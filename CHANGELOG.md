@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-03
 
 - Colocation sites are rooms of their own now, with a cage door, a cross-connect panel showing the carriers on site and a cold aisle in front of the racks, and the trip back starts from their door.
+- Clicking a rack in the room now opens a close-up of it right there, where you install devices from storage, remove them and open their lids without leaving the room.
 - The basement is now seen from above at a three-quarter angle, drawn with datacenter pixel art and placeholder art for the few things it does not have yet.
 - Leaving through the door now shows the drive: you get into the company car in front of the building, follow the route on a dark map while the clock runs ahead, and arrive at the other site before walking in.
 - The basement is drawn in a pixel hotel style with walls on the two far sides, a tile cursor and a walking avatar you can steer with the arrow keys, and a menu bar button and desktop icon take you there.
