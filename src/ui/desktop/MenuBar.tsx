@@ -12,6 +12,7 @@ import { playerAt } from "../../sim/60-infra/handwork";
 import { sky } from "../../sim/20-world/weather";
 import { SkyIcon } from "../apps/weather/SkyIcon";
 import { degrees } from "../apps/weather/WeatherApp";
+import { roomOf } from "../world/World";
 import { DISCORD_URL, uiSound, useStore, type Win } from "../store";
 import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
@@ -90,6 +91,8 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <button className="mb-item mb-place" onClick={() => openApp("Weather")}>
         <SkyIcon kind={sky(here.city, game.hour)} />{degrees(here.city, game.hour)} {here.name}
       </button>
+      <span className="mb-sep" />
+      <button className="mb-item" onClick={() => setSurface("world")}>{roomOf(game).name}</button>
       <span className="mb-sep" />
       <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
         {SPEEDS.map((s: Speed, i) => {

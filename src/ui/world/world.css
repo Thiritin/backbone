@@ -1,10 +1,8 @@
 /* Hotel-chat style: flat tones, a one-pixel navy outline, no gradients or blur. */
 .world {
   --w-line: oklch(0.27 0.045 262);
-  --w-bg: oklch(0.16 0.02 262);
-  --w-floor: oklch(0.72 0.03 250);
-  --w-floor-b: oklch(0.67 0.03 250);
-  --w-grid: oklch(0.58 0.03 250);
+  --w-bg: oklch(0.3 0.025 250);
+  --w-checker: oklch(0.27 0.045 262 / 0.08);
   --w-paper-l: oklch(0.86 0.045 200);
   --w-paper-r: oklch(0.8 0.045 200);
   --w-wall-top: oklch(0.95 0.02 200);
@@ -14,7 +12,6 @@
   --w-skin: oklch(0.84 0.06 60);
   --w-hair: oklch(0.38 0.07 50);
   --w-pants: oklch(0.36 0.05 262);
-  --w-tag: oklch(0.97 0.005 250);
   position: fixed;
   inset: 0;
   background: var(--w-bg);
@@ -23,8 +20,9 @@
 .world-svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 .world-svg:active { cursor: grabbing; }
 
-.w-tile { fill: var(--w-floor); stroke: var(--w-grid); stroke-width: 1; cursor: pointer; }
-.w-tile-b { fill: var(--w-floor-b); }
+.w-sprite { image-rendering: pixelated; }
+.w-tile { fill: transparent; cursor: pointer; }
+.w-tile-b { fill: var(--w-checker); }
 .w-cursor { fill: none; stroke: oklch(1 0 0); stroke-width: 1; pointer-events: none; }
 
 .w-walls polygon { stroke: var(--w-line); stroke-width: 1; pointer-events: none; }
@@ -47,14 +45,22 @@
 .w-edge { fill: none; stroke: var(--w-line); stroke-width: 1; stroke-linejoin: miter; }
 .w-edge-fill { stroke: var(--w-line); stroke-width: 1; }
 .w-lit .w-edge, .w-lit .w-edge-fill { stroke: oklch(1 0 0); }
+.w-lit .w-sprite { filter: brightness(1.25); }
 .w-screen { fill: oklch(0.55 0.12 250); }
-.w-board { fill: var(--w-line); }
-.w-parcel { fill: oklch(0.7 0.09 70); stroke: var(--w-line); stroke-width: 1; }
 .w-obj { cursor: pointer; }
 
 .w-frame { fill: oklch(0.95 0.01 90); stroke: var(--w-line); stroke-width: 1; }
 .w-glass { fill: oklch(0.78 0.06 230); stroke: var(--w-line); stroke-width: 1; }
-.w-blade { fill: none; stroke: var(--metal-2); stroke-width: 2; }
+.w-blade { fill: var(--metal-2); }
+.w-lcd { fill: oklch(0.24 0.04 250); stroke: var(--w-line); stroke-width: 1; }
+.w-digits { fill: oklch(0.88 0.12 190); }
+.w-digits-dim { fill: oklch(0.72 0.08 190); }
+.w-sun { fill: oklch(0.86 0.15 90); }
+.w-cloud { fill: oklch(0.9 0.01 250); }
+.w-rain { fill: oklch(0.7 0.13 240); }
+.w-snow { fill: oklch(1 0 0); }
+.w-switch { fill: var(--w-line); }
+.w-letter { fill: oklch(0.98 0.005 90); stroke: var(--w-line); stroke-width: 1; }
 .w-fuse { fill: oklch(0.82 0.01 250); stroke: var(--w-line); stroke-width: 1; }
 .w-brass { fill: oklch(0.76 0.13 85); }
 .w-slot { fill: var(--w-line); }
@@ -67,6 +73,3 @@
 .w-led { fill: oklch(0.35 0.01 255); }
 .w-led-on { fill: var(--ok); }
 .w-blink .w-led-on { opacity: 0.35; }
-
-.w-tag rect { fill: var(--w-tag); stroke: var(--w-line); stroke-width: 1; }
-.w-tag text { font: 500 8px var(--font-ui); fill: var(--w-line); }

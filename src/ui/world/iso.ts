@@ -1,7 +1,7 @@
 import type { Facing } from "../../sim/20-world/layout";
 
-// Two-to-one pixel diamonds: one tile is TW wide and TH tall at zoom 1, so every tile corner lands on a whole pixel.
-export const TW = 32, TH = 16;
+// Two-to-one pixel diamonds at the hotel-chat native size; tile corners land on whole pixels.
+export const TW = 64, TH = 32;
 
 export interface Pt { x: number; y: number }
 
