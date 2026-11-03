@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The rack close-up carries its name plate on the rack's top, the rack turns on a turntable under it, the wall socket sits beside the rack with its cable rising straight to it, the shelf is drawn as a plain metal shelf, and the Locations app no longer has a room button.
 - Evening and morning now fade in and out with the season instead of switching, and the light switch by the door turns the room's lights on.
 - Every site now has its own spot in its city, and the drive starts and ends on real streets with a zoom out over the motorways in between.
 - The rented office is a room of its own with desks, a reception and a server room, the staff come in during office hours and sit at them, and the post now arrives in the office letterbox.
