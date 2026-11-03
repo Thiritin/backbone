@@ -184,6 +184,7 @@
 .w-cable-hit { fill: none; stroke: transparent; stroke-width: 8; }
 .w-cable:hover .w-cable-line { stroke-width: 2.6; opacity: 1; }
 .w-glow { filter: drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 8px var(--accent)); }
+.w-link { fill: none; stroke: oklch(0.62 0.13 150); stroke-width: 2; stroke-linecap: round; }
 
 /* Datacenter: mesh rack doors, neighbours' racks, tray cables, tubes and their cool light. */
 .w-rack-mesh-line { fill: none; stroke: oklch(0.86 0.008 250); stroke-width: 0.9; }

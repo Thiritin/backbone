@@ -16,7 +16,7 @@ const partner = (id: string) => carrierById(id)?.name ?? exchangeById(id)?.name 
 export const roleName = (r: JackRole) => t(`locations-1.jackRole.${r}`);
 
 // Racks a provider cable can reach from this one: other rented racks in the same datacenter, across shares or within one share.
-function reachable(game: GameState, rackId: string) {
+export function reachable(game: GameState, rackId: string) {
   const loc = (id: string) => game.locations.find((l) => l.id === game.racks.find((r) => r.id === id)?.locationId);
   const here = loc(rackId);
   return game.racks.filter((r) => {

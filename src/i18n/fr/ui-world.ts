@@ -23,6 +23,8 @@ export default {
   "world.cableInHand": () => "Câble en main",
   "world.toRack": () => "Vers une autre baie",
   "world.dropCable": () => "Lâcher le câble",
+  "world.newConnection": () => "Nouvelle connexion d'ici",
+  "world.bookUplink": () => "Réserver un uplink",
   "world.scanAll": () => "Tout numériser",
   "world.mainSwitch": () => "Interrupteur principal",
   "world.prevLetter": () => "Lettre précédente",
