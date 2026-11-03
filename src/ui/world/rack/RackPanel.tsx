@@ -3,7 +3,7 @@ import { t } from "../../../i18n/en";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { freeSlots, mountFrom, portPeers } from "../../../sim/60-infra/status";
+import { freeSlots, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
 import { installCarried } from "../../../sim/90-actions/carry";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
@@ -49,7 +49,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   if (!rack) return null;
 
   const units = rackUnits(rack.model), items = rackItems(game, rack.id);
-  const used = items.filter((it) => !it.chassisId).reduce((n, it) => n + it.model.height, 0);
+  const used = items.filter((it) => !it.chassisId).reduce((n, it) => n + heightIn(game, rack.id, it.model.id), 0);
   const dev = game.devices.find((d) => d.id === sel && d.rackId === rack.id);
   const portDev = port && game.devices.find((d) => d.id === port.device);
   const peerOf = (e: End) => portPeers(game, e.device)[e.port] ?? null;
@@ -80,13 +80,13 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
       <div className="wr-body">
         {back ? (
           <div className="wr-back">
-            <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U}
+            <RackFront units={units} shelf={rack.model === "shelf"} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U}
               selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title} />
           </div>
         ) : (
           <RackFrame units={units}>
             {(w, u) => (
-              <RackFront units={units} items={items} w={w} u={u} selected={dev?.id ?? null}
+              <RackFront units={units} shelf={rack.model === "shelf"} items={items} w={w} u={u} selected={dev?.id ?? null}
                 onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => menus.entries(d))(e); }} />
             )}
           </RackFrame>
@@ -162,7 +162,7 @@ function InstallCard({ rack, unit, onMount, onPick }: { rack: Rack; unit: number
 function carriedFit(game: GameState, rackId: string): number[] {
   const d = game.devices.find((x) => x.id === game.player.carrying), rack = game.racks.find((r) => r.id === rackId);
   if (!d || !rack || rack.locationId !== game.player.at) return [];
-  const h = modelById(d.model).height;
+  const h = heightIn(game, rackId, d.model);
   if (modelById(d.model).kind === "part" || !h) return [];
   return freeSlots(game, rackId, 1).filter((u) => mountFrom(game, rackId, h, 1, u) !== undefined);
 }
@@ -170,7 +170,7 @@ function carriedFit(game: GameState, rackId: string): number[] {
 function CarriedRow({ game, rack, unit, onDone }: { game: GameState; rack: Rack; unit: number; onDone: (id: string) => void }) {
   const act = useStore((s) => s.act);
   const d = game.devices.find((x) => x.id === game.player.carrying)!, m = modelById(d.model);
-  const from = mountFrom(game, rack.id, m.height, 1, unit)!;
+  const from = mountFrom(game, rack.id, heightIn(game, rack.id, d.model), 1, unit)!;
   return (
     <div className="loc-shop-row" data-carried={d.id}>
       <Isometric model={m} brand={d.brand} w={64} />
