@@ -58,7 +58,7 @@ export function PostPanel({ title, onClose }: { title: string; onClose: () => vo
   const letters = [...atDesk(game)].reverse(), l = letters.find((x) => x.id === sel);
   const open = (id: string, read: boolean) => { setSel(id); if (!read) act(readLetter, id); };
   return (
-    <Slab title={title} head={<span className="wr-num">{letters.length}</span>} onClose={onClose} onBack={() => (sel ? (setSel(null), true) : false)} className="wp-panel wp-post" data={{ "post-panel": "" }}>
+    <Slab title={title} head={<span className="wr-num">{letters.length}</span>} onClose={onClose} onBack={() => (sel ? (setSel(null), true) : false)} size="content" className="wp-panel wp-post" data={{ "post-panel": "" }}>
       <div className="wp-split">
         <div className="wp-list" role="list">
           {letters.map((x) => (
@@ -70,14 +70,14 @@ export function PostPanel({ title, onClose }: { title: string; onClose: () => vo
           ))}
           {!letters.length && <div className="wp-none">{t("paperwork.post.empty")}</div>}
         </div>
-        {l && (
-          <div className="wp-read">
+        <div className="wp-read">
+          {l && <>
             <div className="letter-fit"><Letter letter={l} company={game.company.name} owner={game.registration?.owner} /></div>
             <div className="wp-acts">
               {l.scanned ? <span className="wr-num">{t("paperwork.post.scanned")}</span> : <button className="wr-btn" onClick={() => act(scanLetter, l.id)}>{t("paperwork.post.scan")}</button>}
             </div>
-          </div>
-        )}
+          </>}
+        </div>
       </div>
     </Slab>
   );
