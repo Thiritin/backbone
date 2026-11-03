@@ -39,4 +39,7 @@ export default {
   "world.mainSwitch": () => "Main switch",
   "world.prevLetter": () => "Previous letter",
   "world.nextLetter": () => "Next letter",
+  "world.obj.board": () => "Corkboard",
+  "world.board.walk": (p) => `Walk to: ${p.place}`,
+  "world.board.sit": (p) => `At the computer: ${p.app}`,
 } satisfies Dict;

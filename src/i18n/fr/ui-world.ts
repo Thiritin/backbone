@@ -38,4 +38,7 @@ export default {
   "world.mainSwitch": () => "Interrupteur principal",
   "world.prevLetter": () => "Lettre précédente",
   "world.nextLetter": () => "Lettre suivante",
+  "world.obj.board": () => "Tableau en liège",
+  "world.board.walk": (p) => `Aller à : ${p.place}`,
+  "world.board.sit": (p) => `À l'ordinateur : ${p.app}`,
 } satisfies Dict;

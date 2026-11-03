@@ -38,4 +38,7 @@ export default {
   "world.mainSwitch": () => "Hauptschalter",
   "world.prevLetter": () => "Vorheriger Brief",
   "world.nextLetter": () => "Nächster Brief",
+  "world.obj.board": () => "Pinnwand",
+  "world.board.walk": (p) => `Hingehen: ${p.place}`,
+  "world.board.sit": (p) => `Am Computer: ${p.app}`,
 } satisfies Dict;
