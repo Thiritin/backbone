@@ -30,7 +30,7 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Phone | Rings on the wall at night when on call | Support tickets, pager text |
 | Everything software | | Billing, mail, consoles, network, products, customers, staff |
 
-Only the desk PC and the NOC desk open the desktop; every other object opens a panel inside the room.
+Only the desk PC and the NOC desk open the desktop; every other object opens a panel inside the room. Panels are centred popups over the dimmed room that use nearly the whole screen.
 
 The rule: if a real sysadmin in 2005 would have had to stand up for it, it is in the world. If they would do it in a browser or terminal, it is on the desktop.
 

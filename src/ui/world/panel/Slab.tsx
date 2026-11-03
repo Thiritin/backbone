@@ -4,9 +4,9 @@ import { t } from "../../../i18n/en";
 import { reduced } from "../../desktop/motion";
 import "../rack/rack.css";
 
-export const SLIDE_MS = 220;
+export const SLIDE_MS = 180;
 
-// The slide-up panel every object in the room opens. Escape goes to onBack first when it returns true, then closes.
+// The centred popup every object in the room opens. Escape goes to onBack first when it returns true, then closes.
 export function Slab({ title, head, onClose, onBack, className = "", data, children }: {
   title: string; head?: ReactNode; onClose: () => void; onBack?: () => boolean; className?: string; data?: Record<string, string>; children: ReactNode;
 }) {
