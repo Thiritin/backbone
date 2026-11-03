@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The wall phone by the door rings when something breaks at night and nobody else is on call, and answering it shows on a notepad what happened, where and when.
 - In the room a server opens pulled out of the rack on its rails with the lid off, and its parts are checked, swapped and installed on paper tags beside it.
 - Rented racks now come with the provider's patch panel in their top unit, where uplinks and cross-connects land; uplinks are booked by speed as the years allow, with a second line as an option; and cables between racks in rented space are ordered from the provider.
 - Every hands-on action now offers doing it yourself or remote hands as separate buttons, and choosing yourself starts the drive there and does the job on arrival.

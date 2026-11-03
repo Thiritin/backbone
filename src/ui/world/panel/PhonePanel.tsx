@@ -23,20 +23,20 @@ export function PhonePanel({ title, call, cordless, onOpenRack, onClose }: { tit
     <Slab title={title} onClose={onClose} data={{ "phone-panel": call?.id ?? "" }}>
       <div className="wp-scene">
         <div className="wph-desk">
-          <svg className="wph-phone" viewBox="0 0 120 160" aria-hidden>
+          <svg className="wph-phone" viewBox="0 0 170 170" aria-hidden>
             {cordless ? (
               <>
-                <rect className="w-phone-base" x="38" y="40" width="44" height="80" rx="6" />
-                <rect className="wph-cradle" x="48" y="50" width="24" height="10" rx="3" />
-                <g transform="rotate(-24 30 120)"><rect className="w-phone-cordless" x="10" y="80" width="26" height="70" rx="8" /><rect className="w-phone-screen" x="15" y="88" width="16" height="12" /></g>
+                <rect className="w-phone-base" x="62" y="20" width="48" height="96" rx="6" />
+                <rect className="wph-cradle" x="72" y="30" width="28" height="12" rx="3" />
+                <g transform="rotate(-80 60 150)"><rect className="w-phone-cordless" x="44" y="112" width="30" height="80" rx="9" /><rect className="w-phone-screen" x="50" y="122" width="18" height="14" /></g>
               </>
             ) : (
               <>
-                <rect className="w-phone" x="40" y="10" width="56" height="100" rx="8" />
-                <rect className="wph-cradle" x="32" y="14" width="12" height="90" rx="5" />
-                {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} className="w-phone-key" x={54 + c * 11} y={44 + r * 13} width="8" height="8" rx="1.5" />))}
-                <path className="w-phone-cord" d="M38,104 q-8,8 0,12 q8,4 0,12 q-8,4 0,12 q8,4 0,10 L20,150" fill="none" strokeWidth="3" />
-                <g transform="rotate(-70 20 148)"><rect className="w-phone-handset" x="4" y="104" width="22" height="88" rx="10" /></g>
+                <rect className="w-phone" x="70" y="6" width="56" height="100" rx="8" />
+                <rect className="wph-cradle" x="62" y="10" width="12" height="90" rx="5" />
+                {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} className="w-phone-key" x={84 + c * 11} y={40 + r * 13} width="8" height="8" rx="1.5" />))}
+                <path className="w-phone-cord" d="M66,100 q-8,6 0,10 q8,4 0,10 q-8,4 0,10 q8,4 0,8 L40,146" fill="none" strokeWidth="3" />
+                <g transform="rotate(-6 70 150)"><rect className="w-phone-handset" x="20" y="138" width="100" height="22" rx="10" /></g>
               </>
             )}
           </svg>
