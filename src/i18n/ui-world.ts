@@ -33,6 +33,8 @@ export default {
   "world.cableInHand": () => "Cable in hand",
   "world.toRack": () => "To another rack",
   "world.dropCable": () => "Drop cable",
+  "world.newConnection": () => "New connection from here",
+  "world.bookUplink": () => "Book uplink",
   "world.scanAll": () => "Scan all",
   "world.mainSwitch": () => "Main switch",
   "world.prevLetter": () => "Previous letter",

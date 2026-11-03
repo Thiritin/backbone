@@ -6,16 +6,19 @@ import { t } from "../src/i18n/en";
 import { useStore } from "../src/ui/store";
 import { roomOf, World } from "../src/ui/world/World";
 import { tick } from "../src/sim/88-tick/tick";
-import { buyDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyDevice, buyRack } from "../src/sim/90-actions/hardware";
 import { atDesk, inLetterbox, post } from "../src/sim/40-support/letters";
 import { OFFICE_NAME } from "../src/sim/80-business/paperwork";
 import { readyGame } from "./fixtures";
 import { devName } from "../src/ui/apps/hw";
 import { connectError, portPeers } from "../src/sim/60-infra/status";
 import type { End } from "../src/sim/50-state";
-import { dateOf } from "../src/sim/00-core/time";
+import { dateOf, hourOf } from "../src/sim/00-core/time";
 import { NIGHT } from "../src/ui/world/draw";
 import { modelById } from "../src/sim/10-catalog/hardware";
+import { panelOf } from "../src/sim/60-infra/panels";
+import { buyDevice as buyDev, freeFloor, newGame } from "./fixtures";
+import { mountDevice } from "./plugged";
 
 afterEach(cleanup);
 
@@ -255,5 +258,71 @@ describe("world", () => {
     fireEvent.click(screen.getByRole("button", { name: t("world.obj.switch") }));
     expect(bulb()).not.toBeNull();
     expect(Number((document.querySelector(".w-dark") as SVGElement).style.opacity)).toBeCloseTo(dark / 4);
+  });
+});
+
+describe("connections between racks", () => {
+  type R = { ok: boolean; id?: string; error?: string };
+  const ok = (r: R) => { if (!r.ok) throw new Error(r.error); return r.id!; };
+  // Two racks at FR5 with a switch each: two shares side by side, or one cage.
+  function colo(space: "share" | "cage") {
+    const s = freeFloor({ ...newGame(1), cash: 1e7 });
+    s.hour = hourOf(new Date(Date.UTC(2010, 0, 1, 9)));
+    const locs = space === "share" ? [ok(addLocation(s, "equinox-fr5", "share", 1)), ok(addLocation(s, "equinox-fr5", "share", 1))] : [ok(addLocation(s, "equinox-fr5", "cage", 4))];
+    s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
+    const racks = space === "share" ? locs.map((l) => s.racks.find((r) => r.locationId === l)!.id) : [1, 2].map((n) => ok(buyRack(s, locs[0], "rack-42", n)));
+    const sws = racks.map((r) => { const id = ok(buyDev(s, "sw-24", "Sysko", 1, s.racks.find((x) => x.id === r)!.locationId)); ok(mountDevice(s, id, r, 20)); return id; });
+    s.player.at = locs[0];
+    useStore.setState({ game: s, speed: 0, surface: "world" });
+    return { s, racks, sws };
+  }
+  const g = () => useStore.getState().game;
+  const dropOn = (el: Element) => { document.elementFromPoint = () => el; };
+  const at = document.elementFromPoint;
+
+  function openPair(racks: string[]) {
+    const { container } = render(createElement(World));
+    expect(container.querySelectorAll("[data-rack]").length).toBe(2);
+    dropOn(container.querySelector(`[data-rack="${racks[1]}"]`)!);
+    fireEvent.pointerDown(container.querySelector(`[data-rack="${racks[0]}"]`)!, { button: 0 });
+    fireEvent.pointerUp(container.querySelector(".world-svg")!);
+    return container.querySelector(`[data-pair-panel="${racks[0]} ${racks[1]}"]`)!;
+  }
+
+  it("opens both backs side by side on a drag from rack to rack and orders a provider cable jack to jack in a share", () => {
+    try {
+      const { racks, sws } = colo("share");
+      const pair = openPair(racks);
+      expect(pair).not.toBeNull();
+      expect(pair.querySelectorAll("[data-side]").length).toBe(2);
+      const [pa, pb] = racks.map((r) => panelOf(g(), r)!.id);
+      dropOn(pair.querySelector(`[data-end="${sws[1]}:0"]`)!);
+      fireEvent.pointerDown(pair.querySelector(`[data-side] .rack-port[data-end="${sws[0]}:0"]`)!, { button: 0 });
+      fireEvent.pointerUp(window);
+      expect(g().cables.some((c) => c.a.device === sws[0] && c.b.device === sws[1])).toBe(false);
+
+      dropOn(pair.querySelector(`[data-pp="${pb}"] [data-jack="2"]`)!);
+      fireEvent.pointerDown(pair.querySelector(`[data-pp="${pa}"] [data-jack="0"]`)!, { button: 0 });
+      fireEvent.pointerUp(window);
+      expect(g().providerCables).toHaveLength(0);
+      fireEvent.click(pair.querySelector("[data-slip] .wr-line")!);
+      expect(g().providerCables).toMatchObject([{ a: { device: pa, port: 0 }, b: { device: pb, port: 2 } }]);
+      expect(pair.querySelectorAll(".pp-due").length).toBe(2);
+    } finally {
+      document.elementFromPoint = at;
+    }
+  });
+
+  it("cables a port on one rack to a port on the other by hand in a cage", () => {
+    try {
+      const { racks, sws } = colo("cage");
+      const pair = openPair(racks);
+      dropOn(pair.querySelector(`[data-side] .rack-port[data-end="${sws[1]}:0"]`)!);
+      fireEvent.pointerDown(pair.querySelector(`[data-side] .rack-port[data-end="${sws[0]}:0"]`)!, { button: 0 });
+      fireEvent.pointerUp(window);
+      expect(portPeers(g(), sws[0])[0]).toEqual({ device: sws[1], port: 0 });
+    } finally {
+      document.elementFromPoint = at;
+    }
   });
 });

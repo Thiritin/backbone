@@ -156,6 +156,15 @@ export function rackTiles(loc: Location, racks: Rack[], plan?: OfficePlan): Reco
   return out;
 }
 
+// A share holds one rack; the player's other shares in the same datacenter stand nearest it in its row, in place of tenants' racks.
+export function shareMates(loc: Location, locations: Location[], racks: Rack[], own: Record<string, Tile>): Record<string, Tile> {
+  const mine = Object.values(own)[0];
+  if (loc.space !== "share" || !mine) return {};
+  const mates = racks.filter((r) => r.locationId !== loc.id && locations.some((l) => l.id === r.locationId && l.space === "share" && l.dc === loc.dc));
+  const spots = neighbourRacks(loc).filter((t) => t.y === mine.y).sort((a, b) => Math.abs(a.x - mine.x) - Math.abs(b.x - mine.x) || b.x - a.x);
+  return Object.fromEntries(mates.slice(0, spots.length).map((r, i) => [r.id, { ...spots[i], facing: mine.facing }]));
+}
+
 export function freeRackTiles(loc: Location, racks: Rack[], plan?: OfficePlan): Tile[] {
   const taken = new Set(Object.values(rackTiles(loc, racks, plan)).map(key));
   return wallTiles(loc, plan).filter((t) => !taken.has(key(t)));

@@ -34,6 +34,8 @@ export function chassisSlots(model: DeviceModel, parts: Component[]): Slot[] {
 interface R { x: number; y: number; w: number; h: number }
 const box = (r: R) => ({ x: r.x, y: r.y, width: r.w, height: r.h });
 const L = 832, W = 344, X0 = 24, Y0 = 30;
+// The widest a caption's glyph runs on average in any language, and the gap kept between two captions on one line.
+const CAP_CH = 7.2, CAP_GAP = 12;
 export const VIEW = { w: 880, h: 414 };
 
 // Where each zone and slot sits inside the chassis, by line: bays at the front, then the fan wall, the board with a band per
@@ -91,6 +93,17 @@ interface Props {
   onPick: (id: string | null) => void;
 }
 
+// Each caption starts over its section; one running past the lid ends at its edge, and one that would run into a caption already placed moves up a line.
+function capLines(caps: [number, string][]) {
+  const ends: number[] = [];
+  return caps.map(([at, c]) => {
+    const w = c.length * CAP_CH, end = X0 + at + w > X0 + L, x0 = end ? X0 + L - w : X0 + at;
+    const free = ends.findIndex((e) => x0 >= e + CAP_GAP), line = free < 0 ? ends.length : free;
+    ends[line] = x0 + w;
+    return { x: end ? X0 + L : X0 + at, c, end, line };
+  });
+}
+
 export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick }: Props) {
   const slots = chassisSlots(model, parts), { at, bayLen, boardX, rearLen, board } = layout(model, slots);
   const tall = model.height >= 2, gpu = !!lineOf(model)?.startsWith("gpu");
@@ -124,7 +137,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
         <pattern id="lid-pins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill={CAVITY} /><circle cx="2" cy="2" r="0.9" fill={GOLD} opacity="0.7" /></pattern>
         <pattern id="lid-fins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill={ALU} /><rect width="1.6" height="4" fill="oklch(0.55 0.01 255)" /></pattern>
       </defs>
-      {caps.map(([x, c]) => <text key={c} className="lid-cap" x={X0 + x} y={Y0 - 10}>{c}</text>)}
+      {capLines(caps).map(({ x, c, end, line }) => <text key={c} className="lid-cap" x={x} y={Y0 - 10 - line * 13} textAnchor={end ? "end" : undefined}>{c}</text>)}
       <text className="lid-cap dim" x={X0} y={Y0 + W + 20}>Front</text>
       <text className="lid-cap dim" x={X0 + L} y={Y0 + W + 20} textAnchor="end">Rear</text>
 

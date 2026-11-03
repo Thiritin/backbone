@@ -42,7 +42,7 @@
 .wr-cab.shelf { background: none; }
 .wr-cab.shelf::before { background: oklch(0.8 0.008 80); box-shadow: inset 0 -1px 0 oklch(0.62 0.01 80); }
 .wr-cab.shelf::after { background: oklch(0.6 0.008 80); box-shadow: inset 1px 0 0 oklch(0.5 0.01 80); }
-.wr-face > svg { display: block; width: auto; height: min(calc((100cqh - var(--depth) - 72px) * var(--z)), calc(var(--units) * 34px * var(--z) + 80px)); }
+.wr-face > svg { display: block; width: auto; height: min(calc((100cqh - var(--depth) - 72px - var(--pp, 0px)) * var(--z)), calc(var(--units) * 34px * var(--z) + 80px)); }
 .wr-face.out { position: absolute; inset: 0; z-index: 1; pointer-events: none; animation: wr-turn-out 150ms ease-in forwards; }
 .wr-face.in { animation: wr-turn-in 150ms ease-out 150ms backwards; }
 @keyframes wr-turn-out { to { transform: scaleX(0); } }
@@ -157,3 +157,32 @@
 .wr-line[aria-disabled] { opacity: 0.6; cursor: default; }
 .wr-line .hands-mode { margin-left: 6px; color: oklch(0.5 0.02 60); }
 @media (prefers-reduced-motion: reduce) { .wl-pull, .wr-room { transition: none; } }
+
+/* The provider panel's provider side drawn large above the rack back. */
+.wr-stage.pp { --pp: 190px; }
+.wr-stage.pp .wr-room { padding-top: calc(var(--depth) + 24px + var(--pp)); }
+.wr-pp { position: absolute; z-index: 2; left: 50%; bottom: calc(100% + var(--depth) + 12px); width: 460px; transform: translateX(-50%); overflow: visible; font-family: "JetBrains Mono", monospace; }
+.pp-face { fill: oklch(0.24 0.006 255); stroke: var(--metal-line); stroke-width: 1; }
+.pp-ear { fill: var(--metal-2); }
+.pp-hit { fill: transparent; }
+.pp-jack { cursor: pointer; }
+.pp-no { font-size: 6px; fill: oklch(0.62 0.01 255); text-anchor: middle; }
+.pp-sock { fill: oklch(0.13 0.006 255); stroke: oklch(0.34 0.006 255); stroke-width: 0.6; }
+.pp-lc { fill: oklch(0.3 0.006 255); }
+.pp-plug { fill: oklch(0.55 0.12 255); }
+.pp-jack.uplink .pp-plug { fill: oklch(0.62 0.13 150); }
+.pp-jack.xconnect .pp-plug { fill: oklch(0.7 0.13 75); }
+.pp-plate { fill: oklch(0.93 0.01 90); stroke: oklch(0.78 0.01 90); stroke-width: 0.5; }
+.pp-jack.free .pp-plate { fill: oklch(0.36 0.006 255); stroke: none; }
+.pp-label { font-size: 9px; fill: oklch(0.25 0.01 255); }
+.pp-jack.free .pp-label { fill: oklch(0.66 0.01 255); }
+.pp-due line { stroke: oklch(0.5 0.02 60); stroke-width: 0.6; }
+.pp-due rect { fill: oklch(0.86 0.1 90); }
+.pp-due text { font-size: 7.5px; fill: oklch(0.3 0.03 60); }
+.pp-jack:hover .pp-sock, .pp-jack.on .pp-sock { stroke: var(--accent); stroke-width: 1.4; }
+.pp-jack.on .pp-plate { stroke: var(--accent); stroke-width: 1.2; }
+/* A jack's tag hangs clear of the wide panel. */
+.wr-tag.far { left: calc(50% + 254px); }
+/* Two rack backs side by side, and the provider's order slip between them. */
+.wr-pair { display: flex; align-items: flex-end; gap: 300px; }
+.wr-slip { left: 50%; top: auto; bottom: 96px; margin-left: calc(var(--tag-w) / -2); z-index: 3; }

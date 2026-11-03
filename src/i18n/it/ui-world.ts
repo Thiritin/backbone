@@ -32,6 +32,8 @@ export default {
   "world.cableInHand": () => "Cavo in mano",
   "world.toRack": () => "A un altro rack",
   "world.dropCable": () => "Lascia il cavo",
+  "world.newConnection": () => "Nuova connessione da qui",
+  "world.bookUplink": () => "Prenota uplink",
   "world.scanAll": () => "Scansiona tutto",
   "world.mainSwitch": () => "Interruttore generale",
   "world.prevLetter": () => "Lettera precedente",

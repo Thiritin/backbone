@@ -32,6 +32,8 @@ export default {
   "world.cableInHand": () => "Kabel in der Hand",
   "world.toRack": () => "Zu einem anderen Rack",
   "world.dropCable": () => "Kabel ablegen",
+  "world.newConnection": () => "Neue Verbindung von hier",
+  "world.bookUplink": () => "Uplink buchen",
   "world.scanAll": () => "Alle scannen",
   "world.mainSwitch": () => "Hauptschalter",
   "world.prevLetter": () => "Vorheriger Brief",
