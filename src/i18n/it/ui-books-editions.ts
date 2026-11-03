@@ -22,6 +22,7 @@ export default {
   "books-editions.feature.statistics": () => `Statistiche`,
   "books-editions.feature.dunning": () => "Livelli di sollecito",
   "ledger.booksSeat": (p) => `Postazione ${p.program} ${p.edition}`,
+  "ledger.booksHbci": (p) => `Modulo HBCI ${p.program}`,
   "error.unknownEdition": () => `Questa edizione non è in vendita.`,
   "books-editions.noSeat": () => `Nessuna postazione`,
   "books-editions.offline": () => `Contabilità offline`,

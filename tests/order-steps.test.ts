@@ -202,7 +202,7 @@ describe("order steps", () => {
 
   it("with the Helpdesk link runs the account and the first invoice from one Send", () => {
     const s = readyGame(9);
-    s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office-pro", seats: 0, download: null };
+    s.books = { vendor: "lexwear", installedAt: s.hour, edition: "financial-office-pro", seats: 0, download: null, addons: [] };
     const { id, req } = order(s);
     const q = idOf(createQuote(s, id));
     expect(attachQuote(s, q, id).ok).toBe(true);
