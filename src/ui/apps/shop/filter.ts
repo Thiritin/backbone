@@ -18,7 +18,7 @@ export const classOf = (m: DeviceModel) =>
   m.kind === "part" ? "Parts" : m.kind === "chassis" ? "Multi-node" : m.kind === "server" ? LINE_NAME[lineOf(m)!] : m.kind === "switch" ? `Layer ${m.layer ?? 2}` : m.kind === "firewall" ? "Security" : m.kind === "gateway" ? "Routers" : m.kind === "ups" || m.kind === "pdu" ? "Power" : m.kind === "kvm" || m.kind === "console" || m.kind === "oob" ? "Remote access" : "Patch panels";
 
 // The Parts tab files a part by kind.
-const PART_CLASS: Record<ComponentKind, string> = { cpu: "CPUs", ram: "Memory", hdd: "Drives", ssd: "Drives", nvme: "Drives", gpu: "Cards", board: "Boards", nic: "Boards", psu: "Power and cooling", fan: "Power and cooling" };
+const PART_CLASS: Record<ComponentKind, string> = { cpu: "CPUs", ram: "Memory", hdd: "Drives", ssd: "Drives", nvme: "Drives", gpu: "Cards", board: "Boards", nic: "Boards", psu: "Power and cooling", fan: "Power and cooling", optic: "Boards" };
 export const partClass = (kind: ComponentKind) => PART_CLASS[kind];
 // Sidebar classes in order, each with the classes it groups.
 export const CLASS_TREE: [string, string[]][] = [

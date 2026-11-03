@@ -63,7 +63,7 @@ import type { WebmailState } from "./80-business/webmail";
 export const SAVE_VERSION = 5;
 
 export type BondMode = "none" | "failover" | "balance";
-export type CableKind = "copper" | "dac" | "fiber" | "rollover";
+export type CableKind = "copper" | "dac" | "fiber" | "rollover" | "provider";
 
 export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office";
 // Where the company lives (GDD, Properties). building is the postal address; buildingId the listing it was rented or bought from.
@@ -182,7 +182,10 @@ export interface Lease { id: string; lessor: string; monthly: number; months: nu
 export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null; retainedAt: number | null; billing?: Billing }
 export interface Billing { company: string; name: string; address: PostalAddress }
 // A cross-connect from the contract's space to a carrier or exchange on site (to is its id); monthly is fixed at order time.
-export interface CrossConnect { id: string; contractId: string; to: string; monthly: number; since: number }
+// jack is the provider panel jack the line lands on; saves from before panels have none.
+export interface CrossConnect { id: string; contractId: string; to: string; monthly: number; since: number; jack?: End }
+// A cable the provider runs between two provider panel jacks; it is billed and installed at dueAt.
+export interface ProviderCableOrder { id: string; a: End; b: End; fee: number; dueAt: number }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
@@ -310,6 +313,7 @@ export interface GameState {
   waitlist: WaitlistEntry[];
   contracts: Contract[];
   crossConnects: CrossConnect[];
+  providerCables: ProviderCableOrder[];
   // Each provider's position price as a factor of its list price, raised once a game year; new contracts pay it.
   providerPrices: Record<string, number>;
   // Learned research skills (SKILLS ids).
@@ -503,7 +507,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "shelf", locationId: "loc1", position: 1, name: t("rack.shelf"), arriveAt: null, price: 0, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [device("dev5", "home-router", "AVN", "rack2", 5, null, "fra1-gw-01", 0), device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, powerUse: {}, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, powerUse: {}, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerCables: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, ownWebspaces: [], installers: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],

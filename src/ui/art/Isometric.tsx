@@ -123,6 +123,7 @@ const PARTS: Record<ComponentKind, ReactNode> = {
       <path d="M2 2l5 0l-5 5z" fill={GOLD} />
     </Slab>
   ),
+  optic: <Slab x={60} y={100} W={40} D={14} T={10} top={METAL} side={METAL_SIDE} front={DARK} />,
   nic: (
     <>
       <Slab x={30} y={84} W={102} D={50} T={2} top={PCB} side={PCB_SIDE}>

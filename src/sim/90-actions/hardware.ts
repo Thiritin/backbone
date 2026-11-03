@@ -6,6 +6,8 @@ import { debitAllowed, HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance
 import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
 import { hourOf, dateOf, monthIndexOf, yearOf } from "../00-core/time";
+import { freeJack, isProviderPanel } from "../60-infra/panels";
+import { syncProviderPanels } from "./connectivity";
 import { boardVendor, manufacturerByName, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
@@ -89,6 +91,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
     const rackName = nextName(`${prefix(s, loc.id)}-rack`, s.racks.map((r) => r.name));
     s.racks.push({ id: newId(s, "rack"), model: shareRack.id, locationId: loc.id, position: 1, name: rackName, arriveAt: null, price: 0, boughtAt: s.hour, provided: true, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } });
   }
+  syncProviderPanels(s);
   return { ok: true, id: loc.id };
 }
 
@@ -117,7 +120,7 @@ function closeError(s: GameState, locationId: string): string | null {
   if (loc.space === "basement") return "error.cannotClose";
   if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId || d.door?.at === locationId)) return "error.storageNotEmpty";
   const racks = s.racks.filter((r) => r.locationId === locationId);
-  if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id))) return "error.locationNotEmpty";
+  if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id && !isProviderPanel(d)))) return "error.locationNotEmpty";
   return null;
 }
 
@@ -152,6 +155,7 @@ export function closeLocation(s: GameState, locationId: string): ActionResult {
   const why = closeError(s, locationId);
   if (why) return fail(why);
   s.racks = s.racks.filter((r) => r.locationId !== locationId);
+  syncProviderPanels(s);
   const panel = new Set(s.devices.filter((d) => d.panel === locationId).map((d) => d.id));
   unplug(s, panel);
   s.devices = s.devices.filter((d) => !panel.has(d.id));
@@ -162,16 +166,21 @@ export function closeLocation(s: GameState, locationId: string): ActionResult {
   return { ok: true };
 }
 
-// Pays the setup fee now; the monthly price is billed with the rent from the next month start.
-export function orderCrossConnect(s: GameState, contractId: string, to: string): ActionResult {
+// Pays the setup fee now; the monthly price is billed with the rent from the next month start. The line lands on a free
+// jack of the rack's provider panel, the location's first rack with one when no rack is named.
+export function orderCrossConnect(s: GameState, contractId: string, to: string, rackId?: string): ActionResult {
   const c = s.contracts.find((x) => x.id === contractId);
   if (!c) return fail("error.unknownContract");
   if (c.endsAt !== null) return fail("error.alreadyCancelled");
   const dc = datacenterById(c.dc);
   if (!crossConnectTargets(dc).some((x) => x.id === to)) return fail("error.noCrossConnectTarget");
+  const racks = s.racks.filter((r) => r.locationId === c.locationId && (!rackId || r.id === rackId));
+  if (rackId && !racks.length) return fail("error.unknownRack");
+  const jack = racks.map((r) => freeJack(s, r.id)).find(Boolean);
+  if (!jack) return fail("error.noFreeJack");
   const setup = crossConnectSetup(dc);
   if (s.cash < setup) return fail("error.noCash");
-  const x = { id: newId(s, "xc"), contractId, to, monthly: dc.crossConnect, since: s.hour };
+  const x = { id: newId(s, "xc"), contractId, to, monthly: dc.crossConnect, since: s.hour, jack };
   s.crossConnects = [...s.crossConnects, x];
   book(s, "rent", "ledger.crossConnectSetup", { to: targetName(to), dc: dc.id }, -setup);
   return { ok: true, id: x.id };
@@ -206,6 +215,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   const tile = freeRackTiles(s.locations.find((l) => l.id === locationId)!, s.racks)[0];
   const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null }, tile };
   s.racks.push(rack);
+  syncProviderPanels(s);
   book(s, "hardware", "ledger.hardware", { model: spec.id === "shelf" ? "shelf" : `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
 }
@@ -238,6 +248,7 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
     Object.assign(rack, { flatKw: flatDefault(s, to.id), flatKwAt: null, overSince: { a: null, b: null }, tile: undefined });
     rack.tile = rackTiles(to, s.racks)[rack.id];
   }
+  syncProviderPanels(s);
   book(s, "moving", "ledger.move", { rack: rack.name, location: to.name }, -move.price);
   return { ok: true, id: rack.id };
 }
@@ -246,8 +257,9 @@ export function sellRack(s: GameState, rackId: string): ActionResult {
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return fail("error.unknownRack");
   if (rack.provided) return fail("error.providedRack");
-  if (s.devices.some((d) => d.rackId === rackId) || s.workloads.some((w) => w.rackId === rackId)) return fail("error.rackNotEmpty");
+  if (s.devices.some((d) => d.rackId === rackId && !isProviderPanel(d)) || s.workloads.some((w) => w.rackId === rackId)) return fail("error.rackNotEmpty");
   s.racks = s.racks.filter((r) => r.id !== rackId);
+  syncProviderPanels(s);
   book(s, "sales", "ledger.sale", { device: rack.name }, resaleValue(s, rack.price, rack.boughtAt));
   return { ok: true };
 }
@@ -515,6 +527,7 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
 export function moveInRack(s: GameState, deviceId: string, slot: number, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (isProviderPanel(d)) return fail("error.providerPanel");
   if (d.chassisId) return fail("error.inChassis");
   if (!d.rackId) return fail("error.notMounted");
   const spot = spotOf(s, d.rackId)!, h = heightIn(s, d.rackId, d.model);
@@ -532,6 +545,7 @@ export function moveInRack(s: GameState, deviceId: string, slot: number, how: Ho
 export function unmountDevice(s: GameState, deviceId: string, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (isProviderPanel(d)) return fail("error.providerPanel");
   if (d.chassisId) return fail("error.inChassis");
   if (!d.rackId) return fail("error.notMounted");
   const rack = spotOf(s, d.rackId)!;
@@ -682,6 +696,7 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
 export function sellDevice(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (isProviderPanel(d)) return fail("error.providerPanel");
   if (modelById(d.model).kind === "gateway" && !modelById(d.model).price) return fail("error.cannotSell");
   if (d.lease) return fail("error.leased");
   if (d.chassisId) return fail("error.inChassis");
