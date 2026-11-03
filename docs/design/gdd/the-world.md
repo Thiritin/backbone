@@ -62,6 +62,17 @@ Every rack on a datacenter floor has a closed mesh door on the face in view: a f
 
 No wall carries a cross-connect panel. The site's carrier panel appears on the back of every rack of the location, beside its patch panel, and a cross-connect is cabled there in the rack popup. A cable from a rack to the carrier panel runs along the tray to the player's first rack, which holds the panel. The NOC desk opens the desktop, the PDU shows the power draw and the room temperature, and the shelf shows the storage. A rack loaded from a save on a tile that is no longer one of the player's rack tiles moves to the next free one.
 
+## Office
+
+A rented or bought office is a location from its first section on, a destination on the map, and its room is built from the property's sections. Each floor the company holds is one room, 7 tiles deep, its sections side by side, each a block of 6 by 7 tiles. The floor of the first section starts with a reception strip 4 tiles wide; every floor has the hallway door in the left wall with a mat and a light switch, and when the company holds more than one floor a stairwell door with a floor sign switches between them. The floor is carpet, and raised tiles in a server room.
+
+- **Reception strip.** The kitchenette in the corner with a sink, a coffee machine and wall cabinets, the printer, the letterbox by the door, the reception counter with the company's name plate, a plant, and the player's own desk with the PC, which opens the desktop.
+- **Desk section.** Two islands of two desks facing each other, each desk with a flat screen, keyboard, phone and paper tray and a swivel chair; a window with the city outside, a whiteboard with scribbles, a plant and a bin.
+- **Server section.** A glass partition with a code-lock door, four rack tiles in a row facing a cold aisle, a cooling unit, a cable tray, a PDU and an extinguisher.
+- **Section under refit.** Paint buckets, a ladder and a toolbox on a dust sheet; a server room keeps its rack tiles.
+
+Fluorescent tubes hang over every block and are lit during office hours, weekdays 9 to 18; outside them the room is one flat step darker. The staff assigned to desks in the office sit at their desks during office hours, facing their screens, with a small idle head tilt and typing hands. Each arrives in the first half hour at a time of their own, appearing at the door and walking the grid to the desk, and leaves in the last half hour the same way back. The figures cannot be clicked; pointing at one shows a name card on the desk. Arriving by car shows the office building with the company's plate beside its glass door.
+
 ## Movement and interaction
 
 The room is played like a tycoon game. There is no figure to walk around: the player looks at the room and clicks objects directly, and a click acts at once. The arrow keys and WASD pan the view, the wheel zooms and a drag pans. Keys do nothing while a dialog or menu is open.
