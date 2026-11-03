@@ -4,7 +4,8 @@ import { skuById, SMT_SHARE, topBoost } from "../src/sim/10-catalog/cpus";
 import { componentParts, modelById } from "../src/sim/10-catalog/hardware";
 import { sizeSpec } from "../src/sim/10-catalog/products";
 import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
-import { installedThreads, installedVcpu } from "../src/sim/60-infra/status";
+import { nodeCapacity } from "../src/sim/60-infra/cluster";
+import { installedCompute, installedThreads } from "../src/sim/60-infra/status";
 import { FAST_HAPPY, monthlyReviews, nodeBoost } from "../src/sim/85-products/products";
 import type { SimEvent } from "../src/sim/88-tick/tick";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -37,13 +38,15 @@ function setup(cpu?: string) {
 const customer = (s: GameState, id: string) => s.customers.find((c) => c.id === id)!;
 
 describe("threads", () => {
-  it("counts a second thread as a share of a core", () => {
+  it("books every thread as a vCPU and counts a second thread as a share of a core of compute", () => {
     const m = modelById("g3-compute"), d = { ...device("d", m.id, "Dwell", null, 0, null, "d", 0), ...deviceDefaults(m.id, 0, componentParts(m)) };
     expect(installedThreads(d)).toBe(24);
-    expect(installedVcpu(d)).toBe(Math.round((12 + 12 * SMT_SHARE) * 100) / 100);
+    expect(nodeCapacity(d).vcpu).toBe(24);
+    expect(installedCompute(d)).toBe(Math.round((12 + 12 * SMT_SHARE) * 100) / 100);
     const amb = { ...d, ...deviceDefaults(m.id, 0, componentParts(m, "amb", "amb-opteroni-6174")) };
     expect(installedThreads(amb)).toBe(24);
-    expect(installedVcpu(amb)).toBe(24);
+    expect(nodeCapacity(amb).vcpu).toBe(24);
+    expect(installedCompute(amb)).toBe(24);
   });
 });
 

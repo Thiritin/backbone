@@ -10,7 +10,7 @@ import { bump, createTicket, isFinal } from "../40-support/tickets";
 import { serviceHeld } from "../45-billing/billing";
 import type { Device, End, GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { booked, liveRam, oomKilled, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeVcpu, serverOf, workloadsOf, workloadsOn, type Workload } from "./cluster";
+import { booked, liveRam, oomKilled, clustersOn, controlPlanesOn, controlPlaneUp, controlPlaneUse, hostsOfVm, insideVm, isOwnVm, lostDisk, nodeCompute, serverOf, workloadsOf, workloadsOn, type Workload } from "./cluster";
 import { serviceMbps } from "./network";
 import { interestAt, modById, titleById } from "../10-catalog/games";
 import { fillOf } from "../30-customers/resellers";
@@ -237,7 +237,7 @@ export const ramShare = (u: NodeUsage) => u.used.ramGb / Math.max(1e-9, u.physic
 // What a node uses and physically has, before performance; heat reads this through power draw, so it cannot ask for perf.
 function nodeLoad(s: GameState, d: Device, hour: number): { used: Resources; physical: Resources } {
   const deviceId = d.id, used: Resources = { vcpu: 0, ramGb: 0, diskGb: 0 };
-  for (const cp of [controlPlanesOn(s, deviceId), osUse(s, deviceId, nodeVcpu(s, d), installedRamGb(d), hour)]) {
+  for (const cp of [controlPlanesOn(s, deviceId), osUse(s, deviceId, nodeCompute(s, d), installedRamGb(d), hour)]) {
     used.vcpu += cp.vcpu; used.ramGb += cp.ramGb; used.diskGb += cp.diskGb;
   }
   for (const w of s.workloads) {
@@ -245,7 +245,7 @@ function nodeLoad(s: GameState, d: Device, hour: number): { used: Resources; phy
     const u = workloadUse(s, w, hour);
     used.vcpu += u.vcpu; used.ramGb += u.ramGb; used.diskGb += u.diskGb;
   }
-  return { used, physical: { vcpu: nodeVcpu(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) } };
+  return { used, physical: { vcpu: nodeCompute(s, d), ramGb: installedRamGb(d), diskGb: raidUsable(d) } };
 }
 
 // A server's CPU utilisation from 0 to 1: its cluster share plus any whole-server rental on it.

@@ -22,8 +22,8 @@ import { BUDGETS, OWNED, PROFILE_IDS, SATURATION, WEBSITE_LEADS } from "../80-bu
 import { designPrice, generationOf, penaltyFor, SITE_RENT } from "../80-business/website";
 import { annuity, baseRate, LOAN_AMOUNTS, MIN_LIMIT, RISK_PREMIUM } from "../45-billing/billing";
 import { LEASE_FACTOR, LEASE_TERMS } from "../10-catalog/leasing";
-import { modelById, type DeviceModel } from "../10-catalog/hardware";
-import { CORE_SCORE, eraDemand } from "../10-catalog/cpus";
+import { componentParts, modelById, type DeviceModel } from "../10-catalog/hardware";
+import { CORE_SCORE, eraDemand, skuOf, SMT_SHARE } from "../10-catalog/cpus";
 import { presetPrice } from "../10-catalog/parts";
 import { skillById } from "../10-catalog/research";
 import { KNOW_HOW } from "../10-catalog/store";
@@ -62,7 +62,7 @@ export const STEADY: Bot = { name: "steady", priceFactor: 0.8, hires: true, adSh
 export const SOLO: Bot = { ...STEADY, name: "solo", hires: false };
 
 interface Cohort { n: number; H: number }
-interface Server { gen: number; ramGb: number; cores: number; watts: number; bought: number; price: number; basement: boolean; leasedUntil?: number }
+interface Server { gen: number; ramGb: number; compute: number; watts: number; bought: number; price: number; basement: boolean; leasedUntil?: number }
 interface Loan { balance: number; payment: number; rate: number }
 interface Lease { payment: number; until: number }
 type Product = ProductId | "game";
@@ -77,7 +77,7 @@ const MONTHS = 12;
 const GAME_SHARE = 0.6;
 // RAM per cluster for the hypervisor and the panel VM's own panel.
 const CONTROL_RAM = 1;
-// The bot plans for this many vCPU per physical core; the game lets it book more, at the cost of performance.
+// The bot plans for this many vCPU per core of compute; the game lets it book more, at the cost of performance.
 const CPU_PER_CORE = 8;
 // A basement server's average draw and the evening peak over a service's mean traffic (Traffic and bandwidth).
 const BASEMENT_WATTS = 150, PEAK_FACTOR = 2;
@@ -130,14 +130,16 @@ const priceOf = (p: Profile, product: Product, year: number): number => marketPr
 const cpuOf = (p: Profile, product: Product, year: number): number => specOf(p, product, year).vcpu;
 // The live shop's Dwell server of a generation and line (10-catalog/hardware.ts): balanced 1U or memory-optimized 2U.
 const shopServer = (gen: number, line: "compute" | "memory"): DeviceModel => modelById(`g${gen + 1}-${line}`);
-const vcpuOf = (m: DeviceModel): number => m.server!.cores;
+// A preset's compute in cores, as 60-infra/status.ts installedCompute counts it: a second thread adds SMT_SHARE of a core.
+const computeOf = (m: DeviceModel): number =>
+  componentParts(m).reduce((n, p) => (p.kind === "cpu" ? n + (p.size ?? 0) + ((skuOf(p)?.threads ?? p.size ?? 0) - (p.size ?? 0)) * SMT_SHARE : n), 0);
 // The bot buys Indel presets; a core carries bookings by its speed against the month's software (60-infra/status.ts, coreSpeed).
 const speedOf = (gen: number, month: number): number => CORE_SCORE[gen] / eraDemand(2005 + month / 12);
 // What the shop charges for it in a year: its chassis plus its parts at that year's part prices.
 const shopPrice = (gen: number, line: "compute" | "memory", year: number): number => presetPrice(shopServer(gen, line), year);
 const serverOf = (gen: number, line: "compute" | "memory", month: number, basement: boolean): Server => {
   const m = shopServer(gen, line);
-  return { gen, ramGb: m.server!.ramGb, cores: vcpuOf(m), watts: m.watts, bought: month, price: shopPrice(gen, line, 2005 + Math.floor(month / 12)), basement };
+  return { gen, ramGb: m.server!.ramGb, compute: computeOf(m), watts: m.watts, bought: month, price: shopPrice(gen, line, 2005 + Math.floor(month / 12)), basement };
 };
 const ramOf = (p: Profile, product: Product, year: number): number => specOf(p, product, year).ramGb;
 // Mbit/s a customer sends at the evening peak; traffic grows 20% a year like the live TRAFFIC_GROWTH.
@@ -285,7 +287,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
     const ramNeeded = (extra: number[][]) => PROFILES.reduce((a, p, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * ramOf(p, pr, year), 0), 0);
     const ramHave = () => servers.reduce((a, s) => a + s.ramGb, 0) - CONTROL_RAM;
     const cpuNeeded = (extra: number[][]) => PROFILES.reduce((a, p, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * cpuOf(p, pr, year), 0), 0);
-    const cpuHave = () => servers.reduce((a, s) => a + s.cores * CPU_PER_CORE * speedOf(s.gen, month), 0);
+    const cpuHave = () => servers.reduce((a, s) => a + s.compute * CPU_PER_CORE * speedOf(s.gen, month), 0);
     const peakNeeded = (extra: number[][]) => PROFILES.reduce((a, _, i) => a + PRODUCTS.reduce((b, pr, k) => b + (cohorts[i][k].n + extra[i][k]) * peakMbit(pr, year), 0), 0);
     // The basement is full once its slots are taken or its customers' evening peak takes 90% of the home line's upload.
     const basementFull = servers.length >= BASEMENT_SLOTS || peakNeeded(PROFILES.map(() => PRODUCTS.map(() => 0))) > 0.9 * line.up;
@@ -306,7 +308,7 @@ export function run(bot: Bot, seed: number, years = 15): RunResult {
       if (basement && basementFull) break;
       // In the datacenter the bot buys the line with the lowest price per GB it can fill, given the vCPUs its customers book per GB.
       const cpuPerGb = cpuNeeded(newCustomers) / Math.max(1, ramNeeded(newCustomers));
-      const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (vcpuOf(m) * CPU_PER_CORE * speedOf(gen, month)) / Math.max(cpuPerGb, 1e-6));
+      const usable = (m: DeviceModel) => Math.min(m.server!.ramGb, (computeOf(m) * CPU_PER_CORE * speedOf(gen, month)) / Math.max(cpuPerGb, 1e-6));
       const line = basement ? "compute" : (["compute", "memory"] as const).reduce((a, b) => shopPrice(gen, b, year) / usable(shopServer(gen, b)) < shopPrice(gen, a, year) / usable(shopServer(gen, a)) ? b : a);
       const g = serverOf(gen, line, month, basement), reserve = 2000 + 3 * owed();
       const short = g.price + reserve - cash, amount = LOAN_AMOUNTS.find((a) => a >= short);

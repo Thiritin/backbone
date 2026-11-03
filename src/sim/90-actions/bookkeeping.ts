@@ -7,7 +7,7 @@ import { cents } from "../45-billing/billing";
 import { downloadMbps } from "./media";
 import { invoicing } from "../46-finance/payables";
 import type { GameState } from "../50-state";
-import { bill, currentEdition, currentVendor, LICENCE_KEY, licencePrice, matchByReference, monthlyFee, monthlyRun, MONTHLY_KEY, SEAT_KEY, updateOpen, works } from "../80-business/bookkeeping";
+import { bill, currentEdition, currentVendor, hasFeature, HBCI_KEY, LICENCE_KEY, licencePrice, matchByReference, monthlyFee, monthlyRun, MONTHLY_KEY, SEAT_KEY, updateOpen, works } from "../80-business/bookkeeping";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -29,7 +29,7 @@ function take(s: GameState, v: BooksVendor, e: Edition, seats: number): ActionRe
 // The data stays where it is; the old program's edition, seats and fee go. A program bought before costs only what its
 // edition adds. The installer stays in Downloads for a reinstall.
 function setUp(s: GameState, v: BooksVendor, e: Edition): void {
-  s.books = { vendor: v.id, installedAt: s.hour, edition: e.id, seats: 0, download: s.books.download, setupDone: false };
+  s.books = { vendor: v.id, installedAt: s.hour, edition: e.id, seats: 0, download: s.books.download, setupDone: false, addons: [] };
   if (!s.installed.includes("Books")) s.installed = [...s.installed, "Books"];
   const fee = monthlyFee(v, e, 0);
   if (fee) bill(s, v, MONTHLY_KEY, fee, { edition: e.name });
@@ -98,6 +98,19 @@ export function setSeats(s: GameState, seats: number): ActionResult {
     pay(s, v, SEAT_KEY, price, e);
   }
   s.books = { ...s.books, seats };
+  return { ok: true };
+}
+
+// An add-on the installed program's vendor sells for every edition: a desktop add-on is paid once, a browser one each month.
+export function buyAddon(s: GameState, id: Feature): ActionResult {
+  const v = currentVendor(s), e = currentEdition(s), price = v?.addons?.[id];
+  if (!v || !e || price === undefined) return fail("error.unknownEdition");
+  if (hasFeature(s, id)) return fail("error.installed");
+  if (v.deployment === "desktop") {
+    if (s.cash < price) return fail("error.noCash");
+    pay(s, v, HBCI_KEY, price, e);
+  }
+  s.books = { ...s.books, addons: [...s.books.addons, id] };
   return { ok: true };
 }
 

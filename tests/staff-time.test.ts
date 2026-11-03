@@ -143,7 +143,7 @@ describe("billing rules", () => {
     tick(s);
     expect(s.invoices[0].reminders).toHaveLength(0);
     const book = hireOne(s, "bookkeeper"), acc = hireOne(s, "accountant");
-    s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2, download: null };
+    s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2, download: null, addons: [] };
     tick(s);
     expect(s.invoices[0].reminders).toHaveLength(1);
     // One action per invoice and hour: the suspension follows an hour later.
@@ -174,7 +174,7 @@ describe("billing rules", () => {
     s.hour = MONDAY + 8;
     for (let i = 0; i < 10; i++) overdueInvoice(s, c, 8 + i);
     const book = hireOne(s, "bookkeeper");
-    s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2, download: null };
+    s.books = { vendor: "sevdeck", installedAt: 0, edition: "rechnung", seats: 2, download: null, addons: [] };
     setTeam(s, book, "parttime");
     runTo(s, MONDAY + 24);
     // A reminder with its check takes 21 minutes, so five fit in two hours.

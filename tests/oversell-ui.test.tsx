@@ -1,6 +1,6 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { oversellRatio } from "../src/sim/60-infra/oversell";
+import { oversellRatio, physicalOf } from "../src/sim/60-infra/oversell";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setOversell } from "../src/sim/90-actions/oversell";
@@ -25,6 +25,8 @@ describe("oversell readout", () => {
     expect(html).toContain(`${+oversellRatio(s, s.clusters.find((x) => x.id === host)!).cpu.toFixed(2)} : 1`);
     expect(html).toContain("Oversell cap");
     expect(html).toContain("No cap");
+    expect(html).toContain("Compute");
+    expect(html).toContain(`${+physicalOf(s, s.clusters.find((x) => x.id === host)!).compute.toFixed(2)}`);
   });
 
   it("shows the cap the player set", () => {

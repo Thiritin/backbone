@@ -61,7 +61,7 @@ describe("bookkeeping vendors", () => {
   it("debits the fee straight off the cash without a bank account", () => {
     const s = game(2005, false);
     own(s, "collmix");
-    expect(s.cash).toBe(5_000 - 15);
+    expect(s.cash).toBe(5_000 - 6);
     expect(s.payables).toEqual([]);
   });
 
@@ -103,7 +103,7 @@ describe("bookkeeping vendors", () => {
     const raw = JSON.parse(serialize(newGame(4)));
     delete raw.books;
     raw.installed = ["Browser", "Books"];
-    expect(deserialize(JSON.stringify(raw)).books).toEqual({ vendor: "lexwear", installedAt: 0, edition: "buchhalter", seats: 0, download: null });
+    expect(deserialize(JSON.stringify(raw)).books).toEqual({ vendor: "lexwear", installedAt: 0, edition: "buchhalter", seats: 0, download: null, addons: [] });
     raw.installed = ["Browser"];
     expect(deserialize(JSON.stringify(raw)).books.vendor).toBeNull();
   });
@@ -111,7 +111,7 @@ describe("bookkeeping vendors", () => {
   it("starts a new game without Books and ticks the Getting started step on install", () => {
     const s = game(2005);
     expect(STARTER_APPS).not.toContain("Books");
-    expect(s.books).toEqual({ vendor: null, installedAt: 0, edition: null, seats: 0, download: null });
+    expect(s.books).toEqual({ vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] });
     expect(TUTORIAL.indexOf("books")).toBeGreaterThan(TUTORIAL.indexOf("register"));
     expect(TUTORIAL.indexOf("books")).toBeLessThan(TUTORIAL.indexOf("firstCustomer"));
     expect(checkDone(s, "books")).toBe(false);

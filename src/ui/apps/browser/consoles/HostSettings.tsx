@@ -31,6 +31,7 @@ export function Oversell({ game, c }: { game: GameState; c: Cluster }) {
   const facts: Fact[] = [
     { label: t("host.accounts"), value: String(mine.length), num: true },
     { label: t("host.vcpu"), value: t("host.vcpuValue", { booked: num(booked.vcpu), used: num(used), physical: num(phys.vcpu) }), num: true },
+    { label: t("host.compute"), value: num(phys.compute), num: true },
     { label: t("host.ram"), value: t("host.ramValue", { booked: ram(+booked.ramGb.toFixed(1)), physical: ram(+phys.ramGb.toFixed(1)) }), num: true },
     { label: t("host.ratio"), value: `${num(ratio.cpu)} : 1`, num: true },
     { label: t("host.lastSlowdown"), value: slow < 0 ? t("host.none") : formatClock(slow), num: true },

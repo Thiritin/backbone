@@ -14,7 +14,7 @@ import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
 import { isVm } from "./lan";
 import { privateNetDown } from "./private";
-import { deviceVendor, drivesOf, installedRamGb, installedVcpu, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
+import { deviceVendor, drivesOf, installedCompute, installedRamGb, installedThreads, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { addressOf } from "./lan";
@@ -189,9 +189,12 @@ function ecFactor(s: GameState, d: Device): number {
   return set ? (set - effParity(s.netsvc.ec[c.id] ?? 2, set)) / set : 1;
 }
 export function nodeCapacity(d: Device, s?: GameState): Resources {
-  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedVcpu(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk * (s ? ecFactor(s, d) : 1) } : ZERO;
+  return modelById(d.model).server ? { vcpu: s ? nodeVcpu(s, d) : installedThreads(d), ramGb: installedRamGb(d), diskGb: raidUsable(d) * OVERCOMMIT.disk * (s ? ecFactor(s, d) : 1) } : ZERO;
 }
-export const nodeVcpu = (s: GameState, d: Device): number => (clusterOf(s, d.id)?.compat ? Math.round(installedVcpu(d) * COMPAT_VCPU * 100) / 100 : installedVcpu(d));
+const compat = (s: GameState, d: Device, x: number): number => (clusterOf(s, d.id)?.compat ? Math.round(x * COMPAT_VCPU * 100) / 100 : x);
+// vCPU a server books against, and the work it does that its load is measured against.
+export const nodeVcpu = (s: GameState, d: Device): number => compat(s, d, installedThreads(d));
+export const nodeCompute = (s: GameState, d: Device): number => compat(s, d, installedCompute(d));
 // Whether a VM moves live between two servers: their boards share a vendor, or both clusters run compatibility mode.
 export const liveBetween = (s: GameState, from: Device, to: Device): boolean =>
   deviceVendor(from) === deviceVendor(to) || (!!clusterOf(s, from.id)?.compat && !!clusterOf(s, to.id)?.compat);

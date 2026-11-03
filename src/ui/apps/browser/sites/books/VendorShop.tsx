@@ -2,10 +2,10 @@ import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { euro } from "../../../../../sim/00-core/money";
 import { nowHours, yearOf } from "../../../../../sim/00-core/time";
-import { booksVendor, type BooksVendor, type BooksVendorId, type Edition } from "../../../../../sim/10-catalog/bookkeeping";
+import { booksVendor, type BooksVendor, type BooksVendorId, type Edition, type Feature } from "../../../../../sim/10-catalog/bookkeeping";
 import type { GameState } from "../../../../../sim/50-state";
 import { booksUrl, currentEdition, licencePrice } from "../../../../../sim/80-business/bookkeeping";
-import { buyBooks, setSeats, upgradeBooks } from "../../../../../sim/90-actions/bookkeeping";
+import { buyAddon, buyBooks, setSeats, upgradeBooks } from "../../../../../sim/90-actions/bookkeeping";
 import { usePageAct } from "../../pageAct";
 import "./books-vendors.css";
 
@@ -52,6 +52,19 @@ function Seats({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition }) 
   );
 }
 
+// Features the vendor sells for every edition; the company's program buys them here.
+function Addons({ game, v }: { game: GameState; v: BooksVendor }) {
+  const act = usePageAct(), mine = game.books.vendor === v.id;
+  return (Object.entries(v.addons ?? {}) as [Feature, number][]).map(([f, price]) => (
+    <div key={f} className="bv-row">
+      <span>{t(`books-editions.feature.${f}`)}</span>
+      <span className="num">{amount(v, price)}</span>
+      {mine && (game.books.addons.includes(f) ? <span className="bv-state">{t("books-editions.yours")}</span>
+        : <button type="button" className="bv-buy" onClick={() => act(buyAddon, f)}>{t("vendor-sites.buy")}</button>)}
+    </div>
+  ));
+}
+
 // The vendor's editions with their price, users and features, and the seats of the edition the company runs:
 // a plain list on an early site, a pricing table with the editions side by side once table is set.
 export function Editions({ game, v, one, table }: { game: GameState; v: BooksVendor; one?: string; table?: boolean }) {
@@ -75,6 +88,7 @@ export function Editions({ game, v, one, table }: { game: GameState; v: BooksVen
           </tbody>
         </table>
         {seated && <Seats game={game} v={v} e={seated} />}
+        <Addons game={game} v={v} />
       </>
     );
   }
@@ -95,6 +109,7 @@ export function Editions({ game, v, one, table }: { game: GameState; v: BooksVen
           {now?.id === e.id && e.seat > 0 && <Seats game={game} v={v} e={e} />}
         </div>
       ))}
+      <Addons game={game} v={v} />
     </div>
   );
 }
