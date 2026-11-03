@@ -392,9 +392,8 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       })}
       <rect y={top - 4} width={W} height={H - top + 4} rx="4" fill="var(--rack)" />
       <g transform={`translate(0 ${top})`}>
-        {shelf && <Bundle x={pad + w * 0.15} w={w * 0.7} h={y} seed={units} />}
-        <rect x={pad - 6} y="-2" width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
-        <rect x={rail} y="-2" width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
+        {shelf && [...placed.values()].map(({ it, y: dy, h }) => <Loops key={it.id} x={pad + w / 2} y={dy + h} drop={pitch} n={it.ports.filter((p) => p !== "off").length} />)}
+        {shelf ? [pad - 6, rail].map((x) => <Upright key={x} x={x} h={y} />) : [pad - 6, rail].map((x) => <rect key={x} x={x} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />)}
         {back && !shelf && (
           <g aria-label={t("art.cableChannel")}>
             <rect x={rail + 8} y="-2" width={channel - 10} height={y + 4} rx="2" fill="oklch(0.11 0.004 255)" />
@@ -405,7 +404,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       </g>
       <g pointerEvents="none">
         {cords}
-        <rect x={pad - 6} y={top - 2} width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
+        {shelf ? <g transform={`translate(0 ${top})`}><Upright x={pad - 6} h={y} /></g> : <rect x={pad - 6} y={top - 2} width="5" height={y + 4} rx="1" fill="var(--metal-2)" />}
         {wires}
         {back && duct && (
           <g className="rack-duct" aria-hidden="true">
@@ -423,27 +422,37 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
 }
 
 export const shelfPitch = (u: number) => Math.round(u * 2.4);
-const BOARD = 4, UPRIGHT = "oklch(0.6 0.01 250)";
+const BOARD = 5;
 
-// A shelf board, its top edge at y, running between the uprights.
-function Board({ x, y, w }: { x: number; y: number; w: number }) {
+// A punched shelf upright.
+function Upright({ x, h }: { x: number; h: number }) {
   return (
     <g pointerEvents="none">
-      <rect x={x - 6} y={y - BOARD} width={w + 12} height={BOARD} rx="0.6" fill="oklch(0.66 0.008 250)" />
-      <rect x={x - 6} y={y - 1.2} width={w + 12} height="1.2" fill="oklch(0.5 0.01 250)" />
+      <rect x={x} y="-2" width="5" height={h + 4} fill="oklch(0.62 0.008 250)" />
+      <rect x={x + 4} y="-2" width="1" height={h + 4} fill="oklch(0.5 0.01 250)" />
+      {Array.from({ length: Math.floor(h / 8) }, (_, k) => <rect key={k} x={x + 1.5} y={2 + k * 8} width="2" height="3" fill="oklch(0.3 0.006 255)" />)}
     </g>
   );
 }
 
-// The loose cables hanging behind a shelf's boards, swinging left and right on the way down.
-function Bundle({ x, w, h, seed }: { x: number; w: number; h: number; seed: number }) {
-  const tones = ["oklch(0.3 0.01 255)", "oklch(0.45 0.09 250)", "oklch(0.55 0.12 60)", "oklch(0.35 0.06 150)", "oklch(0.25 0.006 255)"];
+// A shelf board, its top edge at y: the lit top, the front lip and its shadowed underside.
+function Board({ x, y, w }: { x: number; y: number; w: number }) {
+  return (
+    <g pointerEvents="none">
+      <rect x={x - 6} y={y - BOARD} width={w + 12} height="1.5" fill="oklch(0.78 0.006 250)" />
+      <rect x={x - 6} y={y - BOARD + 1.5} width={w + 12} height={BOARD - 2.5} fill="oklch(0.64 0.008 250)" />
+      <rect x={x - 6} y={y - 1} width={w + 12} height="1" fill="oklch(0.46 0.01 250)" />
+    </g>
+  );
+}
+
+// The cables of a device on a board, hanging in loops behind the board below it.
+function Loops({ x, y, drop, n }: { x: number; y: number; drop: number; n: number }) {
   return (
     <g pointerEvents="none" aria-hidden="true">
-      {tones.map((c, i) => {
-        const x0 = x + (w * (i + 0.5)) / tones.length, swing = 10 + ((seed * 7 + i * 13) % 9);
-        const d = Array.from({ length: 4 }, (_, k) => `Q${x0 + (k % 2 ? -swing : swing)} ${(h * (k + 0.5)) / 4} ${x0 + (k === 3 ? i * 2 : 0)} ${(h * (k + 1)) / 4}`).join("");
-        return <path key={i} d={`M${x0} -2${d}`} fill="none" stroke={c} strokeWidth="2.4" strokeLinecap="round" opacity="0.85" />;
+      {Array.from({ length: Math.min(3, n) }, (_, k) => {
+        const x0 = x - 40 + k * 34, d = drop * (0.45 + k * 0.12);
+        return <path key={k} d={`M${x0} ${y - 2}C${x0} ${y + d} ${x0 + 26} ${y + d} ${x0 + 26} ${y - 2}`} fill="none" stroke="oklch(0.36 0.01 255)" strokeWidth="2.2" />;
       })}
     </g>
   );
