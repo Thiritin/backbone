@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { archive, atDesk, boxAt, inbox, inLetterbox, post, postLocation } from "../src/sim/40-support/letters";
+import { archive, atDesk, boxAt, FORWARD_HOURS, inbox, inLetterbox, post, postLocation } from "../src/sim/40-support/letters";
 import { listingById } from "../src/sim/20-world/properties";
 import { freeSections, rentSection } from "../src/sim/90-actions/properties";
 import { OFFICE_NAME, REGISTER_NAME } from "../src/sim/80-business/paperwork";
@@ -63,6 +63,23 @@ describe("post in the letterbox", () => {
     expect(fetchPost(s)).toEqual({ ok: false, error: "error.notThere" });
   });
 
+  it("delivers letters addressed before the move to the basement for a month", () => {
+    const s = withPost();
+    s.cash = 1_000_000;
+    const before = post(s, OFFICE_NAME, "officeRegistered", { name: "Kellerhost", reg: "4713" }, 2);
+    const late = post(s, OFFICE_NAME, "officeRegistered", { name: "Kellerhost", reg: "4714" }, 2);
+    expect(rentSection(s, "gallushof", freeSections(s, listingById("gallushof")!)[0]).ok).toBe(true);
+    const office = s.properties.at(-1)!.locationId!;
+    const after = post(s, OFFICE_NAME, "officeRegistered", { name: "Kellerhost", reg: "4715" }, 2);
+    expect([before.addressedTo, after.addressedTo]).toEqual(["loc1", office]);
+    late.at = s.hour + FORWARD_HOURS + 24;
+    run(s, 5);
+    expect(s.letters.find((l) => l.id === before.id)!.box).toBe("loc1");
+    expect(s.letters.find((l) => l.id === after.id)!.box).toBe(office);
+    run(s, 30);
+    expect(s.letters.find((l) => l.id === late.id)!.box).toBe(office);
+  });
+
   it("scans a desk letter into DocuWhere once", () => {
     const s = withPost();
     fetchPost(s);
@@ -77,10 +94,11 @@ describe("post in the letterbox", () => {
   it("loads an old save with its letters at the desk and filed", () => {
     const s = withPost();
     const raw = JSON.parse(serialize(s));
-    for (const x of raw.letters) { delete x.box; delete x.scanned; }
+    for (const x of raw.letters) { delete x.box; delete x.scanned; delete x.addressedTo; }
     const back = deserialize(JSON.stringify(raw));
     expect(inLetterbox(back)).toEqual([]);
     expect(atDesk(back)).toHaveLength(2);
     expect(archive(back, "")).toHaveLength(2);
+    expect(back.letters.every((l) => l.addressedTo === null)).toBe(true);
   });
 });
