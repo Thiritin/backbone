@@ -17,6 +17,7 @@ export default {
   "world.obj.extinguisher": () => "Feuerlöscher",
   "world.obj.noc": () => "NOC-Arbeitsplatz",
   "world.obj.dock": () => "Laderampe",
+  "world.obj.stairs": () => "Treppenhaus",
   "world.inHands": () => "In deinen Händen",
   "world.pickUp": () => "Aufnehmen",
   "world.obj.parcels": (p) => `${p.n} Pakete`,

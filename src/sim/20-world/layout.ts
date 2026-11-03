@@ -173,7 +173,7 @@ function officeRoom(plan: OfficePlan): Room {
   if (floors.length > 1) f.stairs = { x: 0, y: lobby ? 2 : 1, kind: "stairs" };
   if (lobby) {
     Object.assign(f, {
-      kitchen: { x: 0, y: 0, w: 2 }, bossdesk: { x: 2, y: 0, w: 2 }, bosschair: { x: 2, y: 1, w: 2, kind: "chair" }, printer: { x: 0, y: 1 },
+      kitchen: { x: 0, y: 0, w: 2 }, bossdesk: { x: 2, y: 0, w: 2 }, bosschair: { x: 3, y: 1, kind: "chair" }, printer: { x: 0, y: 1 },
       letterbox: { x: 0, y: 3 }, reception: { x: 2, y: 4, w: 2 }, plant: { x: 0, y: SECTION_H - 1 }, tube: { x: 1, y: 3, kind: "tube" },
     });
   }
@@ -181,11 +181,12 @@ function officeRoom(plan: OfficePlan): Room {
     const id = x.id, refit = x.refitUntil > plan.hour;
     f[`tube${id}`] = { x: ox + 2, y: 3, w: 2, kind: "tube" };
     if (x.fit === "servers") {
-      f[`partition${id}`] = { x: ox, y: 0, kind: "partition" };
+      // The glass partition runs one piece per row so it sorts between the blocks; its door sits on the walk row.
+      if (ox) for (let y = 0; y < SECTION_H; y++) f[`partition${id}-${y}`] = { x: ox, y, kind: y === SECTION_H - 1 ? "codedoor" : "partition" };
       f[`cooling${id}`] = { x: ox + 1, y: 0, w: 2, kind: "cooling" };
       f[`tray${id}`] = { x: ox + 3, y: 0, w: 3, kind: "tray" };
       f[`pdu${id}`] = { x: ox + 5, y: 2, kind: "pdu" };
-      f[`extinguisher${id}`] = { x: ox + 5, y: 5, kind: "extinguisher" };
+      f[`extinguisher${id}`] = { x: ox + 5, y: 0, kind: "extinguisher" };
       const row: Row = { y: 2, x0: ox + 1, x1: ox + 4, facing: "s" };
       rows.push(row);
       for (let i = row.x0; i <= row.x1; i++) racks.push({ x: i, y: row.y, facing: row.facing });
