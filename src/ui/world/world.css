@@ -132,6 +132,7 @@
 .w-blotch { fill: oklch(0.82 0.01 250 / 0.16); }
 .w-dark { fill: oklch(0.2 0.04 262); transition: opacity 400ms; }
 .w-night .w-led-on { filter: drop-shadow(0 0 1.2px var(--ok)); }
+.w-night .w-led-fault { filter: drop-shadow(0 0 1.2px var(--bad)); }
 .w-num { font-family: var(--font-ui); font-size: 6.5px; font-weight: 500; font-variant-numeric: tabular-nums; text-anchor: end; fill: oklch(0.95 0.02 220); }
 .w-num-sm { font-size: 4.6px; }
 .w-num-xs { font-size: 3.8px; }
@@ -164,6 +165,7 @@
 
 .w-led { fill: oklch(0.35 0.01 255); }
 .w-led-on { fill: var(--ok); }
+.w-led-fault { fill: var(--bad); }
 .w-blink .w-led-on { opacity: 0.35; }
 
 .w-clock {

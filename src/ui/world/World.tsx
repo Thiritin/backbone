@@ -221,7 +221,7 @@ export function World() {
 
   // Things standing on the floor, sorted by x + y so nearer ones overlap farther ones; a fixture sorts by its farthest tile.
   const things: { depth: number; node: ReactNode }[] = racks.map((r) => {
-    const tile = tiles[r.id], glow = (cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id) || (from && from.rack !== r.id), leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on, top: d.slot + modelById(d.model).height - 1 }));
+    const tile = tiles[r.id], glow = (cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id) || (from && from.rack !== r.id), leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on, fault: d.components.some((c) => c.failedAt !== null), top: d.slot + modelById(d.model).height - 1 }));
     return {
       depth: tile.x + tile.y,
       node: (

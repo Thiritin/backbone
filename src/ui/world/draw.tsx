@@ -635,7 +635,7 @@ export function Parcel({ cx, cy, z, brand }: { cx: number; cy: number; z: number
 export const rackHeight = (units: number) => Math.round(24 + units * 1.6);
 
 // A rack is a dark box; a front facing the camera shows one LED per device, or from zoom 2 the rack front art scaled onto it. In a datacenter the face in view, front or rear, is a closed mesh door over that; a neighbour's rack is muted, its door shut on a few LEDs and a blank label plate. A share is the bottom section of a provider's cabinet of `cabinet` units.
-export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {
+export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; fault?: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {
   const H = rackHeight(units), CH = rackHeight(cabinet), c = center(tile.x, tile.y), dx = 28, m = 1 / 16;
   const L = { x: c.x - dx, y: c.y }, B = { x: c.x, y: c.y + dx / 2 }, R = { x: c.x + dx, y: c.y };
   // The south face is the lower left, the east face the lower right; a north-facing rack shows its rear door on the south face.
@@ -654,7 +654,7 @@ export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cab
   ) : (
     <>
       <rect x="6" y="4" width={artW - 12} height={artH - 8} rx="3" fill="var(--rack)" />
-      {leds.map((d) => <rect key={d.id} className={d.on ? "w-led w-led-on" : "w-led"} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
+      {leds.map((d) => <rect key={d.id} className={d.fault ? "w-led w-led-fault" : d.on ? "w-led w-led-on" : "w-led"} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
     </>
   ));
   const blink = (tile.x * 7 + tile.y * 3) % 5;

@@ -134,6 +134,8 @@ export default {
   "locations-1.workUnderWay": () => "Trabalhos em curso",
   "locations-1.failed": () => "Avariado",
   "locations-1.worn": () => "Desgastado",
+  "locations-1.failedOn": (p) => `Avariado em ${p.day}`,
+  "locations-1.orderPart": () => "Encomendar peça",
   "locations-1.ok": () => "OK",
   "locations-1.powerOffFirst": () => "Desliga primeiro",
   "locations-1.replaceCpus": (p) => `Substituir ${p.n} CPUs`,
