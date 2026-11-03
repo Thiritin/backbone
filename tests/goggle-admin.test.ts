@@ -14,7 +14,7 @@ import { deleteGoggleUser, makeGoggleAdmin, migrateMailbox, signUpGmix, signUpGo
 import { addAlias, createMailAccount, createMailGroup, setCatchAll, setExternalAccess } from "../src/sim/90-actions/mailbox";
 import { hire } from "../src/sim/90-actions/staff";
 import { err, idOf, mailLedger } from "./company-mail.helpers";
-import { readyGame } from "./fixtures";
+import { readyGame, withDesk } from "./fixtures";
 
 const at = (ym: string) => hourOfMonth(ym);
 // Skips to the hour before the next month start and ticks through it, where the monthly bills go out.
@@ -99,9 +99,9 @@ describe("Goggle Admin console", () => {
     for (let i = 0; seatsBilled(s, goggle(s)) < 10; i++) user(s, `box${i}`);
     const c = s.candidates[0];
     s.candidates = [{ ...c, arriveAt: 0, leaveAt: s.hour + 1000 }, ...s.candidates.slice(1)];
-    expect(err(hire(s, c.id))).toBe("error.hireNoMailbox");
+    expect(err(hire(withDesk(s), c.id))).toBe("error.hireNoMailbox");
     expect(err(upgradeGoggleEdition(s, goggle(s).id))).toBe("ok");
-    expect(err(hire(s, c.id))).toBe("ok");
+    expect(err(hire(withDesk(s), c.id))).toBe("ok");
   });
 
   it("migrates a mailbox's mail after the run and refuses FreeMix over IMAP before 2012", () => {

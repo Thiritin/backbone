@@ -14,7 +14,7 @@ import { addAlias, createMailAccount, requestPasswordReset, resetPassword } from
 import { setVacation } from "../src/sim/90-actions/mailmsg";
 import { hire } from "../src/sim/90-actions/staff";
 import { err, idOf, mailLedger, run } from "./company-mail.helpers";
-import { readyGame } from "./fixtures";
+import { readyGame, withDesk } from "./fixtures";
 import { tick } from "../src/sim/88-tick/tick";
 
 // Skips to the hour before the next month start and ticks into it.
@@ -80,9 +80,9 @@ describe("Hosted Exchange by Ionose", () => {
     expect(err(createMailAccount(s, { tenant: ionose(s).id, local: "extra", title: "Extra", password: "box-pw" }))).toBe("error.mailLimit");
     const c = s.candidates[0];
     s.candidates = [{ ...c, arriveAt: 0, leaveAt: s.hour + 1000 }, ...s.candidates.slice(1)];
-    expect(err(hire(s, c.id))).toBe("error.hireNoMailbox");
+    expect(err(hire(withDesk(s), c.id))).toBe("error.hireNoMailbox");
     expect(err(setTenantPlan(s, ionose(s).id, "business"))).toBe("ok");
-    expect(err(hire(s, c.id))).toBe("ok");
+    expect(err(hire(withDesk(s), c.id))).toBe("ok");
   });
 
   it("sends the reset code by letter, keeps the old password until the reset and refuses a wrong code", () => {

@@ -36,6 +36,12 @@ const ROOMS: Record<SpaceKind, Room> = {
     },
     rows: [{ y: 2, x0: 2, x1: 9, facing: "s" }, { y: 4, x0: 2, x1: 9, facing: "n" }],
   },
+  // Placeholder until the office room is drawn: a door and rows for four server-room sections.
+  office: {
+    size: { w: 12, h: 8 },
+    fixtures: { door: { x: 0, y: 5 } },
+    rows: [{ y: 2, x0: 2, x1: 9, facing: "s" }, { y: 4, x0: 2, x1: 9, facing: "n" }],
+  },
   suite: {
     size: { w: 16, h: 11 },
     fixtures: {
