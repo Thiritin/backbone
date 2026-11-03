@@ -46,4 +46,7 @@ export default {
   "world.work.parts": () => "Part swap",
   "world.work.cable": () => "Cabling",
   "world.workUntil": (p) => `until ${p.time}`,
+  "world.obj.board": () => "Corkboard",
+  "world.board.walk": (p) => `Walk to: ${p.place}`,
+  "world.board.sit": (p) => `At the computer: ${p.app}`,
 } satisfies Dict;

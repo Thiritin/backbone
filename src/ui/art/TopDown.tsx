@@ -104,6 +104,16 @@ function capLines(caps: [number, string][]) {
   });
 }
 
+// The fault mark on a failed part: a red warning triangle with an exclamation mark.
+function Fault({ x, y }: { x: number; y: number }) {
+  return (
+    <g className="lid-fault" data-fault="" pointerEvents="none" aria-hidden="true">
+      <path d={`M${x + 5} ${y}L${x + 10} ${y + 9}H${x}Z`} fill={LED.bad} stroke="oklch(0.1 0.004 255)" strokeWidth="0.6" strokeLinejoin="round" />
+      <path d={`M${x + 5} ${y + 3}V${y + 5.6}M${x + 5} ${y + 7}V${y + 7.4}`} stroke="oklch(0.98 0 0)" strokeWidth="1.1" strokeLinecap="round" />
+    </g>
+  );
+}
+
 export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick }: Props) {
   const slots = chassisSlots(model, parts), { at, bayLen, boardX, rearLen, board } = layout(model, slots);
   const tall = model.height >= 2, gpu = !!lineOf(model)?.startsWith("gpu");
@@ -114,11 +124,12 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
     const r = at[s.id], w = s.part ? wear(s.part) : null;
     const pick = (e: KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(sel === s.id ? null : s.id); } };
     return (
-      <g key={s.id} className="lid-slot" role="button" tabIndex={open ? 0 : -1} aria-label={label} aria-pressed={sel === s.id}
+      <g key={s.id} className="lid-slot" role="button" tabIndex={open ? 0 : -1} aria-label={label} aria-pressed={sel === s.id} data-wear={w && w !== "ok" ? w : undefined}
         onClick={(e) => { e.stopPropagation(); onPick(sel === s.id ? null : s.id); }} onKeyDown={pick}>
         <title>{label}</title>
         {body}
         {w && <circle cx={r.x + r.w - 4} cy={r.y + 4} r="2.2" fill={LED[w]} stroke="oklch(0.1 0.004 255)" strokeWidth="0.5" />}
+        {w === "bad" && <Fault x={r.x + 2} y={r.y + 2} />}
         <rect className="lid-ring" x={r.x - pad - 1} y={r.y - pad - 1} width={r.w + 2 * pad + 2} height={r.h + 2 * pad + 2} rx="3" />
         <rect className="lid-ring-in" x={r.x - pad + 0.5} y={r.y - pad + 0.5} width={r.w + 2 * pad - 1} height={r.h + 2 * pad - 1} rx="2" />
       </g>
@@ -173,6 +184,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(sel === "board0" ? null : "board0"); } }}>
           <title>{t("art.mainboard")}</title>
           <rect {...box(board)} rx="3" fill={PCB} stroke={boardWear === "ok" ? TRACE : LED[boardWear]} strokeWidth="1.4" />
+          {boardWear === "bad" && <Fault x={board.x + 4} y={board.y + 4} />}
           {Array.from({ length: model.server!.sockets }, (_, j) => (
             <g key={j} stroke={TRACE} strokeWidth="1" opacity="0.7">
               {[0, 1, 2].map((k) => <line key={k} x1={at[`cpu${j}`].x + at[`cpu${j}`].w} x2={at[`cpu${j}`].x + at[`cpu${j}`].w + 22} y1={at[`cpu${j}`].y + 22 + k * 22} y2={at[`cpu${j}`].y + 22 + k * 22} />)}

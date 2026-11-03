@@ -1,6 +1,6 @@
 // The office room's fixtures, drawn to docs/design/world-art.md.
 import { SECTION_W, type Fixture } from "../../sim/20-world/layout";
-import { at3, Desk, DeskLamp, Monitor, onX, onY, Prism, pts, Tower, WALL } from "./draw";
+import { at3, Corkboard, Desk, DeskLamp, Monitor, onX, onY, Prism, pts, Tower, WALL } from "./draw";
 import { iso } from "./grid";
 import "./office.css";
 
@@ -333,4 +333,9 @@ export function OfficeFloor({ w, h, servers }: { w: number; h: number; servers: 
       <path className="w-tile" d={lines.join(" ")} />
     </g>
   );
+}
+
+// The reception's corkboard above the printer, in an aluminium frame.
+export function ReceptionBoard(p: { f: Fixture; cards: boolean[]; current: number; under: number }) {
+  return <Corkboard {...p} span={1} z={90} alu />;
 }

@@ -132,6 +132,8 @@ export default {
   "locations-1.workUnderWay": () => "Work under way",
   "locations-1.failed": () => "Failed",
   "locations-1.worn": () => "Worn",
+  "locations-1.failedOn": (p) => `Failed on ${p.day}`,
+  "locations-1.orderPart": () => "Order part",
   "locations-1.ok": () => "OK",
   "locations-1.powerOffFirst": () => "Power off first",
   "locations-1.replaceCpus": (p) => `Replace ${p.n} CPUs`,

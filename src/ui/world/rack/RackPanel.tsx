@@ -3,15 +3,15 @@ import { t } from "../../../i18n/en";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { freeSlots, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
+import { deviceHealth, freeSlots, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
 import { installCarried, installFromDoor } from "../../../sim/90-actions/carry";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
-import { RackFront, shelfPitch } from "../../art/RackFront";
+import { RackFront, shelfPitch, type RackItem } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
-import { deviceLamps } from "../../apps/hw";
+import { deviceLamps, partLabel, portLamps } from "../../apps/hw";
 import { handsWays, useHandWork, wayLabel, type HandTask } from "../../apps/locations/HandSheet";
 import { LabelEdit, PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
@@ -96,7 +96,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   }, [anchor, sel, back, zoom, game, turning, jack]);
   if (!rack) return null;
 
-  const units = rackUnits(rack.model), items = rackItems(game, rack.id);
+  const units = rackUnits(rack.model), items = rackItems(game, rack.id).map((it) => withFault(game, it));
   const used = items.filter((it) => !it.chassisId).reduce((n, it) => n + heightIn(game, rack.id, it.model.id), 0);
   const cableAt = port && game.cables.find((c) => same(c.a, port) || same(c.b, port));
   const plug = (e: End) => {
@@ -196,14 +196,22 @@ function RackFrame({ units, bare = false, children }: { units: number; bare?: bo
   );
 }
 
+// A device with a failed part shows its fault light; one the failure took down shows no other light.
+function withFault(g: GameState, it: RackItem): RackItem {
+  const h = deviceHealth(g, it.id);
+  if (!h.failed.length) return it;
+  return h.state === "down" ? { ...it, fault: true, state: "off", blink: false, ports: portLamps(it.model, []), lights: [] } : { ...it, fault: true };
+}
+
 // The paper tag tied to a unit: its name and model, its LED, and its actions as lines written on the tag.
 function DeviceTag({ deviceId, renaming, onRenaming, entries, onPorts }: { deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; entries: () => ReturnType<ReturnType<typeof useDeviceMenu>["entries"]>; onPorts?: () => void }) {
   const game = useStore((s) => s.game);
   const d = game.devices.find((x) => x.id === deviceId)!;
   const m = modelById(d.model), lamps = deviceLamps(game, d.id, m);
-  const items = tidy(entries());
+  const items = tidy(entries()), failed = d.components.filter((c) => c.failedAt !== null);
   return (
     <div className="wr-tag-body" data-device={d.id}>
+      {failed.length > 0 && <div className="wr-model wr-fault" data-fault="">{failed.map(partLabel).join(", ")} · {t("locations-1.failed")}</div>}
       <div className="wr-tag-h">
         <span className={`wr-led ${lamps.state}`} role="img" aria-label={t(d.on ? "locations-1.stOn" : "locations-1.stOff")} />
         <LabelEdit device={d} editing={renaming} onEditing={onRenaming} />

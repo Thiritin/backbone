@@ -45,4 +45,7 @@ export default {
   "world.work.parts": () => "Cambio de pieza",
   "world.work.cable": () => "Cableado",
   "world.workUntil": (p) => `hasta las ${p.time}`,
+  "world.obj.board": () => "Tablón de corcho",
+  "world.board.walk": (p) => `Ir a: ${p.place}`,
+  "world.board.sit": (p) => `En el ordenador: ${p.app}`,
 } satisfies Dict;

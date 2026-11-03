@@ -94,10 +94,11 @@ export const partLed = (lamp: PartLamp | undefined, idle: string) =>
 const bayLed = (p: FrontProps, i: number, idle: string) =>
   p.state === "off" || (p.parts && i >= p.parts.drives.length) ? { fill: LED.off } : partLed(p.parts?.drives[i], idle);
 
-function StatusLeds({ x, y, state, blink }: { x: number; y: number; state: Lamp; blink?: boolean }) {
+// A failed part holds the fault light steady red.
+function StatusLeds({ x, y, state, blink, fault }: { x: number; y: number; state: Lamp; blink?: boolean; fault?: boolean }) {
   return (
     <>
-      <circle cx={x} cy={y} r="1.8" fill={LED[state]} className={blink ? "led-blink" : undefined} />
+      <circle cx={x} cy={y} r="1.8" fill={LED[fault ? "bad" : state]} className={blink && !fault ? "led-blink" : undefined} data-fault={fault ? "" : undefined} />
       <circle cx={x + 7} cy={y} r="1.8" fill={state === "off" ? LED.off : LED.ok} />
     </>
   );
@@ -129,6 +130,8 @@ export interface FrontProps {
   groups?: number[][];
   parts?: Parts;
   blink?: boolean;
+  // A part has failed: the fault light is red.
+  fault?: boolean;
   onPower?: () => void;
   // The USB stick is in this server; onUsb plugs it in or pulls it.
   stick?: boolean;
@@ -177,7 +180,7 @@ function ServerFace(p: FrontProps) {
         <circle className="svg-hit" cx={cx + panel - 8} cy={h - 6} r={Math.min(8, h * 0.3)} fill="transparent" role="button" tabIndex={0} aria-label={state === "off" ? t("art.powerOn") : t("art.shutDown")}
           onClick={p.onPower} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); p.onPower!(); } }}><title>{state === "off" ? t("art.powerOn") : t("art.shutDown")}</title></circle>
       )}
-      <StatusLeds x={cx + panel - 26} y={h - 6} state={state} blink={blink} />
+      <StatusLeds x={cx + panel - 26} y={h - 6} state={state} blink={blink} fault={p.fault} />
       {h >= 18 && <BrandMark brand={brand} x={cx + 4} y={h - 11} size={8} />}
       <UsbPort cx={cx - (h >= 28 ? 13 : 10)} cy={h - 6} h={h} stick={p.stick} onUsb={p.onUsb} />
     </>
@@ -206,7 +209,7 @@ function NodeFace(p: FrontProps) {
       ))}
       {name && <AssetTag x={3} y={h - strip / 2 - 1} text={name} h={Math.min(h, 16)} />}
       <UsbPort cx={w - 34} cy={h - strip / 2 - 1} h={strip} stick={p.stick} onUsb={p.onUsb} />
-      <StatusLeds x={w - 22} y={h - strip / 2 - 1} state={state} blink={blink} />
+      <StatusLeds x={w - 22} y={h - strip / 2 - 1} state={state} blink={blink} fault={p.fault} />
       <circle cx={w - 5} cy={h - strip / 2 - 1} r={Math.min(2.6, strip * 0.3)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.8" aria-label={t("art.powerButton")} />
     </>
   );
@@ -246,7 +249,7 @@ function Caddies(p: FrontProps) {
         );
       })}
       <Mark brand={brand} x={w - 31} h={h} />
-      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} fault={p.fault} />
       <UsbPort cx={x1 - 10} cy={top / 2} h={h} stick={p.stick} onUsb={p.onUsb} />
     </>
   );
@@ -380,7 +383,7 @@ function Gateway(p: FrontProps) {
         <rect x={bx} y="1.5" width={bw} height={h - 5} rx="3" fill="oklch(0.93 0.005 90)" stroke="oklch(0.7 0.01 90)" />
         <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
         {model.ports.map((_, i) => <circle key={i} cx={bx + 10 + i * 6} cy={h / 2 - 1} r="1.3" {...ledProps(lights[i], name, i)} />)}
-        <StatusLeds x={bx + bw - 18} y={h / 2 - 1} state={state} blink={blink} />
+        <StatusLeds x={bx + bw - 18} y={h / 2 - 1} state={state} blink={blink} fault={p.fault} />
       </>
     );
   }
@@ -389,7 +392,7 @@ function Gateway(p: FrontProps) {
       <Ears w={w} h={h} />
       <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
       {[...gatewayLayout(model, name, w, h)].map(([i, p]) => <circle key={i} cx={p.x + p.w / 2} cy={h / 2} r="1.3" {...ledProps(lights[i], name, i)} />)}
-      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} fault={p.fault} />
     </>
   );
 }
