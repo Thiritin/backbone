@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, buyDevice, mountDevice, sellDevice } from "../src/sim/90-actions/hardware";
-import { installCarried, pickUp, putDown } from "../src/sim/90-actions/carry";
+import { installCarried, installFromDoor, pickUp, putDown } from "../src/sim/90-actions/carry";
 import { travelTo } from "../src/sim/90-actions/travel";
 import { freeFloor, newGame } from "./fixtures";
 import type { GameState } from "../src/sim/50-state";
@@ -55,6 +55,21 @@ describe("parcels and carrying", () => {
     expect(err(travelTo(s, far))).toBe("error.carrying");
     ok(putDown(s));
     expect(err(travelTo(s, far))).not.toBe("error.carrying");
+  });
+
+  it("installs a parcel from the door without carrying it", () => {
+    const s = { ...newGame(7), cash: 100_000 }, id = delivered(s), door = s.devices.find((d) => d.id === id)!.door;
+    expect(err(installFromDoor(s, id, "rack2", 99))).toBe("error.outOfBounds");
+    expect(s.devices.find((d) => d.id === id)).toMatchObject({ door, store: null, rackId: null });
+    const stored = s.devices.find((d) => d.store === "loc1" && d.model === "g1-compute")!;
+    expect(err(installFromDoor(s, stored.id, "rack2", 5))).toBe("error.notInStorage");
+    const far = ok(addLocation(freeFloor(s), "hetzler-park", "share", 1));
+    s.devices.find((d) => d.id === id)!.door = { at: far, since: s.hour };
+    expect(err(installFromDoor(s, id, "rack2", 5))).toBe("error.notThere");
+    s.devices.find((d) => d.id === id)!.door = door;
+    ok(installFromDoor(s, id, "rack2", 5));
+    expect(s.player.carrying).toBeNull();
+    expect(s.devices.find((d) => d.id === id)).toMatchObject({ rackId: "rack2", slot: 5, store: null, door: null });
   });
 
   it("loads a save without a door or a hand slot", () => {

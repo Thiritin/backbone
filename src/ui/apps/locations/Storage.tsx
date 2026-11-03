@@ -3,7 +3,7 @@ import { useState } from "react";
 import { isOfficeRouter, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
-import { deviceValue, freeSlots, mountFrom, mountMax, parcelCost, storageStacks } from "../../../sim/60-infra/status";
+import { deviceValue, freeSlots, heightIn, mountFrom, mountMax, parcelCost, storageStacks } from "../../../sim/60-infra/status";
 import { sellDevice, shipStock } from "../../../sim/90-actions/hardware";
 import { installRouter } from "../../../sim/90-actions/routers";
 import { mountedRouter } from "../../../sim/60-infra/routers";
@@ -76,14 +76,14 @@ type Mounted = (rackId: string, deviceId: string) => void;
 function MountSheet({ game, stack, onClose, onMount, onMounted }: { game: GameState; stack: Stack; onClose: () => void; onMount: (task: HandTask) => void; onMounted?: Mounted }) {
   const m = modelById(stack.model), zone = game.devices.find((d) => d.id === stack.ids[0])!.store!;
   const racks = game.racks.filter((r) => r.locationId === zone && r.arriveAt === null);
-  const h = Math.max(1, m.height), fits = (id: string) => freeSlots(game, id, h).length > 0;
+  const fits = (id: string) => freeSlots(game, id, Math.max(1, heightIn(game, id, m.id))).length > 0;
   const [picked, setPicked] = useState(racks.find((r) => fits(r.id))?.id ?? racks[0]?.id);
   const [count, setCount] = useState(1);
   const rack = racks.find((r) => r.id === picked);
   const n = Math.min(count, stack.ids.length);
   const mount = (unit: number) => {
     if (!rack) return;
-    const k = mountMax(game, rack.id, h, n, unit), from = mountFrom(game, rack.id, h, k, unit), id = stack.ids[0];
+    const h = Math.max(1, heightIn(game, rack.id, m.id)), k = mountMax(game, rack.id, h, n, unit), from = mountFrom(game, rack.id, h, k, unit), id = stack.ids[0];
     if (from === undefined) return;
     onClose();
     onMount({ ...mountTask(stack, rack.id, k, from), onDone: () => onMounted?.(rack.id, id) });
@@ -93,7 +93,7 @@ function MountSheet({ game, stack, onClose, onMount, onMounted }: { game: GameSt
       <div className="loc-mount">
         <div className="picks" role="group" aria-label={t("locations-2.rack")}>
           {racks.map((r) => {
-            const used = game.devices.filter((d) => d.rackId === r.id).reduce((u, d) => u + modelById(d.model).height, 0);
+            const used = game.devices.filter((d) => d.rackId === r.id).reduce((u, d) => u + heightIn(game, r.id, d.model), 0);
             return (
               <button key={r.id} className="pick" aria-pressed={r.id === picked} disabled={!fits(r.id)} onClick={() => setPicked(r.id)}>
                 <strong>{r.name}</strong><span className="sub num">{t("locations-2.uFree", { n: rackUnits(r) - used })}</span>
@@ -104,7 +104,7 @@ function MountSheet({ game, stack, onClose, onMount, onMounted }: { game: GameSt
         {!racks.length && <div className="loc-row loc-muted">{t("locations-2.noRackInZone")}</div>}
         {rack && (
           <div className="loc-mount-rack">
-            <RackFront units={rackUnits(rack)} items={rackItems(game, rack.id)} w={340} u={18} onDevice={() => {}} onFree={(unit) => mount(unit)} />
+            <RackFront units={rackUnits(rack)} shelf={rack.model === "shelf"} items={rackItems(game, rack.id)} w={340} u={18} onDevice={() => {}} onFree={(unit) => mount(unit)} />
           </div>
         )}
       </div>

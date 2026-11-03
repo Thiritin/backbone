@@ -39,3 +39,18 @@ export function installCarried(s: GameState, rackId: string, slot: number): Acti
   else s.player.carrying = null;
   return r;
 }
+
+// A parcel at the door of the room the player stands in goes straight into a rack there; it stays at the door when a mount check fails.
+export function installFromDoor(s: GameState, unitId: string, rackId: string, slot: number): ActionResult {
+  const d = s.devices.find((x) => x.id === unitId);
+  if (!d) return fail("error.unknownDevice");
+  if (d.chassisId) return fail("error.inChassis");
+  const door = d.door;
+  if (!door) return fail("error.notInStorage");
+  if (!present(s, door.at)) return fail("error.notThere");
+  Object.assign(d, { door: null, store: door.at });
+  carry(s, d);
+  const r = mountDevice(s, d.id, rackId, slot, "self");
+  if (!r.ok) { Object.assign(d, { door, store: null }); carry(s, d); }
+  return r;
+}

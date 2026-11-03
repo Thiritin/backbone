@@ -20,8 +20,8 @@ import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
-  BeerCrate, Boiler, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
-  Hygrometer, Letterbox, Light, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, RaisedFloor, Scanner, Shelf, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
+  BeerCrate, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
+  Hygrometer, Letterbox, LightSwitch, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, RackBox, RaisedFloor, Scanner, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { RoomCables } from "./rack/Cables";
@@ -185,7 +185,9 @@ export function World() {
       depth: tile.x + tile.y,
       node: (
         <g key={r.id} className={`w-obj w-rack${lit === r.id ? " w-lit" : ""}${glow ? " w-glow" : ""}`} data-rack={r.id} role="button" aria-label={r.name} onClick={use(r.id, () => setRackOpen({ id: r.id }))}>
-          <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} mesh={!home} cabinet={r.provided ? 42 : undefined} />
+          {r.model === "shelf"
+            ? <ShelfUnit tile={tile} units={rackUnits(r.model)} devices={game.devices.filter((d) => d.rackId === r.id).map((d) => ({ id: d.id, slot: d.slot, height: modelById(d.model).height, on: d.on }))} />
+            : <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} mesh={!home} cabinet={r.provided ? 42 : undefined} />}
         </g>
       ),
     };
@@ -231,6 +233,8 @@ export function World() {
     hygrometer: (f) => <Hygrometer f={f} inside={`${n(roomTemperature(game, loc), 1)}°`} outside={`${n(temperature(loc.city, game.hour))}°`} />,
     fusebox: (f) => <FuseBox f={f} reading={watts} turn={turn} w={w} />,
     jack: (f) => <WallJack f={f} />,
+    duct: () => <CableDuct w={w} h={h} door={fx.door} socket={fx.jack} />,
+    switch: (f) => <LightSwitch f={f} />,
     boiler: (f) => <Boiler f={f} />,
     washer: (f) => <Washer f={f} />,
     dryer: (f) => <DryingRack f={f} />,
@@ -273,10 +277,11 @@ export function World() {
         {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></> : <RaisedFloor w={w} h={h} />}
         {back}
         {things.map((x) => x.node)}
-        {over}
+        {home && night && <Night w={w} h={h} />}
         {!home && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
-        {home ? <Light w={w} h={h} hd={hd} windows={[fx.window, fx.fan].flatMap((f) => (f ? [f.x] : []))} lamp={fx.lamp} desk={fx.pc?.x} /> : <TubeLight w={w} h={h} ways={ways} />}
+        {!home && <TubeLight w={w} h={h} ways={ways} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
+        {over}
         {carried && hand && (
           <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>
         )}

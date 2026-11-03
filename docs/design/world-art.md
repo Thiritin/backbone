@@ -16,7 +16,7 @@ A clean flat isometric miniature of a real place, drawn with care and full of th
 
 - Flat fills, two or three tones per object: a lit top, a mid left face, a darker right face. The light comes from the upper left, the same in every room.
 - Edges where faces meet get a one-pixel line in a darker tone of the same hue. No black outlines, no outer strokes.
-- No gradients on faces. The only gradients in a room are light overlays (below).
+- No gradients anywhere in a room.
 - Corners are square. Rounded corners only on things that are round in life: pipes, fans, chair seats, lamp shades.
 - Small details are drawn, not implied: handles, hinges, screws on a fuse box, vents, LEDs, a label plate, the seam of a cardboard box. If a thing has a visible feature in a photo of it, it has one here.
 
@@ -36,8 +36,8 @@ A clean flat isometric miniature of a real place, drawn with care and full of th
 ## Light
 
 - Every room has a light source that is drawn: cellar windows high on the far wall in the basement, fluorescent tubes in a datacenter, a desk lamp on the desk.
-- Light shows as overlays: a soft shaft from each window across the floor and up the near objects, a warm pool under a lamp, a faint cool wash from fluorescent tubes. Overlays are low-opacity gradients on top of the room, never baked into faces, so they move when the light changes.
-- The time of day drives the window light: warm and long in the morning and evening, white at noon, gone at night when the ceiling lamp takes over with a warm pool and the rest of the room drops a step darker. Rack LEDs glow a touch more at night.
+- Light sources are drawn as objects. There are no light overlays: no shafts from windows, no pools under lamps, no washes from tubes.
+- Night makes the whole room one flat step darker, and the lamp bulbs are lit as small discs inside their shades. Rack LEDs glow a touch more at night.
 
 ## Detail density
 
@@ -48,7 +48,7 @@ A clean flat isometric miniature of a real place, drawn with care and full of th
 
 ## What a room must have
 
-Basement: two cellar windows with light shafts, the fuse box with breakers and a meter with a spinning disc, a conduit from it to the racks, the boiler with pipes to the ceiling, a washing machine and a drying rack (it is the parents' house), the desk with PC, screen, keyboard, scanner and a desk lamp, an office chair, the shelf with boxes, the door with a mat, the letterbox beside it, a ceiling lamp, a hygrometer on the wall, a floor drain, a crate of beer, and racks where the player put them.
+Basement: two cellar windows, the fuse box with breakers and a meter with a spinning disc, a conduit from it to the racks, the boiler with pipes to the ceiling, a washing machine and a folding drying rack with a towel over one wing (it is the parents' house), the desk with PC, screen, keyboard, scanner and a desk lamp, an office chair, the shelf with boxes, the door with a mat and a light switch, the letterbox beside it, cable ducts along the base of both walls rising to the socket and the fuse box, a ceiling lamp, a hygrometer on the wall, a floor drain, a crate of beer, and racks where the player put them.
 
 Rack space (share): the player's racks stand in one row among other tenants' racks on the open datacenter floor. Every rack, the player's and the neighbours', has a mesh front door with the servers visible behind it; neighbour racks are drawn closed and dimmed and cannot be clicked. The room has a normal datacenter door and no fence.
 
@@ -57,6 +57,10 @@ Cage: the same floor with a mesh fence and a mesh door around the player's area 
 Suite: a room of its own with the NOC desk, three screens and a loading-dock door.
 
 In every datacenter room: hot and cold aisles are a property of the datacenter, not of the room kind. With aisles, rack rows face each other across an aisle; without them, rows face the same way. The floor is uniform raised-floor tiles everywhere, with no different tiles in front of racks. No wall carries a cross-connect panel with carrier names; cross-connects live in the rack's patch panel and on the desktop. Every room keeps cable trays with cables in them, fluorescent tubes, cooling units with status LEDs, a PDU, an extinguisher, a parts shelf and a cart.
+
+## Close-ups
+
+Clicking an object shows the object itself drawn large. Its interactive parts are drawn as what they are: breakers, switches, labels, papers. A close-up is never a card or a form. A later lane applies this to every panel.
 
 ## What not to do
 

@@ -9,6 +9,9 @@ import { addLocation, buyCart as buyCartReal, buyDevice as buyReal, buyRack, con
 import { buyDevice, newGame, onSaleAt } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { withServer } from "./fixtures";
+import { newGame as blankGame } from "../src/sim/50-state";
+
+const funded = (s: GameState): GameState => ({ ...s, cash: START_CASH });
 
 const atYear = (year: number, cash = 1_000_000): GameState => ({ ...withServer(newGame(1)), hour: hourOf(new Date(Date.UTC(year, 0, 1))), cash });
 const ok = (r: ReturnType<typeof buyDevice>) => {
@@ -82,17 +85,17 @@ describe("catalog", () => {
 });
 
 describe("new game", () => {
-  it("starts with an empty basement rack, the line jack and the flat's router in storage", () => {
-    const s = newGame(3);
+  it("starts with the basement shelf, the line jack and the flat's router on the shelf's top board", () => {
+    const s = funded(blankGame(3));
     expect(s.cash).toBe(START_CASH);
-    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }]);
-    expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }]);
+    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 3, readyAt: 0, extraCircuit: false }]);
+    expect(s.racks).toEqual([{ id: "rack2", model: "shelf", locationId: "loc1", position: 1, name: "Shelf", arriveAt: null, price: 0, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
-      ["home-router", "AVN", "fra1-gw-01", null, null, 0, 0],
+      ["home-router", "AVN", "fra1-gw-01", "rack2", null, 0, 0],
       ["line-jack", "", "fra1-line-01", null, "loc1", 0, 0],
     ]);
-    expect(s.devices[0].store).toBe("loc1");
-    expect(freeSlots(s, "rack2", 1)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1));
+    expect(s.devices[0]).toMatchObject({ store: null, slot: 5 });
+    expect(freeSlots(s, "rack2", 1)).toEqual([1, 2, 3, 4]);
     expect(portPeers(s, "dev5")).toEqual([null, null, null, null, null]);
   });
 });

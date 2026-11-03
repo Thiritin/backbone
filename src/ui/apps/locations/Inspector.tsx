@@ -1,3 +1,4 @@
+import { rackUnits } from "../../../sim/20-world/datacenters";
 import { supportEnd } from "../../../sim/10-catalog/lifecycle";
 import { Cable, Flame, Gauge, EthernetPort, Monitor, MonitorOff, FileSignature, PackageOpen, Plug, PlugZap, Plus, Power, RotateCw, SquareTerminal, Unplug, Usb, Wrench } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -131,7 +132,8 @@ export function Inspector({ game, device, port, side = "front", onSelect, onHot,
   const hot = focus === null ? null : game.cables.find((c) => [c.a, c.b].some((e) => e.device === device.id && e.port === focus))?.id ?? null;
   useEffect(() => { onHot?.(hot); }, [hot, onHot]);
   useEffect(() => () => onHot?.(null), [onHot]);
-  const where = device.panel ? t("locations-1.carrierPanel") : model.height > 1 ? `U${device.slot}–U${device.slot + model.height - 1}` : `U${device.slot}`;
+  const shelf = game.racks.find((r) => r.id === device.rackId)?.model === "shelf";
+  const where = device.panel ? t("locations-1.carrierPanel") : shelf ? t("art.shelfBoard", { n: rackUnits("shelf") - device.slot + 1 }) : model.height > 1 ? `U${device.slot}–U${device.slot + model.height - 1}` : `U${device.slot}`;
   const powered = model.kind !== "patch", server = model.kind === "server";
   const psus = device.components.filter((c) => c.kind === "psu");
   const togglePower = () => (isServerInRack(device) ? menus.op(device, device.on ? "shutdown" : "on") : menus.power(device, !device.on));

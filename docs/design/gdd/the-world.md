@@ -42,11 +42,11 @@ The first room is the basement of the player's parents' house in Frankfurt, avai
 - **Door.** A wooden door in the left wall that swings into the room when used. The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels stack on the floor beside it.
 - **Letterbox.** A brass box on the left wall next to the door. Waiting letters stick out of its slot, with their count beside it. Using it moves every letter to the desk and opens the post panel, where each fetched letter can be read and scanned.
 - **Storage shelf.** Against the left wall, four boards high, one crate per stored device up to four. Using it opens the storage panel, or puts down a carried unit.
-- **Rack slots.** Any free floor tile against a wall takes a rack. A rack loaded from a save on a tile that is no longer against a wall moves to the next free one. The basement allows a handful, limited by the power the house gives.
+- **Shelf and rack tiles.** The metal shelf the company starts with stands on its own tile against the far wall, right of the desk. Two more tiles beside it along the far wall take the two racks the basement holds at most. A rack loaded from a save on a tile that is no longer a rack tile moves to the next free one.
 - **Power.** The fuse box on the left wall stands open, with rows of breakers and a meter whose counter shows the power draw and whose disc turns faster as the draw grows. A conduit runs from it up the wall and along the right wall to the racks. A wall socket below it holds the phone line jack, where the line cable from the racks ends.
 - **Windows and climate.** Two cellar windows sit high in the right wall, one with a window fan in its pane. A thermometer on the wall shows the room temperature over the outside one.
 - **The house.** The gas boiler with its pipes stands in the corner, the washing machine and a drying rack beside it. A mat lies inside the door, a drain sits in the floor and a lamp hangs from the ceiling. None of these do anything when clicked.
-- **Light.** Daylight falls from the windows across the floor, warm and long in the morning and evening and short and white at noon. At night the room darkens and the ceiling lamp and the desk lamp throw warm pools.
+- **Light.** The windows and lamps are drawn as objects, with no light falling from them. At night the room turns one step darker and the bulbs of the ceiling lamp and the desk lamp are lit.
 
 ## Colocation rooms
 
@@ -68,7 +68,7 @@ The room is played like a tycoon game. There is no figure to walk around: the pl
 
 Presence stays a sim rule: the room on screen is the one the player is at, the door starts the trip, and arriving shows the destination room.
 
-Parcels are carried with the hand cursor. Clicking a parcel at the door picks it up, and it follows the pointer as a small box. Clicking the shelf puts it in storage, and clicking a rack opens the rack panel with the carried unit offered for the free units it fits. Escape with a parcel in hand puts it on the shelf.
+Parcels are carried with the hand cursor. Clicking a parcel at the door picks it up, and it follows the pointer as a small box. Clicking the shelf puts it in storage, and clicking a rack opens the rack panel with the carried unit offered for the free units it fits. Escape with a parcel in hand puts it on the shelf. A parcel does not have to be picked up first: a free unit in the rack panel also lists the parcels at that room's door that fit, and installs one in one click.
 
 Every click calls an existing action. Only the desk PC and the NOC desk open the desktop; every other object opens a slide-up panel in the room.
 
@@ -105,7 +105,7 @@ Each is its own feature with a seeded test and lands before the world depends on
 
 - **Rack tiles.** Every rack in a location has a tile and a facing. New racks take the next free wall tile. An action moves a rack. Old saves get tiles assigned on load.
 - **Presence rules.** Hands-on work (mounting, unmounting and moving a unit in its rack, adding, removing and swapping parts, plugging cables and power cords) needs hands at the location. When the player stands there, the player's own hands do it at once. From afar at a datacenter it becomes a remote hands job: queued with its due time, cancellable until it runs, and billed at the datacenter's hourly rate for 30 minutes to mount, 15 minutes to cable and an hour for parts when it is done after the response time. The basement has no remote hands, so its hardware stays read-only until the player is home. Carrying is always the player's own hands.
-- **Parcels at the door.** Arrived deliveries wait at the door (`door` on the unit) until carried to the shelf or into a rack. A door item is outside storage, so the desktop cannot mount, sell or ship it. A datacenter location shelves arrivals itself so remote hands keep working.
+- **Parcels at the door.** Arrived deliveries wait at the door (`door` on the unit) until carried to the shelf or into a rack, or installed from the rack panel. A door item is outside storage, so the desktop cannot mount, sell or ship it. A datacenter location shelves arrivals itself so remote hands keep working.
 - **Post in the box.** Each letter knows whether it waits in a letterbox or lies at the desk, and whether it is scanned. Delivery puts it in the basement letterbox; fetching needs the player there and takes all of them. A letter in the letterbox cannot be read, and its bill is due all the same. Scanning a desk letter once files it in DocuWhere. Old saves keep their letters at the desk and filed.
 - **Carrying.** `player.carrying` holds one unit, which is then in no store. `pickUp`, `putDown` and `installCarried` (90-actions/carry.ts) need the player in the unit's room; picking up and putting down cost no time, and the player cannot travel while carrying.
 

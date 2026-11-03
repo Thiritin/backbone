@@ -17,7 +17,7 @@ describe("rack tiles", () => {
     twoRacks(s);
     const loc = basement(s);
     expect(roomSize(loc)).toEqual({ w: 9, h: 7 });
-    expect(wallTiles(loc).length).toBeGreaterThanOrEqual(4);
+    expect(wallTiles(loc)).toHaveLength(2);
     const walls = new Set(wallTiles(loc).map(key));
     for (const f of Object.values(FIXTURES.basement)) expect(walls.has(key(f))).toBe(false);
     const tiles = Object.values(rackTiles(loc, s.racks));
@@ -73,14 +73,14 @@ describe("rack tiles", () => {
 
   it("places a rack on a free wall tile and refuses a taken or inner one", () => {
     const s = newGame(9);
-    twoRacks(s);
     const loc = basement(s);
-    const [a, b] = s.racks;
-    const tiles = rackTiles(loc, s.racks);
-    const free = freeRackTiles(loc, s.racks)[3];
+    const [a] = s.racks;
+    const free = freeRackTiles(loc, s.racks)[0];
     expect(placeRack(s, a.id, { ...free, facing: "n" })).toEqual({ ok: true, id: a.id });
     expect(a.tile).toEqual(free);
     expect(rackTiles(loc, s.racks)[a.id]).toEqual(free);
+    twoRacks(s);
+    const b = s.racks[1], tiles = rackTiles(loc, s.racks);
     expect(placeRack(s, a.id, tiles[b.id])).toEqual({ ok: false, error: "error.tileTaken" });
     expect(placeRack(s, a.id, { x: 5, y: 4, facing: "n" })).toEqual({ ok: false, error: "error.tileTaken" });
     expect(placeRack(s, a.id, { ...FIXTURES.basement.door, facing: "n" })).toEqual({ ok: false, error: "error.tileTaken" });

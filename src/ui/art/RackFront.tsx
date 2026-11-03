@@ -14,6 +14,8 @@ export interface RackRemote { id: string; label: string; title: string; model: D
 
 interface Props {
   units: number;
+  // Drawn as a metal shelf: units are boards counted from the top, each holding one device lying on it.
+  shelf?: boolean;
   items: RackItem[];
   links?: RackLink[];
   remotes?: RackRemote[];
@@ -72,27 +74,41 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove, onPort, hand = null, portTitle }: Props) {
+export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove, onPort, hand = null, portTitle }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
   const pad = 30, fs = Math.max(7, u * 0.4), at = new Map<number, RackItem>();
-  for (const it of items) for (let k = 0; k < it.model.height; k++) at.set(it.slot + k, it);
+  // A board is tall enough for a 2U device; a device takes one board whatever its height.
+  const pitch = shelf ? shelfPitch(u) : u, span = (it: RackItem) => (shelf ? 1 : it.model.height);
+  for (const it of items) for (let k = 0; k < span(it); k++) at.set(it.slot + k, it);
   const slides = (it: RackItem) => !!onMove && !back && !it.plugs?.some(Boolean) && it.model.height > 0;
   const fitsAt = (it: RackItem, slot: number) =>
-    slot >= 1 && slot + it.model.height - 1 <= units && Array.from({ length: it.model.height }, (_, k) => at.get(slot + k)).every((x) => !x || x.id === it.id);
+    slot >= 1 && slot + span(it) - 1 <= units && Array.from({ length: span(it) }, (_, k) => at.get(slot + k)).every((x) => !x || x.id === it.id);
   // Dragging snaps to whole units; a drop on a free run moves the device there.
   const grabDevice = (it: RackItem) => ({
     onPointerDown: (e: ReactPointerEvent<SVGGElement>) => {
       if (e.button) return;
       e.preventDefault();
-      setSlide({ id: it.id, from: it.slot, y0: e.clientY, to: it.slot, px: u * (e.currentTarget.ownerSVGElement?.getScreenCTM()?.d ?? 1) });
+      setSlide({ id: it.id, from: it.slot, y0: e.clientY, to: it.slot, px: pitch * (e.currentTarget.ownerSVGElement?.getScreenCTM()?.d ?? 1) });
     },
   });
   const placed = new Map<string, { it: RackItem; y: number; h: number }>();
   const out: ReactNode[] = [];
   let y = 0;
   for (let n = units; n >= 1;) {
+    if (!at.has(n) && shelf) {
+      const k = n, board = units - k + 1;
+      out.push(
+        <g key={`e${k}`} className="rack-free" aria-label={t("art.shelfFree", { n: board })} {...press((el) => onFree(k, el))}>
+          <rect x={pad} y={y} width={w} height={pitch} fill="transparent" />
+          <Board x={pad} y={y + pitch} w={w} />
+        </g>,
+      );
+      y += pitch;
+      n--;
+      continue;
+    }
     if (!at.has(n)) {
       const k = n;
       out.push(
@@ -106,27 +122,30 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
       n--;
       continue;
     }
-    const it = at.get(n)!, top = it.slot + it.model.height - 1, h = it.model.height * u;
-    for (let k = 0; k < it.model.height; k++) {
+    const it = at.get(n)!, top = it.slot + span(it) - 1, h = it.model.height * u, room = span(it) * pitch;
+    // On a shelf the device lies on its board's bottom.
+    const dev = shelf ? y + pitch - BOARD - h : y;
+    if (shelf) out.push(<Board key={`k${n}`} x={pad} y={y + pitch} w={w} />);
+    else for (let k = 0; k < it.model.height; k++) {
       out.push(<text key={`n${n - k}`} x={pad - 8} y={y + k * u + u / 2 + fs * 0.35} textAnchor="end" fontFamily={MONO} fontSize={fs} fill={DIM}>{n - k}</text>);
     }
     if (top === n) {
-      placed.set(it.id, { it, y, h });
-      const moving = slide?.id === it.id ? slide : null, dy = moving ? (moving.from - moving.to) * u : 0;
+      placed.set(it.id, { it, y: dev, h });
+      const moving = slide?.id === it.id ? slide : null, dy = moving ? (moving.from - moving.to) * pitch : 0;
       out.push(
-        <g key={it.id} className={`rack-dev${slides(it) ? " movable" : ""}`} transform={`translate(${pad} ${y + dy})`} aria-label={it.name} aria-pressed={it.id === selected}
+        <g key={it.id} className={`rack-dev${slides(it) ? " movable" : ""}`} transform={`translate(${pad} ${dev + dy})`} aria-label={it.name} aria-pressed={it.id === selected}
           {...press(() => { if (!slid.current) onDevice(it.id); })} {...(slides(it) ? grabDevice(it) : {})} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
           {back ? <Back {...it} w={w} h={h} /> : <Front {...it} w={w} h={h} onUsb={onUsb && (() => onUsb(it.id))} />}
         </g>,
       );
-      if (moving && moving.to !== moving.from) out.push(<rect key="slide" x={pad - 2} y={y + dy - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke={fitsAt(it, moving.to) ? "var(--ok)" : "var(--bad)"} strokeWidth="2" pointerEvents="none" />);
+      if (moving && moving.to !== moving.from) out.push(<rect key="slide" x={pad - 2} y={dev + dy - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke={fitsAt(it, moving.to) ? "var(--ok)" : "var(--bad)"} strokeWidth="2" pointerEvents="none" />);
       if (it.badge) {
         const bw = it.badge.length * fs * 0.62 + 8;
-        out.push(<g key={`b${it.id}`} className="rack-badge" pointerEvents="none"><rect x={pad + w - bw - 2} y={y + 2} width={bw} height={fs + 4} rx="2" fill="var(--accent)" /><text x={pad + w - bw / 2 - 2} y={y + fs + 2} textAnchor="middle" fontFamily={MONO} fontSize={fs} fill="var(--on-accent, #fff)">{it.badge}</text></g>);
+        out.push(<g key={`b${it.id}`} className="rack-badge" pointerEvents="none"><rect x={pad + w - bw - 2} y={dev + 2} width={bw} height={fs + 4} rx="2" fill="var(--accent)" /><text x={pad + w - bw / 2 - 2} y={dev + fs + 2} textAnchor="middle" fontFamily={MONO} fontSize={fs} fill="var(--on-accent, #fff)">{it.badge}</text></g>);
       }
-      if (it.id === selected) out.push(<rect key="sel" x={pad - 2} y={y - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke="var(--accent)" strokeWidth="2" pointerEvents="none" />);
+      if (it.id === selected) out.push(<rect key="sel" x={pad - 2} y={dev - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke="var(--accent)" strokeWidth="2" pointerEvents="none" />);
     }
-    y += h;
+    y += shelf ? room : h;
     n = it.slot - 1;
   }
 
@@ -134,7 +153,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   const bays: { it: RackItem; x: number; y: number; w: number; h: number }[] = [];
   for (const { it: c, y: cy, h: ch } of placed.values()) {
     if (!c.model.nodes) continue;
-    const rects = bayRects(c.model, side, w, ch), dy = slide?.id === c.id ? (slide.from - slide.to) * u : 0;
+    const rects = bayRects(c.model, side, w, ch), dy = slide?.id === c.id ? (slide.from - slide.to) * pitch : 0;
     items.filter((x) => x.chassisId === c.id).forEach((it, i) => { if (rects[i]) bays.push({ it, x: pad + rects[i].x, y: cy + dy + rects[i].y, w: rects[i].w, h: rects[i].h }); });
   }
   for (const b of bays) {
@@ -340,9 +359,10 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
       ))}
       <rect y={top - 4} width={W} height={H - top + 4} rx="4" fill="var(--rack)" />
       <g transform={`translate(0 ${top})`}>
-        <rect x={pad - 6} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />
-        <rect x={rail} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />
-        {back && (
+        {shelf && <Bundle x={pad + w * 0.15} w={w * 0.7} h={y} seed={units} />}
+        <rect x={pad - 6} y="-2" width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
+        <rect x={rail} y="-2" width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
+        {back && !shelf && (
           <g aria-label={t("art.cableChannel")}>
             <rect x={rail + 8} y="-2" width={channel - 10} height={y + 4} rx="2" fill="oklch(0.11 0.004 255)" />
             {Array.from({ length: units }, (_, k) => [rail + 8, rail + channel - 5].map((x) => <rect key={`${k}-${x}`} x={x} y={k * u + 3} width="3" height={u - 6} rx="1" fill="var(--metal-2)" />))}
@@ -352,13 +372,40 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
       </g>
       <g pointerEvents="none">
         {cords}
-        <rect x={pad - 6} y={top - 2} width="5" height={y + 4} rx="1" fill="var(--metal-2)" />
+        <rect x={pad - 6} y={top - 2} width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
         {wires}
       </g>
       {hits}
       {drag && drag.moved && <path className="rack-drag" d={`M${drag.x0} ${drag.y0}L${drag.x} ${drag.y}`} />}
       {held && ptr && <path className="rack-drag" data-hand="" d={`M${held.x} ${held.y}L${ptr.x} ${ptr.y}`} />}
     </svg>
+  );
+}
+
+export const shelfPitch = (u: number) => Math.round(u * 2.4);
+const BOARD = 4, UPRIGHT = "oklch(0.6 0.01 250)";
+
+// A shelf board, its top edge at y, running between the uprights.
+function Board({ x, y, w }: { x: number; y: number; w: number }) {
+  return (
+    <g pointerEvents="none">
+      <rect x={x - 6} y={y - BOARD} width={w + 12} height={BOARD} rx="0.6" fill="oklch(0.66 0.008 250)" />
+      <rect x={x - 6} y={y - 1.2} width={w + 12} height="1.2" fill="oklch(0.5 0.01 250)" />
+    </g>
+  );
+}
+
+// The loose cables hanging behind a shelf's boards, swinging left and right on the way down.
+function Bundle({ x, w, h, seed }: { x: number; w: number; h: number; seed: number }) {
+  const tones = ["oklch(0.3 0.01 255)", "oklch(0.45 0.09 250)", "oklch(0.55 0.12 60)", "oklch(0.35 0.06 150)", "oklch(0.25 0.006 255)"];
+  return (
+    <g pointerEvents="none" aria-hidden="true">
+      {tones.map((c, i) => {
+        const x0 = x + (w * (i + 0.5)) / tones.length, swing = 10 + ((seed * 7 + i * 13) % 9);
+        const d = Array.from({ length: 4 }, (_, k) => `Q${x0 + (k % 2 ? -swing : swing)} ${(h * (k + 0.5)) / 4} ${x0 + (k === 3 ? i * 2 : 0)} ${(h * (k + 1)) / 4}`).join("");
+        return <path key={i} d={`M${x0} -2${d}`} fill="none" stroke={c} strokeWidth="2.4" strokeLinecap="round" opacity="0.85" />;
+      })}
+    </g>
   );
 }
 

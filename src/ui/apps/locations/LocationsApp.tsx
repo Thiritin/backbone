@@ -1,4 +1,4 @@
-import { Footprints, Hourglass, Map as MapIcon, Plus } from "lucide-react";
+import { Building2, Footprints, Hourglass, Map as MapIcon, Plus } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
@@ -19,6 +19,7 @@ import { PlanButton, useMaintenance, Windows, windowsAtLocation } from "./Mainte
 import { menuOn } from "../../desktop/ContextMenu";
 import "./locations.css";
 import { NetworkTab, networkCount } from "./NetworkTab";
+import { Properties } from "./Properties";
 import { Overview, Waitlist } from "./Overview";
 import { RackView, Upgrades } from "./RackView";
 import { Storage } from "./Storage";
@@ -75,6 +76,7 @@ export function LocationsApp() {
     <div className="loc">
       <nav className="sidebar fin-side" aria-label={t("locations-1.locations")}>
         {item("overview", view === null, <><MapIcon />{t("locations-1.overview")}</>, () => go(null))}
+        {item("properties", view === "properties", <><Building2 />{t("properties.title")}</>, () => go("properties"))}
         {game.waitlist.length > 0 && item("waitlist", view === "waitlist", <><Hourglass />{t("locations-1.waitlist")}</>, () => go("waitlist"), game.waitlist.length)}
         {REGIONS.filter((r) => game.locations.some((l) => l.city === r.city)).map((r) => (
           <div key={r.id} className="fin-side" role="group" aria-label={r.name}>
@@ -94,6 +96,8 @@ export function LocationsApp() {
       <div className="loc-main">
         {view === "waitlist" ? (
           <div className="loc-scroll"><Waitlist game={game} /></div>
+        ) : view === "properties" ? (
+          <Properties game={game} />
         ) : !loc ? (
           <Overview game={game} onOpen={(id) => go(id)} />
         ) : (

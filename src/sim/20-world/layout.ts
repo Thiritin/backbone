@@ -20,7 +20,11 @@ const BASEMENT = {
     scanner: { x: 3, y: 0 }, hygrometer: { x: 3, y: 0 }, desk: { x: 4, y: 0 }, pc: { x: 4, y: 0 }, fan: { x: 4, y: 0 },
     fusebox: { x: 0, y: 1 }, jack: { x: 0, y: 1 }, shelf: { x: 0, y: 2 }, door: { x: 0, y: 4 }, letterbox: { x: 0, y: 5 },
     chair: { x: 4, y: 1 }, mat: { x: 1, y: 4 }, drain: { x: 3, y: 5 }, lamp: { x: 4, y: 4 },
+    duct: { x: 0, y: 0 }, switch: { x: 0, y: 4 },
   } as Record<string, Fixture>,
+  // The shelf's tile, and the tiles left for racks bought later.
+  shelf: { x: 5, y: 0, facing: "s" } as Tile,
+  racks: [{ x: 6, y: 0, facing: "s" }, { x: 7, y: 0, facing: "s" }] as Tile[],
 };
 
 // Fixed objects stand against or hang on a wall, row y = 0 along the far wall and column x = 0 along the left one, or at a row's end. The door is always on the left wall and opens onto a walkway; the suite's NOC desk stands in front of the rack rows so none hides it.
@@ -44,6 +48,12 @@ const HALLS: Record<Rented, Hall> = {
     // Four positions fill one row, eight two rows of four, sixteen two rows of eight.
     mine: (n) => ({ x0: 3, cols: n > 8 ? 8 : 4, rows: n > 4 ? [6, 8] : [6] }),
   },
+  // Placeholder until the office room is drawn: a door and rows for four server-room sections.
+  office: {
+    size: { w: 12, h: 8 },
+    fixtures: { door: { x: 0, y: 5 } },
+    rows: [[2, "s"], [4, "n"]], x0: 2, x1: 9,
+  },
   suite: {
     size: { w: 16, h: 11 },
     fixtures: {
@@ -56,7 +66,7 @@ const HALLS: Record<Rented, Hall> = {
 };
 
 export const FIXTURES: Record<SpaceKind, Record<string, Fixture>> = {
-  basement: BASEMENT.fixtures, share: HALLS.share.fixtures, cage: HALLS.cage.fixtures, suite: HALLS.suite.fixtures,
+  basement: BASEMENT.fixtures, share: HALLS.share.fixtures, cage: HALLS.cage.fixtures, suite: HALLS.suite.fixtures, office: HALLS.office.fixtures,
 };
 
 export const fixtures = (loc: Location) => FIXTURES[loc.space];
@@ -113,24 +123,20 @@ export function walkways(loc: Location): { y: number; x0: number; x1: number }[]
 
 const key = (t: { x: number; y: number }) => `${t.x},${t.y}`;
 
-// Tiles that take a rack. In the basement: the far wall's row first, then the left and the right column, corners left out since their facing is ambiguous, and the near side has no wall. In a rented room: the player's part of the rack rows.
+// Tiles that take a rack: the basement's listed tiles beside the shelf, or in a rented room the player's part of the rack rows.
 export function wallTiles(loc: Location): Tile[] {
-  if (loc.space !== "basement") return hallTiles(loc).filter((t) => t.mine).map(({ x, y, facing }) => ({ x, y, facing }));
-  const { w, h } = BASEMENT.size;
-  const tiles: Tile[] = [];
-  for (let x = 1; x < w - 1; x++) tiles.push({ x, y: 0, facing: "s" });
-  for (let y = 1; y < h - 1; y++) tiles.push({ x: 0, y, facing: "e" });
-  for (let y = 1; y < h - 1; y++) tiles.push({ x: w - 1, y, facing: "w" });
-  const fixed = new Set(fixtureTiles(loc).map(key));
-  return tiles.filter((t) => !fixed.has(key(t)));
+  if (loc.space === "basement") return BASEMENT.racks;
+  return hallTiles(loc).filter((t) => t.mine).map(({ x, y, facing }) => ({ x, y, facing }));
 }
 
 export function rackTiles(loc: Location, racks: Rack[]): Record<string, Tile> {
   const here = racks.filter((r) => r.locationId === loc.id).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
-  const out: Record<string, Tile> = {};
+  const out: Record<string, Tile> = {}, shelf = loc.space === "basement" ? BASEMENT.shelf : undefined;
+  for (const r of here) if (r.model === "shelf" && shelf) out[r.id] = shelf;
   const spots = wallTiles(loc), taken = new Set<string>(), valid = new Map(spots.map((t) => [key(t), t]));
   // A stored tile that is no longer a rack tile, as in saves from older layouts, gets a new one; facing follows the current layout.
   for (const r of here) {
+    if (out[r.id]) continue;
     const t = r.tile && valid.get(key(r.tile));
     if (t && !taken.has(key(t))) { out[r.id] = t; taken.add(key(t)); }
   }
