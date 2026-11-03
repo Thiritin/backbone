@@ -12,7 +12,7 @@ import { fetchPost } from "../../sim/90-actions/post";
 import { pickUp, putDown } from "../../sim/90-actions/carry";
 import { powerByLocation } from "../../sim/88-tick/tick";
 import { roomTemperature } from "../../sim/60-infra/sensors";
-import type { GameState, Location } from "../../sim/50-state";
+import type { End, GameState, Location } from "../../sim/50-state";
 import { Defs } from "../art/fronts";
 import { rackItems } from "../apps/locations/RackView";
 import { useStore } from "../store";
@@ -25,6 +25,7 @@ import {
   Cooling, CrossConnect, Desk, Dock, Door, Extinguisher, FuseBox, Grate, Letterbox, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Walls, WALL, Window,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
+import { JackPanel, RoomCables } from "./rack/Cables";
 import { NetworkPanel, PostPanel, PowerPanel, StoragePanel } from "./panel/Panels";
 import "./world.css";
 
@@ -50,9 +51,11 @@ export function World() {
 
   const [door, setDoor] = useState(0);
   const [lit, setLit] = useState<string | null>(null);
-  const [rackOpen, setRackOpen] = useState<string | null>(null);
+  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End } | null>(null);
+  // The port whose cable the player holds; with no panel open, the room is in cable mode.
+  const [cable, setCable] = useState<End | null>(null);
   // The panel open over the room: storage, network, the post or the power of a fixture.
-  const [panel, setPanel] = useState<{ kind: "storage" | "network" | "post" | "power"; title: string } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "storage" | "network" | "jacks" | "post" | "power"; title: string } | null>(null);
   const [hand, setHand] = useState<Pt | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
@@ -66,7 +69,7 @@ export function World() {
   useEffect(() => {
     if (shown.current === loc.id) return;
     shown.current = loc.id;
-    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setRackOpen(null); setPanel(null);
+    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setRackOpen(null); setPanel(null); setCable(null);
   }, [loc]);
   useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org }; }, [loc.id, zoomSet, org]);
   const box = { x: iso(0, h).x - 8, y: -WALL - 12, w: (w + h) * 32 + 16, h: (w + h) * 16 + WALL + 12 };
@@ -104,7 +107,7 @@ export function World() {
 
   // Escape puts a carried unit down; open panels close themselves.
   const escape = useRef(() => {});
-  escape.current = () => { if (game.player.carrying) act(putDown); };
+  escape.current = () => { if (cable) setCable(null); else if (game.player.carrying) act(putDown); };
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
@@ -178,11 +181,11 @@ export function World() {
 
   // Things standing on the floor, sorted by x + y so nearer ones overlap farther ones; a fixture sorts by its farthest tile.
   const things: { depth: number; node: ReactNode }[] = racks.map((r) => {
-    const tile = tiles[r.id], leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on, top: d.slot + modelById(d.model).height - 1 }));
+    const tile = tiles[r.id], glow = cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id, leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on, top: d.slot + modelById(d.model).height - 1 }));
     return {
       depth: tile.x + tile.y,
       node: (
-        <g key={r.id} className={`w-obj w-rack${lit === r.id ? " w-lit" : ""}`} data-rack={r.id} role="button" aria-label={r.name} onClick={use(r.id, () => setRackOpen(r.id))}>
+        <g key={r.id} className={`w-obj w-rack${lit === r.id ? " w-lit" : ""}${glow ? " w-glow" : ""}`} data-rack={r.id} role="button" aria-label={r.name} onClick={use(r.id, () => setRackOpen({ id: r.id }))}>
           <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} />
         </g>
       ),
@@ -203,7 +206,7 @@ export function World() {
   const run = (label: string): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
     storage: () => (carried ? act(putDown) : setPanel({ kind: "storage", title: "" })),
-    network: () => setPanel({ kind: "network", title: "" }),
+    network: () => setPanel({ kind: cable ? "jacks" : "network", title: "" }),
     power: () => setPanel({ kind: "power", title: t(label) }),
     door: () => openDoor(),
     post: () => { if (waiting) act(fetchPost); setPanel({ kind: "post", title: t(label) }); },
@@ -259,6 +262,7 @@ export function World() {
         <path className="w-tile" d={grid} />
         {back}
         {things.map((x) => x.node)}
+        <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
         {carried && hand && (
           <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>
         )}
@@ -271,7 +275,8 @@ export function World() {
       {panel?.kind === "network" && <NetworkPanel loc={loc} onClose={() => setPanel(null)} />}
       {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
-      {rackOpen && <RackPanel key={rackOpen} rackId={rackOpen} onClose={() => setRackOpen(null)} />}
+      {panel?.kind === "jacks" && cable && <JackPanel loc={loc} hand={cable} onHand={setCable} onClose={() => setPanel(null)} />}
+      {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)} />}
     </div>
   );
 }

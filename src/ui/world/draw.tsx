@@ -321,9 +321,11 @@ export function Parcel({ cx, cy, z, brand }: { cx: number; cy: number; z: number
   );
 }
 
+export const rackHeight = (units: number) => Math.round(24 + units * 1.6);
+
 // A rack is a dark box; a front facing the camera shows one LED per device, or from zoom 2 the rack front art scaled onto it.
 export function RackBox({ tile, units, items, leds, zoomed }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; top: number }[]; zoomed: boolean }) {
-  const H = Math.round(24 + units * 1.6), c = center(tile.x, tile.y), dx = 28, m = 1 / 16;
+  const H = rackHeight(units), c = center(tile.x, tile.y), dx = 28, m = 1 / 16;
   const L = { x: c.x - dx, y: c.y }, B = { x: c.x, y: c.y + dx / 2 }, R = { x: c.x + dx, y: c.y };
   // Only a front facing the camera shows: the south face is the lower left, the east face the lower right.
   const face = tile.facing === "s" ? { o: up(L, H), u: B.x - L.x, v: B.y - L.y } : tile.facing === "e" ? { o: up(B, H), u: R.x - B.x, v: R.y - B.y } : null;

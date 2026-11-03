@@ -54,3 +54,16 @@
 .wr-side .lid-inline { border-radius: 4px; background: var(--win); color: var(--text); border: 3px solid oklch(0.17 0.02 258); }
 .wr-side .lid-inline { display: flex; flex-direction: column; min-height: 0; max-height: 100%; }
 .wr-side .lid-view { max-height: 30dvh; }
+
+/* The rack back: ports are click targets, the cable in hand glows. */
+.wr-back { flex-shrink: 0; align-self: flex-start; }
+.wr-back .rack-hand { fill: color-mix(in oklch, var(--accent) 50%, transparent); stroke: var(--accent); stroke-width: 1.5; }
+.wr-back .rack-port { cursor: pointer; }
+.wr-side-seg { display: flex; }
+.wr-side-seg .wr-btn { border-radius: 0; }
+.wr-side-seg .wr-btn:first-child { border-radius: 3px 0 0 3px; border-right-width: 0; }
+.wr-side-seg .wr-btn:last-child { border-radius: 0 3px 3px 0; }
+.wr-side-seg .wr-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+.wr-card .loc-card { color: var(--text); border: 0; box-shadow: none; }
+.wr-card .loc-card-h { background-image: none; }
+.wr-card[data-port] > .wr-acts { border-top: 2px solid oklch(0.2 0.02 258); }

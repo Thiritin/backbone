@@ -36,7 +36,7 @@ export function rackItems(g: GameState, rackId: string): RackItem[] {
   });
 }
 
-function rackLinks(g: GameState, rackId: string): RackLink[] {
+export function rackLinks(g: GameState, rackId: string): RackLink[] {
   const dev = new Map(g.devices.map((d) => [d.id, d]));
   return g.cables.flatMap((c) => [[c.a, c.b], [c.b, c.a]].flatMap(([end, peer]) => (dev.get(end.device)?.rackId === rackId ? [{ id: c.id, end, peer, color: cableColor(c) }] : [])));
 }
@@ -44,7 +44,7 @@ function rackLinks(g: GameState, rackId: string): RackLink[] {
 const KIND_LABEL: Record<DeviceKind, string> = { server: t("locations-2.kind.server"), switch: t("locations-2.kind.switch"), firewall: t("locations-2.kind.firewall"), gateway: t("locations-2.kind.gateway"), patch: t("locations-2.kind.patch"), ups: t("locations-2.kind.ups"), pdu: t("locations-2.kind.pdu"), part: t("locations-2.kind.part"), kvm: t("locations-2.kind.kvm"), console: t("locations-2.kind.console"), oob: t("locations-2.kind.oob"), chassis: t("locations-2.kind.chassis"), jack: t("locations-2.kind.jack") };
 
 // Devices outside the rack that it is cabled to, plus the location's carrier panel and patch panels to cable to.
-function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
+export function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
   const here = g.devices.filter((d) => (d.rackId || d.panel) && locationOf(g, d)?.id === rack.locationId);
   const ids = new Set(g.devices.filter((d) => d.rackId === rack.id).map((d) => d.id));
   const cabled = new Set(g.cables.flatMap((c) => (ids.has(c.a.device) ? [c.b.device] : ids.has(c.b.device) ? [c.a.device] : [])));
