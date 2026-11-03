@@ -1,17 +1,13 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { t } from "../../../i18n/en";
 import { modelById } from "../../../sim/10-catalog/hardware";
-import { carrierById, carriersAt, exchangeById } from "../../../sim/10-catalog/network";
-import { datacenterById } from "../../../sim/20-world/datacenters";
 import { atDesk } from "../../../sim/40-support/letters";
 import type { Device, Location } from "../../../sim/50-state";
-import { route, type Uplink } from "../../../sim/60-infra/network";
 import { pickUp } from "../../../sim/90-actions/carry";
 import { readLetter } from "../../../sim/90-actions/paperwork";
 import { scanLetter } from "../../../sim/90-actions/post";
 import { Isometric } from "../../art/Isometric";
-import { devName, readyIn } from "../../apps/hw";
-import { mbps } from "../../apps/locations/NetworkTab";
+import { devName } from "../../apps/hw";
 import { Facts, locationPower, PowerMeter, RoomTemp } from "../../apps/locations/ui";
 import { Letter } from "../../apps/PostApp";
 import { paperDay } from "../../apps/FormDoc";
@@ -78,37 +74,6 @@ export function PostPanel({ title, onClose }: { title: string; onClose: () => vo
             </div>
           </div>
         )}
-      </div>
-    </Slab>
-  );
-}
-
-const partnerName = (u: Uplink) => carrierById(u.partner)?.name ?? exchangeById(u.partner)?.name ?? u.partner;
-
-// The carriers on site and the location's uplinks with their cross-connects.
-export function NetworkPanel({ loc, onClose }: Props) {
-  const game = useStore((s) => s.game);
-  const z = useMemo(() => route(game), [game]).zones[loc.id];
-  const uplinks = game.network.uplinks.filter((u) => u.locationId === loc.id);
-  const carriers = loc.dc ? carriersAt(datacenterById(loc.dc)) : [];
-  const device = (id: string) => { const d = game.devices.find((x) => x.id === id); return d ? devName(d) : id; };
-  return (
-    <Slab title={t("world.obj.xconnect")} head={<span className="wr-num">{t("locations-2.carriedOf", { carried: mbps(z?.carried ?? 0), demand: mbps(z?.demand ?? 0) })}</span>} onClose={onClose} className="wp-panel" data={{ "network-panel": loc.id }}>
-      <div className="wp-list">
-        <h3 className="wp-h">{t("locations-2.carriers")}</h3>
-        <div className="wp-tags">{carriers.map((c) => <span key={c.id} className="wp-tag">{c.name}</span>)}</div>
-        {uplinks.map((u) => (
-          <div key={u.id} className="wp-card">
-            <div className="wp-card-h"><strong>{partnerName(u)}</strong><span className="wr-num">{u.kind === "transit" ? t("locations-2.transit") : t("locations-2.exchange")}</span></div>
-            {u.links.map((l) => (
-              <div key={l.id} className="wp-link">
-                <span className="wr-num">{l.gbit}G</span>
-                <span>{t("locations-2.devicePort", { device: device(l.device), port: l.port + 1 })}</span>
-                <span className="wr-num">{l.readyAt > game.hour ? t("locations-2.readyIn", { time: readyIn(l.readyAt, game.hour) }) : t("locations-2.up")}</span>
-              </div>
-            ))}
-          </div>
-        ))}
       </div>
     </Slab>
   );

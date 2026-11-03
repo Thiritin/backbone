@@ -1,6 +1,6 @@
 import type { Fixture } from "../../sim/20-world/layout";
 
-export type Use = "desktop" | "storage" | "network" | "power" | "door" | "post" | "scan";
+export type Use = "desktop" | "storage" | "power" | "door" | "post" | "scan";
 
 // What using a fixture kind does. Wall ones, and flat marks on the floor, are drawn behind everything standing; top ones hang over the room; the rest are depth-sorted with the racks.
 // A fixture without a label is clutter, hidden from assistive tech.

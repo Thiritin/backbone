@@ -24,8 +24,8 @@ import {
   Hygrometer, Letterbox, Light, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, RaisedFloor, Scanner, Shelf, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
-import { JackPanel, RoomCables } from "./rack/Cables";
-import { NetworkPanel, PostPanel, PowerPanel, StoragePanel } from "./panel/Panels";
+import { RoomCables } from "./rack/Cables";
+import { PostPanel, PowerPanel, StoragePanel } from "./panel/Panels";
 import "./world.css";
 
 const BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
@@ -53,8 +53,8 @@ export function World() {
   const [rackOpen, setRackOpen] = useState<{ id: string; port?: End } | null>(null);
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
-  // The panel open over the room: storage, network, the post or the power of a fixture.
-  const [panel, setPanel] = useState<{ kind: "storage" | "network" | "jacks" | "post" | "power"; title: string } | null>(null);
+  // The panel open over the room: storage, the post or the power of a fixture.
+  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "power"; title: string } | null>(null);
   const [hand, setHand] = useState<Pt | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
@@ -210,7 +210,6 @@ export function World() {
   const run = (label: string): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
     storage: () => (carried ? act(putDown) : setPanel({ kind: "storage", title: "" })),
-    network: () => setPanel({ kind: cable ? "jacks" : "network", title: "" }),
     power: () => setPanel({ kind: "power", title: t(label) }),
     door: () => openDoor(),
     post: () => { if (waiting) act(fetchPost); setPanel({ kind: "post", title: t(label) }); },
@@ -287,10 +286,8 @@ export function World() {
         <span className="num">{formatClock(game.hour, game.minute)}</span>
       </div>
       {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
-      {panel?.kind === "network" && <NetworkPanel loc={loc} onClose={() => setPanel(null)} />}
       {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
-      {panel?.kind === "jacks" && cable && <JackPanel loc={loc} hand={cable} onHand={setCable} onClose={() => setPanel(null)} />}
       {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)} />}
     </div>
   );
