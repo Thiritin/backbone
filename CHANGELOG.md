@@ -2,6 +2,10 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-03
+
+- The bookkeeping setup wizard title is readable again on dark vendor colors.
+
 ## 2026-11-02
 
 - Goggle's address now opens a search engine in every year that searches the web like Yahoy, with Goggle Search, I'm Feeling Lucky and a link that makes it your browser's home page, while the Goggle Apps product site moved to goggle.com/a/ and Yahoy can win the home page back with its own link.
