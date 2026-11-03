@@ -15,7 +15,7 @@ describe("device menu", () => {
     const g = withServer(newGame(7));
     expect(labels(g, "dev3", { open: () => {} })).toEqual([
       "Show details", "-", "Shut down", "Reboot", "At the server", "-", "Burn-in", "-",
-      "Add second power supply, 250 €", "Rename…", "-", "Unmount", "Sell…",
+      "Add second power supply, 250 €", "Rename…", "-", "Unmount · In person", "Sell…",
     ]);
   });
 

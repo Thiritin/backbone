@@ -4,7 +4,8 @@ import { euro } from "../../../sim/00-core/money";
 import type { ReactNode } from "react";
 import { Logo } from "../../art/logos";
 import { cityNamed, WorldMap, type Marker } from "../../map/WorldMap";
-import { day, readyIn } from "../hw";
+import { day, devName, readyIn } from "../hw";
+import { slotTime } from "./TechButton";
 import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, RoomTemp, spaceLabel, spaceSize, Zone } from "./ui";
 import { Hourglass } from "lucide-react";
 import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
@@ -76,6 +77,7 @@ function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; o
       <div className="loc-row"><span className="loc-k">{t("locations-2.power")}</span><PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} /></div>
       <div className="loc-row"><span className="loc-k">{t("locations-2.temperature")}</span><span className="grow" /><RoomTemp g={game} loc={loc} /></div>
       {arriving.map((r) => <div key={r.id} className="loc-row"><span className="loc-k">{t("locations-2.inTransit")}</span>{r.name}<span className="grow" /><span className="num">{day(r.arriveAt!)}</span></div>)}
+      {game.handsJobs.filter((j) => j.locationId === loc.id).map((j) => <div key={j.id} className="loc-row"><span className="loc-k">{t(`locations-2.job.${j.action}`)}</span>{game.devices.filter((d) => d.id === j.deviceId).map(devName)}<span className="grow" /><span className="num">{slotTime(game.hour, j.dueAt)}</span></div>)}
     </div>
   );
 }

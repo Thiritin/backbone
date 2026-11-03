@@ -36,7 +36,7 @@ Infrastructure lives in locations: your basement first, then space in other comp
 | Power price | Per kWh, by city and provider | Running cost |
 | Power density | 4 to 20 kW per position | How many servers a rack can actually run |
 | Cross-connects | Monthly fee per cable | The cost of every carrier, exchange and customer link |
-| Remote hands | Price per hour and response time | Repairs and mounting without your own technician on site |
+| Remote hands | Price per hour and response time | Repairs and mounting without your own technician on site; hands-on work ordered from afar waits as a job until the response time has passed, then runs and is billed for its fixed hours |
 | Certification | Certified or not | Offices and enterprises require it |
 | Lead time and term | Days until ready, months of commitment | How fast you can expand and how long you are bound |
 

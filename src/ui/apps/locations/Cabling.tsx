@@ -8,6 +8,7 @@ import { connect, disconnect } from "../../../sim/90-actions/hardware";
 import { cableColor, LED } from "../../art/fronts";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { HandsMode, handsMode } from "./HandSheet";
 import { CABLE_NAME, devName, portName, speed } from "../hw";
 
 const NODE_W = 190, GAP_X = 150, GAP_Y = 16, PITCH = 17, HEAD = 36, TOP = 40;
@@ -142,7 +143,7 @@ export function Cabling({ game, loc }: { game: GameState; loc: Location }) {
           <span className="num">{name(chosen.a)}</span>
           <span className={`loc-cab-kind ${chosen.kind}`}>{CABLE_NAME[chosen.kind]}</span>
           <span className="num">{name(chosen.b)}</span>
-          <button className="btn danger" onClick={() => { act(disconnect, chosen.id); setSel(null); }}><Unplug />{t("locations-1.disconnect")}</button>
+          <button className="btn danger" disabled={handsMode(game, loc.id, "disconnect").off} onClick={() => { act(disconnect, chosen.id); setSel(null); }}><Unplug />{t("locations-1.disconnect")}<HandsMode mode={handsMode(game, loc.id, "disconnect")} /></button>
         </div>
       )}
       <svg ref={svg} className="loc-cab" role="application" aria-label={t("locations-1.cabling")} onPointerDown={down} onPointerMove={move} onPointerUp={up}

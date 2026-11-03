@@ -4,7 +4,8 @@ import { yearOf } from "../00-core/time";
 import { COUNTRY, datacenterById } from "../20-world/datacenters";
 import type { GameState, Location } from "../50-state";
 
-export type How = "hands" | "self" | "friend" | "tech";
+// "job" is a queued remote hands job running: at once, already paid.
+export type How = "hands" | "self" | "friend" | "tech" | "job";
 
 // Travel hours and fee of a drive: within a city, within a country, to another European country. Overseas is not offered.
 export const TRAVEL = { city: { hours: 1, fee: 20 }, country: { hours: 4, fee: 90 }, europe: { hours: 9, fee: 250 } } as const;
@@ -61,6 +62,7 @@ export interface HandJob { cost: number; wait: number; commit: () => number }
 // Prices work of the given hours at a location. Remote hands bill at least an hour; a technician and the basement are on site at once.
 export function handJob(s: GameState, device: string, loc: Location | undefined, how: How | boolean, work: number, billHours = Math.max(1, work)): { error: string } | HandJob {
   const h: How = how === true ? "tech" : how === false ? "hands" : how;
+  if (h === "job") return { cost: 0, wait: 0, commit: () => 0 };
   const w = h === "tech" || !loc ? null : handWork(s, loc.id);
   if (!w) return { cost: 0, wait: work, commit: () => work };
   const book = (key: string, amount: number, params: Record<string, string | number>) => {
