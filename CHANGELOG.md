@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-03
 
 - The rented office is a room of its own with desks, a reception and a server room, the staff come in during office hours and sit at them, and the post now arrives in the office letterbox.
+- The fuse box, letterbox, scanner and shelf now open as themselves, drawn large with their breakers, sheets of paper, buttons and boards to use, and the rack carries its name on a label plate with a turn arrow at its corner.
 - The trash can in the dock and the room icon on the desktop now change with the OS era like the other icons.
 - The rack opens as a scene in the middle of the screen with depth and a paper tag for the picked unit, cables are dragged from port to port and vanish into the duct, and the map shows Europe only for now.
 - Colocation sites now look like the floor you rent on: your racks stand among other tenants' mesh-fronted racks, a cage appears only when you rent one, and halls have hot and cold aisles where the site has them.

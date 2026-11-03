@@ -5,7 +5,7 @@ import { cage, fixtures, neighbourRacks, officeFloors, officePlan, rackTiles, ro
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { temperature } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
-import { boxAt } from "../../sim/40-support/letters";
+import { atDesk, boxAt } from "../../sim/40-support/letters";
 import { officeOpen } from "../../sim/60-infra/properties";
 import { fetchPost } from "../../sim/90-actions/post";
 import { pickUp, putDown } from "../../sim/90-actions/carry";
@@ -26,7 +26,7 @@ import {
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { RoomCables } from "./rack/Cables";
-import { PostPanel, PowerPanel, StoragePanel } from "./panel/Panels";
+import { PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
 import {
   Bin, BossDesk, Buckets, chairAt, CodeDoor, Kitchen, Ladder, OfficeChair, OfficeDesk, OfficeFloor, OfficeWindow, Partition, Plant, Printer, Reception, StairsSign, Toolbox, Tube,
   useOfficeStaff, WallTray, Whiteboard,
@@ -62,7 +62,7 @@ export function World() {
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
   // The panel open over the room: storage, the post or the power of a fixture.
-  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "power"; title: string } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power"; title: string; id?: string } | null>(null);
   const [hand, setHand] = useState<Pt | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
@@ -218,13 +218,13 @@ export function World() {
       </g>
     ) });
   }
-  const run = (label: string): Record<Use, () => void> => ({
+  const run = (label: string, id = ""): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
     storage: () => (carried ? act(putDown) : setPanel({ kind: "storage", title: "" })),
-    power: () => setPanel({ kind: "power", title: t(label) }),
+    power: () => setPanel({ kind: "power", title: t(label), id }),
     door: () => openDoor(),
-    post: () => { if (waiting) act(fetchPost); setPanel({ kind: "post", title: t(label) }); },
-    scan: () => setPanel({ kind: "post", title: t(label) }),
+    post: () => { if (waiting) act(fetchPost); if (atDesk(useStore.getState().game).length) setPanel({ kind: "post", title: t(label) }); },
+    scan: () => setPanel({ kind: "scan", title: t(label) }),
     stairs: () => { const fs = officeFloors(plan?.sections ?? []); setFloor(fs[(fs.indexOf(plan?.floor ?? 1) + 1) % fs.length]); setRackOpen(null); },
   });
   const watts = `${n(power)}W`;
@@ -284,7 +284,7 @@ export function World() {
   for (const [id, f] of Object.entries(fx)) {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
     const node = a.use && a.label
-      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label)[a.use])}>{art}</g>
+      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use])}>{art}</g>
       : <g key={id} aria-label={a.label && t(a.label)} aria-hidden={!a.label || undefined} pointerEvents="none">{art}</g>;
     if (a.wall) back.push(node);
     else if (a.top) over.push(node);
@@ -323,8 +323,9 @@ export function World() {
         <span className="num">{formatClock(game.hour, game.minute)}</span>
       </div>
       {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
-      {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
+      {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} kind={panel.id ?? ""} onClose={() => setPanel(null)} />}
       {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
+      {panel?.kind === "scan" && <ScanPanel title={panel.title} onClose={() => setPanel(null)} />}
       {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)} />}
     </div>
   );

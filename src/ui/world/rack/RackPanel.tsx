@@ -12,14 +12,15 @@ import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
 import { deviceLamps } from "../../apps/hw";
-import { useHandWork } from "../../apps/locations/HandSheet";
+import { handsMode, useHandWork, type HandTask } from "../../apps/locations/HandSheet";
 import { LabelEdit, PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { LidSheet } from "../../apps/locations/LidSheet";
-import { mountable, MountRow, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
+import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
 import { useStore } from "../../store";
 import "../../apps/locations/locations.css";
 import { Slab } from "../panel/Slab";
 import { endName } from "./Cables";
+import "../panel/panel.css";
 import "./rack.css";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
@@ -103,8 +104,9 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
   else if (lid && dev) tag = <LidSheet key={lid} deviceId={lid} inline onClose={() => setLid(null)} />;
   else if (dev) tag = <DeviceTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => menus.entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) && !back ? () => turn(true) : undefined} />;
-  else if (free !== null) tag = <InstallCard rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} onPick={pick} />;
-  const wide = !!lid || (free !== null && !dev);
+  // A picked free unit sets what fits there on the floor beside the rack.
+  const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} onPick={pick} /> : null;
+  const wide = !!lid;
 
   const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
   const face = (side: boolean) => side ? (
@@ -121,18 +123,15 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   );
 
   return (
-    <Slab title={rack.name} onClose={onClose} onBack={() => (hand ? (onHand(null), true) : lid ? (setLid(null), true) : false)} data={{ "rack-panel": rack.id }}
-      head={<>
-        <div className="wr-side-seg" role="group" aria-label={t("locations-2.side")}>
-          <button className="wr-btn" aria-pressed={!back} onClick={() => turn(false)}>{t("locations-2.front")}</button>
-          <button className="wr-btn" aria-pressed={back} onClick={() => turn(true)}>{t("locations-2.back")}</button>
-        </div>
-        <span className="wr-num">{rack.model === "shelf" ? `${t("rack.shelf")}, ${used} / ${units}` : `${used} / ${units} U`}</span>
-      </>}>
+    <Slab title={rack.name} onClose={onClose} onBack={() => (hand ? (onHand(null), true) : lid ? (setLid(null), true) : false)} data={{ "rack-panel": rack.id }}>
       <div ref={stage} className="wr-stage" style={{ ["--z" as string]: zoom, ["--units" as string]: tall }}>
         <div className="wr-room">
-          <div ref={scene} className={`wr-scene${tag ? (wide ? " tagged wide" : " tagged") : ""}`}>
+          <div ref={scene} className={`wr-scene${tag || floor ? (wide ? " tagged wide" : " tagged") : ""}`}>
             <div className={`wr-cab${shelf ? " shelf" : ""}`}>
+              <div className="wr-plate" data-plate=""><b>{rack.name}</b><span>{shelf ? `${used} / ${units}` : `${used} / ${units} U`}</span></div>
+              <button className="wr-turn" aria-label={t(back ? "locations-2.front" : "locations-2.back")} aria-pressed={back} onClick={() => turn(!back)}>
+                <svg viewBox="0 0 32 32" aria-hidden="true"><path className="wr-turn-arc" d="M7 19a10 7 0 1 0 6-11" /><path className="wr-turn-head" d="M9 3 15 8 9 13Z" /></svg>
+              </button>
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
               <div className={`wr-face${turning !== null ? " in" : ""}`}>{face(back)}</div>
             </div>
@@ -140,6 +139,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
             {tag && (
               <div ref={tagEl} className="wr-tag" style={pin && !wide ? { top: pin.top } : undefined}>{tag}</div>
             )}
+            {floor && <div className="wr-floor-units">{floor}</div>}
             {tag && pin && !wide && (
               <svg className="wr-string" aria-hidden="true"><line x1={pin.x} y1={pin.y} x2={scene.current!.offsetWidth + TAG_GAP + HOLE} y2={pin.top + HOLE} /></svg>
             )}
@@ -211,18 +211,33 @@ function HandTag({ name, onAway, onDrop }: { name: string; onAway: () => void; o
   );
 }
 
-function InstallCard({ rack, unit, onMount, onPick }: { rack: Rack; unit: number; onMount: Parameters<typeof MountRow>[0]["onMount"]; onPick: (id: string) => void }) {
-  const game = useStore((s) => s.game);
-  const rows = mountable(game, rack, unit), parcels = doorFit(game, rack, unit), held = carriedFit(game, rack.id).includes(unit);
-  return (
-    <div className="wr-card" data-free={unit}>
-      <div className="wr-card-h"><h2>{`U${unit}`}</h2><span className="wr-model">{t("locations-1.empty")}</span></div>
-      <div className="loc-shop-list">
-        {held && <HandRow game={game} rack={rack} unit={unit} d={game.devices.find((x) => x.id === game.player.carrying)!} onDone={onPick} />}
-        {parcels.map((d) => <HandRow key={d.id} game={game} rack={rack} unit={unit} d={d} onDone={onPick} />)}
-        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMount={onMount} />)}
-        {!rows.length && !parcels.length && !held && <div className="loc-shop-none">{t("locations-2.noStoredFits")}</div>}
+// What fits the picked free unit, standing on the floor: the unit in the hands, parcels from the door and stored stock; a click mounts one.
+function FloorUnits({ rack, unit, onMount, onPick }: { rack: Rack; unit: number; onMount: (task: HandTask) => void; onPick: (id: string) => void }) {
+  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const held = carriedFit(game, rack.id).includes(unit) ? game.devices.find((x) => x.id === game.player.carrying) : undefined;
+  const hand = [...(held ? [held] : []), ...doorFit(game, rack, unit)], mode = handsMode(game, rack.locationId, "mountDevice");
+  const box = (k: string, model: string, brand: string, label: string, run: () => void, off = false, data: Record<string, string> = {}) => {
+    const m = modelById(model);
+    return (
+      <div key={k} className="wp-unit" {...data}>
+        <button disabled={off} aria-label={`${t("locations-2.mount")}: ${m.kind === "server" ? `${brand} ` : ""}${m.name}`} onClick={run}>
+          <Isometric model={m} brand={brand} w={84} />
+          <span className="wp-label"><b>{m.kind === "server" ? `${brand} ${m.name}` : m.name}</b>{label}</span>
+        </button>
       </div>
+    );
+  };
+  return (
+    <div data-free={unit}>
+      {hand.map((d) => {
+        const carried = d.id === game.player.carrying, from = mountFrom(game, rack.id, heightIn(game, rack.id, d.model), 1, unit)!;
+        const mount = () => { if ((carried ? act(installCarried, rack.id, from) : act(installFromDoor, d.id, rack.id, from)).ok) onPick(d.id); };
+        return box(d.id, d.model, d.brand, t(carried ? "world.inHands" : "locations-2.atDoor"), mount, false, carried ? { "data-carried": d.id } : { "data-door": d.id });
+      })}
+      {mountable(game, rack, unit).map((st) => {
+        const from = mountFrom(game, rack.id, heightIn(game, rack.id, st.model), 1, unit) ?? unit;
+        return box(`${st.model}|${st.brand}`, st.model, st.brand, t("locations-2.nInStorage", { n: st.ids.length }), () => onMount(mountTask(st, rack.id, 1, from)), mode.off);
+      })}
     </div>
   );
 }
@@ -251,22 +266,6 @@ function doorFit(game: GameState, rack: Rack, unit: number): Device[] {
   });
 }
 
-// A unit carried or waiting at the door, mounted by the player's own hands.
-function HandRow({ game, rack, unit, d, onDone }: { game: GameState; rack: Rack; unit: number; d: Device; onDone: (id: string) => void }) {
-  const act = useStore((s) => s.act), m = modelById(d.model), carried = d.id === game.player.carrying;
-  const from = mountFrom(game, rack.id, heightIn(game, rack.id, d.model), 1, unit)!;
-  const mount = () => (carried ? act(installCarried, rack.id, from) : act(installFromDoor, d.id, rack.id, from));
-  return (
-    <div className="loc-shop-row" data-carried={carried ? d.id : undefined} data-door={carried ? undefined : d.id}>
-      <Isometric model={m} brand={d.brand} w={64} />
-      <div className="loc-shop-main">
-        <div className="loc-shop-name">{m.kind === "server" ? `${d.brand} ` : ""}{m.name}</div>
-        <div className="loc-shop-specs">{t(carried ? "world.inHands" : "locations-2.atDoor")}</div>
-      </div>
-      <button className="btn primary" onClick={() => { if (mount().ok) onDone(d.id); }}>{t("locations-2.mount")}</button>
-    </div>
-  );
-}
 // A managed switch port bundles with the other ports cabled to the same device, or leaves its group.
 function GroupRow({ game, d, port }: { game: GameState; d: Device; port: number }) {
   const act = useStore((s) => s.act), m = modelById(d.model);

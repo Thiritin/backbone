@@ -24,4 +24,8 @@ export default {
   "world.cableInHand": () => "Cable in hand",
   "world.toRack": () => "To another rack",
   "world.dropCable": () => "Drop cable",
+  "world.scanAll": () => "Scan all",
+  "world.mainSwitch": () => "Main switch",
+  "world.prevLetter": () => "Previous letter",
+  "world.nextLetter": () => "Next letter",
 } satisfies Dict;
