@@ -58,7 +58,7 @@ export function moveGbit(s: GameState, a: string, b: string): number {
   const linked = zoneLinkGbit(s, a, b);
   const from = s.locations.find((l) => l.az === a), to = s.locations.find((l) => l.az === b);
   if (linked || !from || !to?.dc) return linked;
-  const mbps = (l: Location) => (l.dc ? exitsOf(s, l).reduce((n, e) => n + e.cap, 0) : homeLineById(s.homeLine.id).up);
+  const mbps = (l: Location) => (l.dc || l.space === "office" ? exitsOf(s, l).reduce((n, e) => n + e.cap, 0) : homeLineById(s.homeLine.id).up);
   return Math.min(Math.min(mbps(from), mbps(to)) / 1000, WAN_GB_PER_HOUR / LAN_GB_PER_HOUR);
 }
 

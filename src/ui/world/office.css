@@ -51,6 +51,10 @@
 .w-pane-door { fill: oklch(0.86 0.05 230 / 0.28); }
 .w-keypad { fill: oklch(0.3 0.01 255); }
 .w-sign-server { fill: oklch(0.6 0.15 145); }
+.w-tone-closet { --top: oklch(0.78 0.006 250); --left: oklch(0.72 0.008 250); --right: oklch(0.62 0.008 250); --edge: oklch(0.52 0.008 250); }
+.w-closet-seam { stroke: oklch(0.52 0.008 250); stroke-width: 0.6; }
+.w-closet-slat { fill: oklch(0.42 0.008 255); }
+.w-closet-lock { fill: oklch(0.82 0.06 85); }
 .w-cable-blue { fill: oklch(0.55 0.14 250); }
 .w-cable-yellow { fill: oklch(0.8 0.14 90); }
 .w-cable-grey { fill: oklch(0.6 0.008 255); }

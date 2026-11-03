@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- An office section can now become a server closet holding one rack, an office server room or closet can book a business line from the city's provider, and post addressed before a move still reaches the basement for a month.
 - The wall phone by the door rings when something breaks at night and nobody else is on call, and answering it shows on a notepad what happened, where and when.
 - Trips across the sea now fly: a taxi takes you to the airport, a plane crosses the map along its arc, and a taxi drops you at the far end; the map marks those places with a plane and shows each trip's hours and fare on hover.
 - In the room a server opens pulled out of the rack on its rails with the lid off, and its parts are checked, swapped and installed on paper tags beside it.

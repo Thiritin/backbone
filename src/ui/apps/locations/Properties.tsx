@@ -37,7 +37,7 @@ function BuildingCard({ game, l, year }: { game: GameState; l: Listing; year: nu
   };
   const refit = (fit: SectionFit) => own && own.fit !== fit && (
     <button className="btn" disabled={own.refitUntil > game.hour} onClick={() => act(refitSection, mine!.id, own.id, fit)}>
-      {t(fit === "desks" ? "properties.refitDesks" : "properties.refitServers", { cost: euro(REFIT[fit].cost) })}
+      {t(`properties.refit${fit[0].toUpperCase()}${fit.slice(1)}`, { cost: euro(REFIT[fit].cost) })}
     </button>
   );
   return (
@@ -75,7 +75,7 @@ function BuildingCard({ game, l, year }: { game: GameState; l: Listing; year: nu
             {t(mine ? "properties.expand" : "properties.rent", { cost: euro(rent * DEPOSIT_MONTHS) })}
           </button>
         )}
-        {refit("desks")}{refit("servers")}
+        {refit("desks")}{refit("closet")}{refit("servers")}
         <span className="grow" />
         {mine?.kind === "office" && mine.noticeAt === null && <button className="btn" onClick={() => act(giveNotice, mine.id)}>{t("properties.notice")}</button>}
         {price !== null && mine?.kind !== "own" && <button className="btn" onClick={() => act(buyBuilding, l.id)}>{t("properties.buy", { cost: euro(price) })}</button>}

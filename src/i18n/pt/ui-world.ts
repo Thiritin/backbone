@@ -8,6 +8,7 @@ export default {
   "world.obj.door": () => "Porta",
   "world.obj.switch": () => "Interruptor",
   "world.obj.letterbox": () => "Caixa do correio",
+  "world.obj.closet": () => "Armário de servidores",
   "world.obj.phone": () => "Telefone",
   "world.phone.site": () => "Local",
   "world.phone.what": () => "Evento",

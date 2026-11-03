@@ -33,6 +33,7 @@ import {
   Bin, BossDesk, Buckets, chairAt, CodeDoor, Kitchen, Ladder, OfficeChair, OfficeDesk, OfficeFloor, OfficeWindow, Partition, Plant, Printer, Reception, StairsSign, Toolbox, Tube,
   useOfficeStaff, WallTray, Whiteboard,
 } from "./office";
+import { Closet } from "./office";
 import "./world.css";
 
 const BLINK_MS = 500, FLASH_MS = 120, RING_MS = 4000, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
@@ -298,6 +299,7 @@ export function World() {
     buckets: (f) => <Buckets f={f} />,
     ladder: (f) => <Ladder f={f} />,
     toolbox: (f) => <Toolbox f={f} />,
+    closet: (f) => <Closet f={f} />,
   };
   const back: ReactNode[] = [], over: ReactNode[] = [];
   for (const [id, f] of Object.entries(fx)) {

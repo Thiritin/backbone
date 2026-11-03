@@ -70,7 +70,7 @@ export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office";
 // A section's rent is the monthly price agreed when it was rented (0 once bought); fit is null for a bought section never fitted.
 // refitUntil is the hour a refit is done. locationId is the zone the property's server rooms (or the basement's racks) form.
 export type PropertyKind = "basement" | "office" | "own";
-export type SectionFit = "desks" | "servers";
+export type SectionFit = "desks" | "servers" | "closet";
 export interface Building { name: string; street: string; zip: string; city: string }
 export interface Section { id: string; floor: number; fit: SectionFit | null; since: number; refitUntil: number; rent: number }
 export interface Property {
@@ -81,7 +81,9 @@ export interface Property {
 export type LogSev = "info" | "warn" | "crit";
 export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number }
 // Each location is an availability zone (az, like fra2) in the region of its city.
-export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
+// line is an office's business line, booked in the Network tab.
+export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean;
+  line?: { name: string; mbit: number; monthly: number } }
 // share-N racks belong to the provider of a rack share and hold N units.
 export type RackModel = "shelf" | "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
 // arriveAt is the hour a moving rack arrives; null when it is in place. A moving rack already holds its target location and position.

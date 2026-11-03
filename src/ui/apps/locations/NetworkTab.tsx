@@ -7,6 +7,8 @@ import {
 } from "../../../sim/10-catalog/network";
 import { uplinkOffers, uplinkPrice } from "../../../sim/10-catalog/uplinks";
 import { datacenterById, homeLineById, inUs } from "../../../sim/20-world/datacenters";
+import { officeLineIn } from "../../../sim/20-world/properties";
+import { bookOfficeLine } from "../../../sim/90-actions/properties";
 import type { GameState, Location } from "../../../sim/50-state";
 import {
   acceptChance, activeExchanges, capacityMbps, coolingDown, crossConnects, homePeak, linesMonthly, p95, route, transitBill, zoneLinkMonthly, type Uplink,
@@ -85,6 +87,28 @@ export function NetworkTab({ game, loc }: { game: GameState; loc: Location }) {
   );
 }
 
+function OfficeLine({ game, loc, used }: { game: GameState; loc: Location; used: number }) {
+  const act = useStore((s) => s.act), offer = officeLineIn(yearOf(game.hour)), line = loc.line;
+  const cost = `${offer.name} ${mbps(offer.mbit)}, ${t("locations-2.perMonth", { amount: euro(offer.monthly) })}`;
+  return (
+    <div className="shop-grid mkt-flat">
+      <div className="shop-card">
+        <div className="mkt-head"><strong>{line ? `${line.name} ${mbps(line.mbit)}` : t("properties.noLine")}</strong><span className="pill">{t("properties.businessLine")}</span></div>
+        {line && (
+          <dl className="shop-specs">
+            <div><dt>{t("locations-2.upload")}</dt><dd className="num">{mbps(Math.min(line.mbit, routerMbps(game, loc)))}</dd></div>
+            <div><dt>{t("locations-2.inUse")}</dt><dd className="num">{mbps(used)}</dd></div>
+            <div><dt>{t("locations-2.price")}</dt><dd className="num">{t("locations-2.perMonth", { amount: euro(line.monthly) })}</dd></div>
+          </dl>
+        )}
+        {line?.mbit !== offer.mbit && (
+          <button className="btn primary" disabled={!loc.positions} onClick={() => act(bookOfficeLine, loc.id)}>{t(line ? "properties.upgradeLine" : "properties.bookLine", { cost })}</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Attacks({ game, loc }: { game: GameState; loc: Location }) {
   const act = useStore((s) => s.act);
   const attacks = game.network.attacks.filter((a) => a.locationId === loc.id);
@@ -135,6 +159,7 @@ function Uplinks({ game, loc, routing }: { game: GameState; loc: Location; routi
   const used = routing.zones[loc.id]?.exits ?? {};
   const uplinks = game.network.uplinks.filter((u) => u.locationId === loc.id);
   const year = yearOf(game.hour);
+  if (loc.space === "office") return <OfficeLine game={game} loc={loc} used={used.home ?? 0} />;
   if (!loc.dc) {
     const line = homeLineById(game.homeLine.id);
     return (
