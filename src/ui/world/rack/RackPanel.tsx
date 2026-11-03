@@ -14,12 +14,12 @@ import { reduced } from "../../desktop/motion";
 import { deviceLamps } from "../../apps/hw";
 import { handsWays, useHandWork, wayLabel, type HandTask } from "../../apps/locations/HandSheet";
 import { LabelEdit, PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
-import { LidSheet } from "../../apps/locations/LidSheet";
 import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
 import { useStore } from "../../store";
 import "../../apps/locations/locations.css";
 import { Slab } from "../panel/Slab";
 import { endName } from "./Cables";
+import { LidScene } from "./LidScene";
 import "../panel/panel.css";
 import "./rack.css";
 
@@ -102,11 +102,9 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   let tag: ReactNode = null;
   if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
-  else if (lid && dev) tag = <LidSheet key={lid} deviceId={lid} inline onClose={() => setLid(null)} />;
-  else if (dev) tag = <DeviceTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => menus.entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) && !back ? () => turn(true) : undefined} />;
+  else if (dev && !lid) tag = <DeviceTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => menus.entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) && !back ? () => turn(true) : undefined} />;
   // A picked free unit sets what fits there on the floor beside the rack.
   const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} onPick={pick} /> : null;
-  const wide = !!lid;
 
   const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
   const face = (side: boolean) => side ? (
@@ -125,8 +123,8 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   return (
     <Slab title={rack.name} onClose={onClose} onBack={() => (hand ? (onHand(null), true) : lid ? (setLid(null), true) : false)} data={{ "rack-panel": rack.id }}>
       <div ref={stage} className="wr-stage" style={{ ["--z" as string]: zoom, ["--units" as string]: tall }}>
-        <div className="wr-room">
-          <div ref={scene} className={`wr-scene${tag || floor ? (wide ? " tagged wide" : " tagged") : ""}`}>
+        <div className={`wr-room${lid ? " lidded" : ""}`}>
+          <div ref={scene} className={`wr-scene${tag || floor ? " tagged" : ""}`}>
             <div className={`wr-cab${shelf ? " shelf" : ""}`}>
               <div className="wr-plate" data-plate=""><b>{rack.name}</b><span>{shelf ? `${used} / ${units}` : `${used} / ${units} U`}</span></div>
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
@@ -134,10 +132,10 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
             </div>
             <Turntable back={back} onTurn={() => turn(!back)} />
             {tag && (
-              <div ref={tagEl} className="wr-tag" style={pin && !wide ? { top: pin.top } : undefined}>{tag}</div>
+              <div ref={tagEl} className="wr-tag" style={pin ? { top: pin.top } : undefined}>{tag}</div>
             )}
             {floor && <div className="wr-floor-units">{floor}</div>}
-            {tag && pin && !wide && (
+            {tag && pin && (
               <svg className="wr-string" aria-hidden="true"><line x1={pin.x} y1={pin.y} x2={scene.current!.offsetWidth + TAG_GAP + HOLE} y2={pin.top + HOLE} /></svg>
             )}
           </div>
@@ -145,6 +143,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
             {back && <div className="wr-away" data-away="" role="button" tabIndex={0} aria-label={t("world.toRack")} onClick={() => hand && onClose()}><span>{t("world.toRack")}</span></div>}
           </div>
         </div>
+        {lid && dev && <LidScene key={lid} deviceId={lid} onClose={() => setLid(null)} />}
       </div>
       {menus.dialog}
       {work.dialog}
