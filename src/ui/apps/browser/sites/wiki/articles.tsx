@@ -125,7 +125,7 @@ export const ARTICLES: Article[] = [
       <Infobox title={t("browser-sites-2.wikiRackUnit1")} rows={[[t("browser-sites-2.wikiRackUnit2"), "U"], [t("browser-sites-2.wikiRackUnit3"), "44.45 mm (1.75 in)"], [t("browser-sites-2.wikiRackUnit4"), "19 in"]]} />
       <p>{R(go, "browser-sites-2.wikiRackUnit5")}</p>
       <h2>{R(go, "browser-sites-2.wikiRackUnit6")}</h2>
-      <p>{R(go, "browser-sites-2.wikiRackUnit7", { sizes: RACK_MODELS.map((r) => `${r.units}U`).join(", "), maxUnits: BASEMENT.maxUnits })}</p>
+      <p>{R(go, "browser-sites-2.wikiRackUnit7", { sizes: RACK_MODELS.filter((r) => r.id !== "shelf").map((r) => `${r.units}U`).join(", "), maxUnits: BASEMENT.maxUnits })}</p>
       <h2>{R(go, "browser-sites-2.wikiRackUnit8")}</h2>
       <p>{R(go, "browser-sites-2.wikiRackUnit9")}</p>
       <h2>{R(go, "browser-sites-2.wikiRackUnit10")}</h2>

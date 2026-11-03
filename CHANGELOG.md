@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- A new company starts with a metal shelf for its servers, with the router on its top board, and racks are bought later, with room for two of them in the basement.
 - The company can rent sections in an office building or buy one, new staff need a free desk there, and the company address moves with the office.
 - The basement walls have cable ducts and a light switch, the drying rack folds like a real one, the room drops its light beams and simply darkens at night with the lamps lit, parcels install straight from the rack view, and datacenters show their logos on arrival and on the map.
 - The basement is smaller and full of life, with cellar windows that let daylight in, a real fuse box, a chair at the desk, and the family's boiler and washing machine.

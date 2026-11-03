@@ -30,7 +30,7 @@ const play = (hours: number) => {
   while (store().game.hour < until && store().game.gameOver === null) store().advance(until - store().game.hour);
 };
 
-// The first server through the store, as the player does it: bought, delivered, mounted, plugged, cabled, online, a panel.
+// The first server through the store, as the player does it: bought, delivered, put on the shelf, plugged, cabled, online, a panel.
 function shortGame(): GameState {
   useStore.setState({ game: startChallenge("2026-W43") });
   ok(store().act(openBankAccount, "sparklasse"));
@@ -39,7 +39,6 @@ function shortGame(): GameState {
   play(24 * 6);
   ok(store().act(mountDevice, srv, "rack2", 1));
   for (const c of store().game.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(store().act(setPlugged, srv, c.id, true));
-  ok(store().act(mountDevice, "dev5", "rack2", 24));
   ok(store().act(connect, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
   ok(store().act(connect, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
   ok(store().act(orderHomeLine, "dsl-16"));
@@ -61,7 +60,7 @@ describe("action log", () => {
     const s = short;
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
-    expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "mountDevice", "connect", "connect", "orderHomeLine", "installPanel", "setPortShare"]);
+    expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "connect", "connect", "orderHomeLine", "installPanel", "setPortShare"]);
     expect(s.log[2]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
     expect(store().act(mountDevice, "nope", "rack2", 1).ok).toBe(false);
     expect(store().game.log).toHaveLength(s.log.length);

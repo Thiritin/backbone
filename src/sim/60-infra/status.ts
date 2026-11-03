@@ -214,12 +214,18 @@ export function pathTo(s: GameState, fromId: string, toId: string, live = true):
   return hops && live && hops.slice(0, -1).some((h) => hopDown(s, h)) ? null : hops;
 }
 
+// The units a device takes in a rack: one board on a shelf, whatever its height.
+export const heightIn = (s: GameState, rackId: string | null, modelId: string): number => {
+  const h = modelById(modelId).height;
+  return h > 0 && s.racks.find((r) => r.id === rackId)?.model === "shelf" ? 1 : h;
+};
+
 // Every slot where a device of this height fits, lowest first. Units rented out for colocation are taken.
 export function freeSlots(s: GameState, rackId: string, height: number): number[] {
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return [];
   const used = new Set(s.devices.filter((d) => d.rackId === rackId).flatMap((d) => {
-    const h = modelById(d.model).height;
+    const h = heightIn(s, rackId, d.model);
     return Array.from({ length: h }, (_, i) => d.slot + i);
   }).concat(s.workloads.filter((w) => w.rackId === rackId).flatMap((w) => Array.from({ length: w.units }, (_, i) => w.slot + i))));
   const free: number[] = [];

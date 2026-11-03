@@ -19,6 +19,8 @@ export default {
   "art.portLights": () => "Luces de puertos",
   "art.consolePort": () => "Puerto de consola",
   "art.rackFree": (p) => `U${p.n} libre`,
+  "art.shelfFree": (p) => `Balda ${p.n} libre`,
+  "art.shelfBoard": (p) => `Balda ${p.n}`,
   "art.powerCord": (p) => `${p.name}, cable de corriente ${p.n}`,
   "art.cableChannel": () => "Canaleta de cables",
   "art.rackBack": () => "Parte trasera del rack",

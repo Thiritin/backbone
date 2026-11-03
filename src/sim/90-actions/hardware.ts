@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { rand } from "../00-core/rng";
 import { freeRackTiles, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
@@ -10,10 +11,10 @@ import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
 import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/parts";
-import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, RETENTION_PROVIDERS, SHARE_RACKS, SPACE_SIZES, spacePrice, crossConnectSetup } from "../20-world/datacenters";
+import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, RETENTION_PROVIDERS, SHARE_RACKS, SHELF, SPACE_SIZES, spacePrice, crossConnectSetup } from "../20-world/datacenters";
 import { crossConnectTargets, targetName } from "../10-catalog/network";
 import { deviceDefaults, type Billing, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, parcelCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
+import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, heightIn, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, parcelCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
 import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
@@ -182,11 +183,15 @@ export function cancelCrossConnect(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
-// The target position must exist and be free, and the basement only takes racks up to 24U.
+// The target position must exist and be free, and the basement only takes racks up to 24U. A shelf stands only in the
+// basement, one there, beside at most two racks.
 function placeError(s: GameState, locationId: string, model: RackModel, position: number): string | null {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return "error.unknownLocation";
+  if (model === "shelf" && loc.space !== "basement") return "error.shelfBasementOnly";
   if (loc.space === "basement" && rackUnits(model) > BASEMENT.maxUnits) return "error.rackTooTall";
+  const here = s.racks.filter((r) => r.locationId === locationId && (r.model === "shelf") === (model === "shelf"));
+  if (loc.space === "basement" && here.length >= (model === "shelf" ? 1 : BASEMENT.racks)) return model === "shelf" ? "error.shelfStands" : "error.basementRacksFull";
   if (!freePositions(s, locationId).includes(position)) return "error.positionTaken";
   return null;
 }
@@ -197,11 +202,11 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   const error = placeError(s, locationId, model, position);
   if (error) return fail(error);
   if (s.cash < spec.price) return fail("error.noCash");
-  const name = nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
+  const name = model === "shelf" ? t("rack.shelf") : nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
   const tile = freeRackTiles(s.locations.find((l) => l.id === locationId)!, s.racks)[0];
   const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null }, tile };
   s.racks.push(rack);
-  book(s, "hardware", "ledger.hardware", { model: `${spec.units}U rack`, device: name }, -spec.price);
+  book(s, "hardware", "ledger.hardware", { model: spec.id === "shelf" ? "shelf" : `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
 }
 
@@ -413,6 +418,12 @@ export function carry(s: GameState, chassis: Device) {
 }
 const withNodes = (s: GameState, d: Device): Device[] => [d, ...nodesOf(s, d.id)];
 
+// A shelf has no rails: patch panels, PDUs, 0U devices and anything taller than a board stay off it.
+const needsRails = (s: GameState, rackId: string, modelId: string): boolean => {
+  const m = modelById(modelId);
+  return s.racks.find((r) => r.id === rackId)?.model === "shelf" && ((SHELF.railKinds as readonly string[]).includes(m.kind) || m.height === 0 || m.height > SHELF.maxHeight);
+};
+
 export function mountError(s: GameState, d: Device, rackId: string, slot: number): string | null {
   if (d.chassisId) return "error.inChassis";
   if (d.transitTo) return "error.inTransit";
@@ -423,10 +434,11 @@ export function mountError(s: GameState, d: Device, rackId: string, slot: number
   if (!spot) return "error.unknownRack";
   if (spot.moving) return "error.rackMoving";
   if (d.store !== spot.locationId) return "error.notInZone";
-  const m = modelById(d.model);
+  const m = modelById(d.model), h = heightIn(s, rackId, d.model);
+  if (needsRails(s, rackId, d.model)) return "error.needsRails";
   if (m.kind === "pdu" && hasPdu(s, rackId)) return "error.pduInstalled";
-  if (!Number.isInteger(slot) || slot < 1 || slot + m.height - 1 > spot.units) return "error.outOfBounds";
-  if (!freeSlots(s, rackId, m.height).includes(slot)) return "error.slotTaken";
+  if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return "error.outOfBounds";
+  if (!freeSlots(s, rackId, h).includes(slot)) return "error.slotTaken";
   return null;
 }
 
@@ -479,13 +491,14 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   if (rack.moving) return fail("error.rackMoving");
   if (modelById(modelId).kind === "part") return fail("error.notMountable");
   if (modelById(modelId).chassis) return fail("error.inChassis");
+  if (needsRails(s, rackId, modelId)) return fail("error.needsRails");
   if (modelById(modelId).kind === "pdu" && (count > 1 || hasPdu(s, rackId))) return fail("error.pduInstalled");
   const same = (d: Device) => d.model === modelId && d.brand === brand;
   const stored = s.devices.filter((d) => same(d) && d.store === rack.locationId && !d.maintenance);
   if (!Number.isInteger(count) || count < 1 || stored.length < count) {
     return fail(s.devices.filter((d) => same(d) && d.store).length >= count ? "error.notInZone" : "error.notInStorage");
   }
-  const h = modelById(modelId).height;
+  const h = heightIn(s, rackId, modelId);
   const free = new Set(freeSlots(s, rackId, h));
   const start = [...free].filter((slot) => fromSlot == null || slot === fromSlot).find((slot) => Array.from({ length: count }, (_, i) => slot + i * h).every((x) => free.has(x)));
   if (start === undefined) return fail("error.noRoom");
@@ -504,7 +517,7 @@ export function moveInRack(s: GameState, deviceId: string, slot: number, how: Ho
   if (!d) return fail("error.unknownDevice");
   if (d.chassisId) return fail("error.inChassis");
   if (!d.rackId) return fail("error.notMounted");
-  const spot = spotOf(s, d.rackId)!, h = modelById(d.model).height;
+  const spot = spotOf(s, d.rackId)!, h = heightIn(s, d.rackId, d.model);
   if (spot.moving) return fail("error.rackMoving");
   if (psusOf(d).some(isPlugged)) return fail("error.unplugFirst");
   if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return fail("error.outOfBounds");
@@ -602,7 +615,7 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
   if (hosts.some((w) => w.busyUntil > s.hour || w.migrating)) return fail("error.workloadBusy");
   const ids = [...new Set(hosts.map((w) => w.serviceId))].filter((id) => s.services.some((v) => v.id === id && v.endedAt === null));
   const spotFor = (d: Device) => s.racks.filter((r) => r.locationId === to.id && r.arriveAt === null)
-    .map((rack) => ({ rack, slot: freeSlots(s, rack.id, modelById(d.model).height)[0] })).find((x) => x.slot !== undefined);
+    .filter((rack) => !needsRails(s, rack.id, d.model)).map((rack) => ({ rack, slot: freeSlots(s, rack.id, heightIn(s, rack.id, d.model))[0] })).find((x) => x.slot !== undefined);
   if (!spotFor(servers[0])) return fail("error.noRoom");
   const noAddress = renumberError(s, ids, from, to);
   if (noAddress) return fail(noAddress);

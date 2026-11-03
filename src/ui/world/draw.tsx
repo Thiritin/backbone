@@ -653,3 +653,35 @@ export function RackBox({ tile, units, items, leds, zoomed }: { tile: Tile; unit
     </>
   );
 }
+
+// The basement's metal shelf: four uprights, a board per unit from the floor up, each device lying on its board with an LED
+// on its front, and the loose cables hanging behind the boards.
+const SHELF_BOARDS_Z = 18, SHELF_U = 4.5;
+export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number; devices: { id: string; slot: number; height: number; on: boolean }[] }) {
+  const x0 = tile.x + 0.1, x1 = tile.x + 0.9, y0 = tile.y + 0.12, y1 = tile.y + 0.88, post = 0.05, tone = "w-tone-shelf";
+  const zOf = (slot: number) => 3 + (slot - 1) * SHELF_BOARDS_Z, top = zOf(units) + BOARD;
+  const posts = (y: number) => [x0, x1 - post].map((x) => <Prism key={`${x}-${y}`} x0={x} y0={y} x1={x + post} y1={y + post} z1={top + 2} tone={tone} />);
+  const tones = ["oklch(0.7 0.15 230)", "oklch(0.8 0.15 85)", "oklch(0.3 0.01 255)", "oklch(0.6 0.02 255)"];
+  const cables = tones.map((c, i) => {
+    const x = x0 + 0.15 + i * 0.17, a = at3(x, y0 + 0.08, top - 4), b = at3(x + 0.05, y0 + 0.08, 2), mid = at3(x - 0.1 + (i % 2) * 0.2, y0 + 0.08, top / 2);
+    return <path key={c} className="w-cable" stroke={c} d={`M${a.x} ${a.y}Q${mid.x} ${mid.y} ${b.x} ${b.y}`} />;
+  });
+  return (
+    <>
+      {posts(y0)}
+      <g pointerEvents="none">{cables}</g>
+      {Array.from({ length: units }, (_, k) => {
+        const z = zOf(k + 1), d = devices.find((x) => x.slot === k + 1);
+        const dz = d ? Math.max(1, d.height) * SHELF_U : 0, led = d && at3(x1 - 0.16, y1 - 0.06, z + BOARD + dz / 2);
+        return (
+          <g key={k}>
+            <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={z} z1={z + BOARD} tone={tone} />
+            {d && <Prism x0={x0 + 0.08} y0={y0 + 0.1} x1={x1 - 0.08} y1={y1 - 0.06} z0={z + BOARD} z1={z + BOARD + dz} tone="w-tone-rack" />}
+            {led && <rect className={d.on ? "w-led w-led-on" : "w-led"} x={led.x - 2} y={led.y - 1} width="4" height="2" rx="1" />}
+          </g>
+        );
+      })}
+      {posts(y1 - post)}
+    </>
+  );
+}

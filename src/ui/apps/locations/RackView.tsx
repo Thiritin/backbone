@@ -6,7 +6,7 @@ import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
 import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
-import { EXTRA_CIRCUIT_KW, flatOffer, freePositions, freeSlots, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
+import { EXTRA_CIRCUIT_KW, flatOffer, heightIn, freePositions, freeSlots, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
 import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveInRack, moveRack, moveServer, sellRack, setExtraPower, setFeed, setFlatPower } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
@@ -144,7 +144,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const main = useRef<HTMLDivElement>(null);
   const { zoom, ref: rackRef, width: rackWidth } = useRackZoom();
   const items = rackItems(game, rack.id), units = rackUnits(rack), power = rackPower(game, rack.id);
-  const used = items.reduce((n, it) => n + it.model.height, 0);
+  const used = items.reduce((n, it) => n + heightIn(game, rack.id, it.model.id), 0);
   const nodes = game.devices.filter((d) => d.rackId === rack.id && clusterOf(game, d.id));
   const dev = game.devices.find((d) => d.id === device && d.rackId === rack.id);
   const loc = game.locations.find((l) => l.id === rack.locationId)!;
@@ -184,7 +184,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           </div>
         </div>
         <div className="loc-rack-scroll" ref={rackRef} style={{ width: rackWidth }}>
-          <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
+          <RackFront units={units} shelf={rack.model === "shelf"} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
             hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); if (id !== monitor) setMonitor(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
             onConnect={(a, b) => act(connect, a, b)} onPlug={plug} onConsole={here ? (id) => { onDevice(id); setMonitor(id); } : undefined} onUsb={here ? (id) => (game.media.stick.in === id ? act(unplugStick) : act(plugStick, id)) : undefined} onMove={(id, slot) => act(moveInRack, id, slot)} />
         </div>
@@ -200,7 +200,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
               {!rack.provided && <More label={rack.name} entries={rackMenu} />}
             </div>
             <div className="loc-card">
-              <Facts rows={[[t("locations-2.location"), loc.name], [t("locations-2.position"), <span className="num">{rack.position}</span>], [t("locations-2.used"), <span className="num">{used} / {units} U</span>], ...(rack.provided ? [[t("locations-2.owner"), t("locations-2.provided")]] as [string, string][] : [[t("locations-2.paid"), <span className="num">{euro(rack.price)}</span>]] as [string, ReactNode][])]} />
+              <Facts rows={[[t("locations-2.location"), loc.name], [t("locations-2.position"), <span className="num">{rack.position}</span>], [t("locations-2.used"), <span className="num">{rack.model === "shelf" ? `${t("rack.shelf")}, ${used} / ${units}` : `${used} / ${units} U`}</span>], ...(rack.provided ? [[t("locations-2.owner"), t("locations-2.provided")]] as [string, string][] : [[t("locations-2.paid"), <span className="num">{euro(rack.price)}</span>]] as [string, ReactNode][])]} />
             </div>
             <div className="loc-card">
               <div className="loc-card-h"><h3><Plug />{t("locations-2.power")}</h3><span className="grow" /><PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} /></div>
@@ -249,12 +249,12 @@ function MountPop({ game, rack, unit, top, left, onClose, onMount }: { game: Gam
 }
 
 export const mountable = (game: GameState, rack: Rack, unit: number) =>
-  storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
+  storageStacks(game, rack.locationId).filter((st) => { const h = heightIn(game, rack.id, st.model); return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
 
 export function MountRow({ game, rack, st, unit, onMount }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMount: (task: HandTask) => void }) {
-  const m = modelById(st.model), max = mountMax(game, rack.id, m.height, st.ids.length, unit);
+  const m = modelById(st.model), h = heightIn(game, rack.id, st.model), max = mountMax(game, rack.id, h, st.ids.length, unit);
   const [count, setCount] = useState(1);
-  const n = Math.min(count, max), from = mountFrom(game, rack.id, m.height, n, unit) ?? unit;
+  const n = Math.min(count, max), from = mountFrom(game, rack.id, h, n, unit) ?? unit;
   const mount = () => onMount(mountTask(st, rack.id, n, from)), mode = handsMode(game, rack.locationId, "mountDevice");
   return (
     <div className="loc-shop-row">

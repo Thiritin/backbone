@@ -172,7 +172,7 @@ export default {
   "guide.step.payBill": () => "Paga la tua prima fattura",
   "guide.step.buyServer": () => "Compra un server",
   "guide.step.mountServer": () => "Montalo e accendilo",
-  "guide.step.mountRouter": () => "Monta il router",
+  "guide.step.mountRouter": () => "Cabla il router",
   "guide.step.findAddress": () => "Trova l'indirizzo del server",
   "guide.step.shareWeb": () => "Condividi la porta web",
   "guide.step.internet": () => "Aggiungi internet",
