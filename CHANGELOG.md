@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Hands-on work on the desktop goes through remote hands when you are not on site, priced on its button and done after the datacenter's response time, and the basement's hardware waits until you are home.
 - The game now opens in the basement, where a clock in the corner pauses and speeds up time, and clicking the PC on the desk opens the desktop.
 - The rooms are drawn in a clean isometric style again and you act on them directly, with no figure to walk around.
 - Deliveries to your own place now arrive at the room's door, where you pick up each parcel and carry it to the shelf or straight to a rack to install it.
