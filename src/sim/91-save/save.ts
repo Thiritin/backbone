@@ -1,3 +1,4 @@
+import { syncProviderPanels } from "../90-actions/connectivity";
 import { fillDesk } from "./desk";
 import { fillShopWebspace } from "../90-actions/shop-setup";
 import { fillDeskWebspace } from "../90-actions/desk-setup";
@@ -210,6 +211,7 @@ export function deserialize(raw: string): GameState {
   fillDeskWebspace(s);
   s.webmail = { ...base.webmail, ...data.webmail };
   s.webmail.installs = Object.fromEntries(Object.entries(s.webmail.installs).map(([id, cfg]) => [id, { ...cfg, conf: cfg.conf ?? {} }]));
+  syncProviderPanels(s);
   return s;
 }
 

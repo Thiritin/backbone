@@ -113,6 +113,8 @@ export default {
   "apps.hw.cable.copper": () => "Kupfer",
   "apps.hw.cable.fiber": () => "Glasfaser",
   "apps.hw.cable.rollover": () => "Rollover",
+  "apps.hw.cable.provider": () => "Provider",
+  "apps.hw.part.optic": () => "Netzwerkmodul",
   "apps.hw.part.psu": () => "Netzteil",
   "apps.hw.part.fan": () => "Lüfter",
   "apps.hw.part.ram": () => "RAM-Riegel",

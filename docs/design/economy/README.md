@@ -19,6 +19,7 @@ Read only the section you need.
 - [Datacenters and space](datacenters-and-space.md)
 - [Properties](properties.md)
 - [Addresses and internet](addresses-and-internet.md)
+- [Connectivity](connectivity.md)
 - [Noticing outages](noticing-outages.md)
 - [Pear One subscriptions](pear-one-subscriptions.md)
 - [Leasing](leasing.md)

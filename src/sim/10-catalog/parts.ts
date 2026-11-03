@@ -1,3 +1,4 @@
+import { OPTICS } from "./uplinks";
 // Part prices by year (economy/prices-over-time.md, Prices over time, Part prices by year). Enterprise parts are priced in: RDIMM about 1.6 x
 // consumer RAM, enterprise SSD about 1.5 x, enterprise HDD about 1.6 x.
 import { erodedPrice } from "./lifecycle";
@@ -55,6 +56,8 @@ function rawPrice(kind: ComponentKind, n: number, year: number): number {
     case "nic": return lerp(NIC, year) * (year >= 2017 ? 2 : year >= 2011 ? 4 : 1);
     // A GPU card's size is its launch year; the price rule is in gpu.ts.
     case "gpu": return gpuPrice(cardOf(n), year);
+    // A module's size is the port speed it fits (uplinks.ts).
+    case "optic": return OPTICS.find((o) => o.gbit === n)?.price ?? OPTICS[0].price;
   }
 }
 export const partsPrice = (parts: PartSpec[], year: number): number => parts.reduce((n, p) => n + partPrice(p.kind, p.size, p.ff, year, p), 0);

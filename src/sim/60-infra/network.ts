@@ -3,7 +3,7 @@ import { lineFactor } from "../46-finance/payables";
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import {
-  carrierById, COMMITS, DC_BANDWIDTH, dcPerTb, DDOS, DECLINE_COOLDOWN_HOURS, EXCHANGE_FEES, exchangeById, exchangePortPrice, PEERS, PROTECTIONS,
+  carrierById, COMMITS, DC_BANDWIDTH, dcPerTb, DDOS, DECLINE_COOLDOWN_HOURS, EXCHANGE_FEES, exchangeById, PEERS, PROTECTIONS,
   FAST_LINE, LATENCY_MS, QUEUEING, REQUEST_DAILY, REQUEST_DAYS, SATURATION_FLOOR, SATURATION_PENALTY, TB_PER_MBPS_HOUR, transitPerMbps, zoneLinkPrice,
   type Peer, type Protection, type ZoneLinkKind,
 } from "../10-catalog/network";
@@ -16,6 +16,7 @@ import { attention, segmentOf } from "../10-catalog/attention";
 import { serviceHeld } from "../45-billing/billing";
 import type { GameState, LedgerEntry, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { uplinkPrice } from "../10-catalog/uplinks";
 import { addressBills } from "./addresses";
 import { UPLINK_MONTHLY } from "./oob";
 import { workloadsOf } from "./cluster";
@@ -23,7 +24,8 @@ import { routerMbps, throughputShare } from "./routers";
 import { working, type Hop } from "./status";
 
 // A link takes one router port; it carries traffic from readyAt on, while its router works.
-export interface UplinkLink { id: string; gbit: number; device: string; port: number; readyAt: number }
+// jack is the provider panel jack the line lands on.
+export interface UplinkLink { id: string; gbit: number; device: string; port: number; readyAt: number; jack?: { device: string; port: number } }
 // A contract with one carrier (transit) or one exchange's ports in one zone. commit is the share of capacity always billed;
 // samples are one 5-minute reading of the Mbit/s carried in each of the last 30 days of hours (see burstFactor).
 export interface Uplink { id: string; locationId: string; kind: "transit" | "exchange"; partner: string; commit: number; links: UplinkLink[]; samples: number[] }
@@ -225,6 +227,9 @@ export function zoneLinkMonthly(s: GameState, zl: ZoneLink): number {
   return zoneLinkPrice(zl.kind, zl.gbit, a?.city === b?.city, yearOf(s.hour), !!a && !!b && inUs(a.city) !== inUs(b.city));
 }
 
+// The contract's lines at their monthly price; every line is paid for, the second like the first.
+export const linesMonthly = (u: Uplink, year: number): number => u.links.reduce((sum, l) => sum + uplinkPrice(l.gbit, year), 0);
+
 // Every bill of the coming month start, as ledger lines.
 export function networkBills(s: GameState): LedgerEntry[] {
   const year = yearOf(s.hour), n = s.network, out: LedgerEntry[] = [];
@@ -237,9 +242,9 @@ export function networkBills(s: GameState): LedgerEntry[] {
     if (u.kind === "transit") {
       const bill = transitBill(s, u);
       line("ledger.transit", { carrier: carrierById(u.partner)!.name, location: name(u.locationId), mbps: Math.round(bill.mbps) }, bill.amount);
+      line("ledger.uplinkLines", { carrier: carrierById(u.partner)!.name, location: name(u.locationId), count: u.links.length }, linesMonthly(u, year));
     } else {
-      line("ledger.exchangePorts", { exchange: exchangeById(u.partner)!.name, location: name(u.locationId), count: u.links.length },
-        u.links.reduce((sum, l) => sum + exchangePortPrice(l.gbit, year), 0));
+      line("ledger.exchangePorts", { exchange: exchangeById(u.partner)!.name, location: name(u.locationId), count: u.links.length }, linesMonthly(u, year));
     }
     const xc = crossConnects(s, u), dc = s.locations.find((l) => l.id === u.locationId)?.dc;
     if (dc) line("ledger.crossConnects", { location: name(u.locationId), count: Math.round(xc / datacenterById(dc).crossConnect) }, xc);

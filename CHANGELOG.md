@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Rented racks now come with the provider's patch panel in their top unit, where uplinks and cross-connects land; uplinks are booked by speed as the years allow, with a second line as an option; and cables between racks in rented space are ordered from the provider.
 - Every hands-on action now offers doing it yourself or remote hands as separate buttons, and choosing yourself starts the drive there and does the job on arrival.
 - The rack close-up carries its name plate on the rack's top, the rack turns on a turntable under it, the wall socket sits beside the rack with its cable rising straight to it, the shelf is drawn as a plain metal shelf, and the Locations app no longer has a room button.
 - Evening and morning now fade in and out with the season instead of switching, and the light switch by the door turns the room's lights on.

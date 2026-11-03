@@ -1,3 +1,5 @@
+import { isProviderPanel } from "./panels";
+import { PANEL_JACKS } from "../10-catalog/uplinks";
 import { monthIndexOf, nowHours, yearOf } from "../00-core/time";
 import { lineCut } from "../46-finance/payables";
 import { wanPort, wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
@@ -600,9 +602,13 @@ export function connectError(s: GameState, a: End, b: End): string | null {
   const la = locationOf(s, da), lb = locationOf(s, db);
   if (!la || !lb) return "error.notMounted";
   if (s.racks.some((r) => (r.id === da.rackId || r.id === db.rackId) && r.arriveAt !== null)) return "error.rackMoving";
-  if (la.id !== lb.id) return "error.otherLocation";
+  // On a provider's floor the provider runs cables between racks; the provider side of its panel takes only its own cables.
+  if (la.id !== lb.id) return la.dc && la.dc === lb.dc ? "error.useProviderCable" : "error.otherLocation";
+  if (la.space === "share" && da.rackId && db.rackId && da.rackId !== db.rackId) return "error.useProviderCable";
+  const pp = isProviderPanel(da) || isProviderPanel(db);
+  if ((isProviderPanel(da) && a.port < PANEL_JACKS) || (isProviderPanel(db) && b.port < PANEL_JACKS)) return "error.providerJack";
   if (oa || ob) return oobFits(ma, (oa ?? pa)!, mb, (ob ?? pb)!) ? null : "error.mediaMismatch";
-  if (pa.media !== pb.media) return "error.mediaMismatch";
+  if (pa.media !== pb.media && !pp) return "error.mediaMismatch";
   // A patch panel is passive, so the speed check happens between the devices on either side of it.
   if (ma.kind !== "patch" && mb.kind !== "patch" && pa.gbit !== pb.gbit) return "error.speedMismatch";
   return null;

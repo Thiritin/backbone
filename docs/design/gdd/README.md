@@ -20,6 +20,7 @@ Read only the section you need.
 - [Staff and AI bots](staff-and-ai-bots.md)
 - [Marketing and reviews](marketing-and-reviews.md)
 - [Network and DDoS](network-and-ddos.md)
+- [Connectivity](connectivity.md)
 - [Research and unlocks](research-and-unlocks.md)
 - [Prices](prices.md)
 - [Tech stack and project structure](tech-stack-and-project-structure.md)

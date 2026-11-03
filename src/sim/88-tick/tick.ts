@@ -61,6 +61,7 @@ import { migrationTick } from "../60-infra/migration";
 import { maintenanceTick } from "../60-infra/maintenance";
 import { statsTick } from "../60-infra/stats";
 import { networkTick } from "../60-infra/network";
+import { providerCableTick } from "../90-actions/connectivity";
 import { leaseTick } from "../60-infra/lan";
 import { appsTick } from "../60-infra/apps";
 import { bansTick } from "../60-infra/bans";
@@ -447,6 +448,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...pearMailTick(state));
   leaseTick(state);
   pinMembers(state);
+  events.push(...providerCableTick(state));
   events.push(...networkTick(state));
   lifecycleTick(state);
   events.push(...securityTick(state));

@@ -78,7 +78,7 @@ describe("mounting hardware", () => {
     ok(mountStack(s, "sw-8", "Sysko", rack, 4));
     expect(s.handsJobs).toHaveLength(1);
     run(s, Math.ceil(hands.responseHours + JOB_HOURS.mount));
-    expect(s.devices.filter((d) => d.rackId === rack)).toHaveLength(4);
+    expect(s.devices.filter((d) => d.rackId === rack && d.model !== "panel-provider")).toHaveLength(4);
     expect(s.cash).toBe(cash - JOB_HOURS.mount * hands.perHour);
   });
 

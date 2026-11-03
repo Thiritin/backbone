@@ -12,6 +12,8 @@ import { isOwnRouter } from "../../../sim/60-infra/routers";
 import { clusterOf, workloadsOn } from "../../../sim/60-infra/cluster";
 import { deviceHealth, deviceVendor, deviceWatts, deviceValue, isPlugged, linkStatus, locationOf, pluggedIn, portPeers, resaleValue, working } from "../../../sim/60-infra/status";
 import { pduOf } from "../../../sim/60-infra/pdu";
+import { isProviderPanel, jackRoles, type JackRole } from "../../../sim/60-infra/panels";
+import { ProviderJack, roleName } from "./ProviderJack";
 import { addSecondPsu, atServer, buyOutLease, connect, disconnect, LABEL_MAX, moveServer, resetBmc, sellDevice, setBond, setCableColor, setLabel, setPlugged, setPower, unmountDevice, type ActionResult } from "../../../sim/90-actions/hardware";
 import type { Side } from "../../art/backs";
 import { cableColor, DeviceSvg, SWATCHES } from "../../art/fronts";
@@ -196,7 +198,7 @@ export function Inspector({ game, device, port, side = "front", onSelect, onHot,
         <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={420} u={22} back={side === "back"}
           onPower={server && (device.rackId || device.panel) ? togglePower : undefined}
           plugs={psus.map(isPlugged)} stick={stickIn} onInlet={device.rackId || device.panel ? (k) => menus.plug(device, psus[k].id) : undefined} onConsole={device.rackId ? onConsole : undefined} />
-        {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} />}
+        {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} roles={isProviderPanel(device) ? jackRoles(game, device.id) : undefined} />}
       </div>
 
       {tabs.length > 0 && (
@@ -389,16 +391,17 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
   );
 }
 
-function PortGrid({ model, peers, groups, sel, onPick, onHover }: { model: DeviceModel; peers: (End | null)[]; groups: number[][]; sel: number[]; onPick: (i: number) => void; onHover: (i: number | null) => void }) {
+function PortGrid({ model, peers, groups, sel, onPick, onHover, roles }: { model: DeviceModel; peers: (End | null)[]; groups: number[][]; sel: number[]; onPick: (i: number) => void; onHover: (i: number | null) => void; roles?: JackRole[] }) {
   const lamps = portLamps(model, peers);
   return (
     <div className="loc-ports" role="group" aria-label={t("locations-1.ports")}>
       {portBlocks(model).map((b, k) => (
         <div key={k} className="loc-port-block" style={{ gridTemplateRows: `repeat(${b.rows}, auto)` }}>
           {b.ports.map((i) => {
-            const g = groups.findIndex((x) => x.includes(i));
+            const g = groups.findIndex((x) => x.includes(i)), role = roles?.[i % jacksOf(model)];
+            const label = role ? `${portName(model, i)}, ${roleName(role)}` : portName(model, i);
             return (
-              <button key={i} className={`loc-port${g >= 0 ? " grouped" : ""}`} data-lamp={lamps[i]} aria-pressed={sel.includes(i)} aria-label={portName(model, i)} title={portName(model, i)} onClick={() => onPick(i)} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)}>
+              <button key={i} className={`loc-port${g >= 0 ? " grouped" : ""}`} data-lamp={lamps[i]} data-role={role} aria-pressed={sel.includes(i)} aria-label={label} title={label} onClick={() => onPick(i)} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)}>
                 {model.kind === "server" ? `eth${i}` : model.kind === "patch" ? (i % jacksOf(model)) + 1 : i + 1}
               </button>
             );
@@ -414,6 +417,7 @@ export function PortCard({ game, device, model, port, peer, onSelect }: { game: 
   const here = model.ports[port];
   const group = device.groups.findIndex((g) => g.includes(port));
   const title = <h3><EthernetPort />{portName(model, port)}</h3>;
+  if (!peer && isProviderPanel(device) && port < jacksOf(model)) return <ProviderJack game={game} device={device} port={port} />;
 
   if (peer) {
     const cable = game.cables.find((c) => (c.a.device === device.id && c.a.port === port) || (c.b.device === device.id && c.b.port === port))!;
@@ -423,11 +427,11 @@ export function PortCard({ game, device, model, port, peer, onSelect }: { game: 
         <div className="loc-card-h">
           {title}<span className="pill ok">{t("locations-1.up")}</span>{group >= 0 && <span className="pill">{t("locations-1.groupN", { n: group + 1 })}</span>}
           <span className="grow" />
-          <HandsButtons className="btn danger" ways={handsWays(game, locationOf(game, device)?.id, "disconnect")} onRun={(how) => act(disconnect, cable.id, how)}><Unplug />{t("locations-1.disconnect")}</HandsButtons>
+          {cable.kind !== "provider" && <HandsButtons className="btn danger" ways={handsWays(game, locationOf(game, device)?.id, "disconnect")} onRun={(how) => act(disconnect, cable.id, how)}><Unplug />{t("locations-1.disconnect")}</HandsButtons>}
         </div>
         <div className="loc-path">
           <div className="loc-node here"><span className="k">{devName(device)}</span><strong>{portName(model, port)}</strong></div>
-          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span><span className="num">{Math.min(here.gbit, (om.ports[peer.port] ?? here).gbit)} Gbit/s</span> {CABLE_NAME[cable.kind]}</span></div>
+          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span>{cable.kind !== "provider" && <><span className="num">{Math.min(here.gbit, (om.ports[peer.port] ?? here).gbit)} Gbit/s</span> </>}{CABLE_NAME[cable.kind]}</span></div>
           <button className="loc-node" onClick={() => onSelect(other.id)}><span className="k">{other.panel ? t("locations-1.carrierPanel") : devName(other)}</span><strong>{other.panel ? `${other.name} ${portName(om, peer.port)}` : portName(om, peer.port)}</strong></button>
         </div>
         <ColorRow cable={cable} />

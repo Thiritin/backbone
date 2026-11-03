@@ -113,6 +113,8 @@ export default {
   "apps.hw.cable.copper": () => "cobre",
   "apps.hw.cable.fiber": () => "fibra",
   "apps.hw.cable.rollover": () => "rollover",
+  "apps.hw.cable.provider": () => "fornecedor",
+  "apps.hw.part.optic": () => "Módulo de rede",
   "apps.hw.part.psu": () => "Fonte de alimentação",
   "apps.hw.part.fan": () => "Ventoinha",
   "apps.hw.part.ram": () => "Módulo de RAM",

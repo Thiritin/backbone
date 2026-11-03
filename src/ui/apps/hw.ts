@@ -38,7 +38,7 @@ export const readyIn = (at: number, now: number) => {
   return days ? t("apps.hw.days", { n: days }) : `${left} h`;
 };
 export const lampOf = (st: LinkStatus): Lamp => (!st.online ? "bad" : st.warning ? "warn" : "ok");
-export const CABLE_NAME = { copper: t("apps.hw.cable.copper"), dac: "DAC", fiber: t("apps.hw.cable.fiber"), rollover: t("apps.hw.cable.rollover") };
+export const CABLE_NAME = { copper: t("apps.hw.cable.copper"), dac: "DAC", fiber: t("apps.hw.cable.fiber"), rollover: t("apps.hw.cable.rollover"), provider: t("apps.hw.cable.provider") };
 
 export function portsText(m: DeviceModel): string {
   if (m.kind === "patch") return t("apps.hw.jacks", { n: jacksOf(m) });
@@ -66,7 +66,7 @@ export function portName(m: DeviceModel, i: number): string {
 export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => peers.map((p, i) => (p ? (m.ports[i].media === "sfp" ? "fiber" : "ok") : "off"));
 
 export const devName = (d: Device) => d.label ?? d.name;
-export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: t("apps.hw.part.psu"), fan: t("apps.hw.part.fan"), ram: t("apps.hw.part.ram"), board: t("apps.hw.part.board"), cpu: "CPU", nic: t("apps.hw.part.nic"), gpu: "GPU" };
+export const PART_NAME: Record<ComponentKind, string> = { optic: t("apps.hw.part.optic"), hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: t("apps.hw.part.psu"), fan: t("apps.hw.part.fan"), ram: t("apps.hw.part.ram"), board: t("apps.hw.part.board"), cpu: "CPU", nic: t("apps.hw.part.nic"), gpu: "GPU" };
 // A CPU's clock, "2.0 GHz, 2.8 GHz boost"; empty for anything else or a CPU of unknown make.
 export const clockLabel = (p: Pick<Component, "kind" | "vendor" | "gen" | "size" | "sku">): string => {
   if (p.kind !== "cpu") return "";

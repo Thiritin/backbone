@@ -294,7 +294,7 @@ describe("dedicated and colocation", () => {
     skipTo(s, 2010);
     expect(err(installSoftware(s, third, "proxmocks"))).toBe("error.serverInUse");
   });
-  it("rents rack units with power in a datacenter rack, from the top", () => {
+  it("rents rack units with power in a datacenter rack, from below the provider panel", () => {
     const { s, cus } = twoNodes();
     expect(err(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }))).toBe("error.noRackSpace");
     const loc = ok(addLocation(freeFloor(s), "hetzler-park", "suite", 20));
@@ -303,8 +303,8 @@ describe("dedicated and colocation", () => {
     ok(buyAddresses(s, loc, 4, 1));
     const id = ok(provisionService(s, cus, "colocation", { label: "colo", spec: sizeSpec("colocation", 1, yearOf(s.hour)) }));
     expect(s.ips.addresses.filter((a) => a.holder === id)).toHaveLength(1);
-    expect(workloadsOf(s, id)).toMatchObject([{ rackId: rack, slot: 33, units: 10, watts: 1000 }]);
-    expect(freeSlots(s, rack, 1)).not.toContain(33);
+    expect(workloadsOf(s, id)).toMatchObject([{ rackId: rack, slot: 32, units: 10, watts: 1000 }]);
+    expect(freeSlots(s, rack, 1)).not.toContain(32);
     expect(rackPower(s, rack).watts).toBe(1000);
     s.hour = s.locations.find((l) => l.id === loc)!.readyAt;
     expect(serviceOnline(s, id)).toBe(true);

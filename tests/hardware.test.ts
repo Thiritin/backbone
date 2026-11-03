@@ -323,7 +323,8 @@ describe("mount over a clicked unit", () => {
     expect(mountFrom(s, rack, 2, 3, 10)).toBe(5);
     expect(mountFrom(s, rack, 2, 1, 4)).toBeUndefined();
     expect(mountMax(s, rack, 2, 5, 3)).toBe(1);
-    expect(mountMax(s, rack, 2, 5, 47)).toBe(5);
+    expect(mountMax(s, rack, 2, 5, 47)).toBe(0);
+    expect(mountMax(s, rack, 2, 5, 46)).toBe(5);
   });
 });
 

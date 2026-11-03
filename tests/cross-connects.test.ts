@@ -32,7 +32,7 @@ describe("cross-connects", () => {
     const cash = s.cash;
     const id = ok(orderCrossConnect(s, c.id, "cogentle"));
     expect(s.cash).toBe(cash - crossConnectSetup(FR5));
-    expect(s.crossConnects).toEqual([{ id, contractId: c.id, to: "cogentle", monthly: FR5.crossConnect, since: s.hour }]);
+    expect(s.crossConnects).toEqual([{ id, contractId: c.id, to: "cogentle", monthly: FR5.crossConnect, since: s.hour, jack: { device: expect.any(String), port: 0 } }]);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.crossConnectSetup", category: "rent", params: { to: "Cogentle", dc: FR5.id } });
     runTo(s, hourOf(new Date(Date.UTC(2005, 3, 1))) + 1);
     expect(s.ledger.filter((e) => e.key === "ledger.crossConnect")).toMatchObject([{ amount: -FR5.crossConnect, params: { to: "Cogentle", dc: FR5.id } }]);
