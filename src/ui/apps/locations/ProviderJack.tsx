@@ -31,7 +31,6 @@ export function ProviderJack({ game, device, port }: { game: GameState; device: 
   const at = (e?: { device: string; port: number }) => e?.device === device.id && e.port === port;
   const line = game.network.uplinks.flatMap((u) => u.links.map((l) => ({ u, l }))).find((x) => at(x.l.jack));
   const xc = game.crossConnects.find((x) => at(x.jack));
-  const order = game.providerCables.find((o) => at(o.a) || at(o.b));
   const racks = reachable(game, device.rackId ?? "");
   const [rack, setRack] = useState(racks[0]?.id ?? "");
   const other = panelOf(game, rack);
@@ -47,7 +46,6 @@ export function ProviderJack({ game, device, port }: { game: GameState; device: 
       <dl className="loc-facts">
         {line && <div><dt>{roleName("uplink")}</dt><dd>{partner(line.u.partner)} <span className="num">{speed(line.l.gbit)}</span></dd></div>}
         {xc && <div><dt>{roleName("xconnect")}</dt><dd>{partner(xc.to)}</dd></div>}
-        {order && <div><dt>{t("locations-1.providerCable")}</dt><dd>{name(order.a)} / {name(order.b)}, {t("locations-1.dueOn", { day: formatDay(order.dueAt) })}</dd></div>}
       </dl>
       {role === "free" && racks.length > 0 && (
         <div className="loc-connect">

@@ -428,11 +428,11 @@ export function PortCard({ game, device, model, port, peer, onSelect }: { game: 
         <div className="loc-card-h">
           {title}<span className="pill ok">{t("locations-1.up")}</span>{group >= 0 && <span className="pill">{t("locations-1.groupN", { n: group + 1 })}</span>}
           <span className="grow" />
-          <button className="btn danger" disabled={off.off} onClick={() => act(disconnect, cable.id)}><Unplug />{t("locations-1.disconnect")}<HandsMode mode={off} /></button>
+          {cable.kind !== "provider" && <button className="btn danger" disabled={off.off} onClick={() => act(disconnect, cable.id)}><Unplug />{t("locations-1.disconnect")}<HandsMode mode={off} /></button>}
         </div>
         <div className="loc-path">
           <div className="loc-node here"><span className="k">{devName(device)}</span><strong>{portName(model, port)}</strong></div>
-          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span><span className="num">{Math.min(here.gbit, (om.ports[peer.port] ?? here).gbit)} Gbit/s</span> {CABLE_NAME[cable.kind]}</span></div>
+          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span>{cable.kind !== "provider" && <><span className="num">{Math.min(here.gbit, (om.ports[peer.port] ?? here).gbit)} Gbit/s</span> </>}{CABLE_NAME[cable.kind]}</span></div>
           <button className="loc-node" onClick={() => onSelect(other.id)}><span className="k">{other.panel ? t("locations-1.carrierPanel") : devName(other)}</span><strong>{other.panel ? `${other.name} ${portName(om, peer.port)}` : portName(om, peer.port)}</strong></button>
         </div>
         <ColorRow cable={cable} />

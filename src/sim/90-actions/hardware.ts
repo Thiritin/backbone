@@ -729,6 +729,7 @@ export function connect(s: GameState, a: End, b: End, how: How | boolean = false
 export function disconnect(s: GameState, cableId: string, how: How | boolean = false): ActionResult {
   const cable = s.cables.find((c) => c.id === cableId);
   if (!cable) return fail("error.unknownCable");
+  if (cable.kind === "provider") return fail("error.providerJack");
   const d = s.devices.find((x) => x.id === cable.a.device), at = d && (locationOf(s, d)?.id ?? d.store);
   const h = at ? viaHands(s, "disconnect", [cableId], at, how) : how;
   if (typeof h === "object") return h;

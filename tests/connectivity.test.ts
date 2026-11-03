@@ -7,7 +7,7 @@ import { networkBills, uplinkMbps } from "../src/sim/60-infra/network";
 import { jackRoles, panelOf } from "../src/sim/60-infra/panels";
 import { tick } from "../src/sim/88-tick/tick";
 import { cancelProviderCable, orderProviderCable } from "../src/sim/90-actions/connectivity";
-import { addLocation, buyRack, connect, orderCrossConnect } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, connect, disconnect, orderCrossConnect } from "../src/sim/90-actions/hardware";
 import { addUplinkLink, orderTransit } from "../src/sim/90-actions/network";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { buyDevice, freeFloor, newGame } from "./fixtures";
@@ -140,6 +140,7 @@ describe("cross-connects and provider cables", () => {
     expect(jackRoles(s, pa)[3]).toBe("provider-cable");
     expect(jackRoles(s, pb)[5]).toBe("provider-cable");
     expect(s.providerCables).toEqual([]);
+    expect(err(disconnect(s, cable.id))).toBe("error.providerJack");
   });
 
   it("are cabled by hand across racks in a cage and refused across shares", () => {
