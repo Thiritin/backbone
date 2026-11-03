@@ -30,7 +30,7 @@ Switches come in several sizes: 8, 24 and 48 copper ports, each with a few SFP c
 
 **Rack front view.** Clicking a rack shows its front: every device drawn at its real height, with status lights. Clicking a device opens it in the inspector on the right.
 
-**Ports and cables.** Clicking a switch or router lists its ports in the inspector. For each port you pick the other end: a device in the same rack, or another rack and device from a list. Copper covers 1G, short direct-attach cables 10–25G inside a rack, and fiber 10–400G between racks. Cables between racks run through the trays. Both ends must match in speed, and each port gets a role (server, uplink, or link to another switch).
+**Ports and cables.** Clicking a switch or router lists its ports in the inspector. For each port you pick the other end: a device in the same rack, or another rack and device from a list. Copper covers 1G, short direct-attach cables 10–25G inside a rack, and fiber 10–400G between racks. Cables between racks run through the trays. In the room, cabling is done by hand at the rack back, through the same connect action the inspector uses. Both ends must match in speed, and each port gets a role (server, uplink, or link to another switch).
 
 **Patch panels.** A patch panel sits at the top of a rack, and the player decides what each jack is for: a carrier's cross-connect, a link to another rack, or a colocation customer's line. Incoming cables land on the back of the panel, and short patch cables connect the front jacks to switch ports. Re-patching a jack is quicker than pulling a new cable through the trays.
 

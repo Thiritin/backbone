@@ -407,7 +407,7 @@ function PortGrid({ model, peers, groups, sel, onPick, onHover }: { model: Devic
   );
 }
 
-function PortCard({ game, device, model, port, peer, onSelect }: { game: GameState; device: Device; model: DeviceModel; port: number; peer: End | null; onSelect: (id: string) => void }) {
+export function PortCard({ game, device, model, port, peer, onSelect }: { game: GameState; device: Device; model: DeviceModel; port: number; peer: End | null; onSelect: (id: string) => void }) {
   const act = useStore((s) => s.act);
   const here = model.ports[port];
   const group = device.groups.findIndex((g) => g.includes(port));
