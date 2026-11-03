@@ -41,7 +41,15 @@ The first room is the basement of the player's parents' house in Frankfurt, avai
 - **Rack slots.** Any free floor tile against a wall takes a rack. A rack loaded from a save on a tile that is no longer against a wall moves to the next free one. The basement allows a handful, limited by the power the house gives.
 - **Power and cooling.** The breaker cabinet against the left wall and a cooling unit on the far wall. The cabinet shows the power draw, and a weather display under the cooling unit shows the outside weather and the room temperature from the sim.
 
-Later rooms (colo cage, own hall) are the same renderer with a different layout and a different set of fixed objects. A cage has a locked door, a cross-connect panel in the wall and a shared cold aisle; an own hall has rows, a loading dock and a NOC desk.
+## Colocation rooms
+
+Rented space uses the same renderer with its own layout per space kind. The far wall is the cage fence, with cable trays along its top, and the hall's raised floor shows grated panels along the cold aisle in front of the rack fronts. The door is always on the left wall; arriving by a trip puts the player on the tile inside it, and using it opens the map for the trip back. A fire extinguisher stands beside the door.
+
+- **Share.** An 8 by 6 room: one row of four rack tiles facing the cold aisle, a cross-connect panel on the far wall, a cooling unit and a parts shelf.
+- **Cage.** A 12 by 8 room: two rows of eight rack tiles facing one cold aisle, a cross-connect panel, two cooling units, a shelf and a floor-standing PDU on the right wall.
+- **Suite.** A 16 by 11 room: four rows of ten rack tiles around two cold aisles, a cross-connect panel, a NOC desk, two cooling units, a shelf, a PDU and a loading-dock door in the far wall.
+
+Every fixture with a desktop counterpart opens it: the cross-connect panel opens the location's Network tab and shows the carriers on site as labels beside it, the PDU opens the location with its power meter, the shelf opens Storage, and the NOC desk opens the desktop. A rack loaded from a save on a tile that is no longer a rack tile moves to the next free one.
 
 ## Movement and interaction
 

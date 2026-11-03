@@ -56,6 +56,7 @@ export function LocationsApp() {
     const k = f.kind === "rack" && game.racks.find((x) => x.id === f.id);
     if (k) return void go(k.locationId, k.id);
     if (f.kind === "storage") { go(f.id); setTab("storage"); return; }
+    if (f.kind === "network") { go(f.id); setTab("network"); return; }
     if (f.kind !== "device" && f.kind !== "location") return;
     const d = f.kind === "device" ? game.devices.find((x) => x.id === f.id) : undefined;
     const l = d?.store ? game.locations.find((x) => x.id === d.store) : d ? locationOf(game, d) : game.locations.find((x) => x.id === f.id);

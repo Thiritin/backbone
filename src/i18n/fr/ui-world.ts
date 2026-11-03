@@ -12,4 +12,10 @@ export default {
   "world.obj.shelf": () => "Étagère de stockage",
   "world.obj.fusebox": () => "Boîte à fusibles",
   "world.obj.fan": () => "Ventilateur de fenêtre",
+  "world.obj.xconnect": () => "Panneau de cross-connect",
+  "world.obj.cooling": () => "Unité de climatisation",
+  "world.obj.pdu": () => "PDU",
+  "world.obj.extinguisher": () => "Extincteur",
+  "world.obj.noc": () => "Poste NOC",
+  "world.obj.dock": () => "Quai de chargement",
 } satisfies Dict;

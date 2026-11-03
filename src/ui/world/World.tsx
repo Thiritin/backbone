@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
-import { FIXTURES, rackTiles, roomSize, type Facing, type Tile } from "../../sim/20-world/layout";
+import { coldAisles, entryTile, fixtures, rackTiles, roomSize, type Facing, type Fixture, type Tile } from "../../sim/20-world/layout";
+import { carriersAt } from "../../sim/10-catalog/network";
+import { datacenterById } from "../../sim/20-world/datacenters";
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { sky, temperature, type Sky } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
@@ -16,13 +18,13 @@ import { useStore } from "../store";
 import { facingOf, key, pathTo, T, useTiles, type Pt } from "./grid";
 import { Sprite } from "./Sprite";
 import { useTrip } from "../travel/route";
+import { artOf, WALLS, type Use } from "./rooms";
 import { RackPanel } from "./rack/RackPanel";
 import "./world.css";
 
 const STEP_MS = 400, BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 1, ZOOM_MAX = 3;
 // Rack art is drawn 110 wide with 10 per unit, about a 19-inch front.
 const RACK_W = 110, ART_U = 10;
-const SOLID = ["desk", "pc", "scanner", "shelf", "fusebox"];
 // Arrow keys and WASD step along the grid; up is toward the far wall.
 const KEYS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0],
@@ -39,17 +41,18 @@ export const roomOf = (game: GameState): Location =>
 export function World() {
   const game = useStore((s) => s.game), setSurface = useStore((s) => s.setSurface), openApp = useStore((s) => s.openApp);
   const loc = roomOf(game), home = loc.space === "basement";
-  const { w, h } = roomSize(loc);
+  const { w, h } = roomSize(loc), walls = WALLS[loc.space];
   const tiles = useMemo(() => rackTiles(loc, game.racks), [loc, game.racks]);
   const racks = game.racks.filter((r) => tiles[r.id]);
+  const fx = fixtures(loc);
   const blocked = useMemo(() => new Set([
-    ...(home ? SOLID.map((id) => key(FIXTURES[id].x, FIXTURES[id].y)) : []),
+    ...Object.entries(fx).filter(([id, f]) => artOf(id, f).solid).flatMap(([, f]) => Array.from({ length: f.w ?? 1 }, (_, i) => key(f.x + i, f.y))),
     ...Object.values(tiles).map((p) => key(p.x, p.y)),
-  ]), [tiles, home]);
+  ]), [tiles, fx]);
   const grid = useRef({ w, h, blocked });
   grid.current = { w, h, blocked };
 
-  const start = stood[loc.id] ?? (home ? { x: FIXTURES.pc.x, y: FIXTURES.pc.y + 1 } : { x: Math.floor(w / 2), y: h - 2 });
+  const start = stood[loc.id] ?? (home ? { x: fx.pc.x, y: fx.pc.y + 1 } : entryTile(loc));
   const [pos, setPos] = useState<Pt>(start);
   const [facing, setFacing] = useState<Facing>("s");
   const [stride, setStride] = useState(0);
@@ -59,6 +62,15 @@ export function World() {
   const [rackOpen, setRackOpen] = useState<string | null>(null);
   const at = useRef<Pt>(start), path = useRef<Pt[]>([]), then = useRef<(() => void) | null>(null), held = useRef<string[]>([]), tap = useRef<string | null>(null);
   const svg = useRef<SVGSVGElement>(null);
+  // Arriving by a trip puts the player inside the destination's door.
+  const shown = useRef(loc.id);
+  useEffect(() => {
+    if (shown.current === loc.id) return;
+    shown.current = loc.id;
+    const p = entryTile(loc);
+    at.current = p; path.current = []; then.current = null;
+    setPos(p); setFacing("e"); setZoom(null); setOrg(null); setRackOpen(null);
+  }, [loc]);
 
   // The default view fits the room with its walls.
   const [size, setSize] = useState({ w: 1024, h: 768 });
@@ -205,32 +217,57 @@ export function World() {
     depth: tiles[r.id].y,
     node: <RackSprite key={r.id} rack={r} tile={tiles[r.id]} game={game} zoomed={zoomed} lit={lit === r.id} onClick={use(r.id, tiles[r.id], () => setRackOpen(r.id))} />,
   }));
-  if (home) {
-    const f = FIXTURES, obj = (id: string, label: string, run: () => void, art: ReactNode, k = 0) => ({
-      depth: f[id].y + k,
-      node: <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={label} onClick={use(id, f[id], run)}>{art}</g>,
-    });
-    things.push(
-      obj("scanner", t("world.obj.scanner"), () => openApp("DocuWhere"), <Sprite name="scanner" x={f.scanner.x * T} y={(f.scanner.y + 1) * T} />),
-      obj("desk", t("world.obj.desk"), () => {}, <Sprite name="desk" x={f.desk.x * T} y={(f.desk.y + 1) * T} />),
-      // The tower stands at the desk's right end, beside the chair.
-      obj("pc", t("world.obj.pc"), () => setSurface("desktop"), <Sprite name="pc" x={f.pc.x * T + 16} y={(f.pc.y + 1) * T} />, 0.001),
-      {
-        depth: f.fusebox.y,
-        node: (
-          <g key="fusebox" aria-label={t("world.obj.fusebox")} pointerEvents="none">
-            <Sprite name="fusebox" x={f.fusebox.x * T} y={(f.fusebox.y + 1) * T}>
-              <text className="w-num w-num-tag" x="34" y="12">{`${n(power)}W`}</text>
-            </Sprite>
-          </g>
-        ),
-      },
-      obj("shelf", t("world.obj.shelf"), () => openApp("Locations", { kind: "storage", id: loc.id }), (
-        <Sprite name="shelf" x={f.shelf.x * T} y={(f.shelf.y + 1) * T}>
-          {Array.from({ length: Math.min(stored, CRATES.length) }, (_, i) => <Sprite key={i} name="crate" x={CRATES[i].x} y={CRATES[i].y} />)}
-        </Sprite>
-      )),
+  const run: Record<Use, () => void> = {
+    desktop: () => setSurface("desktop"),
+    storage: () => openApp("Locations", { kind: "storage", id: loc.id }),
+    network: () => openApp("Locations", { kind: "network", id: loc.id }),
+    power: () => openApp("Locations", { kind: "location", id: loc.id }),
+    door: () => openDoor(),
+    post: () => openApp("Post"),
+    scan: () => openApp("DocuWhere"),
+    none: () => {},
+  };
+  const carriers = loc.dc ? carriersAt(datacenterById(loc.dc)).map((c) => c.name) : [];
+  // Live readouts drawn on a fixture, in its sprite's pixels, and things drawn beside it.
+  const on: Record<string, ReactNode> = {
+    fusebox: <text className="w-num w-num-tag" x="34" y="12">{`${n(power)}W`}</text>,
+    pdu: <text className="w-num w-num-tag" x="24" y="30">{`${n(power)}W`}</text>,
+    shelf: Array.from({ length: Math.min(stored, CRATES.length) }, (_, i) => <Sprite key={i} name="crate" x={CRATES[i].x} y={CRATES[i].y} />),
+    letterbox: <>
+      {Array.from({ length: Math.min(unread, 3) }, (_, i) => <rect key={i} className="w-letter" x={5 + i * 4} y={2 + i} width="10" height="9" rx="0.5" />)}
+      <rect className="w-slot" x="5" y="8" width="18" height="3" rx="1.5" />
+    </>,
+  };
+  const beside: Record<string, (f: Fixture) => ReactNode> = {
+    // Carrier labels on a plate beside the panel, one per line.
+    xconnect: (f) => carriers.length > 0 && (
+      <g transform={`translate(${(f.x + (f.w ?? 1)) * T + 2} ${-T - 28})`}>
+        <rect className="w-plate" width="42" height={carriers.length * 7 + 3} rx="1.5" />
+        {carriers.map((c, i) => <text key={c} className="w-carrier" x="3" y={7 + i * 7}>{c}</text>)}
+      </g>
+    ),
+    fan: (f) => (
+      <Sprite name="weather" x={f.x * T + 4} y={-8}>
+        <g transform="translate(4 6)">{SKY[sky(loc.city, game.hour)]}</g>
+        <text className="w-num" x="37" y="11">{`${n(temperature(loc.city, game.hour))}°C`}</text>
+        <text className="w-num w-num-dim" x="37" y="21">{`${n(roomTemperature(game, loc), 1)}°C`}</text>
+      </Sprite>
+    ),
+  };
+  const back: ReactNode[] = [];
+  for (const [id, f] of Object.entries(fx)) {
+    const a = artOf(id, f);
+    const art = (
+      <>
+        <Sprite name={a.frames ? a.frames[door] : a.sprite} x={f.x * T + (a.dx ?? 0)} y={(f.y + 1) * T + (a.dy ?? 0)}>{on[id]}</Sprite>
+        {beside[id]?.(f)}
+      </>
     );
+    const node = a.use
+      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, f, run[a.use])}>{art}</g>
+      : <g key={id} aria-label={t(a.label)} pointerEvents="none">{art}</g>;
+    if (a.back) back.push(node);
+    else things.push({ depth: f.y + (a.depth ?? 0), node });
   }
   things.push({ depth: pos.y + 0.01, node: <Sprite key="player" name={`player-${DIR[facing]}-${stride % 2}`} x={pos.x * T} y={(pos.y + 1) * T} /> });
   things.sort((a, b) => a.depth - b.depth);
@@ -254,38 +291,22 @@ export function World() {
         </defs>
         <g pointerEvents="none">
           <rect fill="url(#w-floor)" x={0} y={0} width={w * T} height={h * T} />
-          <rect fill="url(#w-wall)" x={0} y={-2 * T} width={w * T} height={T} />
-          <rect fill="url(#w-wall-base)" x={0} y={-T} width={w * T} height={T} />
+          <rect fill={`url(#w-${walls.wall})`} x={0} y={-2 * T} width={w * T} height={T} />
+          <rect fill={`url(#w-${walls.base})`} x={0} y={-T} width={w * T} height={T} />
           <rect className="w-wall-edge" x={-EDGE} y={-2 * T - EDGE} width={w * T + 2 * EDGE} height={EDGE} />
           <rect className="w-wall-edge" x={-EDGE} y={-2 * T} width={EDGE} height={(h + 2) * T} />
           <rect className="w-wall-edge" x={w * T} y={-2 * T} width={EDGE} height={(h + 2) * T} />
         </g>
-        {home && (
-          <>
-            <g aria-label={t("world.obj.fan")} pointerEvents="none">
-              <Sprite name="fan" x={FIXTURES.fan.x * T - 12} y={-T + 2} />
-              <Sprite name="weather" x={FIXTURES.fan.x * T + 4} y={-8}>
-                <g transform="translate(4 6)">{SKY[sky(loc.city, game.hour)]}</g>
-                <text className="w-num" x="37" y="11">{`${n(temperature(loc.city, game.hour))}°C`}</text>
-                <text className="w-num w-num-dim" x="37" y="21">{`${n(roomTemperature(game, loc), 1)}°C`}</text>
-              </Sprite>
-            </g>
-            <g className={`w-obj${lit === "letterbox" ? " w-lit" : ""}`} role="button" aria-label={t("world.obj.letterbox")} onClick={use("letterbox", FIXTURES.letterbox, () => openApp("Post"))}>
-              <Sprite name="letterbox" x={2} y={(FIXTURES.letterbox.y + 1) * T - 8}>
-                {Array.from({ length: Math.min(unread, 3) }, (_, i) => <rect key={i} className="w-letter" x={5 + i * 4} y={2 + i} width="10" height="9" rx="0.5" />)}
-                <rect className="w-slot" x="5" y="8" width="18" height="3" rx="1.5" />
-              </Sprite>
-            </g>
-            <g className={`w-obj${lit === "door" ? " w-lit" : ""}`} role="button" aria-label={t("world.obj.door")} onClick={use("door", FIXTURES.door, openDoor)}>
-              <Sprite name={DOOR[door]} x={0} y={(FIXTURES.door.y + 1) * T} />
-            </g>
-          </>
-        )}
+        <g pointerEvents="none">
+          {coldAisles(loc).map((a) => <rect key={a.y} fill="url(#w-grate)" x={a.x0 * T} y={a.y * T} width={(a.x1 - a.x0 + 1) * T} height={T} />)}
+          {walls.trays && Array.from({ length: Math.ceil(w / 2) }, (_, i) => <Sprite key={i} name="tray" x={i * 2 * T} y={-2 * T + 40} />)}
+        </g>
         {Array.from({ length: w * h }, (_, i) => {
           const x = i % w, y = Math.floor(i / w);
           return <rect key={i} className="w-tile" x={x * T} y={y * T} width={T} height={T} onPointerEnter={() => setHover({ x, y })} onClick={click(() => walk([{ x, y }]))} />;
         })}
         {hover && <rect className="w-cursor" x={hover.x * T + 2} y={hover.y * T + 2} width={T - 4} height={T - 4} rx="4" />}
+        {back}
         {things.map((x) => x.node)}
       </svg>
       {rackOpen && <RackPanel key={rackOpen} rackId={rackOpen} onClose={() => setRackOpen(null)} />}
@@ -297,9 +318,8 @@ type Click = (e: MouseEvent) => void;
 
 const DIR: Record<Facing, string> = { s: "down", n: "up", w: "left", e: "right" };
 const AHEAD: Record<Facing, [number, number]> = { s: [0, 1], n: [0, -1], w: [-1, 0], e: [1, 0] };
-const DOOR = ["door-closed", "door-half", "door-open"];
 // The far wall is a face two tiles tall; the walls' top edges are a flat band EDGE pixels thick.
-const TILED = ["floor", "wall", "wall-base"];
+const TILED = ["floor", "wall", "wall-base", "fence", "fence-base", "grate"];
 const EDGE = 10;
 // Crate spots on the shelf, bottom-left corners in the shelf sprite's pixels.
 const CRATES: Pt[] = [{ x: 4, y: 40 }, { x: 24, y: 40 }, { x: 4, y: 72 }, { x: 24, y: 72 }];
