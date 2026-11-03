@@ -2,10 +2,10 @@
 import { yearOf } from "../00-core/time";
 import { nextAz } from "../20-world/datacenters";
 import {
-  DEPOSIT_MONTHS, listingById, NOTICE_MONTHS, priceFor, RACKS_PER_SERVER_SECTION, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
+  DEPOSIT_MONTHS, FIT_POSITIONS, holdsDesks, listingById, NOTICE_MONTHS, officeLineIn, priceFor, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
 } from "../20-world/properties";
 import { cents } from "../45-billing/billing";
-import type { GameState, LedgerEntry, Property, SectionFit } from "../50-state";
+import { device, type GameState, type LedgerEntry, type Property, type SectionFit } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { closeLocation, noticeEnd, type ActionResult } from "./hardware";
 
@@ -85,7 +85,7 @@ export function buyBuilding(s: GameState, buildingId: string): ActionResult {
   return { ok: true, id: p.id };
 }
 
-// The section is closed for the refit's days. A server room adds rack positions to the property's office zone.
+// The section is closed for the refit's days. A server room or closet adds rack positions to the property's office zone.
 export function refitSection(s: GameState, propertyId: string, sectionId: string, fit: SectionFit): ActionResult {
   const p = s.properties.find((x) => x.id === propertyId), x = p?.sections.find((k) => k.id === sectionId);
   if (!p || !x) return fail("error.unknownProperty");
@@ -93,19 +93,33 @@ export function refitSection(s: GameState, propertyId: string, sectionId: string
   if (x.fit === fit) return fail("error.sameFit");
   if (x.refitUntil > s.hour) return fail("error.refitting");
   if (p.noticeAt !== null) return fail("error.noticeGiven");
-  if (x.fit === "desks" && s.staff.some((e) => e.desk?.propertyId === p.id && e.desk.sectionId === x.id)) return fail("error.desksInUse");
-  const loc = s.locations.find((l) => l.id === p.locationId);
-  if (x.fit === "servers" && loc && s.racks.some((r) => r.locationId === loc.id && r.position > loc.positions - RACKS_PER_SERVER_SECTION)) return fail("error.racksInRoom");
+  if (holdsDesks(x.fit) && !holdsDesks(fit) && s.staff.some((e) => e.desk?.propertyId === p.id && e.desk.sectionId === x.id)) return fail("error.desksInUse");
+  const loc = s.locations.find((l) => l.id === p.locationId), gone = x.fit ? FIT_POSITIONS[x.fit] : 0;
+  if (gone && loc && s.racks.some((r) => r.locationId === loc.id && r.position > loc.positions - gone)) return fail("error.racksInRoom");
   const { cost, days } = REFIT[fit];
   if (s.cash < cost) return fail("error.noCash");
   book(s, "other", "ledger.refit", { building: p.building.name }, -cost);
-  if (x.fit === "servers" && loc) loc.positions -= RACKS_PER_SERVER_SECTION;
+  if (loc) loc.positions -= gone;
   x.fit = fit;
   x.refitUntil = s.hour + 24 * days;
-  if (fit === "servers") {
+  if (FIT_POSITIONS[fit]) {
     placeOffice(s, p, x.refitUntil);
-    s.locations.find((l) => l.id === p.locationId)!.positions += RACKS_PER_SERVER_SECTION;
+    s.locations.find((l) => l.id === p.locationId)!.positions += FIT_POSITIONS[fit];
   }
+  return { ok: true };
+}
+
+// Books the year's business line into an office with rack positions, or upgrades an older one. The line ends at the wall socket
+// in the server section, a line jack the router's WAN port is cabled to.
+export function bookOfficeLine(s: GameState, locationId: string): ActionResult {
+  const loc = s.locations.find((l) => l.id === locationId);
+  if (!loc || loc.space !== "office") return fail("error.unknownLocation");
+  if (!loc.positions) return fail("error.noServerRoom");
+  const { name, mbit, monthly } = officeLineIn(yearOf(s.hour));
+  if (loc.line?.mbit === mbit) return fail("error.officeLineActive");
+  loc.line = { name, mbit, monthly };
+  if (!s.devices.some((d) => d.model === "line-jack" && d.panel === loc.id))
+    s.devices = [...s.devices, device(`dev${s.nextId++}`, "line-jack", "", null, 0, loc.id, `${loc.az}-line-01`, 0)];
   return { ok: true };
 }
 
@@ -114,7 +128,8 @@ export const propertyBills = (s: GameState): LedgerEntry[] =>
   s.properties.flatMap((p): LedgerEntry[] =>
     p.kind === "office" ? [{ hour: s.hour, category: "rent", key: "ledger.officeRent", params: { building: p.building.name, n: p.sections.length }, amount: -p.sections.reduce((n, x) => n + x.rent, 0) }]
     : p.kind === "own" ? [{ hour: s.hour, category: "rent", key: "ledger.upkeep", params: { building: p.building.name, n: p.sections.length }, amount: -UPKEEP_PER_SECTION * p.sections.length }]
-    : []).filter((b) => b.amount !== 0);
+    : []).concat(s.locations.flatMap((l): LedgerEntry[] => (l.line ? [{ hour: s.hour, category: "rent", key: "ledger.officeLine", params: { location: l.name, line: l.line.name, mbit: l.line.mbit }, amount: -l.line.monthly }] : [])))
+    .filter((b) => b.amount !== 0);
 
 // At the month start the notice period ends: the deposit returns, desks there clear and the server rooms close. Racks still standing roll one more month.
 export function propertiesEnd(s: GameState, events: SimEvent[]): void {

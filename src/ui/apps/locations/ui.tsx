@@ -36,7 +36,7 @@ export function spaceLabel(l: Location, g?: GameState) {
 export function locationPower(g: GameState, locId: string) {
   const loc = g.locations.find((l) => l.id === locId)!, dc = dcOf(loc);
   const racks = g.racks.filter((r) => r.locationId === locId).map((r) => rackPower(g, r.id));
-  const limit = loc.space === "share" ? racks.reduce((n, p) => n + p.limitWatts, 0) : 1000 * (dc ? loc.positions * dc.kwPerPosition : BASEMENT.kw);
+  const limit = loc.space === "share" || loc.space === "office" ? racks.reduce((n, p) => n + p.limitWatts, 0) : 1000 * (dc ? loc.positions * dc.kwPerPosition : BASEMENT.kw);
   return { watts: racks.reduce((n, p) => n + p.watts, 0), limit, tripped: racks.some((p) => p.tripped) };
 }
 

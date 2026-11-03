@@ -20,7 +20,20 @@ export const NOTICE_MONTHS = 3;
 export const UPKEEP_PER_SECTION = 150;
 export const DESKS_PER_SECTION = 4;
 export const RACKS_PER_SERVER_SECTION = 4;
-export const REFIT = { desks: { cost: 3_000, days: 5 }, servers: { cost: 12_000, days: 14 } } as const;
+// A closet keeps the section's four desks and adds a cupboard in its corner with one rack on the section's own circuit.
+export const CLOSET_KW = 2;
+export const REFIT = { desks: { cost: 3_000, days: 5 }, servers: { cost: 12_000, days: 14 }, closet: { cost: 4_000, days: 3 } } as const;
+export const FIT_POSITIONS = { desks: 0, servers: RACKS_PER_SERVER_SECTION, closet: 1 } as const;
+// Business lines from the city's provider into an office server room or closet, by the first year each is sold; the price is fixed when booked.
+export const OFFICE_LINES = [
+  { from: 2005, name: "SDSL", mbit: 2, monthly: 120 },
+  { from: 2010, name: "SDSL", mbit: 20, monthly: 150 },
+  { from: 2015, name: "Fiber", mbit: 100, monthly: 200 },
+  { from: 2020, name: "Fiber", mbit: 1_000, monthly: 300 },
+  { from: 2025, name: "Fiber", mbit: 10_000, monthly: 450 },
+] as const;
+export const officeLineIn = (year: number) => OFFICE_LINES.filter((l) => l.from <= year).at(-1)!;
+export const holdsDesks = (fit: string | null): boolean => fit === "desks" || fit === "closet";
 
 export const listingById = (id: string): Listing | undefined => LISTINGS.find((l) => l.id === id);
 export const listingsIn = (region: string, year: number): Listing[] => LISTINGS.filter((l) => l.region === region && l.from <= year);

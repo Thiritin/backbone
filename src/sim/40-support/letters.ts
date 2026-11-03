@@ -21,6 +21,8 @@ export interface Letter {
   type?: DocType;
   // The location whose letterbox holds it until fetched; null once it lies at the desk.
   box: string | null;
+  // The location of the company's address when it was sent; null takes the current one.
+  addressedTo: string | null;
   // Scanned into DocuWhere.
   scanned: boolean;
 }
@@ -56,7 +58,7 @@ export function postDay(hour: number, days: number): number {
 }
 
 export function post(s: GameState, from: string, topic: string, params: Record<string, string | number>, days: number, extra: Pick<Letter, "bill" | "form" | "link"> = {}): Letter {
-  const l: Letter = { id: `let${s.nextId++}`, from, topic, params, at: postDay(s.hour, days), read: false, arrived: false, box: null, scanned: false, ...extra };
+  const l: Letter = { id: `let${s.nextId++}`, from, topic, params, at: postDay(s.hour, days), read: false, arrived: false, box: null, addressedTo: postLocation(s), scanned: false, ...extra };
   s.letters = [...s.letters, l];
   return l;
 }
@@ -65,10 +67,13 @@ export const inbox = (s: GameState): Letter[] => s.letters.filter((l) => l.arriv
 export const inLetterbox = (s: GameState): Letter[] => inbox(s).filter((l) => l.box);
 export const atDesk = (s: GameState): Letter[] => inbox(s).filter((l) => !l.box);
 // The letterbox the post lands in: the office's from the move on, else the basement's; without either, the first location.
-// Letters already in the basement's box stay there until fetched.
-export const postLocation = (s: GameState): string => {
-  const o = officeOf(s);
-  return (o?.kind !== "basement" && o?.locationId) || (s.locations.find((l) => l.space === "basement") ?? s.locations[0]).id;
+// For a month after the move a letter addressed to the old place still goes there.
+export const FORWARD_HOURS = 30 * 24;
+export const postLocation = (s: GameState, l?: Letter): string => {
+  const o = officeOf(s), here = (o?.kind !== "basement" && o?.locationId) || (s.locations.find((x) => x.space === "basement") ?? s.locations[0]).id;
+  const movedAt = o?.kind === "basement" ? -Infinity : Math.min(...(o?.sections.map((x) => x.since) ?? []));
+  const old = l?.addressedTo;
+  return old && old !== here && s.hour < movedAt + FORWARD_HOURS && s.locations.some((x) => x.id === old) ? old : here;
 };
 // The letters waiting in one location's letterbox.
 export const boxAt = (s: GameState, locationId: string): Letter[] => inLetterbox(s).filter((l) => l.box === locationId);
@@ -78,7 +83,7 @@ export function lettersTick(s: GameState): void {
   for (const l of s.letters) {
     if (l.arrived || l.at > s.hour) continue;
     l.arrived = true;
-    l.box = postLocation(s);
+    l.box = postLocation(s, l);
     if (l.bill) {
       const p = invoice(s, l.bill.supplier, l.from, l.bill.lines, l.bill.days, true);
       l.payable = p.id;

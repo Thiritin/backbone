@@ -8,6 +8,7 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, PARCEL, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
+import { CLOSET_KW } from "../20-world/properties";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
@@ -60,7 +61,7 @@ export const jacked = (s: GameState, gatewayId: string): boolean => {
 const climbing = new Set<string>();
 function lineUp(s: GameState, gatewayId: string): boolean {
   const d = s.devices.find((x) => x.id === gatewayId)!;
-  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
+  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && lineLive(s, locationOf(s, d)?.id));
   return sweepMemo(s, `up:${gatewayId}`, () => {
     const peer = peerOf(s, { device: gatewayId, port: uplinkPort(d) });
     if (!peer || isOobPort(peer.port) || climbing.has(gatewayId)) return false;
@@ -180,14 +181,19 @@ function cabled(s: GameState, from: string, goal: (id: string) => boolean, live:
 }
 
 // Whether a hop of a route is cut: a stopped device, or a basement without an internet line.
-export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && (!s.homeLine.id || lineCut(s)));
+export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && !lineLive(s, h.location));
+// An office runs on its own business line, the basement on the home line.
+function lineLive(s: GameState, locationId: string | undefined): boolean {
+  const loc = s.locations.find((l) => l.id === locationId);
+  return loc?.space === "office" ? !!loc.line : !!s.homeLine.id && !lineCut(s);
+}
 
 // The hops from a device out to its location's edge: the gateway, then the carrier line (basement) or the datacenter's uplink.
 function toEdge(s: GameState, id: string, loc: Location, live: boolean, exempt?: string): Hop[] | null {
   const ids = cabled(s, id, (x) => kindOf(s, x) === "gateway", live, exempt);
   if (!ids) return null;
   const hops = ids.map((x) => hopOf(s, x));
-  if (!loc.dc) return [...hops, { kind: "line", name: homeLineById(s.homeLine.id).isp || "line", location: loc.id }];
+  if (!loc.dc) return [...hops, { kind: "line", name: (loc.space === "office" ? loc.line?.name : homeLineById(s.homeLine.id).isp) || "line", location: loc.id }];
   const uplink: Hop = { kind: "uplink", name: datacenterById(loc.dc).name, location: loc.id };
   if (hops[hops.length - 1].kind === "uplink") hops[hops.length - 1] = { ...hops[hops.length - 1], ...uplink };
   else hops.push(uplink);
@@ -309,6 +315,9 @@ export const drawWatts = (s: GameState, d: Device, busy: Set<string | null>): nu
 };
 
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
+// ponytail: an office with closets only runs on the closet circuit; a closet beside a server room shares the room's limit, per-section circuits if that matters.
+const officeKw = (s: GameState, loc: Location): number =>
+  s.properties.some((p) => p.locationId === loc.id && p.sections.some((x) => x.fit === "servers")) ? circuitKw(loc) : CLOSET_KW;
 
 function computeRackPower(s: GameState, rackId: string): RackPower {
   const rack = s.racks.find((r) => r.id === rackId);
@@ -326,7 +335,7 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
   }
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
-  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : circuitKw(loc);
+  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc);
   // A flat-rate contract's kW replaces the position's limit.
   const limitWatts = rack.flatKw ? Math.round(1000 * rack.flatKw) : Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
   return { watts: a + b, a, b, limitWatts, tripped: a > limitWatts || b > limitWatts };

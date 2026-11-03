@@ -224,3 +224,12 @@ export function setTechRules(s: GameState, rules: Partial<TechRules>): ActionRes
   s.techRules = { ...s.techRules, ...rules };
   return { ok: true };
 }
+
+// Picking up the ringing phone.
+export function answerCall(s: GameState, callId: string): ActionResult {
+  const c = s.calls.find((x) => x.id === callId && x.answeredAt === null);
+  if (!c) return fail("error.unknownCall");
+  const answeredAt = s.hour * 60 + s.minute;
+  s.calls = s.calls.map((x) => (x === c ? { ...x, answeredAt } : x));
+  return { ok: true, id: c.id };
+}

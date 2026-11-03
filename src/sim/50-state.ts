@@ -15,7 +15,7 @@ import type { Quote } from "./30-market/quotes";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
-import type { OnCall } from "./47-staff/oncall";
+import type { Call, OnCall } from "./47-staff/oncall";
 import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
@@ -70,7 +70,7 @@ export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office";
 // A section's rent is the monthly price agreed when it was rented (0 once bought); fit is null for a bought section never fitted.
 // refitUntil is the hour a refit is done. locationId is the zone the property's server rooms (or the basement's racks) form.
 export type PropertyKind = "basement" | "office" | "own";
-export type SectionFit = "desks" | "servers";
+export type SectionFit = "desks" | "servers" | "closet";
 export interface Building { name: string; street: string; zip: string; city: string }
 export interface Section { id: string; floor: number; fit: SectionFit | null; since: number; refitUntil: number; rent: number }
 export interface Property {
@@ -81,7 +81,9 @@ export interface Property {
 export type LogSev = "info" | "warn" | "crit";
 export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number }
 // Each location is an availability zone (az, like fra2) in the region of its city.
-export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
+// line is an office's business line, booked in the Network tab.
+export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean;
+  line?: { name: string; mbit: number; monthly: number } }
 // share-N racks belong to the provider of a rack share and hold N units.
 export type RackModel = "shelf" | "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
 // arriveAt is the hour a moving rack arrives; null when it is in place. A moving rack already holds its target location and position.
@@ -301,7 +303,7 @@ export interface GameState {
   // Favours asked of friends for datacenter hand work in a calendar year.
   friendFavours: { year: number; used: number };
   // Where the player is, and until which hour the drive there or the hand work on site keeps the computer locked.
-  player: { at: string; until: number; doing: "travel" | "work"; carrying: string | null };
+  player: { at: string; until: number; doing: "travel" | "work"; by: "drive" | "fly"; carrying: string | null };
   downSince: Record<string, number>;
   // Hours in a row each cluster node has run below the timeout performance.
   lowPerf: Record<string, number>;
@@ -354,6 +356,8 @@ export interface GameState {
   handsJobs: HandsJob[];
   techRules: TechRules;
   onCall: OnCall;
+  // Pages ringing on the player's own phone, and the ones answered in the last hour.
+  calls: Call[];
   marketing: Marketing;
   fairs: FairBooking[];
   // Community sponsoring requests and the events running on free services.
@@ -520,11 +524,11 @@ export const newGame = (seed: number): GameState => ({
   daemons: {},
   gameTitles: {},
   gameLost: {},
-  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work", carrying: null }, downSince: {}, lowPerf: {},
+  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work", by: "drive", carrying: null }, downSince: {}, lowPerf: {},
   company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING, address: null },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
-  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], handsJobs: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
+  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], handsJobs: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} }, calls: [],
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),
   ops: newOps(),

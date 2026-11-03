@@ -28,3 +28,11 @@ Other tenants hold a share of each building's sections (25 to 70%), fixed by the
 | --- | --- | --- | --- |
 | Desks | €3,000 | 5 | 4 desks |
 | Server room | €12,000 | 14 | 4 rack positions |
+| Server closet | €4,000 | 3 | 4 desks and 1 rack position on 2 kW |
+
+**Office lines.** A business line into an office server room or closet, billed monthly at the price of the year it is booked.
+
+| From | 2005 | 2010 | 2015 | 2020 | 2025 |
+| --- | --- | --- | --- | --- | --- |
+| Line | SDSL 2 Mbit/s | SDSL 20 Mbit/s | Fiber 100 Mbit/s | Fiber 1 Gbit/s | Fiber 10 Gbit/s |
+| Per month | €120 | €150 | €200 | €300 | €450 |

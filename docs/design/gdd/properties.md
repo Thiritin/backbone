@@ -16,6 +16,7 @@ The city of the first property is always Frankfurt and the first address is neve
 | --- | --- | --- | --- |
 | Basement | The parents' house, the start | The player's own | A few, limited by the house's power |
 | Small office | One floor section in an office building in the company's city | 4 per section | None, or a server closet with 1 rack if the section is fitted as one |
+| Server closet | A desk section with a lockable metal cupboard in its far corner; the four desks stay | 4 per section | 1 rack on the section's own 2 kW circuit, no cooling unit |
 | Office building | Several sections on one or more floors of one building; the company expands section by section | 4 per section | A section fitted as a server room holds 4 racks with proper power and cooling |
 | Own building | Bought outright; sections are free to fit out, no rent, upkeep instead | as above | as above |
 
@@ -29,7 +30,7 @@ The Locations app gains a Properties tab: listings in the company's city, each w
 
 ## The address follows the property
 
-Moving into an office moves the company's address to it. The post arrives at the office letterbox, the letterhead and website update on the day of the move, and the basement stays a location for its racks. All new post lands in the office letterbox from the day of the move; letters already in the basement letterbox stay there until fetched.
+Moving into an office moves the company's address to it. The post arrives at the office letterbox, the letterhead and website update on the day of the move, and the basement stays a location for its racks. Every letter is addressed to the company's address on the day it is sent. For one month after the move, letters sent before it still arrive at the basement letterbox while new ones arrive at the office; after that month everything lands at the office. Letters already in the basement letterbox stay there until fetched.
 
 ## Staff need desks
 

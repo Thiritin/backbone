@@ -1,16 +1,16 @@
 import { dateOf } from "../00-core/time";
-import { DESKS_PER_SECTION } from "../20-world/properties";
+import { DESKS_PER_SECTION, holdsDesks } from "../20-world/properties";
 import type { Employee } from "../47-staff/staff";
 import { BASEMENT_ADDRESS, type GameState, type PostalAddress, type Property, type Section } from "../50-state";
 
 export type Desk = NonNullable<Employee["desk"]>;
 
 const ready = (s: GameState, x: Section) => x.refitUntil <= s.hour;
-const deskSections = (s: GameState, p: Property) => p.sections.filter((x) => x.fit === "desks" && ready(s, x));
+const deskSections = (s: GameState, p: Property) => p.sections.filter((x) => holdsDesks(x.fit) && ready(s, x));
 
 // The office: the latest rented or bought property with a desk section, else the basement.
 export const officeOf = (s: GameState): Property | undefined =>
-  [...s.properties].reverse().find((p) => p.kind !== "basement" && p.sections.some((x) => x.fit === "desks")) ?? s.properties.find((p) => p.kind === "basement");
+  [...s.properties].reverse().find((p) => p.kind !== "basement" && p.sections.some((x) => holdsDesks(x.fit))) ?? s.properties.find((p) => p.kind === "basement");
 
 export const officeAddress = (s: GameState): PostalAddress => {
   const { street, zip, city } = officeOf(s)?.building ?? BASEMENT_ADDRESS;

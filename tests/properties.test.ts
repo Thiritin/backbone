@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { listingById, listingsIn, REFIT, rentFor, UPKEEP_PER_SECTION } from "../src/sim/20-world/properties";
+import { CLOSET_KW, listingById, listingsIn, OFFICE_LINES, REFIT, rentFor, UPKEEP_PER_SECTION } from "../src/sim/20-world/properties";
+import { fixtures, officePlan, wallTiles } from "../src/sim/20-world/layout";
+import { hopDown, rackPower } from "../src/sim/60-infra/status";
+import { buyRack } from "../src/sim/90-actions/hardware";
 import { ownAddress } from "../src/sim/30-customers/addresses";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
 import { desks, officeAddress, whoIsIn } from "../src/sim/60-infra/properties";
 import { tick } from "../src/sim/88-tick/tick";
-import { buyBuilding, freeSections, giveNotice, refitSection, rentSection } from "../src/sim/90-actions/properties";
+import { bookOfficeLine, buyBuilding, freeSections, giveNotice, refitSection, rentSection } from "../src/sim/90-actions/properties";
 import { hire } from "../src/sim/90-actions/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame, withDomainMail } from "./fixtures";
@@ -81,6 +84,44 @@ describe("properties", () => {
     expect(loc.positions).toBe(0);
     s.hour += 24 * REFIT.desks.days;
     expect(desks(s)).toBe(4);
+  });
+
+  it("a closet keeps the desks and adds one rack on the section's own circuit", () => {
+    const s = rich(), id = rentFirst(s), p = s.properties.find((x) => x.id === id)!, sec = p.sections[0].id, cash = s.cash;
+    expect(refitSection(s, id, sec, "closet").ok).toBe(true);
+    expect(s.cash).toBe(cash - REFIT.closet.cost);
+    expect(REFIT.closet).toEqual({ cost: 4_000, days: 3 });
+    const loc = s.locations.find((l) => l.id === p.locationId)!;
+    expect(loc.positions).toBe(1);
+    s.hour += 24 * REFIT.closet.days;
+    expect(desks(s)).toBe(4);
+    const plan = officePlan(s, loc)!, fx = fixtures(loc, plan), [tile] = wallTiles(loc, plan);
+    expect(Object.values(fx).filter((f) => f.kind === "closet")).toEqual([{ x: tile.x, y: tile.y, kind: "closet" }]);
+    expect(buyRack(s, loc.id, "rack-24", 1).ok).toBe(true);
+    expect(rackPower(s, s.racks.find((x) => x.locationId === loc.id)!.id).limitWatts).toBe(CLOSET_KW * 1000);
+    expect(refitSection(s, id, sec, "desks")).toEqual({ ok: false, error: "error.racksInRoom" });
+  });
+
+  it("an office server room books the era's business line, billed monthly", () => {
+    const s = rich(), id = rentFirst(s), p = s.properties.find((x) => x.id === id)!, loc = s.locations.find((l) => l.id === p.locationId)!;
+    const hop = { kind: "line" as const, name: "", location: loc.id };
+    expect(bookOfficeLine(s, loc.id)).toEqual({ ok: false, error: "error.noServerRoom" });
+    expect(refitSection(s, id, p.sections[0].id, "servers").ok).toBe(true);
+    expect(hopDown(s, hop)).toBe(true);
+    expect(bookOfficeLine(s, loc.id).ok).toBe(true);
+    expect(loc.line).toEqual({ name: "SDSL", mbit: 2, monthly: 120 });
+    expect(OFFICE_LINES[0]).toMatchObject(loc.line!);
+    expect(bookOfficeLine(s, loc.id)).toEqual({ ok: false, error: "error.officeLineActive" });
+    expect(s.devices.filter((d) => d.model === "line-jack" && d.panel === loc.id)).toHaveLength(1);
+    expect(fixtures(loc, officePlan(s, loc)!).jack).toMatchObject({ kind: "jack", y: 0 });
+    expect(hopDown(s, hop)).toBe(false);
+    monthStart(s, 2005, 4);
+    expect(ledger(s, "ledger.officeLine").map((e) => e.amount)).toEqual([-120]);
+    s.hour = at(2015, 2);
+    expect(bookOfficeLine(s, loc.id).ok).toBe(true);
+    expect(loc.line).toEqual({ name: "Fiber", mbit: 100, monthly: 200 });
+    const back = deserialize(serialize(s));
+    expect(back.locations.find((l) => l.id === loc.id)!.line).toEqual(loc.line);
   });
 
   it("the address follows the office", () => {

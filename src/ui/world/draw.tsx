@@ -766,3 +766,31 @@ export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number;
     </>
   );
 }
+
+// The wall phone beside the door: a beige corded set until 2010, then a cordless handset in its wall base. Ringing shakes the handset.
+export const CORDLESS_YEAR = 2010;
+export function Phone({ f, ringing, cordless }: { f: Fixture; ringing: boolean; cordless: boolean }) {
+  return (
+    <g transform={wallT(f, 50)} data-phone={ringing ? "ringing" : "idle"}>
+      {cordless ? (
+        <>
+          <rect className="w-phone-base" x="11" y="6" width="11" height="14" rx="1.5" />
+          <g className={ringing ? "w-ringing" : undefined}>
+            <rect className="w-phone-cordless" x="13" y="0" width="7" height="17" rx="2" />
+            <rect className="w-phone-screen" x="14.2" y="2" width="4.6" height="3" />
+            <rect className={`w-led${ringing ? " w-led-on" : ""}`} x="15.8" y="12.5" width="1.4" height="1" />
+          </g>
+        </>
+      ) : (
+        <>
+          <path className="w-phone-cord" d="M10,18 q-2,2 0,3 q2,1 0,3 q-2,1 0,3 q2,1 0,3 q-2,1 0,3 L14,36" fill="none" />
+          <rect className="w-phone" x="12" y="0" width="12" height="20" rx="2" />
+          {[0, 1, 2].map((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} className="w-phone-key" x={16 + c * 2.4} y={8 + r * 2.6} width="1.6" height="1.6" rx="0.3" />))}
+          <g className={ringing ? "w-ringing" : undefined}>
+            <rect className="w-phone-handset" x="8" y="-1" width="5" height="21" rx="2.5" />
+          </g>
+        </>
+      )}
+    </g>
+  );
+}

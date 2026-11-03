@@ -1,0 +1,15 @@
+.wph-desk { display: flex; align-items: center; gap: 40px; flex-wrap: wrap; justify-content: center; }
+.wph-phone { width: min(260px, 40vw); height: auto; }
+.wph-cradle { fill: oklch(0.4 0.02 80); }
+.wph-pad {
+  width: min(320px, 80vw); min-height: 300px; padding: 28px 24px 24px; box-sizing: border-box; transform: rotate(-2deg);
+  background: repeating-linear-gradient(oklch(0.97 0.03 95) 0 27px, oklch(0.82 0.05 240) 27px 28px);
+  border-top: 14px solid oklch(0.55 0.1 25); box-shadow: 0 6px 18px oklch(0 0 0 / 0.35);
+  color: oklch(0.3 0.08 260); font: 500 16px/28px var(--font-ui);
+}
+.wph-pad dl { margin: 0; display: grid; grid-template-columns: auto 1fr; column-gap: 14px; }
+.wph-pad dt { font-weight: 700; }
+.wph-pad dd { margin: 0; }
+.wph-pad p { margin: 0; }
+.wph-line { display: block; margin-top: 14px; padding: 0; border: 0; background: none; color: inherit; font: 700 16px/28px var(--font-ui); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.wph-line .hands-mode { margin-left: 6px; font-weight: 500; }
