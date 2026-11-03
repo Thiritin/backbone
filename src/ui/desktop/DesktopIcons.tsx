@@ -1,6 +1,5 @@
-import { DoorOpen } from "lucide-react";
 import { t } from "../../i18n/en";
-import { FILE_ICON } from "../art/era-icon";
+import { FILE_ICON, RoomIcon } from "../art/era-icon";
 import { useEffect, useState } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
 import type { Doc } from "../../sim/50-state";
@@ -92,7 +91,7 @@ export function DesktopIcons() {
       {/* The room the player is in, pinned to the top right; it has no doc, so it cannot be moved or trashed. */}
       <div role="button" tabIndex={0} className="desktop-icon" style={{ right: 16, top: MENUBAR + 16 }}
         onDoubleClick={() => setSurface("world")} onKeyDown={(e) => e.key === "Enter" && setSurface("world")}>
-        <span className="dock-tile" style={{ "--tile": "var(--accent)" } as CSSProperties}><DoorOpen /></span>
+        <span className="dock-tile" style={{ "--tile": "var(--accent)" } as CSSProperties}><RoomIcon /></span>
         <span className="di-label">{roomOf(game).name}</span>
       </div>
       {docs.map((d) => {

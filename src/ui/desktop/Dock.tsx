@@ -1,8 +1,8 @@
 import { t } from "../../i18n/en";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Trash2 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { APPS, appFor, appTitle, listed } from "../apps/registry";
+import { TrashIcon } from "../art/era-icon";
 import { appMenu, APP, dragApp, dropTarget, trashApp } from "../apps/ApplicationsApp";
 import { uiSound, useStore } from "../store";
 import { unreadBadge } from "../../sim/43-pear-mail/view";
@@ -76,7 +76,7 @@ export function Dock() {
       <span className="dock-divider" />
       <button className={`dock-app${over ? " drop" : ""}`} aria-label={t("apps.finder.trash")} onClick={() => openApp("Applications", { kind: "folder", id: "trash" })} {...dropTarget(APP, trashApp, setOver)}>
         <span className="tip">{t("apps.finder.trash")}</span>
-        <span className="dock-tile dock-trash"><Trash2 /></span>
+        <span className="dock-tile dock-trash"><TrashIcon /></span>
         <span className="dot" />
       </button>
     </nav>
