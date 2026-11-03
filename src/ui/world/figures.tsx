@@ -150,6 +150,8 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
         </g>
       ),
     });
+    // A rack row in front would hide someone in the aisle, so a faint outline shows through.
+    if (!seat) out.push({ depth: 1e9, node: <g key={`x-${f.id}`} className="w-person w-xray" aria-hidden onPointerEnter={enter} onPointerLeave={exit} style={{ transform: `translate(${s.x}px, ${s.y}px)` }}>{t < 1 ? <Walking l={l} step={m % 2} /> : <Standing l={l} facing={f.facing} busy={false} />}</g> });
     if (hover !== f.id || t < 1) continue;
     if (seat) {
       // A tent card at the desk's left corner, toward the person.
@@ -163,7 +165,7 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
           </g>
         ),
       });
-    } else out.push({ depth: depth - 0.25, node: <FloorTag key={`tag-${f.id}`} at={s} name={f.name} /> });
+    } else out.push({ depth: 1e9 + 1, node: <FloorTag key={`tag-${f.id}`} at={s} name={f.name} /> });
   }
   return out;
 }
