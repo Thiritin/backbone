@@ -14,7 +14,7 @@
 .w-wall-r { fill: oklch(0.86 0.012 85); }
 .w-wall-near { fill: oklch(0.74 0.012 85); }
 .w-wall-x { fill: oklch(0.7 0.012 85); }
-.w-near { transition: opacity 0.25s; }
+.w-near { transition: opacity 0.25s; pointer-events: none; }
 .w-obj { cursor: pointer; }
 .w-obj:hover { filter: brightness(1.12); }
 .w-door { transform-origin: 0 0; transition: transform 0.5s ease-in-out; }
