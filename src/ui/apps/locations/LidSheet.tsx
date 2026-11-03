@@ -12,7 +12,7 @@ import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { ageYears, devName, isWorn, partLabel, partSlot } from "../hw";
 import { specOf, spareSpec } from "./Slots";
-import { useHandWork } from "./HandSheet";
+import { HandsMode, handsMode, useHandWork } from "./HandSheet";
 import { Facts, Sheet } from "./ui";
 
 export const LID_MS = 600;
@@ -68,6 +68,8 @@ export function LidSheet({ deviceId, onClose, inline = false }: { deviceId: stri
 function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Slot; wear: (c: Component) => "ok" | "warn" | "bad"; spares: (kinds: ComponentKind[]) => Device[]; az: string }) {
   const game = useStore((s) => s.game), hand = useHandWork(), model = modelById(device.model), c = slot.part;
   const busy = !!device.maintenance, live = !!device.rackId && energized(device);
+  const at = locationOf(game, device)?.id ?? device.store ?? undefined;
+  const rep = handsMode(game, at, "replaceComponent"), rem = handsMode(game, at, "removePart"), ins = handsMode(game, at, "installPart");
   if (c) {
     const w = wear(c);
     const zone = device.rackId ? locationOf(game, device)?.id : device.store;
@@ -80,8 +82,8 @@ function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Sl
           {busy ? <span className="pill">{t("locations-1.workUnderWay")}</span> : <span className={`pill ${w}`}>{w === "bad" ? t("locations-1.failed") : w === "warn" ? t("locations-1.worn") : t("locations-1.ok")}</span>}
           <span className="grow" />
           {!busy && cold && <span className="loc-muted">{t("locations-1.powerOffFirst")}</span>}
-          {!busy && !cold && <button className="btn" disabled={!spare} onClick={() => hand.start(game, { title: set > 1 ? t("locations-1.replaceCpus", { n: set }) : t("locations-1.replacePart", { part: partLabel(c) }), deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>{t("locations-1.replace")}</button>}
-          {!busy && !cold && removable && <button className="btn" onClick={() => hand.start(game, { title: t("locations-1.removePart", { part: partLabel(c) }), deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>{t("locations-1.remove")}</button>}
+          {!busy && !cold && <button className="btn" disabled={!spare || rep.off} onClick={() => hand.start(game, { title: set > 1 ? t("locations-1.replaceCpus", { n: set }) : t("locations-1.replacePart", { part: partLabel(c) }), deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>{t("locations-1.replace")}<HandsMode mode={rep} /></button>}
+          {!busy && !cold && removable && <button className="btn" disabled={rem.off} onClick={() => hand.start(game, { title: t("locations-1.removePart", { part: partLabel(c) }), deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>{t("locations-1.remove")}<HandsMode mode={rem} /></button>}
         </div>
         <Facts rows={[
           [t("locations-1.slot"), <span className="num">{slotName(slot)}</span>],
@@ -103,8 +105,8 @@ function SlotCard({ device, slot, wear, spares, az }: { device: Device; slot: Sl
         {busy ? <span className="loc-muted">{t("locations-1.workUnderWay")}</span> : cold ? <span className="loc-muted">{t("locations-1.powerOffFirst")}</span> : offers.length ? offers.map((d) => {
           const spec = spareSpec(d), n = fitting.filter((x) => samePart(spareSpec(x), spec)).length;
           return (
-            <button key={d.id} className="btn" onClick={() => hand.start(game, { title: t("locations-1.installPart", { part: partLabel(spec) }), deviceId: device.id, action: installPart, args: [device.id, d.id, undefined], tech: { kind: "part", partId: d.id } })}>
-              {partLabel(spec)}<span className="num">{euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour), spec))}</span>{n > 1 && <span className="num">× {n}</span>}
+            <button key={d.id} className="btn" disabled={ins.off} onClick={() => hand.start(game, { title: t("locations-1.installPart", { part: partLabel(spec) }), deviceId: device.id, action: installPart, args: [device.id, d.id, undefined], tech: { kind: "part", partId: d.id } })}>
+              {partLabel(spec)}<span className="num">{euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour), spec))}</span>{n > 1 && <span className="num">× {n}</span>}<HandsMode mode={ins} />
             </button>
           );
         }) : <span className="loc-muted">{t("locations-1.noFittingPart", { az })}</span>}

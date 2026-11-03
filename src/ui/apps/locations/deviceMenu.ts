@@ -13,6 +13,7 @@ import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { consoleEntry } from "../products/parts";
 import { techItem } from "./TechButton";
+import { handsMode } from "./HandSheet";
 import { frontOptions, handsLabel, powerOptions, type PowerOp } from "./power";
 import type { FrontOp } from "../../../sim/60-infra/power";
 
@@ -97,7 +98,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     lease && { label: t("locations-1.buyOutLease", { price: euro(lease.monthly * (lease.months - lease.paid)) }), run: () => act(buyOutLease, lease.id) },
     { label: t("locations-1.rename"), run: ui.rename },
     null,
-    !!d.rackId && { label: t("locations-1.unmount"), run: ui.unmount },
+    !!d.rackId && ((h) => ({ label: `${t("locations-1.unmount")} · ${h.label}`, disabled: h.off, run: ui.unmount }))(handsMode(game, locationOf(game, d)?.id, "unmountDevice")),
     m.kind !== "gateway" && { label: t("locations-1.sell"), run: ui.sell },
   ];
 }
