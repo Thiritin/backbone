@@ -27,7 +27,7 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Network and power | Cross-connects are cabled on the rack's back; the fuse box opens with its door open, the draw on the meter's display and its breakers on their rails, and its main switch pulls the plug of every unit in the room or boots them all again; the PDU opens with its display and an LED per outlet | The Locations app orders and changes them |
 | Desk PC | Opens the desktop | Everything on the desktop |
 | Faults | Blinking LED on the rack, the technician PC plugs into a port | Monitoring, alarms, the port inspector diagram |
-| Phone | Rings on the wall at night when on call | Support tickets, pager text |
+| Phone | Hangs by the basement door and in the office reception; rings at night when the player is on call, and picking it up shows the call on a notepad | Support tickets, pager text |
 | Everything software | | Billing, mail, consoles, network, products, customers, staff |
 
 Only the desk PC and the NOC desk open the desktop; every other object opens a close-up inside the room: the object itself drawn large over the dimmed room, its parts drawn as what they are and used directly, with a small close plate in the corner.
@@ -82,6 +82,8 @@ Presence stays a sim rule: the room on screen is the one the player is at, the d
 Parcels are carried with the hand cursor. Clicking a parcel at the door picks it up, and it follows the pointer as a small box. Clicking the shelf puts it in storage, and clicking a rack opens the rack panel with the carried unit offered for the free units it fits. Escape with a parcel in hand puts it on the shelf. A parcel does not have to be picked up first: a free unit in the rack panel also lists the parcels at that room's door that fit, and installs one in one click.
 
 Every click calls an existing action. Only the desk PC and the NOC desk open the desktop; every other object opens a slide-up panel in the room.
+
+**Phone.** A wall phone hangs beside the basement door and in the office reception: a beige corded set in 2005, a cordless handset in its wall base from 2010. Between 21:00 and 06:00 the player is on call for every location with no technician on call or on shift. A part failing there, or an attack saturating its links, rings the phone: the handset shakes and a bell rings every few seconds while a room with a phone is on screen, and the inbox gets the page as before. Clicking the phone answers. The close-up shows the phone with its handset off the hook and a notepad with the site, what happened and when; for a failed part the notepad opens the rack close-up when the player is at the site, or offers going there in person and remote hands when away. A call left ringing for 30 minutes is missed and costs every active customer 5 happiness.
 
 Staff may later appear in rooms as figures at their desks, the way tycoon games show employees.
 

@@ -18,6 +18,7 @@ import { bankTick, tanTick } from "../46-finance/bank";
 import { deliverPaidOrders } from "../80-business/vendor-shop";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
+import { phoneTick } from "../47-staff/oncall";
 import { handsJobsTick } from "../90-actions/presence";
 import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
@@ -467,6 +468,7 @@ export function tick(state: GameState): SimEvent[] {
   payablesTick(state);
   events.push(...staffTick(state));
   events.push(...techTick(state));
+  events.push(...phoneTick(state));
   events.push(...autoUpdateTick(state));
   events.push(...fairsTick(state));
   events.push(...marketingTick(state));
@@ -489,5 +491,5 @@ export function tickMinute(state: GameState): SimEvent[] {
   panelOpsTick(state);
   const tripped = tripTick(state);
   tanTick(state);
-  return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state), ...pearMailTick(state)];
+  return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state), ...pearMailTick(state), ...phoneTick(state)];
 }
