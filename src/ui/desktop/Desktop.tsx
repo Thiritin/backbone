@@ -25,6 +25,8 @@ import { UpdateSheet } from "./UpdateSheet";
 import { OsUpdateSheet } from "./OsUpdateSheet";
 import { ConfirmHost } from "./Confirm";
 import { watchUpdates } from "../update";
+import { Travel } from "../travel/Travel";
+import { useTrip } from "../travel/route";
 import type { ChangelogDay } from "../changelog";
 
 const AUTOSAVE_MS = 15_000;
@@ -144,6 +146,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       <Searchlight />
       <Switcher />
       <AwayLock />
+      <Travel />
     </>
   );
 }
@@ -153,7 +156,8 @@ const AWAY_MS_PER_HOUR = 150;
 
 function AwayLock() {
   const game = useStore((s) => s.game), advance = useStore((s) => s.advance);
-  const away = game.player.until > game.hour && game.gameOver === null;
+  const driving = useTrip((s) => s.stage !== "room");
+  const away = game.player.until > game.hour && game.gameOver === null && !driving;
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!away) return;

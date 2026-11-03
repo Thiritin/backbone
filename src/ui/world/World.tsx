@@ -13,6 +13,7 @@ import { RackFront } from "../art/RackFront";
 import { rackItems } from "../apps/locations/RackView";
 import { useStore } from "../store";
 import { center, facingOf, iso, key, pathTo, TH, TW, useTiles, type Pt } from "./iso";
+import { useTrip } from "../travel/route";
 import "./world.css";
 
 const WALL = 120, LOW = 58, STEP_MS = 200, BLINK_MS = 500, PAD = 48;
@@ -177,7 +178,7 @@ export function World() {
           <polygon className="w-wall w-wall-near w-wall-x" points={pts(X, XY, up(XY, LOW), up(X, LOW))} />
         </g>
         {/* Fixtures in the near walls stay solid while the walls give way. */}
-        {home && <Door at={FIXTURES.door.x} h={h} open={door} label={t("world.obj.door")} onClick={use(FIXTURES.door, () => { setDoor(true); setTimeout(() => openApp("Weather"), 700); })} />}
+        {home && <Door at={FIXTURES.door.x} h={h} open={door} label={t("world.obj.door")} onClick={use(FIXTURES.door, () => { setDoor(true); setTimeout(() => { setDoor(false); useTrip.getState().send("door"); }, 700); })} />}
         {home && <Letterbox at={FIXTURES.letterbox.x} h={h} count={unread} label={t("world.obj.letterbox")} onClick={use(FIXTURES.letterbox, () => openApp("Post"))} />}
         {home && <FuseBox at={FIXTURES.fusebox.y} w={w} label={`${n(power)} W`} />}
       </svg>

@@ -19,8 +19,8 @@ export const cityNamed = (name: string) => CITIES.find((c) => c.name === name);
 
 // Equirectangular with its standard parallel at about 45 degrees, so Europe keeps its shape.
 const KX = 0.7;
-const X = (lon: number) => Math.round(lon * KX * 100) / 100;
-const Y = (lat: number) => -lat;
+export const X = (lon: number) => Math.round(lon * KX * 100) / 100;
+export const Y = (lat: number) => -lat;
 const X0 = X(WORLD.west), X1 = X(WORLD.east), Y0 = Y(WORLD.north), Y1 = Y(WORLD.south);
 const MIN_W = 4;
 
@@ -37,7 +37,7 @@ function curve(ll: [number, number][]) {
   return d;
 }
 
-const LAND = COAST.map((r) => ring(r) + "Z").join("");
+export const LAND = COAST.map((r) => ring(r) + "Z").join("");
 let GRID = "";
 for (let lon = -180; lon <= 180; lon += 15) GRID += `M${X(lon)} ${Y0}V${Y1}`;
 for (let lat = -45; lat <= 75; lat += 15) GRID += `M${X0} ${Y(lat)}H${X1}`;

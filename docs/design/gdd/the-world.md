@@ -23,7 +23,7 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Deliveries | Parcels arrive at the door; carry them to storage, unbox | Shop buys, tracking in Storage |
 | Post | Letters land in the letterbox; walk over, take them, open them at the desk | Reading, filing, DMS |
 | Scanner | A desk device turns a paper letter into a document | The document appears in the document app |
-| Travel | Walk out the door, pick a destination on the map, arrive after the trip | Locations app shows where you are and when you arrive |
+| Travel | Walk out the door, pick a destination on the map, watch the drive ([Travel](travel.md)) | Locations app shows where you are and when you arrive |
 | Faults | Blinking LED on the rack, the technician PC plugs into a port | Monitoring, alarms, the port inspector diagram |
 | Phone | Rings on the wall at night when on call | Support tickets, pager text |
 | Everything software | | Billing, mail, consoles, network, products, customers, staff |
@@ -35,7 +35,7 @@ The rule: if a real sysadmin in 2005 would have had to stand up for it, it is in
 The first room is the basement of the player's parents' house in Frankfurt, availability zone fra1. Floor grid of about 12 by 9 tiles, isometric, two-to-one diamonds. Fixed objects:
 
 - **Desk with the PC.** Walking to the desk and using the PC opens the desktop fullscreen. The world keeps running underneath and resumes where the player stood. The scanner sits on the desk next to the PC.
-- **Door.** The only exit. Using it opens the map, and the trip starts on arrival at a destination. Parcels and letters appear beside it.
+- **Door.** The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels and letters appear beside it.
 - **Letterbox.** Holds unread post. A count on the flap. Using it moves the letters into the player's hands; the desk opens them.
 - **Storage shelf.** Boxes stacked per delivery; the shelf shows how full the storage is. Using it opens the Storage view.
 - **Rack slots.** Any free floor tile against a wall takes a rack. The basement allows a handful, limited by the power the house gives.
