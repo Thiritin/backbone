@@ -13,11 +13,7 @@
 .wp-letter:hover, .wp-letter:focus-visible, .wp-letter.on { border-color: var(--accent); }
 .wp-letter small { font-variant-numeric: tabular-nums; color: oklch(0.75 0.03 220); }
 .wp-split { display: flex; gap: 16px; min-height: 0; flex: 1; }
-/* The post popup is a letter-sized sheet beside the list, as tall as the room allows. */
-.wp-post { --paper: min(620px, calc((100dvh - 200px) * 210 / 297)); }
-.wp-post .wp-split { flex: 0 1 auto; height: calc(var(--paper) * 297 / 210 + 64px); }
-.wp-post .wp-split > .wp-list { flex: none; width: 340px; }
-.wp-post .wp-read { flex: none; width: var(--paper); }
+.wp-post .wp-split > .wp-list { flex: 1; min-width: 280px; }
 .wp-read { flex: 1.3; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; padding: 8px 16px 16px 0; }
 .wp-acts { display: flex; gap: 8px; align-items: center; }
 .wp-tags { display: flex; flex-wrap: wrap; gap: 6px; }

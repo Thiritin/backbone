@@ -6,9 +6,9 @@ import "../rack/rack.css";
 
 export const SLIDE_MS = 180;
 
-// The centred popup every object in the room opens, filling the room or sized to its content. Escape goes to onBack first when it returns true, then closes.
-export function Slab({ title, head, onClose, onBack, size = "full", className = "", data, children }: {
-  title: string; head?: ReactNode; onClose: () => void; onBack?: () => boolean; size?: "full" | "content"; className?: string; data?: Record<string, string>; children: ReactNode;
+// The centred popup every object in the room opens. Escape goes to onBack first when it returns true, then closes.
+export function Slab({ title, head, onClose, onBack, className = "", data, children }: {
+  title: string; head?: ReactNode; onClose: () => void; onBack?: () => boolean; className?: string; data?: Record<string, string>; children: ReactNode;
 }) {
   const [shown, setShown] = useState(false);
   const ref = useRef<HTMLDivElement>(null), closing = useRef(false);
@@ -35,7 +35,7 @@ export function Slab({ title, head, onClose, onBack, size = "full", className = 
   return (
     <>
       <div className={`wr-veil${shown ? " in" : ""}`} onPointerDown={close} />
-      <div ref={ref} className={`wr-panel${size === "content" ? " wr-fit" : ""} ${className}${shown ? " in" : ""}`} role="dialog" aria-label={title} {...attrs}>
+      <div ref={ref} className={`wr-panel ${className}${shown ? " in" : ""}`} role="dialog" aria-label={title} {...attrs}>
         <div className="wr-head">
           <h2>{title}</h2>
           {head}
