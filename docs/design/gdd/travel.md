@@ -18,7 +18,11 @@ The car is the vehicle for every trip in the first build. Trips that cross the s
 - Land, coast and the game's cities already exist in the Network app's map data. The travel map reuses them with a dark palette: deep blue-grey sea, dark slate land, dim grey roads, the route in the game's accent colour, the car marker bright.
 - Roads come from a public-domain world roads dataset, filtered to the countries the game plays in and simplified so the file stays small. They are decoration and orientation; the route itself is a precomputed line.
 - Routes between every pair of game cities are precomputed once by a script with an open routing engine and committed as a compact JSON of simplified polylines. The game reads the file and never routes at runtime. Pairs without a road route get a great-circle arc.
-- The car marker follows the polyline at constant speed along the length, rotating with the heading.
+- Every place has its own spot in its city: each datacenter, the basement on Kellerweg and each office building. Pins and routes use the place, never the city centre.
+- Each game city has its main streets from OpenStreetMap, motorways down to residential streets where the file size allows, one lazily loaded file per city. Whenever streets are on screen the map shows the "© OpenStreetMap contributors" line the licence asks for.
+- The picker map opens at street zoom over the current city with every place as a named pin. Zoomed out, each city shows one pin with the number of places; clicking it zooms into that city.
+- A route is the street-level leg out of the origin place (its first 3 km toward the destination city), the simplified city-to-city route, and the leg into the destination place. Drives between two places of one city are stored whole.
+- The drive opens at street level over the origin with the car on its street, slows through the first and last 3 km, eases out to the whole route over the motorways in between and back in to the destination's streets, arriving at the place. The car follows the polyline, rotating with the heading.
 
 ## Sounds
 
