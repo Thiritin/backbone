@@ -24,6 +24,21 @@ import type { MenuEntry } from "./menu";
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
+export function SpeedControl({ speed, setSpeed }: { speed: Speed; setSpeed: (s: Speed) => void }) {
+  return (
+    <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
+      {SPEEDS.map((s: Speed, i) => {
+        const label = s === SKIP ? t("desktop.menu.skip") : s ? t("desktop.menu.speedN", { n: s }) : t("desktop.menu.pause");
+        return (
+          <button key={s} aria-pressed={speed === s} aria-label={label} title={label} onClick={() => setSpeed(s)}>
+            {s === SKIP ? <SkipForward className="skip" /> : s ? <span className="arrows">{Array.from({ length: i }, (_, k) => <Play key={k} />)}</span> : <Pause />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function MenuBar({ theme, onTheme, onBell }: Props) {
   const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, toMenu, openNews, deleteProgress, minimize, close, setSurface } = useStore();
   const guideGone = !game.docs.some((d) => d.kind === "guide");
@@ -94,16 +109,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <span className="mb-sep" />
       <button className="mb-item" onClick={() => setSurface("world")}>{roomOf(game).name}</button>
       <span className="mb-sep" />
-      <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
-        {SPEEDS.map((s: Speed, i) => {
-          const label = s === SKIP ? t("desktop.menu.skip") : s ? t("desktop.menu.speedN", { n: s }) : t("desktop.menu.pause");
-          return (
-            <button key={s} aria-pressed={speed === s} aria-label={label} title={label} onClick={() => setSpeed(s)}>
-              {s === SKIP ? <SkipForward className="skip" /> : s ? <span className="arrows">{Array.from({ length: i }, (_, k) => <Play key={k} />)}</span> : <Pause />}
-            </button>
-          );
-        })}
-      </div>
+      <SpeedControl speed={speed} setSpeed={setSpeed} />
       <span className="mb-sep" />
       <button className="mb-item num" onClick={() => openApp("Calendar")}>{formatClock(game.hour, game.minute)}</button>
       <span className="mb-sep" />

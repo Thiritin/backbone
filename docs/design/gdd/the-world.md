@@ -83,9 +83,12 @@ Staff may later appear in rooms as figures at their desks, the way tycoon games 
 
 ## Switching between surfaces
 
-- The desktop shows the room the player is in as a button in the menu bar next to the time controls and as a desktop icon in the top right; both open the world. **Stand up** in the logo menu and a world button in the Locations app do the same. The world shows the room where the player is.
-- In the world, using the PC returns to the desktop. Escape in the world also returns.
-- Both surfaces share the store. The current surface is UI state and is not saved; a load starts on the desktop.
+- The world is the first screen. A new game and a loaded game both open in the room where the player is.
+- In the world, clicking the desk PC or the NOC PC opens the desktop. Escape in the world closes an open panel or puts down a carried parcel and stays in the room.
+- A clock in the top left corner of the world shows the game date and time and holds the same speed buttons as the menu bar, so the player can pause and resume from the first second.
+- The desktop shows the room the player is in as a button in the menu bar next to the time controls and as a desktop icon in the top right; both return to the world. **Stand up** in the logo menu and a world button in the Locations app do the same.
+- Sheets that greet the player on the desktop (Early Access, what's new, system and game updates) wait until the desktop opens.
+- Both surfaces share the store. The current surface is UI state and is not saved.
 - Notifications still slide in while the world is open, so the world is never a blind spot.
 
 ## Simulation pieces the world needs

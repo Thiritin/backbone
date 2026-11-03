@@ -1,6 +1,6 @@
 # The desktop
 
-The whole game is a macOS-style desktop. Every system is an app in the dock that opens in its own window, and notifications slide in at the top right so you always know what is happening.
+The game opens in the basement, and clicking the PC on the desk opens a macOS-style desktop. Every system is an app in the dock that opens in its own window, and notifications slide in at the top right so you always know what is happening.
 
 &#91;embedded content: desktop mock-up · menu bar, two windows, notifications, dock\]
 

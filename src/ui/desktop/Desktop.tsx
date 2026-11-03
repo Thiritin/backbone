@@ -62,14 +62,13 @@ export function Desktop() {
         ? <div className="wallpaper-host photo" style={{ backgroundImage: `url(${photo})` }} />
         : <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />}
       {started ? <Shell theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} /> : <StartScreen />}
-      <EarlyAccess />
     </div>
   );
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   const { windows, speed, setSpeed, advance, save, notify, clearUnseen, news, explain, setExplain, alert } = useStore();
-  const gameOver = useStore((s) => s.game.gameOver), surface = useStore((s) => s.surface);
+  const gameOver = useStore((s) => s.game.gameOver), surface = useStore((s) => s.surface), desk = surface === "desktop";
   const [update, setUpdate] = useState<ChangelogDay[] | null>(null);
   const dismissed = useRef<number | null>(null);
 
@@ -136,11 +135,12 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
           {speed === 0 && <div className="paused-veil">{t("desktop.paused")}</div>}
         </>
       )}
-      {news && <WhatsNew changes={news} />}
+      {desk && <EarlyAccess />}
+      {desk && news && <WhatsNew changes={news} />}
       {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}
-      {gameOver === null && <OsUpdateSheet />}
-      {update && <UpdateSheet changes={update} onLater={() => { dismissed.current = Date.now(); setUpdate(null); }} />}
+      {desk && gameOver === null && <OsUpdateSheet />}
+      {desk && update && <UpdateSheet changes={update} onLater={() => { dismissed.current = Date.now(); setUpdate(null); }} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />
       <Searchlight />
