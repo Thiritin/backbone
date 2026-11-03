@@ -342,23 +342,32 @@ export function Washer({ f }: { f: Fixture }) {
   );
 }
 
-// Drying rack beside the washer with a towel, a shirt and socks on its rails.
+// Folding drying rack beside the washer: a flat middle of wire rungs on crossed legs, a wing hinged down on each long side, a towel over the front wing.
+const DRY_Z = 30, WING_Z = 20;
 export function DryingRack({ f }: { f: Fixture }) {
-  const x0 = f.x + 0.12, len = 24, H = 34;
+  const x0 = f.x + 0.1, x1 = f.x + 0.9, mid = [0.38, 0.62], out = [0.18, 0.82];
+  const line = (a: Pt, b: Pt, cls: string, key?: string | number) => <path key={key} className={cls} d={`M${pts(a)} L${pts(b)}`} />;
+  // Point t of the way along a wing, from its hinge at the middle out to its free edge.
+  const wing = (side: 0 | 1, t: number, x: number) => at3(x, mid[side] + (out[side] - mid[side]) * t, DRY_Z - (DRY_Z - WING_Z) * t);
+  const end = (x: number) => (
+    <g key={x}>
+      {line(at3(x, out[0] + 0.02, 0), at3(x, mid[1], DRY_Z), "w-dry-tube")}
+      {line(at3(x, out[1] - 0.02, 0), at3(x, mid[0], DRY_Z), "w-dry-tube")}
+      <path className="w-dry-tube" d={`M${pts(wing(0, 1, x))} L${pts(at3(x, mid[0], DRY_Z))} L${pts(at3(x, mid[1], DRY_Z))} L${pts(wing(1, 1, x))}`} />
+    </g>
+  );
+  const rungs = (side: 0 | 1) => [0.25, 0.5, 0.75, 1].map((t) => line(wing(side, t, x0), wing(side, t, x1), t === 1 ? "w-dry-tube" : "w-dry-wire", `${side}-${t}`));
+  const tx0 = x0 + 0.14, tx1 = x0 + 0.42, drop = WING_Z - 9;
   return (
     <>
-      <Prism x0={x0} y0={0.18} x1={x0 + 0.04} y1={0.74} z1={2} tone="w-tone-pipe" />
-      <Prism x0={x0 + 0.71} y0={0.18} x1={x0 + 0.75} y1={0.74} z1={2} tone="w-tone-pipe" />
-      <g transform={onY(x0, 0.46, H)}>
-        <rect className="w-rail-post" x="0" y="0" width="1.2" height={H} />
-        <rect className="w-rail-post" x={len - 1.2} y="0" width="1.2" height={H} />
-        {[0, 4, 8, 12].map((y) => <rect key={y} className="w-rail-bar" x="0" y={y} width={len} height="0.8" />)}
-        <rect className="w-towel" x="2.5" y="0.4" width="8" height="16" />
-        <rect className="w-towel-band" x="2.5" y="13" width="8" height="1.2" />
-        <path className="w-shirt" d="M12.5,4.4 h8 l2,3 -1.8,1 -0.8,-1 v9 h-6.8 v-9 l-0.8,1 -1.8,-1 Z" />
-        <rect className="w-sock" x="14" y="12.4" width="2" height="6" />
-        <rect className="w-sock" x="17.5" y="12.4" width="2" height="5" />
-      </g>
+      {end(x0)}
+      {rungs(0)}
+      {[0, 0.06, 0.12, 0.18, 0.24].map((d) => line(at3(x0, mid[0] + d, DRY_Z), at3(x1, mid[0] + d, DRY_Z), d === 0 || d === 0.24 ? "w-dry-tube" : "w-dry-wire", d))}
+      {rungs(1)}
+      {end(x1)}
+      <polygon className="w-towel" points={pts(wing(1, 0.1, tx0), wing(1, 0.1, tx1), wing(1, 1, tx1), at3(tx1, out[1], drop), at3(tx0, out[1], drop), wing(1, 1, tx0))} />
+      <polygon className="w-towel-fold" points={pts(wing(1, 1, tx0), wing(1, 1, tx1), at3(tx1, out[1], drop), at3(tx0, out[1], drop))} />
+      <polygon className="w-towel-band" points={pts(at3(tx0, out[1], drop + 3), at3(tx1, out[1], drop + 3), at3(tx1, out[1], drop + 1.8), at3(tx0, out[1], drop + 1.8))} />
     </>
   );
 }
