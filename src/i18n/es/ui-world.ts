@@ -7,6 +7,7 @@ export default {
   "world.obj.desk": () => "Escritorio",
   "world.obj.scanner": () => "Escáner",
   "world.obj.door": () => "Puerta",
+  "world.obj.switch": () => "Interruptor",
   "world.obj.letterbox": () => "Buzón",
   "world.obj.shelf": () => "Estantería del almacén",
   "world.obj.fusebox": () => "Caja de fusibles",

@@ -218,4 +218,11 @@ describe("world", () => {
     expect(dusk).toBeGreaterThan(0);
     expect(dusk).toBeLessThan(NIGHT);
   });
+  it("lights the bulb and lowers the darkening with the light switch", () => {
+    const dark = darkAt(23, 0), bulb = () => document.querySelector(".w-bulb");
+    expect(bulb()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: t("world.obj.switch") }));
+    expect(bulb()).not.toBeNull();
+    expect(Number((document.querySelector(".w-dark") as SVGElement).style.opacity)).toBeCloseTo(dark / 4);
+  });
 });

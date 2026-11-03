@@ -321,12 +321,12 @@ export function CableDuct({ w, h, door, socket }: { w: number; h: number; door?:
 }
 
 // Light switch at hand height just past the latch side of the door on tile f, so it takes no rack tile of its own.
-export function LightSwitch({ f }: { f: Fixture }) {
+export function LightSwitch({ f, on }: { f: Fixture; on: boolean }) {
   return (
     <g transform={wallT(f, 37)}>
       <rect className="w-socket" x="35" y="0" width="5" height="5" />
       <rect className="w-socket-in" x="36" y="1" width="3" height="3" />
-      <rect className="w-rocker" x="36.5" y="1.5" width="2" height="1" />
+      <rect className="w-rocker" data-on={on} x="36.5" y={on ? 1.5 : 2.5} width="2" height="1" />
     </g>
   );
 }
