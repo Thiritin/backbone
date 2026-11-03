@@ -24,6 +24,7 @@ export interface TechOp { id: string; kind: OpKind; deviceId: string; componentI
 // blackhole: the on-call technician blackholes an attack that saturates their location's links.
 // updates: update software with an open high or critical vulnerability.
 // recover: run the recovery of workloads a pulled plug corrupted.
+export interface TechJob { employeeId: string; kind: OpKind; deviceId: string; hour: number }
 export interface TechRules { failed: boolean; worn: boolean; blackhole: boolean; updates: boolean; recover: boolean }
 export const OP_TASK: Record<OpKind, Task> = { replace: "hardware", off: "hardware", on: "hardware", drain: "servers", php: "panels", migrate: "panels", part: "hardware", domains: "panels", update: "panels", reset: "hardware", bmcreset: "hardware", recover: "servers", boot: "hardware", gear: "hardware", mount: "hardware", unmount: "hardware" };
 // An update of a hypervisor is server work; a panel or mail host update is panel work.
@@ -168,6 +169,7 @@ function perform(s: GameState, o: TechOp): ActionResult | "off" {
 // At a location with nobody on shift the on-call technician answers incidents first, then urgent operations, one per call-out hour.
 export function techTick(s: GameState): SimEvent[] {
   onCallPayroll(s);
+  s.techJobs = [];
   if (!s.staff.some((e) => e.role === "technician")) return [];
   const events: SimEvent[] = [];
   s.techOps = s.techOps.filter((o) => (o.kind === "domains" ? !!s.registrar?.transfer && s.registrar.transfer.doneAt === null : s.devices.some((d) => d.id === o.deviceId)));
@@ -195,6 +197,7 @@ function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>,
     return true;
   }
   taken.add(o.deviceId);
+  s.techJobs = [...s.techJobs, { employeeId: e.id, kind: o.kind, deviceId: o.deviceId, hour: s.hour }];
   // Actions change devices and the ledger in place; the tick works on copies.
   s.devices = s.devices.map((d) => (d.id === o.deviceId || (o.count && d.store) ? { ...d } : d));
   s.ledger = [...s.ledger];
