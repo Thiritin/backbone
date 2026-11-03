@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Rented racks now come with the provider's patch panel in their top unit, where uplinks and cross-connects land; uplinks are booked by speed as the years allow, with a second line as an option; and cables between racks in rented space are ordered from the provider.
 - The trash can in the dock and the room icon on the desktop now change with the OS era like the other icons.
 - The rack opens as a scene in the middle of the screen with depth and a paper tag for the picked unit, cables are dragged from port to port and vanish into the duct, and the map shows Europe only for now.
 - Colocation sites now look like the floor you rent on: your racks stand among other tenants' mesh-fronted racks, a cage appears only when you rent one, and halls have hot and cold aisles where the site has them.

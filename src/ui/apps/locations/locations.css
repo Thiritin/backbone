@@ -152,6 +152,9 @@ svg.logo-mark { flex: none; }
 .loc-port[data-lamp="warn"] { --lamp: oklch(0.83 0.17 80); color: oklch(0.88 0.01 255); }
 .loc-port[data-lamp="bad"] { --lamp: oklch(0.66 0.23 27); color: oklch(0.88 0.01 255); }
 .loc-port:hover { background: oklch(0.22 0.006 255); }
+.loc-port[data-role="uplink"] { background: oklch(0.3 0.06 145); }
+.loc-port[data-role="xconnect"] { background: oklch(0.3 0.06 262); }
+.loc-port[data-role="provider-cable"] { background: oklch(0.3 0.06 80); }
 .loc-port.grouped { outline: 1.2px dashed oklch(0.74 0.14 300); outline-offset: 1px; }
 .loc-port[aria-pressed="true"] { box-shadow: 0 0 0 1.6px var(--accent); background: oklch(0.24 0.04 262); }
 .loc-port:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
