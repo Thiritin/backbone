@@ -48,7 +48,7 @@ A clean flat isometric miniature of a real place, drawn with care and full of th
 
 ## What a room must have
 
-Basement: two cellar windows with light shafts, the fuse box with breakers and a meter with a spinning disc, a conduit from it to the racks, the boiler with pipes to the ceiling, a washing machine and a drying rack (it is the parents' house), the desk with PC, screen, keyboard, scanner and a desk lamp, an office chair, the shelf with boxes, the door with a mat, the letterbox beside it, a ceiling lamp, a hygrometer on the wall, a floor drain, a crate of beer, and racks where the player put them.
+Basement: two cellar windows with light shafts, the fuse box with breakers and a meter with a spinning disc, a conduit from it to the racks, the boiler with pipes to the ceiling, a washing machine and a drying rack (it is the parents' house), the desk with PC, screen, keyboard, scanner and a desk lamp, an office chair, the shelf with boxes, the door with a mat and a light switch, the letterbox beside it, cable ducts along the base of both walls rising to the socket and the fuse box, a ceiling lamp, a hygrometer on the wall, a floor drain, a crate of beer, and racks where the player put them.
 
 Rack space (share): the player's racks stand in one row among other tenants' racks on the open datacenter floor. Every rack, the player's and the neighbours', has a mesh front door with the servers visible behind it; neighbour racks are drawn closed and dimmed and cannot be clicked. The room has a normal datacenter door and no fence.
 

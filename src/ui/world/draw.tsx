@@ -266,6 +266,43 @@ export function WallJack({ f }: { f: Fixture }) {
   );
 }
 
+// Flat cable ducts along the base of both far walls, broken by the doorway, with a riser up through the socket to the fuse box.
+const DUCT_Z = 4, DUCT_H = 4, RISER = 16;
+export function CableDuct({ w, h, door, socket }: { w: number; h: number; door?: Fixture; socket?: Fixture }) {
+  const run = (x0: number, x1: number) => (
+    <g key={x0}>
+      <rect className="w-duct" x={x0} y="0" width={x1 - x0} height={DUCT_H} />
+      <path className="w-duct-seam" d={`M${x0},1.2 L${x1},1.2`} />
+    </g>
+  );
+  const rise = (z0: number, z1: number) => <rect key={z0} className="w-duct" x={RISER - DUCT_H / 2} y={-z1} width={DUCT_H} height={z1 - z0} />;
+  // The left wall runs from the near corner (local 0) to the far one (h * 32); the door's jamb spans one tile.
+  const gap = door && [(h - door.y - 1) * 32, (h - door.y) * 32];
+  return (
+    <>
+      <g transform={onX(0, h, DUCT_Z + DUCT_H)}>{gap ? [run(0, gap[0]), run(gap[1], h * 32)] : run(0, h * 32)}</g>
+      <g transform={onY(0, 0, DUCT_Z + DUCT_H)}>{run(0, w * 32)}</g>
+      {socket && (
+        <g transform={wallT(socket, 0)}>
+          {rise(DUCT_Z + DUCT_H, JACK_Z - 9)}
+          {rise(JACK_Z, FUSE_Z - FUSE_H)}
+        </g>
+      )}
+    </>
+  );
+}
+
+// Light switch at hand height just past the latch side of the door on tile f, so it takes no rack tile of its own.
+export function LightSwitch({ f }: { f: Fixture }) {
+  return (
+    <g transform={wallT(f, 37)}>
+      <rect className="w-socket" x="35" y="0" width="8" height="8" />
+      <rect className="w-socket-in" x="36.6" y="1.6" width="4.8" height="4.8" />
+      <rect className="w-rocker" x="37.4" y="2.4" width="3.2" height="1.6" />
+    </g>
+  );
+}
+
 // Gas boiler in the corner: an enamel cabinet with its control strip, flame window and label plate, pipes up to the ceiling.
 export function Boiler({ f }: { f: Fixture }) {
   const x0 = f.x + 0.12, x1 = f.x + 0.8, y1 = 0.62, H = 62, len = (x1 - x0) * 32;

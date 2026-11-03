@@ -99,6 +99,9 @@
 .w-socket { fill: oklch(0.97 0.004 90); stroke: oklch(0.8 0.006 90); stroke-width: 0.5; }
 .w-socket-in { fill: oklch(0.92 0.004 90); stroke: oklch(0.82 0.006 90); stroke-width: 0.3; }
 .w-socket-hole { fill: oklch(0.35 0.01 255); }
+.w-duct { fill: oklch(0.9 0.004 250); stroke: oklch(0.76 0.008 250); stroke-width: 0.4; }
+.w-duct-seam { fill: none; stroke: oklch(0.8 0.006 250); stroke-width: 0.3; }
+.w-rocker { fill: oklch(0.97 0.004 90); stroke: oklch(0.78 0.006 90); stroke-width: 0.3; }
 .w-strip { fill: oklch(0.86 0.006 90); stroke: oklch(0.76 0.008 90); stroke-width: 0.4; }
 .w-dial { fill: oklch(0.62 0.01 250); stroke: oklch(0.5 0.01 250); stroke-width: 0.4; }
 .w-drawer { fill: oklch(0.9 0.005 90); stroke: oklch(0.72 0.008 90); stroke-width: 0.4; }

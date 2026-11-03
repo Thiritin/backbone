@@ -22,8 +22,8 @@ import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
-  BeerCrate, Boiler, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox, Grate,
-  Hygrometer, Letterbox, Light, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
+  BeerCrate, Boiler, CableDuct, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox, Grate,
+  Hygrometer, Letterbox, Light, LightSwitch, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { JackPanel, RoomCables } from "./rack/Cables";
@@ -230,6 +230,8 @@ export function World() {
     hygrometer: (f) => <Hygrometer f={f} inside={`${n(roomTemperature(game, loc), 1)}°`} outside={`${n(temperature(loc.city, game.hour))}°`} />,
     fusebox: (f) => <FuseBox f={f} reading={watts} turn={turn} w={w} />,
     jack: (f) => <WallJack f={f} />,
+    duct: () => <CableDuct w={w} h={h} door={fx.door} socket={fx.jack} />,
+    switch: (f) => <LightSwitch f={f} />,
     boiler: (f) => <Boiler f={f} />,
     washer: (f) => <Washer f={f} />,
     dryer: (f) => <DryingRack f={f} />,
