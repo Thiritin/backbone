@@ -38,6 +38,7 @@ Infrastructure lives in locations: your basement first, then space in other comp
 | Cross-connects | Monthly fee per cable | The cost of every carrier, exchange and customer link |
 | Remote hands | Price per hour and response time | Repairs and mounting without your own technician on site; hands-on work ordered from afar waits as a job until the response time has passed, then runs and is billed for its fixed hours |
 | Certification | Certified or not | Offices and enterprises require it |
+| Hot and cold aisles | Yes or no; large certified halls have them, budget sites do not | How the hall looks: with aisles the rack rows face each other across a cold aisle, without them every row faces the same way |
 | Lead time and term | Days until ready, months of commitment | How fast you can expand and how long you are bound |
 
 **Provider logos.** Every datacenter provider has its own parody logo, drawn in code: an original mark and wordmark that hint at the real company through its name and colour without copying its logo. The basement shows a house icon.

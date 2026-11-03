@@ -63,7 +63,7 @@ export function post(s: GameState, from: string, topic: string, params: Record<s
 export const inbox = (s: GameState): Letter[] => s.letters.filter((l) => l.arrived);
 export const inLetterbox = (s: GameState): Letter[] => inbox(s).filter((l) => l.box);
 export const atDesk = (s: GameState): Letter[] => inbox(s).filter((l) => !l.box);
-// The company's postal address is the basement's; without a basement, the first location.
+// The letterbox the post lands in: the basement's; without a basement, the first location.
 export const postLocation = (s: GameState): string => (s.locations.find((l) => l.space === "basement") ?? s.locations[0]).id;
 
 // Delivers the letters due this hour; the first one puts the Post app on the dock.

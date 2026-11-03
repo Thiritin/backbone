@@ -1,4 +1,5 @@
 // Postal addresses of customers, printed on invoices and used as domain owner data. Drawn per country of the customer's city.
+import { officeAddress } from "../60-infra/properties";
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import type { GameState } from "../50-state";
 import { personName } from "../30-market/market";
@@ -64,10 +65,10 @@ export function addressFor(seed: number, key: number, contact: string, company: 
   return { contact, ...(company && { company }), street, zip, city: town, email };
 }
 
-// The company's own address: the registered one, else the address the seed gives the basement.
+// The company's own address: the office's, with the owner as contact.
 export const ownAddress = (s: GameState): Address => ({
   ...addressFor(s.seed, 0, s.registration?.owner ?? s.company.name, s.company.name, s.locations[0]?.city ?? "Frankfurt"),
-  ...s.company.address,
+  ...officeAddress(s),
 });
 
 // Saves from before addresses: the name is the contact of a private customer and the company of any other.

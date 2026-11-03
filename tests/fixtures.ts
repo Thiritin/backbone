@@ -13,6 +13,7 @@ import { chmodFile, extractFile, uploadFile } from "../src/sim/90-actions/webspa
 import { bookMail } from "../src/sim/90-actions/mail";
 import { mxSetAt } from "../src/sim/10-catalog/mail-providers";
 import { hire as hireReal } from "../src/sim/90-actions/staff";
+import { freeDesk } from "../src/sim/60-infra/properties";
 import { mxTarget } from "../src/sim/42-mail/caps";
 import { companyDomain } from "../src/sim/30-customers/domains";
 import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
@@ -38,7 +39,13 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
 const funded = (s: GameState): GameState => { s.cash = START_CASH; return s; };
-export const newGame = (seed: number): GameState => funded(blankGame(seed));
+// The basement as games had it before the shelf: a 24U rack with the router in storage, which most suites build on.
+export const racked = (s: GameState): GameState => {
+  s.racks[0] = { ...s.racks[0], model: "rack-24", name: "fra1-rack-01", price: 350 };
+  Object.assign(s.devices.find((d) => d.id === "dev5")!, { rackId: null, slot: 0, store: "loc1" });
+  return s;
+};
+export const newGame = (seed: number): GameState => funded(racked(blankGame(seed)));
 export const startGame = (seed: number): GameState => funded(startBlank(seed));
 import { buyCart as buyCartReal, buyDevice as buyDeviceReal, type CartLine } from "../src/sim/90-actions/hardware";
 import { addNode, createPanelVm, installHypervisor, installPanel, provisionService, workload } from "../src/sim/90-actions/clusters";
@@ -151,6 +158,7 @@ export const runServers = (s: GameState): void => {
 // The basement server and switch new games used to start with, cabled to the home router and paid from the savings, on the
 // business DSL line with an own /24 announced there and the router's web port shared with the server; suites that are not about the first server or addresses start from it.
 export function withServer(s: GameState): GameState {
+  racked(s);
   s.cash -= 2500;
   s.homeLine = { id: "dsl-16-biz", next: null };
   s.ips = { ...s.ips, blocks: [{ id: "blk-test", prefix: "185.1.0.0/24", size: 256, locationId: "loc1", boughtAt: 0 }] };
@@ -367,7 +375,13 @@ export function withDomainMail(s: GameState): GameState {
   s.company = { ...s.company, zone: [...s.company.zone, ...mxSetAt("ionose", d, s.hour).map(([p, h]) => ({ id: `z${s.nextId++}`, type: "MX" as const, name: "@", ttl: 3600, data: `${p} ${h}` }))] };
   return s;
 }
-export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDomainMail(s), candidateId, team);
+// A desk section in the basement, so tests hire the way they did before staff needed desks.
+export function withDesk(s: GameState): GameState {
+  const b = s.properties.find((p) => p.kind === "basement");
+  if (b && !freeDesk(s)) b.sections.push({ id: `t${b.sections.length + 1}`, floor: 0, fit: "desks", since: 0, refitUntil: 0, rent: 0 });
+  return s;
+}
+export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDesk(withDomainMail(s)), candidateId, team);
 
 // Company emails about this topic in every mailbox, oldest first.
 export const mailsAbout = (s: GameState, topic: string): Message[] =>

@@ -12,7 +12,7 @@ import { hire } from "../src/sim/90-actions/staff";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { err, idOf } from "./company-mail.helpers";
-import { readyGame } from "./fixtures";
+import { readyGame, withDesk } from "./fixtures";
 import { tick } from "../src/sim/88-tick/tick";
 
 // Skips to the hour before the next month start and ticks into it.
@@ -71,7 +71,7 @@ describe("provider actions", () => {
   it("give a Goggle sign-up a mailbox for every employee and an admin that cannot be suspended", () => {
     const s = readyGame(15);
     s.candidates = s.candidates.map((c) => ({ ...c, arriveAt: Math.min(c.arriveAt, s.hour), leaveAt: Math.max(c.leaveAt, s.hour + 1) }));
-    expect(hire(s, visibleCandidates(s)[0].id).ok).toBe(true);
+    expect(hire(withDesk(s), visibleCandidates(s)[0].id).ok).toBe(true);
     s.hour = at("2011-06");
     expect(err(signUpGoggle(s, { domain: "elsewhere.com", plan: "free", local: "admin", title: "Admin", password: "admin-pw" }))).toBe("error.needsDomain");
     const admin = idOf(goggle(s, "free")), t = tenantOf(s, admin);

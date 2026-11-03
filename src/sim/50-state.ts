@@ -8,7 +8,7 @@ import type { BooksDownload, BooksVendorId, Feature } from "./10-catalog/bookkee
 import type { Vendor } from "./10-catalog/cpus";
 import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
-import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
+import { BASEMENT, MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Service } from "./30-customers/customers";
 import type { Quote } from "./30-market/quotes";
@@ -65,14 +65,25 @@ export const SAVE_VERSION = 5;
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
 
-export type SpaceKind = "basement" | "share" | "cage" | "suite";
+export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office";
+// Where the company lives (GDD, Properties). building is the postal address; buildingId the listing it was rented or bought from.
+// A section's rent is the monthly price agreed when it was rented (0 once bought); fit is null for a bought section never fitted.
+// refitUntil is the hour a refit is done. locationId is the zone the property's server rooms (or the basement's racks) form.
+export type PropertyKind = "basement" | "office" | "own";
+export type SectionFit = "desks" | "servers";
+export interface Building { name: string; street: string; zip: string; city: string }
+export interface Section { id: string; floor: number; fit: SectionFit | null; since: number; refitUntil: number; rent: number }
+export interface Property {
+  id: string; kind: PropertyKind; buildingId: string | null; building: Building; sections: Section[];
+  deposit: number; noticeAt: number | null; boughtFor: number | null; locationId: string | null;
+}
 // One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.
 export type LogSev = "info" | "warn" | "crit";
 export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number }
 // Each location is an availability zone (az, like fra2) in the region of its city.
 export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
 // share-N racks belong to the provider of a rack share and hold N units.
-export type RackModel = "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
+export type RackModel = "shelf" | "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
 // arriveAt is the hour a moving rack arrives; null when it is in place. A moving rack already holds its target location and position.
 export interface Rack { id: string; model: RackModel; locationId: string; position: number; name: string; arriveAt: number | null; price: number; boughtAt: number; provided: boolean; feedB: boolean; highDensity: boolean; extraKw: number; extraKwAt: { kw: number; at: number } | null;
   // A flat-rate power contract's kW, 0 for metered, and a change booked for a later hour.
@@ -221,6 +232,7 @@ export interface GameState {
   cash: number;
   nextId: number;
   locations: Location[];
+  properties: Property[];
   racks: Rack[];
   devices: Device[];
   cables: Cable[];
@@ -475,15 +487,21 @@ export function fillCards(modelId: string, components: Component[]): Component[]
 export const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
   ({ id, model, brand, rackId, slot, panel, name, bond: "none", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
 
-// Starting infrastructure: an empty 24U basement rack, the line jack on its panel and the flat's router in storage. The player
-// mounts the router, buys, mounts and cables the first server.
+// Starting infrastructure: a metal shelf in the basement with the flat's router on its top board, and the line jack on its
+// panel. The player cables the router, buys, places and cables the first server.
 const START_NAME = "Basement Hosting";
+
+export const BASEMENT_ADDRESS: Building = { name: "", street: "Kellerweg 3", zip: "60311", city: "Frankfurt am Main" };
+export const basementProperty = (locationId: string | null): Property => ({
+  id: "prop1", kind: "basement", buildingId: null, building: BASEMENT_ADDRESS, sections: [], deposit: 0, noticeAt: null, boughtFor: null, locationId,
+});
 
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: 0, nextId: 8,
-  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
-  racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
-  devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
+  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: BASEMENT.positions, readyAt: 0, extraCircuit: false }],
+  properties: [basementProperty("loc1")],
+  racks: [{ id: "rack2", model: "shelf", locationId: "loc1", position: 1, name: t("rack.shelf"), arriveAt: null, price: 0, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
+  devices: [device("dev5", "home-router", "AVN", "rack2", 5, null, "fra1-gw-01", 0), device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
   ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, powerUse: {}, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, ownWebspaces: [], installers: {},

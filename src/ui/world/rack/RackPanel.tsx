@@ -3,11 +3,11 @@ import { t } from "../../../i18n/en";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { freeSlots, mountFrom, portPeers } from "../../../sim/60-infra/status";
+import { freeSlots, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
 import { installCarried, installFromDoor } from "../../../sim/90-actions/carry";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
-import { RackFront } from "../../art/RackFront";
+import { RackFront, shelfPitch } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
@@ -87,7 +87,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   if (!rack) return null;
 
   const units = rackUnits(rack.model), items = rackItems(game, rack.id);
-  const used = items.filter((it) => !it.chassisId).reduce((n, it) => n + it.model.height, 0);
+  const used = items.filter((it) => !it.chassisId).reduce((n, it) => n + heightIn(game, rack.id, it.model.id), 0);
   const cableAt = port && game.cables.find((c) => same(c.a, port) || same(c.b, port));
   const plug = (e: End) => {
     if (peerOf(e)) { pick(null); setPort(e); return; }
@@ -106,14 +106,15 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   else if (free !== null) tag = <InstallCard rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} onPick={pick} />;
   const wide = !!lid || (free !== null && !dev);
 
+  const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
   const face = (side: boolean) => side ? (
-    <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U} duct
+    <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U} duct
       selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title}
       onConnect={(a, b) => { act(connect, a, b); }} onAway={away} />
   ) : (
-    <RackFrame units={units}>
+    <RackFrame units={tall} bare={shelf}>
       {(w, u) => (
-        <RackFront units={units} items={items} w={w} u={u} selected={dev?.id ?? null}
+        <RackFront units={units} shelf={shelf} items={items} w={w} u={u} selected={dev?.id ?? null}
           onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => menus.entries(d))(e); }} />
       )}
     </RackFrame>
@@ -126,12 +127,12 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
           <button className="wr-btn" aria-pressed={!back} onClick={() => turn(false)}>{t("locations-2.front")}</button>
           <button className="wr-btn" aria-pressed={back} onClick={() => turn(true)}>{t("locations-2.back")}</button>
         </div>
-        <span className="wr-num">{used} / {units} U</span>
+        <span className="wr-num">{rack.model === "shelf" ? `${t("rack.shelf")}, ${used} / ${units}` : `${used} / ${units} U`}</span>
       </>}>
-      <div ref={stage} className="wr-stage" style={{ ["--z" as string]: zoom, ["--units" as string]: units }}>
+      <div ref={stage} className="wr-stage" style={{ ["--z" as string]: zoom, ["--units" as string]: tall }}>
         <div className="wr-room">
           <div ref={scene} className={`wr-scene${tag ? (wide ? " tagged wide" : " tagged") : ""}`}>
-            <div className="wr-cab">
+            <div className={`wr-cab${shelf ? " shelf" : ""}`}>
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
               <div className={`wr-face${turning !== null ? " in" : ""}`}>{face(back)}</div>
             </div>
@@ -154,11 +155,12 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   );
 }
 
-// The rack's metal frame around the drawn units.
-function RackFrame({ units, children }: { units: number; children: (w: number, u: number) => ReactNode }) {
-  const u = FRONT_U, w = u * 19;
+// The rack's metal frame around the drawn units; a shelf stands open, bare.
+function RackFrame({ units, bare = false, children }: { units: number; bare?: boolean; children: (w: number, u: number) => ReactNode }) {
+  const u = FRONT_U, w = u * 19, [cap, side, foot] = bare ? [0, 0, 0] : [CAP, SIDE, FOOT];
   // RackFront's front view without the cable channel it draws to the right.
-  const iw = w + 36, ih = units * u + 8, ow = iw + 2 * SIDE, oh = ih + CAP + FOOT;
+  const iw = w + 36, ih = units * u + 8, ow = iw + 2 * side, oh = ih + cap + foot;
+  if (bare) return <svg className="wr-rack" width={iw} height={ih} viewBox={`0 0 ${iw} ${ih}`}>{children(w, u)}</svg>;
   return (
     <svg className="wr-rack" width={ow} height={oh} viewBox={`0 0 ${ow} ${oh}`}>
       <rect className="wr-frame" width={ow} height={oh} />
@@ -228,7 +230,7 @@ function InstallCard({ rack, unit, onMount, onPick }: { rack: Rack; unit: number
 // Free units a unit in the player's hands could go into, one per start slot and every unit of its run.
 function fitOf(game: GameState, rack: Rack, d: Device | undefined): number[] {
   if (!d || rack.locationId !== game.player.at) return [];
-  const h = modelById(d.model).height;
+  const h = heightIn(game, rack.id, d.model);
   if (modelById(d.model).kind === "part" || !h) return [];
   return freeSlots(game, rack.id, 1).filter((u) => mountFrom(game, rack.id, h, 1, u) !== undefined);
 }
@@ -252,7 +254,7 @@ function doorFit(game: GameState, rack: Rack, unit: number): Device[] {
 // A unit carried or waiting at the door, mounted by the player's own hands.
 function HandRow({ game, rack, unit, d, onDone }: { game: GameState; rack: Rack; unit: number; d: Device; onDone: (id: string) => void }) {
   const act = useStore((s) => s.act), m = modelById(d.model), carried = d.id === game.player.carrying;
-  const from = mountFrom(game, rack.id, m.height, 1, unit)!;
+  const from = mountFrom(game, rack.id, heightIn(game, rack.id, d.model), 1, unit)!;
   const mount = () => (carried ? act(installCarried, rack.id, from) : act(installFromDoor, d.id, rack.id, from));
   return (
     <div className="loc-shop-row" data-carried={carried ? d.id : undefined} data-door={carried ? undefined : d.id}>

@@ -22,6 +22,7 @@ import { handsJobsTick } from "../90-actions/presence";
 import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
 import { closeLocation, noticeEnd } from "../90-actions/hardware";
+import { propertiesEnd, propertyBills } from "../90-actions/properties";
 import { endService } from "../90-actions/holds";
 import { officeOpen } from "../80-business/office";
 import { fairsTick } from "../80-business/fairs";
@@ -355,6 +356,7 @@ export function tick(state: GameState): SimEvent[] {
   }
   if (state.waitlist.length) updateHolds(state, events);
   contractsEnd(state, events);
+  if (monthStart) propertiesEnd(state, events);
   for (const v of state.services) if (v.endedAt === null && v.endsAt !== undefined && v.endsAt <= state.hour) endService(state, v.id);
   if (monthStart) competitorsTake(state);
   if (monthStart) events.push(...rivalsTick(state));
@@ -367,6 +369,7 @@ export function tick(state: GameState): SimEvent[] {
     const free = (l: Location) => { const c = state.contracts.find((x) => x.locationId === l.id); return c?.retainedAt != null && noticeEnd(c.retainedAt, 0) === state.hour ? c.monthly : 0; };
     const bills: LedgerEntry[] = state.locations.filter((l) => l.dc)
       .map((l) => ({ hour: state.hour, category: "rent", key: "ledger.space", params: { location: l.name, dc: l.dc! }, amount: free(l) - locationRent(state, l) }));
+    bills.push(...propertyBills(state));
     for (const r of state.racks) {
       const loc = state.locations.find((l) => l.id === r.locationId)!;
       if (!loc.dc) continue;

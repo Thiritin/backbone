@@ -54,8 +54,8 @@ describe("datacenter catalog", () => {
     expect(SPACE_SIZES.cage.map((n) => spacePrice(fr5, "cage", n))).toEqual([2550, 4800, 9000]);
     expect(SPACE_SIZES.suite.map((n) => spacePrice(fr5, "suite", n))).toEqual([11250, 21000]);
     expect(LEAD_DAYS).toEqual({ share: 2, cage: 30, suite: 90 });
-    expect(RACK_MODELS.map((m) => [m.id, m.units, m.price])).toEqual([["rack-24", 24, 350], ["rack-42", 42, 800], ["rack-47", 47, 1000]]);
-    expect(BASEMENT).toEqual({ positions: 1, maxUnits: 24, kw: 3 });
+    expect(RACK_MODELS.map((m) => [m.id, m.units, m.price])).toEqual([["shelf", 5, 60], ["rack-24", 24, 350], ["rack-42", 42, 800], ["rack-47", 47, 1000]]);
+    expect(BASEMENT).toEqual({ positions: 3, racks: 2, maxUnits: 24, kw: 3 });
   });
 });
 
@@ -133,7 +133,7 @@ describe("racks", () => {
     ok(sellRack(s, "rack2"));
     expect(s.cash).toBe(280);
     expect(s.ledger.at(-1)).toEqual({ hour: 730, category: "sales", key: "ledger.sale", params: { device: "fra1-rack-01" }, amount: 280 });
-    expect(freePositions(s, "loc1")).toEqual([1]);
+    expect(freePositions(s, "loc1")).toEqual([1, 2, 3]);
     expect(err(sellRack(s, "rack2"))).toBe("error.unknownRack");
   });
 });
@@ -163,7 +163,7 @@ describe("moveRack", () => {
     expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "moving", key: "ledger.move", params: { rack: "fra1-rack-01", location: "Equinox FR5" }, amount: -300 });
     // The server-to-switch cable stays inside the rack; the cable to the home router is unplugged.
     expect(s.cables.map((c) => c.id)).toEqual(["cab6"]);
-    expect(freePositions(s, "loc1")).toEqual([1]);
+    expect(freePositions(s, "loc1")).toEqual([1, 2, 3]);
     expect(linkStatus(s, "dev3").online).toBe(false);
     expect(rackPower(s, "rack2").watts).toBe(0);
     expect(err(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }))).toBe("error.rackMoving");

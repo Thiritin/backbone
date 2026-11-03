@@ -19,11 +19,11 @@ export const providerOf = (l: Location) => dcOf(l)?.provider ?? null;
 export const Zone = ({ loc }: { loc: Location }) => <span className="loc-az num">{loc.az}</span>;
 export const LocName = ({ loc }: { loc: Location }) => <span className="loc-name">{loc.name}<Zone loc={loc} /></span>;
 export const positionsLabel = (n: number) => t("locations-2.nPositions", { n });
-export const SPACE_NAME = { basement: t("locations-2.space.basement"), share: t("locations-2.space.share"), cage: t("locations-2.space.cage"), suite: t("locations-2.space.suite") };
+export const SPACE_NAME = { basement: t("locations-2.space.basement"), share: t("locations-2.space.share"), cage: t("locations-2.space.cage"), suite: t("locations-2.space.suite"), office: t("locations-2.space.office") };
 // A share of size n is 1/n of a rack.
 export const shareLabel = (n: number) => (n === 1 ? t("locations-2.fullRack") : t("locations-2.shareRack", { n }));
 // A rented space and its size, as offered: "1/4 rack", "Cage, 8 positions".
-export const spaceSize = (space: Exclude<Location["space"], "basement">, size: number) =>
+export const spaceSize = (space: Exclude<Location["space"], "basement" | "office">, size: number) =>
   space === "share" ? shareLabel(size) : t("locations-2.spaceSize", { space: SPACE_NAME[space], positions: positionsLabel(size) });
 export const shareUnits = (n: number) => SHARE_RACKS.find((m) => m.size === n)?.units ?? 0;
 const shareOf = (g: GameState, l: Location) => SHARE_RACKS.find((m) => g.racks.some((r) => r.locationId === l.id && r.model === m.id));
@@ -36,7 +36,7 @@ export function spaceLabel(l: Location, g?: GameState) {
 export function locationPower(g: GameState, locId: string) {
   const loc = g.locations.find((l) => l.id === locId)!, dc = dcOf(loc);
   const racks = g.racks.filter((r) => r.locationId === locId).map((r) => rackPower(g, r.id));
-  const limit = loc.space === "share" ? racks.reduce((n, p) => n + p.limitWatts, 0) : 1000 * loc.positions * (dc ? dc.kwPerPosition : BASEMENT.kw);
+  const limit = loc.space === "share" ? racks.reduce((n, p) => n + p.limitWatts, 0) : 1000 * (dc ? loc.positions * dc.kwPerPosition : BASEMENT.kw);
   return { watts: racks.reduce((n, p) => n + p.watts, 0), limit, tripped: racks.some((p) => p.tripped) };
 }
 
