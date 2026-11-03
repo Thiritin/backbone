@@ -1,6 +1,6 @@
 import { STARTER_APPS, WIDGETS } from "../src/sim/10-catalog/store";
 import { describe, expect, it } from "vitest";
-import { SAVE_VERSION } from "../src/sim/50-state";
+import { newGame as blankGame, SAVE_VERSION } from "../src/sim/50-state";
 import { linkStatus } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
@@ -57,9 +57,9 @@ describe("save", () => {
       cables: [{ id: "cab5", a: { device: "dev3", port: 0 }, b: { device: "dev4", port: 0 }, kind: "copper" }],
     };
     const s = deserialize(JSON.stringify(v1));
-    const fresh = newGame(4);
-    // An old save keeps the DSL line it started with and lists no line it cannot deliver; the new basement's router waits in
-    // storage, so the line has no address yet.
+    const fresh = blankGame(4);
+    // An old save keeps the DSL line it started with and lists no line it cannot deliver; the new basement's router stands on
+    // its shelf uncabled, so the line has no address yet.
     expect(s).toEqual({
       ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)], registration: legacyRegistration(4),
       marketing: { ...fresh.marketing, lines: [] }, homeLine: { id: "dsl-16", next: null },

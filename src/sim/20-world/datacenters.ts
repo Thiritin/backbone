@@ -165,6 +165,8 @@ export const seedDcs = (seed: number, year: number): Record<string, { others: nu
 }));
 
 export const RACK_MODELS: { id: RackModel; units: number; price: number }[] = [
+  // A used metal shelf: units are its boards, counted from the bottom like rack units, each holding one device.
+  { id: "shelf", units: 5, price: 60 },
   { id: "rack-24", units: 24, price: 350 },
   { id: "rack-42", units: 42, price: 800 },
   { id: "rack-47", units: 47, price: 1000 },
@@ -185,7 +187,10 @@ export const rackUnits = (model: RackModel): number => {
   return u;
 };
 
-export const BASEMENT = { positions: 1, maxUnits: 24, kw: 3 } as const;
+// The basement holds the shelf and at most two racks.
+export const BASEMENT = { positions: 3, racks: 2, maxUnits: 24, kw: 3 } as const;
+// The tallest device a shelf board holds; patch panels and PDUs need rails.
+export const SHELF = { maxHeight: 2, railKinds: ["patch", "pdu"] } as const;
 // A circuit carries 80% of its limit continuously; a draw above that for three hours trips its breaker.
 export const CONTINUOUS = { share: 0.8, hours: 3 } as const;
 export const HOUSEHOLD_FACTOR = 1.6;

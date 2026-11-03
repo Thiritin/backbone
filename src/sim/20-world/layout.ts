@@ -7,7 +7,8 @@ export interface RoomSize { w: number; h: number }
 export interface Fixture { x: number; y: number; w?: number; kind?: string }
 // A row of rack tiles from x0 to x1, fronts facing the cold aisle.
 interface Row { y: number; x0: number; x1: number; facing: Facing }
-interface Room { size: RoomSize; fixtures: Record<string, Fixture>; rows: Row[] }
+// A room without rows lists its rack tiles, and a basement the shelf's tile.
+interface Room { size: RoomSize; fixtures: Record<string, Fixture>; rows: Row[]; racks?: Tile[]; shelf?: Tile }
 
 // Fixed objects stand against or hang on a wall, row y = 0 along the far wall and column x = 0 along the left one, except the basement's floor clutter. The door is always on the left wall; the suite's NOC desk stands in front of the rack rows so none hides it.
 const ROOMS: Record<SpaceKind, Room> = {
@@ -21,6 +22,8 @@ const ROOMS: Record<SpaceKind, Room> = {
       chair: { x: 4, y: 1 }, mat: { x: 1, y: 4 }, drain: { x: 3, y: 5 }, lamp: { x: 4, y: 4 },
     },
     rows: [],
+    shelf: { x: 5, y: 0, facing: "s" },
+    racks: [{ x: 6, y: 0, facing: "s" }, { x: 7, y: 0, facing: "s" }],
   },
   share: {
     size: { w: 8, h: 6 },
@@ -82,25 +85,20 @@ export function coldAisles(loc: Location): { y: number; x0: number; x1: number }
 
 const key = (t: { x: number; y: number }) => `${t.x},${t.y}`;
 
-// Tiles that take a rack. In the basement: the far wall's row first, then the left and the right column, corners left out since their facing is ambiguous, and the near side has no wall. In a rented room: the rack rows.
+// Tiles that take a rack: the rack rows, or the room's listed tiles. The basement's shelf has its own tile.
 export function wallTiles(loc: Location): Tile[] {
   const room = ROOMS[loc.space];
-  if (room.rows.length) return room.rows.flatMap((r) => Array.from({ length: r.x1 - r.x0 + 1 }, (_, i) => ({ x: r.x0 + i, y: r.y, facing: r.facing })));
-  const { w, h } = room.size;
-  const tiles: Tile[] = [];
-  for (let x = 1; x < w - 1; x++) tiles.push({ x, y: 0, facing: "s" });
-  for (let y = 1; y < h - 1; y++) tiles.push({ x: 0, y, facing: "e" });
-  for (let y = 1; y < h - 1; y++) tiles.push({ x: w - 1, y, facing: "w" });
-  const fixed = new Set(fixtureTiles(loc).map(key));
-  return tiles.filter((t) => !fixed.has(key(t)));
+  return room.racks ?? room.rows.flatMap((r) => Array.from({ length: r.x1 - r.x0 + 1 }, (_, i) => ({ x: r.x0 + i, y: r.y, facing: r.facing })));
 }
 
 export function rackTiles(loc: Location, racks: Rack[]): Record<string, Tile> {
   const here = racks.filter((r) => r.locationId === loc.id).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
-  const out: Record<string, Tile> = {};
+  const out: Record<string, Tile> = {}, shelf = ROOMS[loc.space].shelf;
+  for (const r of here) if (r.model === "shelf" && shelf) out[r.id] = shelf;
   const spots = wallTiles(loc), taken = new Set<string>(), valid = new Map(spots.map((t) => [key(t), t]));
   // A stored tile that is no longer a rack tile, as in saves from older layouts, gets a new one; facing follows the current layout.
   for (const r of here) {
+    if (out[r.id]) continue;
     const t = r.tile && valid.get(key(r.tile));
     if (t && !taken.has(key(t))) { out[r.id] = t; taken.add(key(t)); }
   }

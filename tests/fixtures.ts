@@ -38,7 +38,13 @@ import { START_CASH } from "../src/sim/10-catalog/economy";
 
 // Games with the savings already in hand and no bank account, the way every game started before the account came first.
 const funded = (s: GameState): GameState => { s.cash = START_CASH; return s; };
-export const newGame = (seed: number): GameState => funded(blankGame(seed));
+// The basement as games had it before the shelf: a 24U rack with the router in storage, which most suites build on.
+export const racked = (s: GameState): GameState => {
+  s.racks[0] = { ...s.racks[0], model: "rack-24", name: "fra1-rack-01", price: 350 };
+  Object.assign(s.devices.find((d) => d.id === "dev5")!, { rackId: null, slot: 0, store: "loc1" });
+  return s;
+};
+export const newGame = (seed: number): GameState => funded(racked(blankGame(seed)));
 export const startGame = (seed: number): GameState => funded(startBlank(seed));
 import { buyCart as buyCartReal, buyDevice as buyDeviceReal, type CartLine } from "../src/sim/90-actions/hardware";
 import { addNode, createPanelVm, installHypervisor, installPanel, provisionService, workload } from "../src/sim/90-actions/clusters";
@@ -151,6 +157,7 @@ export const runServers = (s: GameState): void => {
 // The basement server and switch new games used to start with, cabled to the home router and paid from the savings, on the
 // business DSL line with an own /24 announced there and the router's web port shared with the server; suites that are not about the first server or addresses start from it.
 export function withServer(s: GameState): GameState {
+  racked(s);
   s.cash -= 2500;
   s.homeLine = { id: "dsl-16-biz", next: null };
   s.ips = { ...s.ips, blocks: [{ id: "blk-test", prefix: "185.1.0.0/24", size: 256, locationId: "loc1", boughtAt: 0 }] };
