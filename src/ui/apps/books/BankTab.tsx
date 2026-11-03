@@ -1,12 +1,15 @@
 import { useState, type KeyboardEvent } from "react";
 import { Check, Undo2 } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
-import { invoiceTotal, isUnpaid, owed, type Invoice, type Transfer } from "../../../sim/45-billing/billing";
+import { dateOf } from "../../../sim/00-core/time";
+import { invoiceTotal, isUnpaid, owed, payerOf, type Invoice, type Transfer } from "../../../sim/45-billing/billing";
 import type { Outgoing } from "../../../sim/46-finance/bank";
-import { referenced, suggested } from "../../../sim/80-business/bookkeeping";
+import type { BooksVendorId } from "../../../sim/10-catalog/bookkeeping";
+import { currentVendor, referenced, suggested } from "../../../sim/80-business/bookkeeping";
 import { assignPayment, unassignPayment } from "../../../sim/90-actions/bank";
 import { matchTransfer, unmatchTransfer } from "../../../sim/90-actions/billing";
 import { t } from "../../../i18n/en";
+import { LOCALE } from "../../../i18n/lang";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 import { arrowRows, useBooks } from "./view";
@@ -20,9 +23,13 @@ const SHOWN = 100;
 type Row = { id: string; hour: number; tr?: Transfer; out?: Outgoing };
 const unassigned = (r: Row) => (r.tr ? r.tr.matchedAt === null : r.out!.matched === null && !r.out!.returned);
 const EPS = 0.005;
+// EightDesk lists the bookings beside the documents they could pay, with what agrees; Rexoffice shows them as a feed by day.
+const VARIANT: Partial<Record<BooksVendorId, "match" | "feed">> = { sevdeck: "match", lexoffize: "feed" };
+const longDay = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+type Doc = { id: string; number: string; name: string; due: number; amount: number; tag?: boolean; onPick?: () => void; sel?: boolean; hits?: string[] };
 
 export function BankTab() {
-  const game = useBooks(), act = useStore((s) => s.act);
+  const game = useBooks(), act = useStore((s) => s.act), variant = VARIANT[currentVendor(game)?.id ?? "gnucache"];
   const [view, setView] = useSessionState<"open" | "all">("books.bankView", "open");
   const [selected, setSelected] = useState<string | null>(null);
   const [invoice, setInvoice] = useState<string | null>(null);
@@ -36,6 +43,7 @@ export function BankTab() {
   const invoiceNo = (id: string | null) => game.invoices.find((i) => i.id === id)?.number ?? "";
   const payable = (id: string | null) => game.payables.find((p) => p.id === id);
   const customer = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
+  const payer = (id: string) => { const c = game.customers.find((x) => x.id === id); return c ? payerOf(c) : ""; };
   const proposal = (tr: Transfer) => (tr.back ? referenced(game, tr) : suggested(game, tr));
 
   const book = (trId: string, invId: string, settle = false) => {
@@ -81,36 +89,98 @@ export function BankTab() {
         </div>
         <Locked id="match-by-reference" label={t("books.matchByReference")} />
       </div>
-      <div className="books-bank">
+      {variant === "feed" && <div className="bk-feed-balance"><span>{t("books-screens.balance")}</span><b className="num">{euroCents(game.cash)}</b></div>}
+      <div className={`books-bank${variant ? ` bk-${variant}` : ""}`}>
         <div className="fin-scroll" onKeyDown={arrowRows}>
-          <table className="table fin-table">
-            <thead><tr><th>{t("books.col.date")}</th><th>{t("books.col.name")}</th><th>{t("books.col.reference")}</th><th className="r">{t("books.col.amount")}</th><th>{t("books.col.assignment")}</th></tr></thead>
-            <tbody>
-              {rows.map((r) => {
-                const amount = r.tr ? r.tr.amount : -r.out!.amount, ref = r.tr ? t(r.tr.reference, r.tr.params) : r.out!.reference, name = r.tr ? r.tr.from : r.out!.name;
-                return (
-                  <tr key={r.id} className={r.id === selected ? "sel" : ""} tabIndex={0} onClick={() => choose(r.id === selected ? null : r.id)} onKeyDown={(e) => e.key === "Enter" && choose(r.id)}>
-                    <td className="num">{formatDay(r.hour)}</td>
-                    <td className="books-name" title={name}>{name}</td>
-                    <td className="books-ref" title={ref}>{ref}{r.out?.debit && <span className="pill">{t("books.debit")}</span>}</td>
-                    <td className={`r num${amount < 0 ? " neg" : ""}`}>{euroCents(amount)}</td>
-                    <td>{cell(r)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          {variant === "feed" ? feed() : variant === "match" ? matchList() : (
+            <table className="table fin-table">
+              <thead><tr><th>{t("books.col.date")}</th><th>{t("books.col.name")}</th><th>{t("books.col.reference")}</th><th className="r">{t("books.col.amount")}</th><th>{t("books.col.assignment")}</th></tr></thead>
+              <tbody>
+                {rows.map((r) => {
+                  const { amount, ref, name } = parts(r);
+                  return (
+                    <tr key={r.id} className={r.id === selected ? "sel" : ""} tabIndex={0} onClick={() => choose(r.id === selected ? null : r.id)} onKeyDown={(e) => e.key === "Enter" && choose(r.id)}>
+                      <td className="num">{formatDay(r.hour)}</td>
+                      <td className="books-name" title={name}>{name}</td>
+                      <td className="books-ref" title={ref}>{ref}{r.out?.debit && <span className="pill">{t("books.debit")}</span>}</td>
+                      <td className={`r num${amount < 0 ? " neg" : ""}`}>{euroCents(amount)}</td>
+                      <td>{cell(r)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
           {rows.length === 0 && <p className="books-none">{t("books.noTransfers")}</p>}
         </div>
-        {row && panel(row)}
+        {variant === "match" ? <div className="bk-match-docs">{row ? panel(row) : <p className="books-none">{t("books-screens.pickBooking")}</p>}</div>
+          : variant !== "feed" && row && panel(row)}
       </div>
       {differs()}
     </>
   );
 
+  function parts(r: Row) {
+    return r.tr ? { amount: r.tr.amount, ref: t(r.tr.reference, r.tr.params), name: r.tr.from } : { amount: -r.out!.amount, ref: r.out!.reference, name: r.out!.name };
+  }
+
+  // Rexoffice: the bookings as cards under their day, the documents opening inside the selected card.
+  function feed() {
+    const days = new Map<string, Row[]>();
+    for (const r of rows) days.set(longDay(r.hour), [...(days.get(longDay(r.hour)) ?? []), r]);
+    return [...days].map(([day, list]) => (
+      <section key={day} className="bk-feed-day">
+        <h4>{day}</h4>
+        {list.map((r) => {
+          const { amount, ref, name } = parts(r);
+          return (
+            <div key={r.id} className={`bk-feed-card${r.id === selected ? " sel" : ""}`}>
+              <div className="books-item" tabIndex={0} onClick={() => choose(r.id === selected ? null : r.id)} onKeyDown={(e) => e.key === "Enter" && choose(r.id)}>
+                <span className="bk-feed-avatar" aria-hidden>{name.charAt(0)}</span>
+                <span className="bk-feed-text"><b title={name}>{name}</b><small title={ref}>{ref}</small></span>
+                <span className={`num bk-feed-amount${amount < 0 ? " neg" : ""}`}>{euroCents(amount)}</span>
+                <span className="bk-feed-state">{cell(r)}</span>
+              </div>
+              {r.id === selected && panel(r)}
+            </div>
+          );
+        })}
+      </section>
+    ));
+  }
+
+  // EightDesk: each booking's name over its reference, a tick once it is assigned.
+  function matchList() {
+    return (
+      <table className="table fin-table">
+        <thead><tr><th>{t("books.col.date")}</th><th>{t("books.col.name")}</th><th className="r">{t("books.col.amount")}</th><th /></tr></thead>
+        <tbody>
+          {rows.map((r) => {
+            const { amount, ref, name } = parts(r);
+            return (
+              <tr key={r.id} className={r.id === selected ? "sel" : ""} tabIndex={0} onClick={() => choose(r.id === selected ? null : r.id)} onKeyDown={(e) => e.key === "Enter" && choose(r.id)}>
+                <td className="num">{formatDay(r.hour)}</td>
+                <td className="bk-feed-text"><b title={name}>{name}</b><small title={ref}>{ref}</small></td>
+                <td className={`r num${amount < 0 ? " neg" : ""}`}>{euroCents(amount)}</td>
+                <td className="books-assigned">{!unassigned(r) && <Check />}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
+  }
+
+  // EightDesk: what a document shares with the booking, amount, number in the reference, payer.
+  function hits(amount: boolean, reference: boolean, name: boolean) {
+    return variant === "match" ? [amount && "amount", reference && "reference", name && "name"].filter((x): x is string => !!x) : undefined;
+  }
+
   // Below the list: the documents a booking can pay, or the one it pays with the way back out.
   function panel(r: Row) {
-    const docs = (title: string, list: { id: string; number: string; name: string; due: number; amount: number; tag?: boolean; onPick?: () => void; sel?: boolean }[], undo?: () => void) => (
+    const docs = (title: string, given: Doc[], undo?: () => void) => {
+      const list = variant === "match" && !undo ? [...given].sort((a, b) => (b.hits?.length ?? 0) - (a.hits?.length ?? 0)) : given;
+      return (
       <section className="books-assign">
         <h3>{title}</h3>
         <table className="table fin-table">
@@ -118,8 +188,8 @@ export function BankTab() {
             {list.map((d) => (
               <tr key={d.id} className={d.sel ? "sel" : ""} {...(d.onPick && { tabIndex: 0, onClick: d.onPick, onKeyDown: (e: KeyboardEvent) => e.key === "Enter" && d.onPick!() })}>
                 <td className="num">{d.number}{d.tag && <span className="pill accent">{t("books.suggested")}</span>}</td>
-                <td>{d.name}</td>
-                <td className="num">{formatDay(d.due)}</td>
+                <td>{d.name}{d.hits && d.hits.length > 0 && <div className="bk-match-hits">{d.hits.map((h) => <span key={h} className="pill ok">{t(`books-screens.hit.${h}`)}</span>)}</div>}</td>
+                {variant !== "match" && <td className="num">{formatDay(d.due)}</td>}
                 <td className="r num">{euroCents(d.amount)}</td>
                 {undo && <td className="r"><button className="btn" onClick={undo}><Undo2 />{t("books.unassign")}</button></td>}
               </tr>
@@ -128,13 +198,15 @@ export function BankTab() {
         </table>
         {list.length === 0 && <p className="books-none">{t("books.noOpen")}</p>}
       </section>
-    );
+      );
+    };
     if (r.out) {
       const o = r.out, p = payable(o.matched);
       if (o.returned) return null;
       if (p) return docs(t("books.col.assignment"), [{ id: p.id, number: p.number, name: p.name, due: p.dueAt, amount: o.amount }], () => act(unassignPayment, o.id));
       return docs(t("books.openPayables"), game.payables.filter((x) => x.booked < x.amount - EPS).map((x) => ({
-        id: x.id, number: x.number, name: x.name, due: x.dueAt, amount: x.amount - x.booked, onPick: () => { act(assignPayment, o.id, x.id); choose(null); },
+        id: x.id, number: x.number, name: x.name, due: x.dueAt, amount: x.amount - x.booked,
+        hits: hits(Math.abs(x.amount - x.booked - o.amount) < EPS, o.reference.includes(x.number), x.name === o.name), onPick: () => { act(assignPayment, o.id, x.id); choose(null); },
       })));
     }
     const tr = r.tr!;
@@ -146,7 +218,8 @@ export function BankTab() {
     const s = proposal(tr);
     const list = tr.back ? game.invoices.filter((i) => i.status === "paid").slice(-50).reverse() : game.invoices.filter(isUnpaid);
     return docs(t(tr.back ? "payment-methods.paidInvoices" : "books.openInvoices"), (s ? [s, ...list.filter((i) => i.id !== s.id)] : list).map((i) => ({
-      id: i.id, number: i.number, name: customer(i.customerId), due: i.dueAt, amount: tr.back ? invoiceTotal(i) : owed(i), tag: i.id === s?.id, sel: i.id === invoice, onPick: () => pick(tr, i),
+      id: i.id, number: i.number, name: customer(i.customerId), due: i.dueAt, amount: tr.back ? invoiceTotal(i) : owed(i), tag: variant !== "match" && i.id === s?.id, sel: i.id === invoice, onPick: () => pick(tr, i),
+      hits: hits(tr.amount === (tr.back ? invoiceTotal(i) : owed(i)), tr.params.number === i.number, payer(i.customerId) === tr.from),
     })));
   }
 

@@ -5,13 +5,16 @@ import { licenceMail } from "../../../sim/80-business/licences";
 import { unsynced } from "../../../sim/80-business/shoplink";
 import { importFromShop } from "../../../sim/90-actions/shoplink";
 import { lateInBooks } from "../../../sim/46-finance/payables";
-import { sells, type BooksVendor, type Feature } from "../../../sim/10-catalog/bookkeeping";
+import { sells, type BooksVendor, type BooksVendorId, type Feature } from "../../../sim/10-catalog/bookkeeping";
 import { booksAppUrl, booksOffline, booksUrl, currentVendor, hasFeature } from "../../../sim/80-business/bookkeeping";
 import type { GameState } from "../../../sim/50-state";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
+import { AccountTree } from "./AccountTree";
 import { BankTab } from "./BankTab";
+import { BookingTab } from "./BookingTab";
+import { ChartTab } from "./ChartTab";
 import { CustomersTab } from "./CustomersTab";
 import { InvoicesTab } from "./InvoicesTab";
 import { QuotesTab } from "./QuotesTab";
@@ -27,23 +30,28 @@ import { LAYOUTS } from "./layouts";
 import type { Entry, Group } from "./layouts/types";
 import "../billing/billing.css";
 import "./books.css";
+import "./screens.css";
 
 export const drafts = (s: GameState) => s.invoices.filter((i) => i.status === "draft" && synced(i)).length;
 export const unmatched = (s: GameState) =>
   s.transfers.filter((x) => x.matchedAt === null).length + (s.bank?.outgoing ?? []).filter((o) => o.matched === null && !o.returned).length;
 export const late = (s: GameState) => s.invoices.filter((i) => i.status === "overdue" && synced(i)).length;
 
-// Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id.
-const TABS: { id: string; group: Group; count: (s: GameState) => number; body: ComponentType<{ focus: string | null }>; features?: Feature[] }[] = [
+// Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id; go switches tab.
+// only: the one program that has the tab.
+const TABS: { id: string; group: Group; count: (s: GameState) => number; body: ComponentType<{ focus: string | null; go: (tab: string) => void }>; features?: Feature[]; only?: BooksVendorId }[] = [
+  { id: "accounts", group: "reports", count: () => 0, body: AccountTree, only: "gnucache" },
   { id: "overview", group: "reports", count: () => 0, body: OverviewTab },
   { id: "customers", group: "sales", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
   { id: "quotes", group: "sales", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab, features: ["quotes"] },
   { id: "invoices", group: "sales", count: drafts, body: InvoicesTab },
   { id: "bank", group: "payments", count: unmatched, body: BankTab },
+  { id: "booking", group: "payments", count: () => 0, body: BookingTab, only: "collmix" },
   { id: "reminders", group: "payments", count: late, body: RemindersTab, features: ["dunning"] },
   { id: "payables", group: "payments", count: (s) => s.payables.filter((p) => lateInBooks(s, p)).length, body: PayablesTab },
   { id: "statistics", group: "reports", count: () => 0, body: StatisticsTab, features: ["reports", "statistics"] },
   { id: "tax", group: "reports", count: (s) => s.tax.returns.filter((r) => r.filedAt === null && s.hour >= r.dueAt).length, body: TaxTab, features: ["tax"] },
+  { id: "chart", group: "reports", count: () => 0, body: ChartTab, only: "saga" },
   { id: "statement", group: "reports", count: () => 0, body: StatementTab },
 ];
 
@@ -79,7 +87,7 @@ export function BooksProgram() {
   });
   const v = currentVendor(game), skin = v?.skin;
   // An entry the edition lacks opens the vendor's editions page; one the vendor never sells is missing.
-  const shown = TABS.filter((x) => !x.features || x.features.some((f) => v && sells(v, f)));
+  const shown = TABS.filter((x) => (!x.only || x.only === v?.id) && (!x.features || x.features.some((f) => v && sells(v, f))));
   const locked = (x: (typeof TABS)[number]) => !!x.features && !x.features.some((f) => hasFeature(game, f));
   const current = shown.find((x) => x.id === tab && !locked(x)) ?? shown[0];
   const Body = current.body;
@@ -104,7 +112,7 @@ export function BooksProgram() {
         <div className="books-body">
           {v && booksOffline(game) ? <Offline v={v} />
             : v && (setup || game.books.setupDone === false) ? <BooksSetup v={v} game={game} close={(to) => { setSetup(false); if (shown.some((x) => x.id === to)) pick(to!); }} />
-            : <Body key={`${current.id}:${focus}`} focus={focus} />}
+            : <Body key={`${current.id}:${focus}`} focus={focus} go={pick} />}
         </div>
       </Layout>
     </div>

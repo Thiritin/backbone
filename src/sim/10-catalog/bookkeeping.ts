@@ -50,7 +50,7 @@ export const BOOKS_VENDORS: BooksVendor[] = [
       ed("l", "L", 399, ["quotes", "monthly-run", "match-by-reference", "hbci", "tax", "reports", "statistics", "helpdesk-link"], { seat: 79 })],
     skin: { bar: "#1f5fa8", ink: "#ffffff", accent: "#1f5fa8" } },
   { id: "saga", name: "Thyme", program: "Thyme 50", from: 2005, deployment: "desktop", setupMb: 350, layout: "menus",
-    editions: [ed("office-line", "Office Line", 599, ALL.filter((f) => f !== "dunning")), ed("office-line-plus", "Office Line Plus", 999, ALL, { users: NETWORK })],
+    editions: [ed("office-line", "Comfort", 599, ALL.filter((f) => f !== "dunning")), ed("office-line-plus", "Quantum", 999, ALL, { users: NETWORK })],
     skin: { bar: "#00704a", ink: "#ffffff", accent: "#00704a" } },
   { id: "orgamin", name: "orgaMIN", program: "orgaMIN", from: 2005, deployment: "desktop", setupMb: 90, layout: "tabs",
     editions: [ed("standard", "Standard", 199, ["quotes", "helpdesk-link", "monthly-run"]),

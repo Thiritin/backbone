@@ -12,4 +12,4 @@
 .bk-gtk-leaf { display: flex; align-items: center; gap: 4px; width: 100%; padding: 2px 6px 2px 24px; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
 .bk-gtk-leaf:nth-child(odd) { background: #f5f5f4; }
 .bk-gtk-leaf[aria-current] { background: #86abd9; color: #fff; }
-.bk-gtk .bk-body { background: #fff; border: 1px solid #a9a69f; }
+.bk-gtk .bk-body { background: var(--win); color: var(--text); border: 1px solid #a9a69f; }

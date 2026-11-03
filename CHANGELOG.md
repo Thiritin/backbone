@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Every bookkeeping program now has a screen of its own: GnuCache's account tree with registers, Kontomix's form for booking a payment by document number, EightDesk's list that lines payments up with the invoices they match, Rexoffice's bank feed by day and Thyme 50's chart of accounts with account sheets.
+- Thyme 50's editions are now called Comfort and Quantum, and the WARUM logo stands out on its blue website header.
 - The bookkeeping programs are now called Taxware Office, WARUM Mein Büro, Thyme 50, Kontomix, EightDesk and Rexoffice, and every vendor shows its own logo on its website, in the browser tab and in the program.
 - Each bookkeeping program now has its own strengths and gaps, so the free program offers reports without HBCI or tax filing, some programs include HBCI and payment matching in their smallest edition, and one sells HBCI as an add-on in its shop.
 - Two browser bookkeeping programs changed their monthly prices to match their place in the market.
