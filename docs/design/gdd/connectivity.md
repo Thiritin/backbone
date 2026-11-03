@@ -39,10 +39,12 @@ In the player's own cage or suite the floor is the player's, and cables between 
 
 ## What the player does
 
-- Books an uplink or a second line in the Network app, choosing the rack and the speed.
-- Orders a provider cable between two racks from the rack back, choosing the jack on each side.
-- Cables jacks down to routers and switches by hand on the rack back, and between racks by hand where the floor is theirs.
-- Sees on the patch panel which jack is what, and in the Network app what each uplink costs.
+- Books an uplink or a second line in the Network app, choosing the rack and the speed, or from a free jack's tag on the rack back, choosing the carrier and the speed for that jack.
+- Starts a connection between two racks by dragging from one rack to the other in the room, or with "New connection from here" on a right-click of a rack or a device and a click on the other rack. Both rack backs then open side by side.
+- In that view, drags or clicks a cable from a port or jack on one rack to one on the other. Two provider-side jacks become a provider cable order on a slip showing the fee and the day it is ready, which the player signs; a device port in a share is refused, since the provider runs those cables. In a cage, a suite or an own floor the cable is run by hand.
+- Cables jacks down to routers and switches by hand on the rack back.
+- Sees the provider panel drawn large above the rack back: every provider-side jack has a label strip with its role (the uplink's speed and carrier, the cross-connect's party, the other rack of a provider cable, or free), a queued order hangs its due day under the strip, and hovering a jack names it. The Network app shows what each uplink costs.
+- In a share, the player's other shares in the same datacenter stand beside the rack in the same row.
 
 ## Pieces
 
