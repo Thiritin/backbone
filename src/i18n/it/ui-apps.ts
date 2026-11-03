@@ -231,7 +231,7 @@ export default {
   "apps.kb.reads": () => "Letture",
 
   "apps.guide.title": () => "Per iniziare",
-  "apps.guide.intro": () => "È gennaio 2005. Gestisci una piccola azienda di hosting da un seminterrato, con un rack vuoto e 3.500 € di risparmi. Il tuo obiettivo è farla crescere fino ad avere un data center tutto tuo, automatizzando il tuo stesso lavoro.",
+  "apps.guide.intro": () => "È gennaio 2005. Gestisci una piccola azienda di hosting da un seminterrato, con uno scaffale metallico per i server e 3.500 € di risparmi. Il tuo obiettivo è farla crescere fino ad avere un data center tutto tuo, automatizzando il tuo stesso lavoro.",
   "apps.guide.firstServer": () => "Il tuo primo server",
   "apps.guide.setup": () => "Configura il tuo primo host web perché i clienti possano ordinare il web hosting. Ogni passaggio viene spuntato appena è completato.",
   "apps.guide.wiki": () => "Wiki",
