@@ -36,7 +36,7 @@ The rule: if a real sysadmin in 2005 would have had to stand up for it, it is in
 
 ## The basement
 
-The first room is the basement of the player's parents' house in Frankfurt, availability zone fra1. A floor of 9 by 7 diamond tiles in isometric view, tight enough that the house's own things fill it. Two walls rise along the far sides, the left wall along the first column and the right wall along the first row; the near sides are open, so nothing ever hides the player. Every fixed object stands against or hangs on a wall:
+The first room is the basement of the player's parents' house in Frankfurt, availability zone fra1. A floor of 9 by 7 tiles in isometric view, tight enough that the house's own things fill it, in raw concrete with faint patches and no tile grid. Two walls rise along the far sides, the left wall along the first column and the right wall along the first row; the near sides are open, so nothing ever hides the player. Every fixed object stands against or hangs on a wall:
 
 - **Desk with the PC.** One wooden desk along the right wall carries the scanner at its left end and the flat screen with its keyboard and a desk lamp at its right end; the beige tower and a crate of beer stand under it, and an office chair stands pushed back in front of it. Using the PC opens the desktop fullscreen. The world keeps running underneath and resumes at the same view. Using the scanner opens the scanner panel with the fetched letters.
 - **Door.** A wooden door in the left wall that swings into the room when used. The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels stack on the floor beside it.

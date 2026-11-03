@@ -274,7 +274,7 @@ export function World() {
         <polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} />
         {coldAisles(loc).map((a) => <Grate key={a.y} {...a} />)}
         {home && <Concrete w={w} h={h} />}
-        <path className="w-tile" d={grid} />
+        {!home && <path className="w-tile" d={grid} />}
         {back}
         {things.map((x) => x.node)}
         {over}
