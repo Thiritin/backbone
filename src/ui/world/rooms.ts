@@ -1,19 +1,31 @@
 import type { Fixture } from "../../sim/20-world/layout";
 
-export type Use = "desktop" | "storage" | "network" | "power" | "door" | "post" | "scan" | "none";
+export type Use = "desktop" | "storage" | "network" | "power" | "door" | "post" | "scan";
 
-// What using a fixture kind does. Wall ones are drawn on the wall behind everything standing, the rest are depth-sorted with the racks.
-export interface FixtureArt { label: string; use?: Use; wall?: boolean; depth?: number }
+// What using a fixture kind does. Wall ones, and flat marks on the floor, are drawn behind everything standing; top ones hang over the room; the rest are depth-sorted with the racks.
+// A fixture without a label is clutter, hidden from assistive tech.
+export interface FixtureArt { label?: string; use?: Use; wall?: boolean; top?: boolean; depth?: number }
 
 export const ART: Record<string, FixtureArt> = {
-  scanner: { label: "world.obj.scanner", use: "scan", depth: 0.001 },
-  desk: { label: "world.obj.desk", use: "none" },
+  // The scanner stands on the desk top, so it sorts after the desk at the next column.
+  scanner: { label: "world.obj.scanner", use: "scan", depth: 1.01 },
+  desk: { label: "world.obj.desk" },
   pc: { label: "world.obj.pc", use: "desktop", depth: 0.002 },
   fusebox: { label: "world.obj.fusebox", use: "power", wall: true },
   shelf: { label: "world.obj.shelf", use: "storage" },
   fan: { label: "world.obj.fan", wall: true },
   letterbox: { label: "world.obj.letterbox", use: "post", wall: true },
   door: { label: "world.obj.door", use: "door", wall: true },
+  window: { wall: true },
+  hygrometer: { wall: true },
+  jack: { wall: true },
+  mat: { wall: true },
+  drain: { wall: true },
+  lamp: { top: true },
+  boiler: {},
+  washer: {},
+  dryer: {},
+  chair: {},
   extinguisher: { label: "world.obj.extinguisher" },
   xconnect: { label: "world.obj.xconnect", use: "network", wall: true },
   cooling: { label: "world.obj.cooling" },

@@ -8,7 +8,7 @@ import { connect } from "../../../sim/90-actions/hardware";
 import { cableColor } from "../../art/fronts";
 import { devName, portName } from "../../apps/hw";
 import { useStore } from "../../store";
-import { at3, rackHeight, WALL } from "../draw";
+import { at3, JACK_Z, rackHeight, WALL } from "../draw";
 import { Slab } from "../panel/Slab";
 
 // Overhead tray height; every cable between racks or to the wall panel climbs to it.
@@ -19,12 +19,11 @@ export const endName = (g: GameState, e: End) => {
   return d ? `${d.panel ? t("locations-1.carrierPanel") : devName(d)} ${portName(modelById(d.model), e.port)}` : "";
 };
 
-// The carrier panel hangs on the cross-connect fixture; the basement has none, so its line jack sits by the fuse box.
-// ponytail: one wall point per room, give the basement jack its own fixture if it gets drawn.
+// The carrier panel hangs on the cross-connect fixture; in the basement the line ends at the wall socket.
 const wallPoint = (fx: Record<string, Fixture>) => {
-  const f = fx.xconnect ?? fx.fusebox;
+  const f = fx.xconnect ?? fx.jack, z = fx.xconnect ? WALL * 0.5 : JACK_Z - 4;
   if (!f) return null;
-  return f.y === 0 ? { x: f.x + (f.w ?? 1) / 2, y: 0, z: WALL * 0.5 } : { x: 0, y: f.y + 0.5, z: WALL * 0.5 };
+  return f.y === 0 ? { x: f.x + (f.w ?? 1) / 2, y: 0, z } : { x: 0, y: f.y + 0.5, z };
 };
 
 // Cables between two racks or a rack and the wall panel, one line each: up from the rack top, along the far wall's tray, and down at the other end.

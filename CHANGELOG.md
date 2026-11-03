@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The basement is smaller and full of life, with cellar windows that let daylight in, a real fuse box, a chair at the desk, and the family's boiler and washing machine.
 - The rack and the other room views now open as a large popup in the middle of the screen.
 - Hands-on work on the desktop goes through remote hands when you are not on site, priced on its button and done after the datacenter's response time, and the basement's hardware waits until you are home.
 - Racks now have a back side in the room where you plug cables by hand, port to port, and cables between racks run along the trays.

@@ -45,6 +45,12 @@
 .w-tone-cool { --top: oklch(0.92 0.008 230); --left: oklch(0.85 0.01 230); --right: oklch(0.76 0.012 230); --edge: oklch(0.68 0.012 230); }
 .w-tone-card { --top: oklch(0.74 0.075 70); --left: oklch(0.66 0.08 65); --right: oklch(0.58 0.075 60); --edge: oklch(0.52 0.07 60); }
 .w-tone-red { --top: oklch(0.62 0.19 27); --left: oklch(0.55 0.19 27); --right: oklch(0.47 0.17 27); --edge: oklch(0.4 0.14 27); }
+.w-tone-enamel { --top: oklch(0.97 0.004 90); --left: oklch(0.92 0.005 90); --right: oklch(0.84 0.006 90); --edge: oklch(0.76 0.008 90); }
+.w-tone-beige { --top: oklch(0.89 0.03 88); --left: oklch(0.84 0.035 85); --right: oklch(0.75 0.035 82); --edge: oklch(0.67 0.035 80); }
+.w-tone-copper { --top: oklch(0.74 0.1 55); --left: oklch(0.66 0.11 50); --right: oklch(0.57 0.1 48); --edge: oklch(0.5 0.09 45); }
+.w-tone-pipe { --top: oklch(0.88 0.006 80); --left: oklch(0.8 0.008 80); --right: oklch(0.71 0.01 80); --edge: oklch(0.63 0.01 80); }
+.w-tone-fabric { --top: oklch(0.44 0.03 260); --left: oklch(0.37 0.03 260); --right: oklch(0.31 0.03 260); --edge: oklch(0.26 0.03 260); }
+.w-tone-bottle { --top: oklch(0.82 0.04 85); --left: oklch(0.42 0.08 60); --right: oklch(0.35 0.07 58); --edge: oklch(0.3 0.06 55); }
 .w-tone-dark { --top: oklch(0.36 0.01 255); --left: oklch(0.3 0.01 255); --right: oklch(0.25 0.01 255); --edge: oklch(0.2 0.01 255); }
 .w-box polygon { stroke: var(--edge); stroke-width: 0.6; stroke-linejoin: round; }
 .w-face-t { fill: var(--top); }
@@ -56,20 +62,80 @@
 .w-screen { fill: oklch(0.5 0.1 250); }
 .w-lid { fill: oklch(0.4 0.02 250); }
 
-.w-frame { fill: oklch(0.95 0.008 250); }
-.w-glass { fill: oklch(0.82 0.05 230); }
-.w-fan { fill: none; stroke: oklch(0.62 0.012 250); stroke-width: 1; }
-.w-blade { fill: oklch(0.62 0.012 250); }
+.w-frame { fill: oklch(0.95 0.008 250); stroke: oklch(0.82 0.01 250); stroke-width: 0.5; }
+.w-reveal { fill: oklch(0.78 0.012 252); }
+.w-sill { fill: oklch(0.86 0.008 250); stroke: oklch(0.74 0.01 250); stroke-width: 0.5; }
+.w-glass { fill: oklch(0.86 0.05 230); }
+.w-glass-night { fill: oklch(0.32 0.04 260); }
+.w-glint { fill: none; stroke: oklch(1 0 0 / 0.75); stroke-width: 0.8; stroke-linecap: round; }
+.w-fan-box { fill: oklch(0.88 0.006 250); stroke: oklch(0.72 0.01 250); stroke-width: 0.5; }
+.w-fan-hole { fill: oklch(0.3 0.02 255); }
+.w-fan-blade { fill: oklch(0.72 0.01 250); stroke: oklch(0.6 0.012 250); stroke-width: 0.3; }
+.w-fan-hub { fill: oklch(0.55 0.012 250); }
+.w-fan-ring { fill: none; stroke: oklch(0.85 0.006 250); stroke-width: 0.45; }
+.w-fan-rotor { transform-box: fill-box; transform-origin: center; animation: w-spin 0.9s linear infinite; }
+@keyframes w-spin { to { transform: rotate(360deg); } }
 .w-lcd { fill: oklch(0.26 0.03 250); }
+.w-hygro { fill: oklch(0.97 0.004 90); stroke: oklch(0.8 0.008 90); stroke-width: 0.6; }
+.w-hygro-lcd { fill: oklch(0.82 0.03 130); stroke: oklch(0.7 0.03 130); stroke-width: 0.4; }
+.w-num-lcd { fill: oklch(0.25 0.02 130); }
+.w-fuse-in { fill: oklch(0.8 0.008 250); }
+.w-meter { fill: oklch(0.3 0.01 255); }
+.w-disc-win { fill: oklch(0.88 0.03 220); stroke: oklch(0.2 0.01 255); stroke-width: 0.4; }
+.w-disc { fill: oklch(0.7 0.01 250); }
+.w-disc-mark { fill: oklch(0.55 0.19 27); animation: w-disc 6s linear infinite; }
+@keyframes w-disc { from { transform: translateX(0); } to { transform: translateX(10px); } }
+.w-rail { fill: oklch(0.6 0.01 250); }
+.w-breaker { fill: oklch(0.97 0.004 90); stroke: oklch(0.78 0.006 90); stroke-width: 0.3; }
+.w-toggle { fill: oklch(0.35 0.012 255); }
+.w-screw { fill: oklch(0.6 0.01 250); }
+.w-fuse-door { fill: oklch(0.74 0.01 250); stroke: oklch(0.64 0.012 250); stroke-width: 0.5; }
+.w-fuse-door-in { fill: oklch(0.79 0.009 250); }
+.w-plate-label { fill: oklch(0.97 0.004 90); stroke: oklch(0.82 0.006 90); stroke-width: 0.3; }
+.w-handle { fill: oklch(0.3 0.01 255); }
+.w-hinge { fill: oklch(0.55 0.01 250); }
+.w-conduit { fill: oklch(0.84 0.006 250); stroke: oklch(0.72 0.01 250); stroke-width: 0.4; }
+.w-clip { fill: oklch(0.62 0.01 250); }
+.w-socket { fill: oklch(0.97 0.004 90); stroke: oklch(0.8 0.006 90); stroke-width: 0.5; }
+.w-socket-in { fill: oklch(0.92 0.004 90); stroke: oklch(0.82 0.006 90); stroke-width: 0.3; }
+.w-socket-hole { fill: oklch(0.35 0.01 255); }
+.w-strip { fill: oklch(0.86 0.006 90); stroke: oklch(0.76 0.008 90); stroke-width: 0.4; }
+.w-dial { fill: oklch(0.62 0.01 250); stroke: oklch(0.5 0.01 250); stroke-width: 0.4; }
+.w-drawer { fill: oklch(0.9 0.005 90); stroke: oklch(0.72 0.008 90); stroke-width: 0.4; }
+.w-flame-win { fill: oklch(0.72 0.17 55); stroke: oklch(0.45 0.05 50); stroke-width: 0.5; }
+.w-porthole { fill: oklch(0.8 0.008 250); stroke: oklch(0.66 0.01 250); stroke-width: 0.6; }
+.w-port-glass { fill: oklch(0.45 0.05 240); }
+.w-rail-post, .w-rail-bar { fill: oklch(0.8 0.008 80); }
+.w-towel { fill: oklch(0.62 0.12 235); }
+.w-towel-band { fill: oklch(0.85 0.04 235); }
+.w-shirt { fill: oklch(0.96 0.005 90); stroke: oklch(0.82 0.008 90); stroke-width: 0.4; }
+.w-sock { fill: oklch(0.45 0.02 260); }
+.w-bay { fill: oklch(0.8 0.03 85); stroke: oklch(0.66 0.035 80); stroke-width: 0.3; }
+.w-pled { fill: var(--ok); }
+.w-keys { fill: none; stroke: oklch(0.7 0.008 250); stroke-width: 0.5; }
+.w-lamp-arm { fill: none; stroke: oklch(0.3 0.01 255); stroke-width: 1.1; stroke-linejoin: round; }
+.w-lamp-shade { fill: oklch(0.45 0.08 160); stroke: oklch(0.36 0.07 160); stroke-width: 0.4; }
+.w-bulb { fill: oklch(0.96 0.09 90); }
+.w-bulb-off { fill: oklch(0.88 0.01 90); }
+.w-chair-leg { fill: none; stroke: oklch(0.3 0.01 255); stroke-width: 1.4; stroke-linecap: round; }
+.w-caster { fill: oklch(0.22 0.01 255); }
+.w-mat { fill: oklch(0.55 0.06 65); }
+.w-mat-in { fill: oklch(0.62 0.07 70); }
+.w-damp { fill: oklch(0.6 0.014 250 / 0.25); }
+.w-drain { fill: oklch(0.42 0.01 255); stroke: oklch(0.34 0.01 255); stroke-width: 0.5; }
+.w-drain-slot { fill: none; stroke: oklch(0.25 0.01 255); stroke-width: 0.9; }
+.w-cord { fill: none; stroke: oklch(0.3 0.01 255); stroke-width: 0.9; }
+.w-shade { fill: oklch(0.95 0.006 90); stroke: oklch(0.78 0.008 90); stroke-width: 0.5; }
+.w-shade-in { fill: oklch(0.82 0.01 90); }
+.w-blotch { fill: oklch(0.82 0.01 250 / 0.16); }
+.w-dark { fill: oklch(0.2 0.04 262); }
+.w-night .w-led-on { filter: drop-shadow(0 0 1.2px var(--ok)); }
 .w-num { font-family: var(--font-ui); font-size: 6.5px; font-weight: 500; font-variant-numeric: tabular-nums; text-anchor: end; fill: oklch(0.95 0.02 220); }
 .w-num-sm { font-size: 4.6px; }
+.w-num-xs { font-size: 3.8px; }
 .w-num-dim { fill: oklch(0.75 0.03 220); }
 .w-num-tag { text-anchor: middle; paint-order: stroke; stroke: oklch(0.2 0.02 258); stroke-width: 2.5px; }
-.w-sun { fill: oklch(0.86 0.14 90); }
-.w-cloud { fill: oklch(0.9 0.01 250); }
-.w-rain { fill: oklch(0.72 0.11 240); }
-.w-snow { fill: oklch(1 0 0); }
-.w-fuse { fill: oklch(0.86 0.008 250); stroke: oklch(0.76 0.01 250); stroke-width: 0.6; }
+.w-fuse { fill: oklch(0.72 0.01 250); stroke: oklch(0.6 0.012 250); stroke-width: 0.6; }
 .w-switch { fill: oklch(0.45 0.015 250); }
 .w-letter { fill: oklch(0.98 0.005 90); stroke: oklch(0.82 0.01 90); stroke-width: 0.5; }
 .w-brass { fill: oklch(0.76 0.1 85); stroke: oklch(0.66 0.1 80); stroke-width: 0.6; }
@@ -77,6 +143,7 @@
 .w-jamb { fill: oklch(0.68 0.065 65); stroke: oklch(0.58 0.06 60); stroke-width: 0.6; }
 .w-doorway { fill: oklch(0.18 0.02 262); }
 .w-panel { fill: oklch(0.6 0.065 60); stroke: oklch(0.52 0.06 58); stroke-width: 0.6; }
+.w-panel-in { fill: oklch(0.56 0.065 58); stroke: oklch(0.5 0.06 56); stroke-width: 0.5; }
 .w-knob { fill: oklch(0.84 0.09 85); }
 .w-cage-jamb { fill: oklch(0.5 0.012 252); stroke: oklch(0.42 0.012 252); stroke-width: 0.6; }
 .w-cage-frame { fill: none; stroke: oklch(0.45 0.012 252); stroke-width: 2; }
