@@ -50,7 +50,13 @@ A clean flat isometric miniature of a real place, drawn with care and full of th
 
 Basement: two cellar windows with light shafts, the fuse box with breakers and a meter with a spinning disc, a conduit from it to the racks, the boiler with pipes to the ceiling, a washing machine and a drying rack (it is the parents' house), the desk with PC, screen, keyboard, scanner and a desk lamp, an office chair, the shelf with boxes, the door with a mat, the letterbox beside it, a ceiling lamp, a hygrometer on the wall, a floor drain, a crate of beer, and racks where the player put them.
 
-Colocation share and cage: raised floor, cage fence, cage door with a badge reader, the cross-connect panel with its carrier plate, cable trays with cables in them, fluorescent tubes, cooling units with status LEDs, a PDU, an extinguisher, a floor-standing fan or two in a share, a parts shelf, a cart. A suite adds a NOC desk with three screens, a loading-dock door with a roller shutter and a pallet.
+Rack space (share): the player's racks stand in one row among other tenants' racks on the open datacenter floor. Every rack, the player's and the neighbours', has a mesh front door with the servers visible behind it; neighbour racks are drawn closed and dimmed and cannot be clicked. The room has a normal datacenter door and no fence.
+
+Cage: the same floor with a mesh fence and a mesh door around the player's area only, and a badge reader at the door.
+
+Suite: a room of its own with the NOC desk, three screens and a loading-dock door.
+
+In every datacenter room: hot and cold aisles are a property of the datacenter, not of the room kind. With aisles, rack rows face each other across an aisle; without them, rows face the same way. The floor is uniform raised-floor tiles everywhere, with no different tiles in front of racks. No wall carries a cross-connect panel with carrier names; cross-connects live in the rack's patch panel and on the desktop. Every room keeps cable trays with cables in them, fluorescent tubes, cooling units with status LEDs, a PDU, an extinguisher, a parts shelf and a cart.
 
 ## What not to do
 
