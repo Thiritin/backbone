@@ -231,7 +231,7 @@ export default {
   "apps.kb.reads": () => "Lecturas",
 
   "apps.guide.title": () => "Primeros pasos",
-  "apps.guide.intro": () => "Estamos en enero de 2005. Diriges una pequeña empresa de alojamiento desde un sótano, con un rack vacío y 3.500 € de ahorros. Tu meta es convertirla en tu propio centro de datos automatizando tu propio trabajo.",
+  "apps.guide.intro": () => "Estamos en enero de 2005. Diriges una pequeña empresa de alojamiento desde un sótano, con una estantería metálica para servidores y 3.500 € de ahorros. Tu meta es convertirla en tu propio centro de datos automatizando tu propio trabajo.",
   "apps.guide.firstServer": () => "Tu primer servidor",
   "apps.guide.setup": () => "Configura tu primer host web para que los clientes puedan contratar alojamiento web. Cada paso se marca en cuanto lo completas.",
   "apps.guide.wiki": () => "Wiki",

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { formatClock, MS_PER_HOUR, nowHours } from "../../sim/00-core/time";
-import { datacenterById } from "../../sim/20-world/datacenters";
+import { datacenterById, listed } from "../../sim/20-world/datacenters";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
 import { cityNamed, LAND, WorldMap, X, Y, type Marker } from "../map/WorldMap";
@@ -29,7 +29,7 @@ function TravelMap() {
   const here = playerAt(game);
   const markers = useMemo(() => game.locations.flatMap((l): Marker[] => {
     const c = cityNamed(l.city);
-    if (!c || (l.id !== here.id && !drive(game, l.id))) return [];
+    if (!c || !listed(l.city) || (l.id !== here.id && !drive(game, l.id))) return [];
     return [{ id: l.id, lon: c.lon, lat: c.lat, label: l.name, kind: l.space === "basement" ? "basement" : l.dc ? "datacenter" : "location", provider: l.dc ? datacenterById(l.dc).provider : null, selected: l.id === here.id }];
   }), [game, here.id]);
   const home = cityNamed(here.city);

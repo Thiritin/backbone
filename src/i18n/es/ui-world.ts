@@ -11,7 +11,6 @@ export default {
   "world.obj.shelf": () => "Estantería del almacén",
   "world.obj.fusebox": () => "Caja de fusibles",
   "world.obj.fan": () => "Ventilador de ventana",
-  "world.obj.xconnect": () => "Panel de interconexión",
   "world.obj.cooling": () => "Unidad de refrigeración",
   "world.obj.pdu": () => "PDU",
   "world.obj.extinguisher": () => "Extintor",

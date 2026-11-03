@@ -1,4 +1,4 @@
-import { BookOpen, Disc3, FileArchive, FileText, Package } from "lucide-react";
+import { BookOpen, Disc3, DoorOpen, FileArchive, FileText, Package, Trash2 } from "lucide-react";
 import type { ComponentType } from "react";
 import { PearMailMark, type MarkProps } from "./mailmarks";
 
@@ -35,3 +35,5 @@ export const ICON_CREDITS = [
 ];
 
 export const PearMailIcon = era(PearMailMark, "pear-mail");
+export const TrashIcon = era(Trash2, "trash");
+export const RoomIcon = era(DoorOpen, "room");
