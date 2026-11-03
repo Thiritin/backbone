@@ -64,7 +64,7 @@ The room is played like a tycoon game. There is no figure to walk around: the pl
 
 Presence stays a sim rule: the room on screen is the one the player is at, the door starts the trip, and arriving shows the destination room.
 
-Parcels are carried with the hand cursor. Clicking a parcel at the door picks it up, and it follows the pointer as a small box. Clicking the shelf puts it in storage, and clicking a rack opens the rack panel with the carried unit offered for the free units it fits. Escape with a parcel in hand puts it on the shelf.
+Parcels are carried with the hand cursor. Clicking a parcel at the door picks it up, and it follows the pointer as a small box. Clicking the shelf puts it in storage, and clicking a rack opens the rack panel with the carried unit offered for the free units it fits. Escape with a parcel in hand puts it on the shelf. A parcel does not have to be picked up first: a free unit in the rack panel also lists the parcels at that room's door that fit, and installs one in one click.
 
 Every click calls an existing action. Only the desk PC and the NOC desk open the desktop; every other object opens a slide-up panel in the room.
 
@@ -101,7 +101,7 @@ Each is its own feature with a seeded test and lands before the world depends on
 
 - **Rack tiles.** Every rack in a location has a tile and a facing. New racks take the next free wall tile. An action moves a rack. Old saves get tiles assigned on load.
 - **Presence rules.** Hands-on work (mounting, unmounting and moving a unit in its rack, adding, removing and swapping parts, plugging cables and power cords) needs hands at the location. When the player stands there, the player's own hands do it at once. From afar at a datacenter it becomes a remote hands job: queued with its due time, cancellable until it runs, and billed at the datacenter's hourly rate for 30 minutes to mount, 15 minutes to cable and an hour for parts when it is done after the response time. The basement has no remote hands, so its hardware stays read-only until the player is home. Carrying is always the player's own hands.
-- **Parcels at the door.** Arrived deliveries wait at the door (`door` on the unit) until carried to the shelf or into a rack. A door item is outside storage, so the desktop cannot mount, sell or ship it. A datacenter location shelves arrivals itself so remote hands keep working.
+- **Parcels at the door.** Arrived deliveries wait at the door (`door` on the unit) until carried to the shelf or into a rack, or installed from the rack panel. A door item is outside storage, so the desktop cannot mount, sell or ship it. A datacenter location shelves arrivals itself so remote hands keep working.
 - **Post in the box.** Each letter knows whether it waits in a letterbox or lies at the desk, and whether it is scanned. Delivery puts it in the basement letterbox; fetching needs the player there and takes all of them. A letter in the letterbox cannot be read, and its bill is due all the same. Scanning a desk letter once files it in DocuWhere. Old saves keep their letters at the desk and filed.
 - **Carrying.** `player.carrying` holds one unit, which is then in no store. `pickUp`, `putDown` and `installCarried` (90-actions/carry.ts) need the player in the unit's room; picking up and putting down cost no time, and the player cannot travel while carrying.
 
