@@ -39,8 +39,8 @@ export interface BankAccount {
   card: Card | null;
   // The overdraft limit, and the hour an application for one is decided.
   overdraft: number; overdraftAt: number | null;
-  // Suppliers that debit themselves, and the transfers the bank sends every month.
-  mandates: string[]; standingOrders: StandingOrder[];
+  // Suppliers that debit themselves, suppliers that charge the card, and the transfers the bank sends every month.
+  mandates: string[]; cards: string[]; standingOrders: StandingOrder[];
   tans: { list: number; codes: string[]; used: number[] };
   pending: Pending | null;
   // Wrong TANs in a row; three lock the account until lockedUntil.
@@ -78,7 +78,7 @@ export function openAccount(s: GameState, id: BankId, plan = defaultPlan(bankByI
   const bank = bankById(id)!;
   return {
     id, plan, number: `${1 + Math.floor(rand(r) * 9)}${digits(r, 9)}`, pin: `${1 + Math.floor(rand(r) * 9)}${digits(r, 4)}`, opened: s.hour, tan: tanMethods(bank, yearOf(s.hour)).at(-1)?.method ?? "itan",
-    card: null, overdraft: 0, overdraftAt: null, mandates: [], standingOrders: [],
+    card: null, overdraft: 0, overdraftAt: null, mandates: [], cards: [], standingOrders: [],
     tans: { list: 1, codes: tanCodes(s.seed, 1), used: [] }, pending: null, wrong: 0, lockedUntil: 0, outgoing: [], interest: 0, welcomed: false, payees: [],
   };
 }

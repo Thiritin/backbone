@@ -54,7 +54,7 @@ export default {
   "error.shopUnpaid": () => "Der Shop hat eine unbezahlte Rechnung.",
   "error.noInvoice": () => "Der Shop bietet noch keinen Kauf auf Rechnung an.",
   "ticket.mail.invoice.subject": (p) => `Rechnung ${p.number}`,
-  "ticket.mail.invoice.text": (p) => `Anbei erhalten Sie unsere Rechnung ${p.number} über ${money(p)}, fällig am ${day(p.due)}. Bitte überweisen Sie den Betrag auf ${p.iban ? `IBAN ${p.iban}` : `Konto ${p.account}, Bankleitzahl ${p.code}`} und geben Sie die Rechnungsnummer als Verwendungszweck an. Ein Lastschriftmandat können Sie unter ${p.url} einrichten.`,
+  "ticket.mail.invoice.text": (p) => `Anbei erhalten Sie unsere Rechnung ${p.number} über ${money(p)}, fällig am ${day(p.due)}. Bitte überweisen Sie den Betrag auf ${p.iban ? `IBAN ${p.iban}` : `Konto ${p.account}, Bankleitzahl ${p.code}`} und geben Sie die Rechnungsnummer als Verwendungszweck an. Die Zahlungsart können Sie unter ${p.url} ändern.`,
   "ticket.mail.debit.subject": (p) => `Rechnung ${p.number}`,
   "ticket.mail.debit.text": (p) => `Anbei erhalten Sie unsere Rechnung ${p.number} über ${money(p)}. Wir haben den Betrag von Ihrem Konto abgebucht.`,
   "ticket.mail.consequence.throttle.subject": (p) => `Zahlungserinnerung: Rechnung ${p.number}`,

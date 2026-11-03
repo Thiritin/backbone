@@ -81,7 +81,7 @@ import { skillById } from "../10-catalog/research";
 import { deskItem, KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
 import { deskById } from "../10-catalog/desks";
 import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR, PROVIDERS } from "../20-world/datacenters";
-import type { Component, Device, GameState, LedgerEntry, Location } from "../50-state";
+import type { Component, Device, GameState, LedgerEntry, Location, PowerUse } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
@@ -123,15 +123,39 @@ export function endLease(s: GameState, leaseId: string) {
   s.devices = s.devices.map((d) => (d.lease === leaseId ? { ...d, lease: null } : d));
 }
 
-// Euros of power drawn in one hour: every powered device at the business price × the datacenter's power factor, or the household price in the basement.
-// Racks on a flat-rate contract pay it monthly instead.
-export function powerPerHour(s: GameState): number {
+// Power drawn in one hour per location: kWh, and euros at the business price × the datacenter's power factor, or the household
+// price in the basement. Racks on a flat-rate contract pay it monthly instead.
+export function powerByLocation(s: GameState): Record<string, PowerUse> {
   const price = businessPowerPrice(yearOf(s.hour));
-  const busy = busyDevices(s), flat = new Set(s.racks.filter((r) => r.flatKw).map((r) => r.id));
-  return readOnlySweep(s, () => s.devices.filter((d) => d.on && !flat.has(d.rackId ?? "") && powered(s, d.id)).reduce((sum, d) => {
-    const loc = locationOf(s, d)!;
-    return sum + (drawWatts(s, d, busy) / 1000) * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
-  }, 0));
+  const busy = busyDevices(s), flat = new Set(s.racks.filter((r) => r.flatKw).map((r) => r.id)), out: Record<string, PowerUse> = {};
+  readOnlySweep(s, () => {
+    for (const d of s.devices) {
+      if (!d.on || flat.has(d.rackId ?? "") || !powered(s, d.id)) continue;
+      const loc = locationOf(s, d)!, kwh = drawWatts(s, d, busy) / 1000, u = (out[loc.id] ??= { kwh: 0, eur: 0 });
+      u.kwh += kwh;
+      u.eur += kwh * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
+    }
+  });
+  return out;
+}
+// Euros of power drawn in one hour.
+export const powerPerHour = (s: GameState): number => Object.values(powerByLocation(s)).reduce((n, u) => n + u.eur, 0);
+
+// The month's power lines: metered power at a datacenter goes on its invoice, the rest on the utility's; kWh and ct/kWh ride
+// along. What powerDue holds beyond the per-location use (a save from before it) is one plain power line.
+export function powerBills(s: GameState): LedgerEntry[] {
+  const bills: LedgerEntry[] = [];
+  let used = 0;
+  for (const [id, u] of Object.entries(s.powerUse)) {
+    const l = s.locations.find((x) => x.id === id);
+    if (!l || u.eur < 0.005) continue;
+    used += u.eur;
+    const params = { location: l.name, kwh: Math.round(u.kwh), ct: Math.round((u.eur / u.kwh) * 10000) / 100 };
+    bills.push(l.dc ? { hour: s.hour, category: "power", key: "ledger.dcPower", params: { ...params, dc: l.dc }, amount: -cents(u.eur) } : { hour: s.hour, category: "power", key: "ledger.powerUse", params, amount: -cents(u.eur) });
+  }
+  const rest = cents(s.powerDue - used);
+  if (rest > 0) bills.unshift({ hour: s.hour, category: "power", key: "ledger.power", params: {}, amount: -rest });
+  return bills;
 }
 
 export const CANCEL_CHANCE = 0.015;
@@ -262,7 +286,11 @@ export const knowHowPerMonth = (s: GameState): number =>
   s.services.filter((v) => v.endedAt === null).reduce((sum, v) => sum + KNOW_HOW[v.product], 0);
 
 export function tick(state: GameState): SimEvent[] {
-  state.powerDue += powerPerHour(state);
+  for (const [id, u] of Object.entries(powerByLocation(state))) {
+    const was = state.powerUse[id] ?? { kwh: 0, eur: 0 };
+    state.powerUse = { ...state.powerUse, [id]: { kwh: was.kwh + u.kwh, eur: was.eur + u.eur } };
+    state.powerDue += u.eur;
+  }
   const minutes = 60 - state.minute;
   state.hour++;
   state.minute = 0;
@@ -330,7 +358,7 @@ export function tick(state: GameState): SimEvent[] {
   if (monthStart) {
     const d = dateOf(state.hour);
     events.push({ app: "Books", key: "event.monthStart", params: { month: d.getUTCMonth(), year: d.getUTCFullYear() } });
-    const power = cents(state.powerDue);
+    const powerLines = powerBills(state), power = cents(-powerLines.reduce((n, b) => n + b.amount, 0));
     // A retained contract's first month after the offer is free; dc names whose invoice a line is on in the provider's portal.
     const free = (l: Location) => { const c = state.contracts.find((x) => x.locationId === l.id); return c?.retainedAt != null && noticeEnd(c.retainedAt, 0) === state.hour ? c.monthly : 0; };
     const bills: LedgerEntry[] = state.locations.filter((l) => l.dc)
@@ -363,7 +391,7 @@ export function tick(state: GameState): SimEvent[] {
     }
     const desk = state.desk && state.desk.hosting.kind !== "self" ? deskById(state.desk.id) : undefined;
     if (desk && desk.monthly > 0) bills.push(subscriptionEntry(state, deskItem(desk)));
-    if (power > 0) bills.unshift({ hour: state.hour, category: "power", key: "ledger.power", params: {}, amount: -power });
+    bills.unshift(...powerLines);
     const dc = state.locations.find((l) => l.dc);
     const direct = invoicing(state) ? billSuppliers(state, bills, { upstream: line.isp, datacenter: dc && datacenterById(dc.dc!).name }) : bills;
     const rent = bills.filter((b) => b.category === "rent").reduce((sum, b) => sum - b.amount, 0);
@@ -371,6 +399,7 @@ export function tick(state: GameState): SimEvent[] {
     const subscriptions = cents(bills.filter((b) => b.category === "subscriptions").reduce((sum, b) => sum - b.amount, 0));
     state.cash = cents(state.cash + direct.reduce((n, b) => n + b.amount, 0));
     state.powerDue = 0;
+    state.powerUse = {};
     state.ledger = [...state.ledger, ...direct];
     if (bills.length) events.push({ app: "Books", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));

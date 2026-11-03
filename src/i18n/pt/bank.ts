@@ -54,7 +54,7 @@ export default {
   "error.shopUnpaid": () => "A loja tem uma fatura por pagar.",
   "error.noInvoice": () => "A loja ainda não oferece pagamento por fatura.",
   "ticket.mail.invoice.subject": (p) => `Fatura ${p.number}`,
-  "ticket.mail.invoice.text": (p) => `Segue em anexo a nossa fatura ${p.number} no valor de ${money(p)}, com vencimento em ${day(p.due)}. Pedimos que transfira o montante ${p.iban ? `para o IBAN ${p.iban}` : `para a conta ${p.account}, código do banco ${p.code}`}, indicando o número da fatura como referência. Pode configurar um débito direto em ${p.url}.`,
+  "ticket.mail.invoice.text": (p) => `Segue em anexo a nossa fatura ${p.number} no valor de ${money(p)}, com vencimento em ${day(p.due)}. Pedimos que transfira o montante ${p.iban ? `para o IBAN ${p.iban}` : `para a conta ${p.account}, código do banco ${p.code}`}, indicando o número da fatura como referência. Pode escolher a forma de pagamento em ${p.url}.`,
   "ticket.mail.debit.subject": (p) => `Fatura ${p.number}`,
   "ticket.mail.debit.text": (p) => `Segue em anexo a nossa fatura ${p.number} no valor de ${money(p)}. Debitámos o montante na sua conta.`,
   "ticket.mail.consequence.throttle.subject": (p) => `Lembrete: fatura ${p.number}`,

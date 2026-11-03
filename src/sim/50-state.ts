@@ -157,6 +157,8 @@ export interface RouterLan {
 export interface PrivateNet { customerId: string; vlan: number; since: number }
 export interface PortShare { ip: string; kind: "web" | "exposed" }
 // paid counts the monthly payments made so far; the lease ends after months payments.
+// One location's power use this month.
+export interface PowerUse { kwh: number; eur: number }
 export interface Lease { id: string; lessor: string; monthly: number; months: number; startedAt: number; paid: number; devices: string[] }
 // A waitlist entry gets heldUntil once its space is free; the space is then reserved until that hour.
 // A rented space's contract with its provider. monthly is the rent agreed at order time; endsAt is set once the player
@@ -231,6 +233,8 @@ export interface GameState {
   leases: Lease[];
   // Power drawn since the last monthly bill, in euros.
   powerDue: number;
+  // The same per location, with the kWh behind it, for the month's power lines.
+  powerUse: Record<string, PowerUse>;
   customers: Customer[];
   services: Service[];
   // Billing and bank.
@@ -473,7 +477,7 @@ export const newGame = (seed: number): GameState => ({
   racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, powerUse: {}, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, ownWebspaces: [], installers: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],

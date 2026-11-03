@@ -3,9 +3,8 @@ import { nowMinutes, yearOf } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { bankById, banksOpen, defaultPlan, planById, tanMethods, type BankId, type PlanId, type TanMethod } from "../10-catalog/banks";
 import { APPROVAL_HOURS, assign, bankOf, ibanValid, openWithSavings, openAccount, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft, type Payee } from "../46-finance/bank";
-import { invoice } from "../46-finance/payables";
+import { debitAllowed, invoice, isSupplier, PAY_METHODS, type PayMethod } from "../46-finance/payables";
 import type { GameState } from "../50-state";
-import { datacenterById } from "../20-world/datacenters";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -127,15 +126,19 @@ export function applyOverdraft(s: GameState): ActionResult {
   return { ok: true };
 }
 
-// A direct debit mandate for one supplier, set up or cancelled on the supplier's portal; its next invoices debit themselves.
-export function setMandate(s: GameState, name: string, on: boolean): ActionResult {
+// How one supplier is paid, chosen on its portal; its next invoices go that way. A card needs a company card, a direct
+// debit a German supplier.
+export function setPayMethod(s: GameState, name: string, method: PayMethod): ActionResult {
   if (!s.bank) return fail("error.noBank");
-  // A site under contract takes a mandate before its first invoice.
-  if (!s.payables.some((p) => p.name === name) && !s.contracts.some((c) => datacenterById(c.dc).name === name)) return fail("error.unknownSupplier");
-  const rest = s.bank.mandates.filter((x) => x !== name);
-  s.bank = { ...s.bank, mandates: on ? [...rest, name] : rest };
+  if (!PAY_METHODS.includes(method)) return fail("error.payMethod");
+  if (!isSupplier(s, name)) return fail("error.unknownSupplier");
+  if (method === "card" && !s.bank.card) return fail("error.payNoCard");
+  if (method === "debit" && !debitAllowed(name)) return fail("error.debitAbroad");
+  const off = (list: string[]) => list.filter((x) => x !== name);
+  s.bank = { ...s.bank, mandates: method === "debit" ? [...off(s.bank.mandates), name] : off(s.bank.mandates), cards: method === "card" ? [...off(s.bank.cards), name] : off(s.bank.cards) };
   return { ok: true };
 }
+export const setMandate = (s: GameState, name: string, on: boolean): ActionResult => setPayMethod(s, name, on ? "debit" : "transfer");
 
 export function payAllDue(s: GameState): ActionResult {
   if (!s.bank) return fail("error.noBank");

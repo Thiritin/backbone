@@ -176,6 +176,7 @@ export function deserialize(raw: string): GameState {
   // Accounts from before plans get their bank's cheapest plan for the form.
   if (s.bank && !s.bank.plan) s.bank = { ...s.bank, plan: defaultPlan(bankById(s.bank.id)!, s.registration?.form ?? "sole") };
   // Saves from before Books assigned payments out count each one toward the invoice the supplier booked it to.
+  if (s.bank && !s.bank.cards) s.bank = { ...s.bank, cards: [] };
   if (s.bank) s.bank = { ...s.bank, outgoing: s.bank.outgoing.map((o) => (o.matched === undefined ? { ...o, matched: o.payableId ?? null } : o)) };
   s.payables = s.payables.map((p) => (p.booked === undefined ? { ...p, booked: p.paidAt !== null ? p.amount : p.sent } : p));
   fillGames(s);

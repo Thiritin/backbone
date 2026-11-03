@@ -1,11 +1,12 @@
 // docs/design/plans/billing-by-hand.md, 9b milestone 4: supplier invoices the player pays on the bank's site, and what each
 // supplier does when one stays unpaid.
 import { hashRng, rand } from "../00-core/rng";
-import { registrarHost, REGISTRARS } from "../10-catalog/registrars";
+import { registrarById, registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { storeItem } from "../10-catalog/store";
 import { deliverMail } from "../42-mail/sources";
 import type { GameState, LedgerEntry } from "../50-state";
-import { groupIban, iban, ibanEra } from "./bank";
+import { COUNTRY, DATACENTERS, datacenterById } from "../20-world/datacenters";
+import { cardReady, cardSpent, groupIban, iban, ibanEra } from "./bank";
 
 export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software";
 // throttle slows the home line, cut takes it off the internet, dark switches the locations' power off, licence stops the Pear
@@ -59,6 +60,23 @@ export function supplierHost(name: string): string {
 }
 export const supplierUrl = (name: string): string => `www.${supplierHost(name)}/account`;
 
+// How a supplier gets its money: by transfer, from the company card as the invoice is issued, or by SEPA direct debit.
+export type PayMethod = "transfer" | "card" | "debit";
+export const PAY_METHODS: PayMethod[] = ["transfer", "card", "debit"];
+export const payMethod = (s: GameState, name: string): PayMethod => (s.bank?.mandates.includes(name) ? "debit" : s.bank?.cards.includes(name) ? "card" : "transfer");
+// A datacenter's country is its city's; any other supplier is German when its site is under .de.
+export function supplierCountry(name: string): string {
+  const dc = DATACENTERS.find((d) => d.name === name);
+  return dc ? COUNTRY[dc.city] ?? "" : supplierHost(name).endsWith(".de") ? "DE" : "";
+}
+// SEPA direct debit is only offered by German suppliers.
+export const debitAllowed = (name: string): boolean => supplierCountry(name) === "DE";
+
+// Whom the company buys from on account: a supplier that invoiced it, a datacenter under contract, the registrar partner and
+// the utility.
+export const isSupplier = (s: GameState, name: string): boolean => name === UTILITY || s.payables.some((p) => p.name === name)
+  || s.contracts.some((c) => datacenterById(c.dc).name === name) || (!!s.registrar && registrarById(s.registrar.id)?.name === name);
+
 export const open = (s: GameState): Payable[] => s.payables.filter((p) => p.paidAt === null);
 export const overdue = (s: GameState, p: Payable): boolean => p.paidAt === null && s.hour > p.dueAt;
 // The same in Books, which goes by the payments assigned there.
@@ -85,7 +103,7 @@ const book = (s: GameState, lines: LedgerEntry[]) => {
 };
 
 // A supplier's invoice by email with the invoice attached, or on paper when a letter brings it; a supplier with a mandate
-// debits it at once.
+// debits it at once, one paid by card charges the card when it is ready and has the room.
 export function invoice(s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[], days = PAY_DAYS, paper = false): Payable {
   const amount = cents(-lines.reduce((n, e) => n + e.amount, 0));
   const id = `pay${s.nextId++}`;
@@ -96,6 +114,11 @@ export function invoice(s: GameState, supplier: SupplierId, name: string, lines:
     const debit = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour, name, account: ibanEra(s) ? supplierIban(supplier) : supplierAccount(supplier), amount, reference: p.number, payableId: id, matched: id, arrived: true as const, debit: true as const };
     s.bank = { ...s.bank, outgoing: [...s.bank.outgoing, debit] };
     deliverMail(s, name, "debit", { name, number: p.number, amount, payable: id }, { source: `supplier:${supplier}`, att: [{ k: "invoice", id }] });
+  } else if (s.bank?.cards.includes(name) && cardReady(s) && cardSpent(s) + amount <= s.bank.card!.limit) {
+    const card = s.bank.card!;
+    s.bank = { ...s.bank, card: { ...card, spent: [...card.spent, ...lines.map((e) => ({ ...e, hour: s.hour }))] } };
+    Object.assign(p, { sent: amount, paidAt: s.hour, booked: amount });
+    deliverMail(s, name, "cardPaid", { name, number: p.number, amount, payable: id }, { source: `supplier:${supplier}`, att: [{ k: "invoice", id }] });
   } else if (!paper) deliverMail(s, name, "invoice", { name, number: p.number, amount, payable: id, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) }, { source: `supplier:${supplier}`, att: [{ k: "invoice", id }] });
   s.payables = [...s.payables, p];
   return p;
@@ -103,7 +126,7 @@ export function invoice(s: GameState, supplier: SupplierId, name: string, lines:
 
 // Which supplier sends each monthly bill line; lines of no supplier here stay direct debits (leases, addresses).
 const SUPPLIER_OF: Record<string, SupplierId> = {
-  "ledger.power": "power", "ledger.space": "datacenter", "ledger.feed": "datacenter", "ledger.flatPower": "datacenter",
+  "ledger.power": "power", "ledger.powerUse": "power", "ledger.dcPower": "datacenter", "ledger.space": "datacenter", "ledger.feed": "datacenter", "ledger.flatPower": "datacenter",
   "ledger.homeLine": "upstream", "ledger.subscription": "pear", "ledger.subscriptionSeats": "pear",
 };
 export const UTILITY = "E.OFF";
