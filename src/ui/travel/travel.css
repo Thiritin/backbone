@@ -30,3 +30,8 @@
 }
 .travel-clock strong { color: var(--accent-soft); font-weight: 650; }
 .travel-fade { position: absolute; inset: 0; background: black; pointer-events: none; }
+.tr-streets { fill: none; stroke: oklch(0.43 0.008 250); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.travel-osm {
+  position: absolute; right: 8px; bottom: 6px; padding: 2px 6px; border-radius: 4px;
+  background: oklch(0.16 0.01 250 / 0.7); color: oklch(0.75 0.01 250); font: 500 10px Inter, sans-serif; pointer-events: none;
+}

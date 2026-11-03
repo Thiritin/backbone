@@ -10,8 +10,11 @@ export interface Marker {
   id: string; lon: number; lat: number; label: string;
   kind: "basement" | "location" | "datacenter";
   selected?: boolean; alert?: boolean; provider?: string | null; count?: number;
+  // Shown only at street zoom, or only above it; always when unset.
+  zoom?: "street" | "region";
 }
-interface Props { initial?: Bounds; markers?: Marker[]; onMarkerClick?: (id: string) => void; onCityClick?: (city: City) => void; className?: string; children?: ReactNode }
+// minW is the narrowest view in map units; layer draws between the base map and the pins.
+interface Props { initial?: Bounds; markers?: Marker[]; onMarkerClick?: (id: string) => void; onCityClick?: (city: City) => void; className?: string; children?: ReactNode; minW?: number; layer?: ReactNode }
 
 export const EUROPE: Bounds = { west: -9.14, south: 41.9, east: 21.01, north: 59.91 };
 export const WORLD: Bounds = { west: -180, south: -58, east: 180, north: 84 };
@@ -20,6 +23,8 @@ export const cityNamed = (name: string) => CITIES.find((c) => c.name === name);
 // Equirectangular with its standard parallel at about 45 degrees, so Europe keeps its shape.
 const KX = 0.7;
 export const X = (lon: number) => Math.round(lon * KX * 100) / 100;
+// Unrounded, for street-level detail.
+export const XF = (lon: number) => lon * KX;
 export const Y = (lat: number) => -lat;
 const X0 = X(WORLD.west), X1 = X(WORLD.east), Y0 = Y(WORLD.north), Y1 = Y(WORLD.south);
 const MIN_W = 4;
@@ -53,7 +58,7 @@ const CABLE_D = CABLES.map((c) => ({
 
 type View = { x: number; y: number; w: number };
 
-export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCityClick, className, children }: Props) {
+export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCityClick, className, children, minW = MIN_W, layer }: Props) {
   const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null), tip = useRef<HTMLDivElement>(null);
   const cityClick = useRef(onCityClick);
   cityClick.current = onCityClick;
@@ -67,13 +72,13 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
     const cur: View = { x: 0, y: 0, w: X1 - X0 }, goal: View = { ...cur };
     const clamp = (v: View) => {
       const a = ch / cw;
-      v.w = Math.min(Math.max(v.w, MIN_W), X1 - X0, (Y1 - Y0) / a);
+      v.w = Math.min(Math.max(v.w, minW), X1 - X0, (Y1 - Y0) / a);
       v.x = Math.min(Math.max(v.x, X0), X1 - v.w);
       v.y = Math.min(Math.max(v.y, Y0), Y1 - v.w * a);
     };
     const apply = () => {
       s.setAttribute("viewBox", `${cur.x} ${cur.y} ${cur.w} ${(cur.w * ch) / cw}`);
-      const k = cur.w / cw, nz = k > 0.12 ? "1" : k > 0.035 ? "2" : "3";
+      const k = cur.w / cw, nz = k > 0.12 ? "1" : k > 0.035 ? "2" : k > 5e-4 ? "3" : "4";
       s.style.setProperty("--k", String(k));
       if (nz !== z) el.dataset.z = z = nz;
     };
@@ -180,14 +185,15 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
   }, []);
 
   const groups = new Map<string, Marker[]>();
-  for (const m of markers) { const k = `${m.lon},${m.lat}`; groups.set(k, [...(groups.get(k) ?? []), m]); }
+  for (const m of markers) { const k = `${m.zoom},${m.lon},${m.lat}`; groups.set(k, [...(groups.get(k) ?? []), m]); }
 
   return (
     <div ref={wrap} className={`wm ${className ?? ""}`}>
       <svg ref={svg} role="group" aria-label="World map" onClickCapture={(e) => { if (dragged.current) { e.stopPropagation(); dragged.current = false; } }}>
         <Base onCity={(c) => cityClick.current?.(c)} />
+        {layer}
         {[...groups.values()].map((g) => (
-          <g key={g[0].id} transform={`translate(${X(g[0].lon)} ${Y(g[0].lat)})`}>
+          <g key={g[0].id} className={g[0].zoom ? `wm-${g[0].zoom}` : undefined} transform={`translate(${XF(g[0].lon)} ${Y(g[0].lat)})`}>
             <g className="wm-s">
               {g[0].kind === "datacenter"
                 ? g.map((m, i) => <Pin key={m.id} m={m} y={-i * 24} onClick={() => onMarkerClick?.(m.id)} />)
