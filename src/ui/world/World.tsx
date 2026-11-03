@@ -24,6 +24,7 @@ import {
   CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, rackHeight, RackBox, RaisedFloor, Scanner, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
+import { useFigures } from "./figures";
 import { PairPanel } from "./rack/PairPanel";
 import { menuOn } from "../desktop/ContextMenu";
 import { RoomCables } from "./rack/Cables";
@@ -34,7 +35,7 @@ import { answerCall } from "../../sim/90-actions/staff";
 import type { Call } from "../../sim/47-staff/oncall";
 import {
   Bin, ReceptionBoard, BossDesk, Buckets, chairAt, CodeDoor, Kitchen, Ladder, OfficeChair, OfficeDesk, OfficeFloor, OfficeWindow, Partition, Plant, Printer, Reception, StairsSign, Toolbox, Tube,
-  useOfficeStaff, WallTray, Whiteboard,
+  WallTray, Whiteboard,
 } from "./office";
 import { Closet } from "./office";
 import "./world.css";
@@ -204,7 +205,7 @@ export function World() {
     run();
   });
 
-  const staff = useOfficeStaff(game, loc, plan);
+  const staff = useFigures(game, loc, plan);
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const waiting = boxAt(game, loc.id).length;
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;

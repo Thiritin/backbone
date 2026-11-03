@@ -25,6 +25,7 @@ import { jackEntries, jacksOf, jackText, ProviderPanel } from "./ProviderPanel";
 import { panelOf } from "../../../sim/60-infra/panels";
 import "../panel/panel.css";
 import "./rack.css";
+import { WorkTag } from "../figures";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
 const CAP = 36, SIDE = 18, FOOT = 18;
@@ -137,6 +138,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
           <div ref={scene} className={`wr-scene${tag || floor ? " tagged" : ""}`}>
             <div className={`wr-cab${shelf ? " shelf" : ""}`}>
               {back && pp && <ProviderPanel game={game} panel={pp} picked={jack} hand={hand} onJack={(e) => (hand ? plug(e) : (pick(null), setJack(e.port)))} onConnect={(a, b) => { act(connect, a, b); }} />}
+              <WorkTag game={game} rackId={rack.id} />
               <div className="wr-plate" data-plate=""><b>{rack.name}</b><span>{shelf ? `${used} / ${units}` : `${used} / ${units} U`}</span></div>
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
               <div className={`wr-face${turning !== null ? " in" : ""}`}>{face(back)}</div>
