@@ -231,7 +231,7 @@ export default {
   "apps.kb.reads": () => "Reads",
 
   "apps.guide.title": () => "Getting started",
-  "apps.guide.intro": () => "It is January 2005. You run a small hosting company from a basement with an empty rack and 3,500 € of savings. Your goal is to grow it into your own datacenter by automating your own jobs.",
+  "apps.guide.intro": () => "It is January 2005. You run a small hosting company from a basement with a metal shelf for servers and 3,500 € of savings. Your goal is to grow it into your own datacenter by automating your own jobs.",
   "apps.guide.firstServer": () => "Your first server",
   "apps.guide.setup": () => "Set up your first web host so customers can order web hosting. Each step is checked off once it is done.",
   "apps.guide.wiki": () => "Wiki",

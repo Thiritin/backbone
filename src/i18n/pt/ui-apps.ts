@@ -231,7 +231,7 @@ export default {
   "apps.kb.reads": () => "Leituras",
 
   "apps.guide.title": () => "Primeiros passos",
-  "apps.guide.intro": () => "É janeiro de 2005. Geres uma pequena empresa de hospedagem a partir de um porão, com um rack vazio e 3.500 € de poupanças. O teu objetivo é transformá-la no teu próprio datacenter, automatizando o teu próprio trabalho.",
+  "apps.guide.intro": () => "É janeiro de 2005. Geres uma pequena empresa de hospedagem a partir de um porão, com uma prateleira metálica para servidores e 3.500 € de poupanças. O teu objetivo é transformá-la no teu próprio datacenter, automatizando o teu próprio trabalho.",
   "apps.guide.firstServer": () => "O teu primeiro servidor",
   "apps.guide.setup": () => "Configura o teu primeiro host web para que os clientes possam encomendar hospedagem web. Cada passo fica assinalado assim que for concluído.",
   "apps.guide.wiki": () => "Wiki",

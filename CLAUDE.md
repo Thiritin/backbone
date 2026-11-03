@@ -15,6 +15,7 @@ Design: `docs/design/gdd/` (game) and `docs/design/economy/` (numbers) hold one 
 - `src/ui/desktop/` shell (menu bar, dock, windows), `src/ui/apps/` one folder or file per app, `src/ui/art/` code-drawn rack and device fronts.
 - `src/i18n/` English by key (`en.ts`, topic files, `ui-<area>.ts` for UI text); translations in `src/i18n/<lang>/` mirror the English file names. `lang.ts` picks and loads the language.
 - `tests/` one seeded suite per feature.
+- Every dock and desktop icon is an era icon; see `docs/design/era-icons.md`.
 
 ## Hard rules
 
