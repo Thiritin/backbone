@@ -56,50 +56,51 @@ How the newer locations are priced:
 - **Nuremberg and Falkenstein** are the budget hoster parks. Hetzler's own halls are the cheapest space in the game (€170 and €160) with one carrier, the provider's own network; Boris Network NBG is the carrier-neutral alternative with N-ICKS on site.
 - **Munich** prices sit between Frankfurt and Berlin.
 - **North America** prices are 2026 US retail converted at about €0.90 to the dollar. Space costs about the same as in Germany, but power is much cheaper, so the power factors are lower (1.05 to 1.2, against 1.3 to 1.5 in Europe). New York and Los Angeles carry a metro premium. Ashburn has the most carriers in the game (60 at Equinox DC2), and Dallas is the cheapest American market.
+- Aisles says whether the halls run hot and cold aisles, with rack rows facing each other; large and certified sites do, budget sites do not.
 - Datacenters have no opening years yet; every one is open from 2005, which matches the real buildings closely enough for the American and German hubs.
 
-| Datacenter | City | Carriers | Exchange | Feeds | Backup | Green | kW per position | Position per month | Power factor | Cross-connect | Remote hands | Certified | Cages |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Equinox FR5 | Frankfurt | 30 | DE-KICKS on site | A+B | UPS, generator | Yes | 8 | €750 | 1.4 | €250 | €150/h, 1 h | Yes | Yes |
-| Interaction FRA | Frankfurt | 25 | DE-KICKS on site | A+B | UPS, generator | No | 6 | €600 | 1.3 | €200 | €120/h, 2 h | Yes | Yes |
-| mainqubes FRA | Frankfurt | 12 | DE-KICKS by cross-connect | A+B | UPS, generator | Yes | 6 | €450 | 1.3 | €150 | €100/h, 4 h | Yes | Yes |
-| Hetzler Park | Frankfurt | 1 | None | Single | UPS, generator | Yes | 4 | €180 | 1.1 | €80 | €60/h, 8 h | No | No |
-| Tellyhouse North | London | 30 | LYNX on site | A+B | UPS, generator | No | 6 | €800 | 1.5 | €300 | €160/h, 1 h | Yes | Yes |
-| Global Snitch LON | London | 20 | LYNX by cross-connect | A+B | UPS, generator | Yes | 8 | €700 | 1.4 | €250 | €140/h, 2 h | Yes | Yes |
-| Docklands Data | London | 3 | None | Single | UPS | No | 4 | €350 | 1.2 | €100 | €80/h, 8 h | No | No |
-| Equinox AM3 | Amsterdam | 25 | HAMS-IX on site | A+B | UPS, generator | Yes | 8 | €650 | 1.3 | €220 | €140/h, 1 h | Yes | Yes |
-| Iron Molehill AMS | Amsterdam | 10 | HAMS-IX by cross-connect | A+B | UPS, generator | Yes | 10 | €500 | 1.2 | €180 | €110/h, 4 h | Yes | Yes |
-| Tellyhouse Voltaire | Paris | 25 | Franz-IX on site | A+B | UPS, generator | No | 6 | €650 | 1.3 | €220 | €140/h, 2 h | Yes | Yes |
-| Data5 Marcoussis | Paris | 8 | Franz-IX by cross-connect | A+B | UPS, generator | Yes | 10 | €450 | 1.2 | €150 | €100/h, 4 h | Yes | Yes |
-| NTD Berlin 1 | Berlin | 12 | BeCIX on site | A+B | UPS, generator | Yes | 6 | €500 | 1.3 | €150 | €110/h, 2 h | Yes | Yes |
-| Spree Colo | Berlin | 3 | None | Single | UPS | Yes | 4 | €250 | 1.2 | €90 | €70/h, 8 h | No | No |
-| Data5 Milano | Milan | 10 | MIXup on site | A+B | UPS, generator | No | 6 | €500 | 1.3 | €160 | €110/h, 2 h | Yes | Yes |
-| Arubaba Hub | Milan | 4 | None | A+B | UPS, generator | Yes | 6 | €350 | 1.2 | €100 | €80/h, 4 h | Yes | No |
-| Interaction VIE | Vienna | 15 | VieX on site | A+B | UPS, generator | No | 6 | €500 | 1.3 | €160 | €120/h, 2 h | Yes | Yes |
-| Next Lair VIE | Vienna | 4 | VieX by cross-connect | Single | UPS, generator | No | 4 | €300 | 1.2 | €100 | €80/h, 4 h | No | No |
-| Equinox ZH4 | Zurich | 15 | SwizzIX on site | A+B | UPS, generator | Yes | 8 | €800 | 1.5 | €250 | €160/h, 1 h | Yes | Yes |
-| Green.chz Lupfig | Zurich | 6 | SwizzIX by cross-connect | A+B | UPS, generator | Yes | 6 | €550 | 1.3 | €180 | €120/h, 4 h | Yes | Yes |
-| Equinox DU1 | Düsseldorf | 18 | ECKS-IX on site | A+B | UPS, generator | Yes | 8 | €650 | 1.35 | €220 | €140/h, 1 h | Yes | Yes |
-| Interaction DUS | Düsseldorf | 14 | ECKS-IX by cross-connect | A+B | UPS, generator | No | 6 | €520 | 1.3 | €180 | €110/h, 2 h | Yes | Yes |
-| NTD Düsseldorf 1 | Düsseldorf | 10 | ECKS-IX by cross-connect | A+B | UPS, generator | Yes | 6 | €430 | 1.25 | €140 | €100/h, 2 h | Yes | Yes |
-| myLoch DUS | Düsseldorf | 8 | ECKS-IX by cross-connect | A+B | UPS, generator | No | 6 | €380 | 1.2 | €120 | €80/h, 4 h | Yes | Yes |
-| SkyBlink Eygelshoven | Kerkrade | 20 | None | A+B | UPS, generator | Yes | 6 | €300 | 1.15 | €60 | €60/h, 2 h | Yes | No |
-| Hetzler NBG | Nuremberg | 1 | None | Single | UPS, generator | Yes | 4 | €170 | 1.1 | €80 | €60/h, 8 h | No | No |
-| Boris Network NBG | Nuremberg | 10 | N-ICKS on site | A+B | UPS, generator | Yes | 6 | €420 | 1.25 | €150 | €100/h, 2 h | Yes | Yes |
-| Hetzler FSN | Falkenstein | 1 | None | Single | UPS, generator | Yes | 4 | €160 | 1.1 | €80 | €60/h, 8 h | No | No |
-| Equinox MU1 | Munich | 15 | IN-EXCESS on site | A+B | UPS, generator | Yes | 8 | €700 | 1.4 | €230 | €150/h, 1 h | Yes | Yes |
-| Interaction MUC | Munich | 10 | IN-EXCESS by cross-connect | A+B | UPS, generator | No | 6 | €550 | 1.3 | €180 | €120/h, 2 h | Yes | Yes |
-| Equinox DC2 | Ashburn | 60 | Equinox IX on site | A+B | UPS, generator | No | 8 | €650 | 1.15 | €200 | €130/h, 1 h | Yes | Yes |
-| Digital Reality ACC | Ashburn | 25 | Equinox IX by cross-connect | A+B | UPS, generator | No | 10 | €480 | 1.1 | €150 | €100/h, 2 h | Yes | Yes |
-| CoreSpite VA1 | Ashburn | 15 | Equinox IX by cross-connect | A+B | UPS, generator | No | 8 | €420 | 1.1 | €120 | €90/h, 4 h | Yes | Yes |
-| Equinox NY4 | New York | 45 | NYIKES on site | A+B | UPS, generator | No | 8 | €800 | 1.4 | €250 | €160/h, 1 h | Yes | Yes |
-| Telex 60 Hudson | New York | 35 | NYIKES by cross-connect | A+B | UPS, generator | No | 5 | €700 | 1.45 | €220 | €150/h, 2 h | Yes | Yes |
-| Digital Reality 350 Cermak | Chicago | 40 | CHI-KICKS on site | A+B | UPS, generator | No | 8 | €550 | 1.2 | €180 | €120/h, 2 h | Yes | Yes |
-| CoreSpite CH1 | Chicago | 15 | CHI-KICKS by cross-connect | A+B | UPS, generator | No | 8 | €450 | 1.15 | €140 | €100/h, 4 h | Yes | Yes |
-| Equinox DA1 | Dallas | 30 | Y'ALL-IX on site | A+B | UPS, generator | No | 8 | €500 | 1.1 | €170 | €120/h, 2 h | Yes | Yes |
-| Digital Reality DFW | Dallas | 12 | Y'ALL-IX by cross-connect | A+B | UPS, generator | No | 10 | €400 | 1.05 | €130 | €90/h, 4 h | Yes | Yes |
-| CoreSpite One Wilshire | Los Angeles | 60 | Any3 on site | A+B | UPS, generator | No | 6 | €750 | 1.45 | €230 | €150/h, 1 h | Yes | Yes |
-| Equinox LA1 | Los Angeles | 30 | Any3 by cross-connect | A+B | UPS, generator | No | 8 | €650 | 1.4 | €210 | €140/h, 2 h | Yes | Yes |
+| Datacenter | City | Carriers | Exchange | Feeds | Backup | Green | kW per position | Position per month | Power factor | Cross-connect | Remote hands | Certified | Cages | Aisles |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Equinox FR5 | Frankfurt | 30 | DE-KICKS on site | A+B | UPS, generator | Yes | 8 | €750 | 1.4 | €250 | €150/h, 1 h | Yes | Yes | Yes |
+| Interaction FRA | Frankfurt | 25 | DE-KICKS on site | A+B | UPS, generator | No | 6 | €600 | 1.3 | €200 | €120/h, 2 h | Yes | Yes | Yes |
+| mainqubes FRA | Frankfurt | 12 | DE-KICKS by cross-connect | A+B | UPS, generator | Yes | 6 | €450 | 1.3 | €150 | €100/h, 4 h | Yes | Yes | No |
+| Hetzler Park | Frankfurt | 1 | None | Single | UPS, generator | Yes | 4 | €180 | 1.1 | €80 | €60/h, 8 h | No | No | No |
+| Tellyhouse North | London | 30 | LYNX on site | A+B | UPS, generator | No | 6 | €800 | 1.5 | €300 | €160/h, 1 h | Yes | Yes | Yes |
+| Global Snitch LON | London | 20 | LYNX by cross-connect | A+B | UPS, generator | Yes | 8 | €700 | 1.4 | €250 | €140/h, 2 h | Yes | Yes | Yes |
+| Docklands Data | London | 3 | None | Single | UPS | No | 4 | €350 | 1.2 | €100 | €80/h, 8 h | No | No | No |
+| Equinox AM3 | Amsterdam | 25 | HAMS-IX on site | A+B | UPS, generator | Yes | 8 | €650 | 1.3 | €220 | €140/h, 1 h | Yes | Yes | Yes |
+| Iron Molehill AMS | Amsterdam | 10 | HAMS-IX by cross-connect | A+B | UPS, generator | Yes | 10 | €500 | 1.2 | €180 | €110/h, 4 h | Yes | Yes | Yes |
+| Tellyhouse Voltaire | Paris | 25 | Franz-IX on site | A+B | UPS, generator | No | 6 | €650 | 1.3 | €220 | €140/h, 2 h | Yes | Yes | Yes |
+| Data5 Marcoussis | Paris | 8 | Franz-IX by cross-connect | A+B | UPS, generator | Yes | 10 | €450 | 1.2 | €150 | €100/h, 4 h | Yes | Yes | Yes |
+| NTD Berlin 1 | Berlin | 12 | BeCIX on site | A+B | UPS, generator | Yes | 6 | €500 | 1.3 | €150 | €110/h, 2 h | Yes | Yes | Yes |
+| Spree Colo | Berlin | 3 | None | Single | UPS | Yes | 4 | €250 | 1.2 | €90 | €70/h, 8 h | No | No | No |
+| Data5 Milano | Milan | 10 | MIXup on site | A+B | UPS, generator | No | 6 | €500 | 1.3 | €160 | €110/h, 2 h | Yes | Yes | Yes |
+| Arubaba Hub | Milan | 4 | None | A+B | UPS, generator | Yes | 6 | €350 | 1.2 | €100 | €80/h, 4 h | Yes | No | No |
+| Interaction VIE | Vienna | 15 | VieX on site | A+B | UPS, generator | No | 6 | €500 | 1.3 | €160 | €120/h, 2 h | Yes | Yes | Yes |
+| Next Lair VIE | Vienna | 4 | VieX by cross-connect | Single | UPS, generator | No | 4 | €300 | 1.2 | €100 | €80/h, 4 h | No | No | No |
+| Equinox ZH4 | Zurich | 15 | SwizzIX on site | A+B | UPS, generator | Yes | 8 | €800 | 1.5 | €250 | €160/h, 1 h | Yes | Yes | Yes |
+| Green.chz Lupfig | Zurich | 6 | SwizzIX by cross-connect | A+B | UPS, generator | Yes | 6 | €550 | 1.3 | €180 | €120/h, 4 h | Yes | Yes | Yes |
+| Equinox DU1 | Düsseldorf | 18 | ECKS-IX on site | A+B | UPS, generator | Yes | 8 | €650 | 1.35 | €220 | €140/h, 1 h | Yes | Yes | Yes |
+| Interaction DUS | Düsseldorf | 14 | ECKS-IX by cross-connect | A+B | UPS, generator | No | 6 | €520 | 1.3 | €180 | €110/h, 2 h | Yes | Yes | Yes |
+| NTD Düsseldorf 1 | Düsseldorf | 10 | ECKS-IX by cross-connect | A+B | UPS, generator | Yes | 6 | €430 | 1.25 | €140 | €100/h, 2 h | Yes | Yes | No |
+| myLoch DUS | Düsseldorf | 8 | ECKS-IX by cross-connect | A+B | UPS, generator | No | 6 | €380 | 1.2 | €120 | €80/h, 4 h | Yes | Yes | No |
+| SkyBlink Eygelshoven | Kerkrade | 20 | None | A+B | UPS, generator | Yes | 6 | €300 | 1.15 | €60 | €60/h, 2 h | Yes | No | No |
+| Hetzler NBG | Nuremberg | 1 | None | Single | UPS, generator | Yes | 4 | €170 | 1.1 | €80 | €60/h, 8 h | No | No | No |
+| Boris Network NBG | Nuremberg | 10 | N-ICKS on site | A+B | UPS, generator | Yes | 6 | €420 | 1.25 | €150 | €100/h, 2 h | Yes | Yes | No |
+| Hetzler FSN | Falkenstein | 1 | None | Single | UPS, generator | Yes | 4 | €160 | 1.1 | €80 | €60/h, 8 h | No | No | No |
+| Equinox MU1 | Munich | 15 | IN-EXCESS on site | A+B | UPS, generator | Yes | 8 | €700 | 1.4 | €230 | €150/h, 1 h | Yes | Yes | Yes |
+| Interaction MUC | Munich | 10 | IN-EXCESS by cross-connect | A+B | UPS, generator | No | 6 | €550 | 1.3 | €180 | €120/h, 2 h | Yes | Yes | Yes |
+| Equinox DC2 | Ashburn | 60 | Equinox IX on site | A+B | UPS, generator | No | 8 | €650 | 1.15 | €200 | €130/h, 1 h | Yes | Yes | Yes |
+| Digital Reality ACC | Ashburn | 25 | Equinox IX by cross-connect | A+B | UPS, generator | No | 10 | €480 | 1.1 | €150 | €100/h, 2 h | Yes | Yes | Yes |
+| CoreSpite VA1 | Ashburn | 15 | Equinox IX by cross-connect | A+B | UPS, generator | No | 8 | €420 | 1.1 | €120 | €90/h, 4 h | Yes | Yes | No |
+| Equinox NY4 | New York | 45 | NYIKES on site | A+B | UPS, generator | No | 8 | €800 | 1.4 | €250 | €160/h, 1 h | Yes | Yes | Yes |
+| Telex 60 Hudson | New York | 35 | NYIKES by cross-connect | A+B | UPS, generator | No | 5 | €700 | 1.45 | €220 | €150/h, 2 h | Yes | Yes | Yes |
+| Digital Reality 350 Cermak | Chicago | 40 | CHI-KICKS on site | A+B | UPS, generator | No | 8 | €550 | 1.2 | €180 | €120/h, 2 h | Yes | Yes | Yes |
+| CoreSpite CH1 | Chicago | 15 | CHI-KICKS by cross-connect | A+B | UPS, generator | No | 8 | €450 | 1.15 | €140 | €100/h, 4 h | Yes | Yes | No |
+| Equinox DA1 | Dallas | 30 | Y'ALL-IX on site | A+B | UPS, generator | No | 8 | €500 | 1.1 | €170 | €120/h, 2 h | Yes | Yes | Yes |
+| Digital Reality DFW | Dallas | 12 | Y'ALL-IX by cross-connect | A+B | UPS, generator | No | 10 | €400 | 1.05 | €130 | €90/h, 4 h | Yes | Yes | Yes |
+| CoreSpite One Wilshire | Los Angeles | 60 | Any3 on site | A+B | UPS, generator | No | 6 | €750 | 1.45 | €230 | €150/h, 1 h | Yes | Yes | Yes |
+| Equinox LA1 | Los Angeles | 30 | Any3 by cross-connect | A+B | UPS, generator | No | 8 | €650 | 1.4 | €210 | €140/h, 2 h | Yes | Yes | Yes |
 
 **Cross-connects and price changes.** A cross-connect ordered in a provider's portal reaches a carrier on sale at the datacenter or its exchange when that is on site. It costs the Cross-connect column a month, fixed at order time and billed with the rent, plus a setup fee of two months. An uplink link to the same partner in that zone runs over it and pays no second cross-connect. Each January one provider, preferring one the player rents from, raises its position price by 2 to 5% for new contracts and emails its customers; existing contracts keep their monthly price.
 
