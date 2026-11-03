@@ -17,12 +17,13 @@ export function travelTo(s: GameState, locationId: string): ActionResult {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return fail("error.noLocation");
   if (s.player.until > s.hour) return fail("error.away");
+  if (s.player.carrying) return fail("error.carrying");
   if (playerAt(s).id === loc.id) return fail("error.alreadyThere");
   const d = drive(s, loc.id);
   if (!d) return fail("error.tooFar");
   if (s.cash < d.fee) return fail("error.noCash");
   s.cash = Math.round((s.cash - d.fee) * 100) / 100;
   s.ledger.push({ hour: s.hour, category: "travel", key: "ledger.drive", params: { place: loc.name }, amount: -d.fee });
-  s.player = { at: loc.id, until: s.hour + d.hours, doing: "travel" };
+  s.player = { ...s.player, at: loc.id, until: s.hour + d.hours, doing: "travel" };
   return { ok: true };
 }

@@ -344,8 +344,7 @@ describe("delivery wait", () => {
       expect(err(mountDevice(s, id, "rack2", 5))).toBe("error.inTransit");
       const events = tick(s);
       expect(events).toContainEqual(expect.objectContaining({ key: "event.stockArrived", params: { count: 1, location: "Basement" } }));
-      expect(dev(s, id)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
-      expect(err(mountDevice(s, id, "rack2", 5))).toBe("ok");
+      expect(dev(s, id)).toMatchObject({ door: "loc1", store: null, transitTo: null, arriveAt: null });
     }
   });
   it("delays a cart on cash or lease alike", () => {
