@@ -5,6 +5,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-03
 
 - Drawing too much power for an hour trips the breaker and the room goes dark until you reset it in the fuse box with less load, while at a datacenter the provider resets it for a remote hands fee; the room also warms with its draw and the window fan spins when it gets warm.
+- Technicians and the datacenter's remote hands are now seen standing at the rack while they work there, and the rack close-up shows a paper tag with who is working, on what and until when.
+- The getting-started steps hang on a corkboard in the basement and the office, ticked off as you do them, and the current card points you to the object in the room or the app on the computer.
+- A failed part now shows a red light on its rack from across the room, and in the opened server it is marked on its slot with the date it failed, a swap from stored parts and an order from the Shop.
 - Connections between racks are made by dragging from one rack to another in the room or with a right-click, the provider's patch panel shows on the rack back with every jack labelled, and provider cables and uplinks are ordered right there.
 - An office section can now become a server closet holding one rack, an office server room or closet can book a business line from the city's provider, and post addressed before a move still reaches the basement for a month.
 - The wall phone by the door rings when something breaks at night and nobody else is on call, and answering it shows on a notepad what happened, where and when.

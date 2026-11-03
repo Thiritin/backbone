@@ -1,14 +1,10 @@
-// The office room's fixtures and the staff at their desks, drawn to docs/design/world-art.md.
-import { useState, type ReactNode } from "react";
-import { dateOf } from "../../sim/00-core/time";
-import { officeSeats, officeWalk, SECTION_W, type Fixture, type OfficePlan } from "../../sim/20-world/layout";
-import type { GameState, Location } from "../../sim/50-state";
-import { whoIsIn } from "../../sim/60-infra/properties";
-import { at3, Desk, DeskLamp, Monitor, onX, onY, Prism, pts, Tower, WALL } from "./draw";
-import { iso, type Pt } from "./grid";
+// The office room's fixtures, drawn to docs/design/world-art.md.
+import { SECTION_W, type Fixture } from "../../sim/20-world/layout";
+import { at3, Corkboard, Desk, DeskLamp, Monitor, onX, onY, Prism, pts, Tower, WALL } from "./draw";
+import { iso } from "./grid";
 import "./office.css";
 
-const DESK_Z = 25;
+export const DESK_Z = 25;
 
 // A desk of two tiles in an island: the "s" desk's occupant sits north of it facing the room, the "n" desk's sits south facing the wall.
 export function OfficeDesk({ f, facing }: { f: Fixture; facing: "s" | "n" }) {
@@ -339,104 +335,7 @@ export function OfficeFloor({ w, h, servers }: { w: number; h: number; servers: 
   );
 }
 
-// People: a rounded figure in flat colours, head a little large, seated facing the screen or walking the grid.
-const SKIN = ["oklch(0.82 0.06 60)", "oklch(0.72 0.08 55)", "oklch(0.58 0.08 50)", "oklch(0.45 0.06 45)"];
-const HAIR = ["oklch(0.3 0.03 50)", "oklch(0.5 0.08 60)", "oklch(0.75 0.1 85)", "oklch(0.25 0.01 260)", "oklch(0.55 0.12 40)"];
-const SHIRT = ["oklch(0.55 0.12 250)", "oklch(0.62 0.12 150)", "oklch(0.7 0.13 70)", "oklch(0.55 0.15 20)", "oklch(0.8 0.02 250)", "oklch(0.5 0.08 300)"];
-const PANTS = ["oklch(0.35 0.04 255)", "oklch(0.3 0.01 60)", "oklch(0.5 0.03 80)"];
-// String hash with a final mix, so ids that differ in one digit still spread.
-const hash = (s: string) => { let h = [...s].reduce((a, c) => Math.imul(a ^ c.charCodeAt(0), 0x5bd1e995) >>> 0, 7); h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d); return (h ^ (h >>> 13)) >>> 0; };
-const look = (id: string) => { const h = hash(id); return { skin: SKIN[h % 4], hair: HAIR[(h >>> 3) % 5], shirt: SHIRT[(h >>> 6) % 6], pants: PANTS[(h >>> 9) % 3], delay: (h % 50) / 10 }; };
-type Look = ReturnType<typeof look>;
-// Screen offset of a step of dx, dy tiles at height z.
-const rel = (dx: number, dy: number, z: number): Pt => ({ x: (dx - dy) * 32, y: (dx + dy) * 16 - z });
-
-function Seated({ l, facing }: { l: Look; facing: "s" | "n" }) {
-  const k = facing === "s" ? 1 : -1, knee = rel(0, 0.3 * k, 18), head = rel(0, 0, 41);
-  return (
-    <>
-      {facing === "s" && <path className="w-fig" style={{ stroke: l.pants }} strokeWidth="6" strokeLinecap="round" d={`M-3,-18 L${knee.x - 3},${knee.y} M3,-18 L${knee.x + 3},${knee.y}`} />}
-      <rect x="-7" y="-35" width="14" height="19" rx="6" fill={l.shirt} />
-      {facing === "s" && (
-        <g className="w-fig-hands" style={{ animationDelay: `${l.delay}s` }}>
-          <path stroke={l.shirt} strokeWidth="3.4" strokeLinecap="round" fill="none" d={`M-6,-31 L${rel(-0.1, 0.32, 24).x},${rel(-0.1, 0.32, 24).y} M6,-31 L${rel(0.1, 0.32, 24).x},${rel(0.1, 0.32, 24).y}`} />
-          <circle cx={rel(-0.1, 0.32, 24).x} cy={rel(-0.1, 0.32, 24).y} r="1.8" fill={l.skin} />
-          <circle cx={rel(0.1, 0.32, 24).x} cy={rel(0.1, 0.32, 24).y} r="1.8" fill={l.skin} />
-        </g>
-      )}
-      <g className="w-fig-head" style={{ animationDelay: `${l.delay}s`, transformOrigin: `0px ${head.y + 6}px` }}>
-        <circle cx="0" cy={head.y} r="7" fill={l.skin} />
-        {facing === "s"
-          ? <path fill={l.hair} d={`M-7,${head.y - 0.5} A7,7 0 0 1 7,${head.y - 0.5} L5,${head.y - 3} L-5,${head.y - 3} Z`} />
-          : <path fill={l.hair} d={`M-7,${head.y + 1.5} A7,7 0 1 1 7,${head.y + 1.5} Z`} />}
-      </g>
-    </>
-  );
-}
-
-function Walking({ l, step }: { l: Look; step: number }) {
-  const s = step ? 2 : -2;
-  return (
-    <>
-      <path stroke={l.pants} strokeWidth="5" strokeLinecap="round" d={`M-3,-24 L${-3 + s},-2 M3,-24 L${3 - s},-2`} />
-      <rect x="-7" y="-44" width="14" height="22" rx="6" fill={l.shirt} />
-      <circle cx="0" cy="-51" r="7" fill={l.skin} />
-      <path fill={l.hair} d="M-7,-51.5 A7,7 0 0 1 7,-51.5 L5,-54 L-5,-54 Z" />
-    </>
-  );
-}
-
-// Minutes of the day each person arrives and leaves, spread over the first and last half hour, and how long the walk takes.
-const WALK_MIN = 6, ARRIVE = 9 * 60, LEAVE = 17 * 60 + 30, SPREAD = 30 - WALK_MIN;
-
-function along(path: Pt[], t: number): Pt {
-  const seg = path.slice(1).map((p, i) => Math.abs(p.x - path[i].x) + Math.abs(p.y - path[i].y)), total = seg.reduce((a, b) => a + b, 0);
-  let d = t * total;
-  for (let i = 0; i < seg.length; i++) {
-    if (d <= seg[i]) { const k = seg[i] ? d / seg[i] : 0; return { x: path[i].x + (path[i + 1].x - path[i].x) * k, y: path[i].y + (path[i + 1].y - path[i].y) * k }; }
-    d -= seg[i];
-  }
-  return path[path.length - 1];
-}
-
-// The staff on this floor as depth-sorted things, and the name card on the desk of the one under the pointer.
-export function useOfficeStaff(game: GameState, loc: Location, plan: OfficePlan | undefined): { depth: number; node: ReactNode }[] {
-  const [hover, setHover] = useState<string | null>(null);
-  const p = plan && game.properties.find((x) => x.locationId === loc.id);
-  if (!p || !plan) return [];
-  const seats = new Map(officeSeats(plan).map((x) => [`${x.sectionId}/${x.index}`, x]));
-  const m = dateOf(game.hour).getUTCHours() * 60 + game.minute, out: { depth: number; node: ReactNode }[] = [];
-  for (const e of whoIsIn(game, p.id, game.hour)) {
-    const seat = e.desk && seats.get(`${e.desk.sectionId}/${e.desk.index}`);
-    if (!seat || seat.floor !== plan.floor) continue;
-    const h = hash(e.id), arrive = ARRIVE + (h % SPREAD), leave = LEAVE + ((h >>> 4) % SPREAD);
-    if (m < arrive || m >= leave + WALK_MIN) continue;
-    const t = m < arrive + WALK_MIN ? (m - arrive) / WALK_MIN : m >= leave ? 1 - (m - leave) / WALK_MIN : 1, l = look(e.id);
-    const facing = seat.facing === "s" ? "s" : "n", chair = { cx: seat.x + 1, cy: seat.y + (facing === "s" ? 0.55 : 0.45) };
-    const pos = t >= 1 ? { x: chair.cx, y: chair.cy } : along(officeWalk(plan, seat), t), s = iso(pos.x, pos.y);
-    const enter = () => setHover(e.id), exit = () => setHover((v) => (v === e.id ? null : v));
-    out.push({
-      // Seated facing the wall, the chair's backrest is drawn over the person; facing the room, the person over the chair.
-      depth: t >= 1 ? seat.x + seat.y + (facing === "s" ? 0.001 : -0.001) : Math.floor(pos.x) + Math.floor(pos.y) + 0.5,
-      node: (
-        <g key={e.id} className="w-person" data-person={e.id} aria-label={e.name} style={{ transform: `translate(${s.x}px, ${s.y}px)` }} onPointerEnter={enter} onPointerLeave={exit}>
-          {t >= 1 ? <Seated l={l} facing={facing} /> : <Walking l={l} step={m % 2} />}
-        </g>
-      ),
-    });
-    if (hover === e.id && t >= 1) {
-      // A tent card at the desk's left corner, toward the person.
-      const dy = facing === "s" ? 1.3 : -0.3, c = at3(seat.x + 0.18, seat.y + dy, DESK_Z);
-      out.push({
-        depth: seat.x + seat.y + 3,
-        node: (
-          <g key={`tag-${e.id}`} pointerEvents="none" transform={`translate(${c.x} ${c.y})`}>
-            <rect className="w-tent" x="-1" y="-7" width={e.name.length * 2.6 + 4} height="7" />
-            <text className="w-num w-num-sm w-tent-text" x="1" y="-2">{e.name}</text>
-          </g>
-        ),
-      });
-    }
-  }
-  return out;
+// The reception's corkboard above the printer, in an aluminium frame.
+export function ReceptionBoard(p: { f: Fixture; cards: boolean[]; current: number; under: number }) {
+  return <Corkboard {...p} span={1} z={90} alu />;
 }

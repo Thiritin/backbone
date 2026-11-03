@@ -647,7 +647,7 @@ export function Shimmer({ tile, z }: { tile: Tile; z: number }) {
 }
 
 // A rack is a dark box; a front facing the camera shows one LED per device, or from zoom 2 the rack front art scaled onto it. In a datacenter the face in view, front or rear, is a closed mesh door over that; a neighbour's rack is muted, its door shut on a few LEDs and a blank label plate. A share is the bottom section of a provider's cabinet of `cabinet` units.
-export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {
+export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; fault?: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {
   const H = rackHeight(units), CH = rackHeight(cabinet), c = center(tile.x, tile.y), dx = 28, m = 1 / 16;
   const L = { x: c.x - dx, y: c.y }, B = { x: c.x, y: c.y + dx / 2 }, R = { x: c.x + dx, y: c.y };
   // The south face is the lower left, the east face the lower right; a north-facing rack shows its rear door on the south face.
@@ -666,7 +666,7 @@ export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cab
   ) : (
     <>
       <rect x="6" y="4" width={artW - 12} height={artH - 8} rx="3" fill="var(--rack)" />
-      {leds.map((d) => <rect key={d.id} className={d.on ? "w-led w-led-on" : "w-led"} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
+      {leds.map((d) => <rect key={d.id} className={d.fault ? "w-led w-led-fault" : d.on ? "w-led w-led-on" : "w-led"} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
     </>
   ));
   const blink = (tile.x * 7 + tile.y * 3) % 5;
@@ -803,6 +803,40 @@ export function Phone({ f, ringing, cordless }: { f: Fixture; ringing: boolean; 
           </g>
         </>
       )}
+    </g>
+  );
+}
+
+// The getting-started corkboard on the left wall, span tiles long towards the far wall: one index card per step, ticked and dimmed when done, the current one larger.
+// Cards of a finished chapter stay pinned underneath.
+export function Corkboard({ f, cards, current, under, span = 1, z = 92, alu = false }: {
+  f: Fixture; cards: boolean[]; current: number; under: number; span?: number; z?: number; alu?: boolean;
+}) {
+  const W = span * 32 - 8, H = 30, x0 = 4;
+  const grid = (n: number) => {
+    const cols = Math.max(1, Math.ceil(Math.sqrt((n * W) / H))), rows = Math.max(1, Math.ceil(n / cols));
+    return { cols, cw: (W - 4) / cols, ch: (H - 4) / rows };
+  };
+  const card = (i: number, n: number, dx = 0) => {
+    const { cols, cw, ch } = grid(n), w = cw * 0.78, h = ch * 0.78;
+    return { x: x0 + 2 + (i % cols) * cw + (cw - w) / 2 + dx, y: 2 + Math.floor(i / cols) * ch + (ch - h) / 2 + dx, w, h };
+  };
+  return (
+    <g transform={onX(0, f.y + 1, z)} data-corkboard>
+      <rect className={`w-cork-frame${alu ? " alu" : ""}`} x={x0 - 1.5} y="-1.5" width={W + 3} height={H + 3} />
+      <rect className="w-cork" x={x0} y="0" width={W} height={H} />
+      {Array.from({ length: under }, (_, i) => { const c = card(i, under, -0.8); return <rect key={`u${i}`} className="w-card under" x={c.x} y={c.y} width={c.w} height={c.h} />; })}
+      {cards.map((done, i) => {
+        const c = card(i, cards.length, under ? 0.8 : 0), k = i === current ? 1.3 : 1;
+        const w = c.w * k, h = c.h * k, x = c.x - (w - c.w) / 2, y = c.y - (h - c.h) / 2;
+        return (
+          <g key={i} data-card={i} data-done={done}>
+            <rect className={`w-card${done ? " done" : ""}`} x={x} y={y} width={w} height={h} />
+            <circle className="w-card-pin" cx={x + w / 2} cy={y + 0.6} r="0.6" />
+            {done && <path className="w-card-tick" d={`M${x + w * 0.25} ${y + h * 0.55}l${w * 0.18} ${h * 0.22}l${w * 0.35} ${-h * 0.5}`} />}
+          </g>
+        );
+      })}
     </g>
   );
 }

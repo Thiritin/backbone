@@ -22,7 +22,7 @@ const BASEMENT = {
     scanner: { x: 3, y: 0 }, hygrometer: { x: 3, y: 0 }, desk: { x: 4, y: 0 }, pc: { x: 4, y: 0 }, fan: { x: 4, y: 0 },
     fusebox: { x: 0, y: 1 }, jack: { x: 0, y: 1 }, shelf: { x: 0, y: 2 }, door: { x: 0, y: 4 }, letterbox: { x: 0, y: 5 }, phone: { x: 0, y: 3 },
     chair: { x: 4, y: 1 }, mat: { x: 1, y: 4 }, drain: { x: 3, y: 5 }, lamp: { x: 4, y: 4 },
-    duct: { x: 0, y: 0 }, switch: { x: 0, y: 4 },
+    duct: { x: 0, y: 0 }, switch: { x: 0, y: 4 }, corkboard: { x: 0, y: 6 },
   } as Record<string, Fixture>,
   // The shelf's tile, and the tiles left for racks bought later.
   shelf: { x: 5, y: 0, facing: "s" } as Tile,
@@ -223,6 +223,7 @@ function officeRoom(plan: OfficePlan): OfficeRoom {
     Object.assign(f, {
       kitchen: { x: 0, y: 0, w: 2 }, bossdesk: { x: 2, y: 0, w: 2 }, bosschair: { x: 3, y: 1, kind: "chair" }, printer: { x: 0, y: 1 },
       letterbox: { x: 0, y: 3 }, reception: { x: 2, y: 4, w: 2 }, phone: { x: 0, y: 5 }, plant: { x: 0, y: SECTION_H - 1 }, tube: { x: 1, y: 3, kind: "tube" },
+      corkboard: { x: 0, y: 1 },
     });
   }
   for (const { x, ox } of bs) {
