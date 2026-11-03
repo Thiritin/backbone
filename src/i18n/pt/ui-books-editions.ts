@@ -26,6 +26,7 @@ export default {
   "books-editions.noSeat": () => `Sem lugar`,
   "books-editions.offline": () => `Contabilidade offline`,
   "books-editions.offlineTitle": () => `Não é possível mostrar esta página`,
+  "books.openWeb": (p) => `Abrir ${p.program}`,
   "books.tab.overview": () => `Visão geral`,
   "books.tab.statistics": () => `Estatísticas`,
   "books.tab.tax": () => `Impostos`,

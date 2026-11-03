@@ -6,7 +6,7 @@ import { unsynced } from "../../../sim/80-business/shoplink";
 import { importFromShop } from "../../../sim/90-actions/shoplink";
 import { lateInBooks } from "../../../sim/46-finance/payables";
 import { sells, type BooksVendor, type Feature } from "../../../sim/10-catalog/bookkeeping";
-import { booksHost, booksOffline, booksUrl, currentVendor, hasFeature } from "../../../sim/80-business/bookkeeping";
+import { booksAppUrl, booksOffline, booksUrl, currentVendor, hasFeature } from "../../../sim/80-business/bookkeeping";
 import type { GameState } from "../../../sim/50-state";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
@@ -47,7 +47,18 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
   { id: "statement", group: "reports", count: () => 0, body: StatementTab },
 ];
 
+// A browser program runs in the Browser at the vendor's site; Books only links there.
 export function BooksApp() {
+  const game = useBooks(), openApp = useStore((s) => s.openApp), v = currentVendor(game);
+  if (v?.deployment !== "browser") return <BooksProgram />;
+  return (
+    <div className="books books-link">
+      <button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: booksAppUrl(v) })}>{t("books.openWeb", { program: v.program })}</button>
+    </div>
+  );
+}
+
+export function BooksProgram() {
   const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const waiting = useStore((s) => unsynced(s.game));
   // Before Shop link, a shop system hands its records over only on import.
@@ -56,7 +67,9 @@ export function BooksApp() {
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);
   const [setup, setSetup] = useSessionState("books.setup", false);
-  useFocus("Books", (f) => {
+  useFocus("Books", (got) => {
+    const f = got.kind === "url" ? got.inner : got;
+    if (!f) return;
     if (f.kind === "register") return setRegister(true);
     const to = f.kind === "invoice" ? (hasFeature(game, "dunning") && game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
       : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : null;
@@ -103,7 +116,7 @@ function Offline({ v }: { v: BooksVendor }) {
   return (
     <div className="books-offline">
       <h2>{t("books-editions.offlineTitle")}</h2>
-      <p className="num">{`https://www.${booksHost(v)}/app`}</p>
+      <p className="num">{`https://${booksAppUrl(v)}`}</p>
     </div>
   );
 }

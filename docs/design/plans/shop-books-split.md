@@ -42,7 +42,7 @@ Before the first shop, the company works by email: a request arrives, the player
 ## 4. Leads and quotes
 
 - One quote flow. Before a shop every Books program writes quotes the same way through the Books quote document. `QuoteFields` and `quoteOrder` go away, and the order ticket always links a quote document.
-- GnuCache (decision B) follows real GnuCash, which has no quote module: a quote is an unposted invoice, and posting it is the convert step. The sim object is the same quote; GnuCache labels it "Rechnung (nicht gebucht)" and the convert button "Buchen". GnuCache gains the `quotes` feature.
+- GnuCache (decision B) follows the open-source program it copies, which has no quote module: a quote is an unposted invoice, and posting it is the convert step. The sim object is the same quote; GnuCache labels it "Rechnung (nicht gebucht)" and the convert button "Buchen". GnuCache gains the `quotes` feature.
 - With an active shop, quotes are written only in the shop admin (WHMCS: Billing > Quotes) with the same steps: draft, send, accepted or declined, convert to invoice (decision C). Books > Quotes turns read-only and lists shop quotes; its New button is gone. The sim reuses `src/sim/30-market/quotes.ts`; the quote gets an `origin: "books" | "shop"`. Quotes still open in Books when the shop goes live stay editable there until they are accepted, declined or expire.
 - Routing with an active shop:
   - Standard orders go through the storefront, as today.
@@ -186,7 +186,7 @@ Variants without server groups place by today's ranking and show no fill option.
 ## 10. Decisions
 
 - A. The shop owns everything a customer sees; Books keeps the ledger (bank, matching, payables, tax, reports). Replacing Books would drop that gameplay and make the eight Books programs useless after the first shop.
-- B. GnuCache gets the same quote document as every other program, presented as an unposted invoice like real GnuCash.
+- B. GnuCache gets the same quote document as every other program, presented as an unposted invoice like the open-source program it copies.
 - C. With an active shop, quotes are written only in the shop. Books shows them read-only.
 - D. Automatic cycle prices are `monthly × months` minus a discount per cycle, set once in the shop settings, default 0. Longer cycles lower churn, so the discount is a real lever.
 

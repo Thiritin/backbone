@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Servers now sell one vCPU per CPU thread, while a second thread on a core adds only about a third of a core's real work, so servers with Hyper-Threading take more bookings but slow down sooner under load.
 - The server inspector shows each CPU's cores and threads, and panel host settings show the host's compute next to its vCPU.
+- Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
 
 ## 2026-11-02
