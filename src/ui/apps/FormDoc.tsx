@@ -1,3 +1,4 @@
+import { addressLine, officeAddress } from "../../sim/60-infra/properties";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { euro } from "../../sim/00-core/money";
@@ -18,7 +19,7 @@ export function FormDoc({ doc }: { doc: Doc }) {
   const rows: [string, string][] = [
     [t("browser-sites-1.of.businessName"), game.company.name],
     [t("browser-sites-1.of.ownerField"), r?.owner ?? ""],
-    [t("checkout.address"), game.company.address ? `${game.company.address.street}, ${game.company.address.zip} ${game.company.address.city}` : ""],
+    [t("checkout.address"), r ? addressLine(officeAddress(game)) : ""],
     [t("browser-sites-1.of.regNumber"), r ? `GA ${r.number}` : ""],
     [t("paperwork.doc.current"), LEGAL_FORMS[f.from ?? r?.form ?? ""] ?? ""],
     [t("paperwork.doc.next"), LEGAL_FORMS[f.form]],

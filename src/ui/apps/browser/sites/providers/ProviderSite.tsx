@@ -17,7 +17,7 @@ import { contractNo, Portal } from "./portal/Portal";
 import "./providers.css";
 
 // docs/design/plans/colo-portals.md, section 4: the pages every provider site shares; each provider lays them out in its own look.
-export type Rented = Exclude<SpaceKind, "basement">;
+export type Rented = Exclude<SpaceKind, "basement" | "office">;
 export type Route =
   | { page: "home" }
   | { page: "sites" }

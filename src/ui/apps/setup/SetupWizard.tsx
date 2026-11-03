@@ -1,3 +1,4 @@
+import { officeAddress } from "../../../sim/60-infra/properties";
 import type { ReactNode } from "react";
 import { BANKS } from "../../../sim/10-catalog/banks";
 import { invoiceNumber, NUMBERINGS } from "../../../sim/45-billing/billing";
@@ -41,7 +42,7 @@ const Fields = ({ rows }: { rows: [string, ReactNode][] }) => (
 );
 
 export function CompanyStep({ game, currency }: { game: GameState; currency?: boolean }) {
-  const a = game.company.address;
+  const a = game.company.address && officeAddress(game);
   return <Fields rows={[
     [t("setup.company.name"), game.company.name],
     [t("setup.company.address"), a ? `${a.street}, ${a.zip} ${a.city}` : t("setup.none")],

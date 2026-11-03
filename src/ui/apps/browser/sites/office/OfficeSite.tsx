@@ -1,3 +1,4 @@
+import { addressLine, officeAddress } from "../../../../../sim/60-infra/properties";
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { dateOf } from "../../../../../sim/00-core/time";
@@ -48,7 +49,7 @@ function Register({ game }: { game: GameState }) {
   const at = error ? FIELD[error] ?? "form" : null, note = (field: string) => at === field && <span className="to-error" role="alert">{t(error!)}</span>;
   const [name, setName] = useState(game.company.name);
   const [owner, setOwner] = useState("");
-  const blank = { street: "", zip: "", city: game.locations[0]?.city ?? "" };
+  const blank = officeAddress(game);
   const [address, setAddress] = useState<AddressValue>(blank);
   return (
     <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, "sole", address); }}>
@@ -105,7 +106,7 @@ function Extract({ game }: { game: GameState }) {
           <tr><td>{t("browser-sites-1.of.regNumber")}</td><td>GA {r.number}</td></tr>
           <tr><td>{t("browser-sites-1.of.businessName")}</td><td>{game.company.name}</td></tr>
           {r.owner && <tr><td>{t("browser-sites-1.of.owner")}</td><td>{r.owner}</td></tr>}
-          {game.company.address && <tr><td>{t("checkout.address")}</td><td>{game.company.address.street}, {game.company.address.zip} {game.company.address.city}</td></tr>}
+          {game.company.address && <tr><td>{t("checkout.address")}</td><td>{addressLine(officeAddress(game))}</td></tr>}
           <tr><td>{t("browser-sites-1.of.legalForm")}</td><td>{LEGAL_FORMS[r.form]}</td></tr>
           <tr><td>{t("browser-sites-1.of.registeredOn")}</td><td>{stamp(r.hour)}</td></tr>
         </tbody>
