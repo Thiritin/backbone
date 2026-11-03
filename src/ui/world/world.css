@@ -183,8 +183,8 @@
 .w-glow { filter: drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 8px var(--accent)); }
 
 /* Datacenter: mesh rack doors, neighbours' racks, tray cables, tubes and their cool light. */
-.w-rack-mesh-line { fill: none; stroke: oklch(0.82 0.008 250); stroke-width: 1.4; }
-.w-rack-mesh { opacity: 0.42; }
+.w-rack-mesh-line { fill: none; stroke: oklch(0.86 0.008 250); stroke-width: 0.9; }
+.w-rack-mesh { opacity: 0.32; }
 .w-rack-door { fill: none; stroke: oklch(0.36 0.01 255); stroke-width: 4; }
 .w-rack-handle { fill: oklch(0.72 0.008 250); }
 .w-neighbour { filter: saturate(0.5) brightness(0.8); }
