@@ -18,6 +18,7 @@ import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
 import { handJob, present, trip as drive, type HandJob, type How } from "../60-infra/handwork";
+import { viaHands } from "./presence";
 import { drive as driveTo } from "./travel";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { cardsFree, serverTaken, vmById } from "../60-infra/cluster";
@@ -452,7 +453,7 @@ function rackWork(s: GameState, devices: Device[], locationId: string, how: How 
   if (s.cash < job.cost) return fail("error.noCash");
   return () => {
     const doneAt = s.hour + job.commit();
-    for (const d of devices) d.maintenance = { componentId: "", partId: "", doneAt, mount: true };
+    if (doneAt > s.hour) for (const d of devices) d.maintenance = { componentId: "", partId: "", doneAt, mount: true };
   };
 }
 
@@ -462,7 +463,9 @@ export function mountDevice(s: GameState, deviceId: string, rackId: string, slot
   if (!d) return fail("error.unknownDevice");
   const error = mountError(s, d, rackId, slot);
   if (error) return fail(error);
-  const done = rackWork(s, [d], d.store!, how);
+  const h = viaHands(s, "mountDevice", [deviceId, rackId, slot], d.store!, how);
+  if (typeof h === "object") return h;
+  const done = rackWork(s, [d], d.store!, h);
   if (typeof done !== "function") return done;
   mount(s, d, rackId, slot);
   done();
@@ -470,7 +473,7 @@ export function mountDevice(s: GameState, deviceId: string, rackId: string, slot
 }
 
 // Stored units go into the lowest free run of slots, or the run starting at fromSlot, each directly on top of the previous one.
-export function mountStack(s: GameState, modelId: string, brand: string, rackId: string, count: number, fromSlot?: number, how: How | boolean = false): ActionResult {
+export function mountStack(s: GameState, modelId: string, brand: string, rackId: string, count: number, fromSlot?: number | null, how: How | boolean = false): ActionResult {
   const rack = spotOf(s, rackId);
   if (!rack) return fail("error.unknownRack");
   if (rack.moving) return fail("error.rackMoving");
@@ -484,9 +487,11 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
   }
   const h = modelById(modelId).height;
   const free = new Set(freeSlots(s, rackId, h));
-  const start = [...free].filter((slot) => fromSlot === undefined || slot === fromSlot).find((slot) => Array.from({ length: count }, (_, i) => slot + i * h).every((x) => free.has(x)));
+  const start = [...free].filter((slot) => fromSlot == null || slot === fromSlot).find((slot) => Array.from({ length: count }, (_, i) => slot + i * h).every((x) => free.has(x)));
   if (start === undefined) return fail("error.noRoom");
-  const done = rackWork(s, stored.slice(0, count), rack.locationId, how);
+  const hw = viaHands(s, "mountStack", [modelId, brand, rackId, count, fromSlot ?? null], rack.locationId, how);
+  if (typeof hw === "object") return hw;
+  const done = rackWork(s, stored.slice(0, count), rack.locationId, hw);
   if (typeof done !== "function") return done;
   stored.slice(0, count).forEach((d, i) => mount(s, d, rackId, start + i * h));
   done();
@@ -494,7 +499,7 @@ export function mountStack(s: GameState, modelId: string, brand: string, rackId:
 }
 
 // Slides a device whose power cords are all unplugged to another free position in its rack; its network cables stay attached.
-export function moveInRack(s: GameState, deviceId: string, slot: number): ActionResult {
+export function moveInRack(s: GameState, deviceId: string, slot: number, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (d.chassisId) return fail("error.inChassis");
@@ -504,6 +509,8 @@ export function moveInRack(s: GameState, deviceId: string, slot: number): Action
   if (psusOf(d).some(isPlugged)) return fail("error.unplugFirst");
   if (!Number.isInteger(slot) || slot < 1 || slot + h - 1 > spot.units) return fail("error.outOfBounds");
   if (!freeSlots({ ...s, devices: s.devices.filter((x) => x.id !== d.id) }, d.rackId, h).includes(slot)) return fail("error.slotTaken");
+  const hw = viaHands(s, "moveInRack", [deviceId, slot], spot.locationId, how);
+  if (typeof hw === "object") return hw;
   d.slot = slot;
   carry(s, d);
   return { ok: true };
@@ -518,7 +525,9 @@ export function unmountDevice(s: GameState, deviceId: string, how: How | boolean
   if (rack.moving) return fail("error.rackMoving");
   if (d.maintenance) return fail("error.handWork");
   if (withNodes(s, d).some((x) => serverTaken(s, x.id))) return fail("error.serverInUse");
-  const done = rackWork(s, [d], rack.locationId, how);
+  const h = viaHands(s, "unmountDevice", [deviceId], rack.locationId, how);
+  if (typeof h === "object") return h;
+  const done = rackWork(s, [d], rack.locationId, h);
   if (typeof done !== "function") return done;
   unplug(s, new Set(withNodes(s, d).map((x) => x.id)));
   Object.assign(d, { rackId: null, slot: 0, store: rack.locationId });
@@ -638,12 +647,12 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
   }
   // Cables between moving servers go along; the hands patch the rest to the same kind of device at the target, in the server's rack first.
   for (const c of cables) {
-    if (list.includes(c.a.device) && list.includes(c.b.device)) { connect(s, c.a, c.b); continue; }
+    if (list.includes(c.a.device) && list.includes(c.b.device)) { connect(s, c.a, c.b, "job"); continue; }
     const [mine, far] = list.includes(c.a.device) ? [c.a, c.b] : [c.b, c.a], kind = modelById(s.devices.find((x) => x.id === far.device)!.model).kind;
     const rack = s.devices.find((x) => x.id === mine.device)!.rackId;
     const pool = s.devices.filter((x) => x.rackId && locationOf(s, x)?.id === to.id && modelById(x.model).kind === kind)
       .sort((x, y) => Number(y.rackId === rack) - Number(x.rackId === rack));
-    pool.some((x) => modelById(x.model).ports.some((_, port) => connect(s, mine, { device: x.id, port }).ok));
+    pool.some((x) => modelById(x.model).ports.some((_, port) => connect(s, mine, { device: x.id, port }, "job").ok));
   }
   // A cluster still named after the location it leaves takes the new location's name.
   for (const id of hosted) {
@@ -675,10 +684,13 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   return { ok: true };
 }
 
-export function connect(s: GameState, a: End, b: End): ActionResult {
+export function connect(s: GameState, a: End, b: End, how: How | boolean = false): ActionResult {
   const error = connectError(s, a, b);
   if (error) return fail(error);
   const da = s.devices.find((x) => x.id === a.device)!, db = s.devices.find((x) => x.id === b.device)!;
+  const at = locationOf(s, da)?.id ?? da.store;
+  const h = at ? viaHands(s, "connect", [a, b], at, how) : how;
+  if (typeof h === "object") return h;
   const ma = modelById(da.model), mb = modelById(db.model), serial = [oobPortOf(ma, a.port), oobPortOf(mb, b.port)].includes("serial");
   const kind = serial ? "rollover" : (ma.ports[a.port] ?? mb.ports[b.port] ?? { media: "rj45" }).media === "rj45" ? "copper" : da.rackId === db.rackId ? "dac" : "fiber";
   const id = newId(s, "cab");
@@ -686,8 +698,12 @@ export function connect(s: GameState, a: End, b: End): ActionResult {
   return { ok: true, id };
 }
 
-export function disconnect(s: GameState, cableId: string): ActionResult {
-  if (!s.cables.some((c) => c.id === cableId)) return fail("error.unknownCable");
+export function disconnect(s: GameState, cableId: string, how: How | boolean = false): ActionResult {
+  const cable = s.cables.find((c) => c.id === cableId);
+  if (!cable) return fail("error.unknownCable");
+  const d = s.devices.find((x) => x.id === cable.a.device), at = d && (locationOf(s, d)?.id ?? d.store);
+  const h = at ? viaHands(s, "disconnect", [cableId], at, how) : how;
+  if (typeof h === "object") return h;
   s.cables = s.cables.filter((c) => c.id !== cableId);
   return { ok: true };
 }
@@ -843,12 +859,14 @@ export function resetBmc(s: GameState, deviceId: string, how: How | boolean = fa
 }
 
 // Plugs one power supply into the rack's power strip or pulls it.
-export function setPlugged(s: GameState, deviceId: string, componentId: string, plugged: boolean): ActionResult {
+export function setPlugged(s: GameState, deviceId: string, componentId: string, plugged: boolean, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   const c = d.components.find((x) => x.id === componentId && x.kind === "psu");
   if (!c) return fail("error.unknownComponent");
   if (!d.rackId) return fail("error.notMounted");
+  const h = viaHands(s, "setPlugged", [deviceId, componentId, plugged], spotOf(s, d.rackId)!.locationId, how);
+  if (typeof h === "object") return h;
   plugCords(s, d, plugged, [c.id]);
   return { ok: true };
 }
@@ -927,6 +945,9 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   const spares = replaceSpares(s, d, c, rack.locationId), part = spares[0];
   if (!part) return fail("error.noPart");
   if (energized(d) && !hotSwappable(d, c)) return fail("error.powerOffFirst");
+  const h = viaHands(s, "replaceComponent", [deviceId, componentId], rack.locationId, how);
+  if (typeof h === "object") return h;
+  how = h;
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const swap = SWAP_HOURS * spares.length * workFactor(d.model, s.hour), grey = spares.reduce((n, x) => n + greyMarket(s, d, x), 0);
   const job = handJob(s, d.label ?? d.name, loc, how, swap);
@@ -1087,7 +1108,9 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
     : [part, ...s.devices.filter((x) => x !== part && x.model === part.model && x.store === zone && samePart(specFor(x), spec)).slice(0, Math.max(0, slotsOf(model, kind) - used - 1))];
   const error = chassisFits(model, [...d.components.map(asSpec), ...set.map(() => spec)]);
   if (error) return fail(error);
-  const w = handsOn(s, d, hotKind(d, kind), how);
+  const h = viaHands(s, "installPart", [deviceId, partId, slot ?? null], zone, how);
+  if (typeof h === "object") return h;
+  const w = handsOn(s, d, hotKind(d, kind), h);
   if ("error" in w) return fail(w.error);
   const grey = set.reduce((n, x) => n + greyMarket(s, d, x), 0);
   if (s.cash < w.cost + grey) return fail("error.noCash");
@@ -1116,7 +1139,9 @@ export function removePart(s: GameState, deviceId: string, componentId: string, 
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
   if (!zone) return fail("error.inTransit");
   if (isDriveKind(c.kind) && d.raid !== "none" && !raidFits(d.raid, drivesOf(d).length - 1)) return fail("error.raidLevel");
-  const w = handsOn(s, d, hotSwappable(d, c), how);
+  const h = viaHands(s, "removePart", [deviceId, componentId], zone, how);
+  if (typeof h === "object") return h;
+  const w = handsOn(s, d, hotSwappable(d, c), h);
   if ("error" in w) return fail(w.error);
   startWork(s, d, "", w);
   // The part takes its share of the server's price at purchase year prices along, so parts and server never resell for more.

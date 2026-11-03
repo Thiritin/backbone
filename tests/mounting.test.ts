@@ -5,7 +5,8 @@ import type { Task } from "../src/sim/47-staff/staff";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addLocation, buyRack, mountDevice, mountHours, mountStack, setPlugged, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
+import { JOB_HOURS } from "../src/sim/90-actions/presence";
+import { addLocation, buyRack, mountDevice, mountHours, mountStack, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { queueOperation, setTechLocation } from "../src/sim/90-actions/staff";
 import { hire } from "./fixtures";
 import { buyDevice, freeFloor, withServer, newGame } from "./fixtures";
@@ -53,45 +54,46 @@ describe("mounting hardware", () => {
     expect(s.cash).toBe(cash);
   });
 
-  it("books remote hands at a datacenter for at least an hour and keeps the device off until they are done", () => {
+  it("queues a remote hands job at a datacenter and racks the device when it is done", () => {
     const { s, loc, rack, hands } = colo();
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
-    const cash = s.cash, start = s.hour;
+    const cash = s.cash, wait = hands.responseHours + JOB_HOURS.mount;
     ok(mountDevice(s, id, rack, 1));
-    expect(s.cash).toBe(cash - hands.perHour);
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", params: { hours: 1 } });
-    expect(dev(s, id)).toMatchObject({ rackId: rack, slot: 1, maintenance: { mount: true, doneAt: start + hands.responseHours + 0.5 } });
-    for (const c of dev(s, id).components) if (c.kind === "psu") ok(setPlugged(s, id, c.id, true));
-    expect(err(setPower(s, id, true))).toBe("error.handWork");
-    expect(err(unmountDevice(s, id))).toBe("error.handWork");
-    const events = run(s, hands.responseHours + 1);
-    expect(events.some((e) => e.key === "event.workDone")).toBe(true);
-    expect(dev(s, id).maintenance).toBeNull();
-    ok(setPower(s, id, true));
-    expect(dev(s, id).on).toBe(true);
+    expect(s.handsJobs).toHaveLength(1);
+    expect(s.cash).toBe(cash);
+    expect(dev(s, id).rackId).toBeNull();
+    run(s, Math.ceil(wait) - 1);
+    expect(dev(s, id).rackId).toBeNull();
+    run(s, 1);
+    expect(s.handsJobs).toHaveLength(0);
+    expect(dev(s, id)).toMatchObject({ rackId: rack, slot: 1 });
+    expect(s.cash).toBe(cash - JOB_HOURS.mount * hands.perHour);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", params: { hours: JOB_HOURS.mount } });
   });
 
-  it("bills a stack for the work of every unit", () => {
+  it("bills a stack as one mount job", () => {
     const { s, loc, rack, hands } = colo();
     ok(buyDevice(s, "sw-8", "Sysko", 4, loc));
     const cash = s.cash;
     ok(mountStack(s, "sw-8", "Sysko", rack, 4));
-    expect(s.cash).toBe(cash - 2 * hands.perHour);
-    expect(s.devices.filter((d) => d.rackId === rack).every((d) => d.maintenance?.mount)).toBe(true);
+    expect(s.handsJobs).toHaveLength(1);
+    run(s, Math.ceil(hands.responseHours + JOB_HOURS.mount));
+    expect(s.devices.filter((d) => d.rackId === rack)).toHaveLength(4);
+    expect(s.cash).toBe(cash - JOB_HOURS.mount * hands.perHour);
   });
 
-  it("unmounts by hand work too and keeps the unit busy in storage until done", () => {
+  it("queues an unmount job and keeps the unit racked until it runs", () => {
     const { s, loc, rack, hands } = colo();
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
-    ok(mountDevice(s, id, rack, 1));
-    run(s, hands.responseHours + 1);
+    ok(mountDevice(s, id, rack, 1, true));
+    run(s, 24);
     const cash = s.cash;
     ok(unmountDevice(s, id));
-    expect(s.cash).toBe(cash - hands.perHour);
-    expect(dev(s, id)).toMatchObject({ rackId: null, store: loc, maintenance: { mount: true } });
-    expect(err(mountDevice(s, id, rack, 1))).toBe("error.handWork");
-    run(s, hands.responseHours + 1);
-    ok(mountDevice(s, id, rack, 1));
+    expect(s.cash).toBe(cash);
+    expect(dev(s, id).rackId).toBe(rack);
+    run(s, Math.ceil(hands.responseHours + JOB_HOURS.mount));
+    expect(dev(s, id)).toMatchObject({ rackId: null, store: loc });
+    expect(s.cash).toBe(cash - JOB_HOURS.mount * hands.perHour);
   });
 
   it("lets the player rack it free when standing in the datacenter", () => {
