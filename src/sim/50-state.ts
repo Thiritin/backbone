@@ -1,4 +1,5 @@
 import type { OveruseChoice } from "./80-business/overuse";
+import type { Tile } from "./20-world/layout";
 import type { OwnWebspace, WebspaceOverlay } from "./60-infra/webspace";
 import type { SqlDump } from "./60-infra/webdb";
 import { createRng, type Rng } from "./00-core/rng";
@@ -77,7 +78,9 @@ export interface Rack { id: string; model: RackModel; locationId: string; positi
   // A flat-rate power contract's kW, 0 for metered, and a change booked for a later hour.
   flatKw: number; flatKwAt: { kw: number; at: number } | null;
   // The hour each feed went above its continuous load, null while below.
-  overSince: { a: number | null; b: number | null } }
+  overSince: { a: number | null; b: number | null };
+  // Floor tile in its location's room; rackTiles fills it in when missing.
+  tile?: Tile }
 // slot is the lowest unit the device occupies, counted from 1 at the bottom.
 // A datacenter handoff and the basement's line jack sit on their location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
 // a shipped unit has store null and transitTo/arriveAt set until it arrives.

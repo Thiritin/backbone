@@ -130,6 +130,7 @@ export default {
   "error.rackTooTall": () => "Cette baie est trop haute pour le site.",
   "error.rackNotEmpty": () => "Retire d'abord tous les appareils de la baie.",
   "error.rackMoving": () => "La baie est en route.",
+  "error.tileTaken": () => "La baie ne peut pas être placée ici.",
   "error.locationNotEmpty": () => "Déplace ou vends d'abord toutes les baies de ce site.",
   "error.cannotClose": () => "Le sous-sol ne peut pas être fermé.",
   "error.badQuantity": () => "Saisis une quantité d'au moins un.",
