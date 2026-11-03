@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { t } from "../src/i18n/en";
 import { useStore } from "../src/ui/store";
 import { roomOf, World } from "../src/ui/world/World";
-import { tick } from "../src/sim/88-tick/tick";
+import { failComponents, tick } from "../src/sim/88-tick/tick";
 import { addLocation, buyDevice, buyRack } from "../src/sim/90-actions/hardware";
 import { atDesk, inLetterbox, post } from "../src/sim/40-support/letters";
 import { OFFICE_NAME } from "../src/sim/80-business/paperwork";
@@ -95,6 +95,44 @@ describe("world", () => {
       act(() => { vi.advanceTimersByTime(2000); });
       expect(panel.querySelector("[data-lid]")).toBeNull();
       expect(screen.getByRole("dialog", { name: rack.name })).toBe(panel);
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("shows a failed fan as a red light on the rack, marks it in the opened server and offers the swap", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "setTimeout", "clearTimeout", "performance"] });
+    try {
+      const s = readyGame(7);
+      const rack = s.racks.find((r) => r.locationId === roomOf(s).id)!;
+      const dev = s.devices.find((d) => d.rackId === rack.id && !d.chassisId && modelById(d.model).kind === "server")!;
+      const fan = dev.components.find((c) => c.kind === "fan")!;
+      s.devices = s.devices.map((d) => (d.id === dev.id ? failComponents(s, d, [fan.id]) : d));
+      expect(buyDevice(s, "part-fan", "Generic", 1, rack.locationId).ok).toBe(true);
+      s.devices = s.devices.map((d) => (d.model === "part-fan" ? { ...d, store: rack.locationId, transitTo: null, arriveAt: null } : d));
+      useStore.setState({ game: s, speed: 0, surface: "world" });
+      const { container } = render(createElement(World));
+      expect(container.querySelector(`[data-rack="${rack.id}"] .w-led-fault`)).not.toBeNull();
+      fireEvent.click(container.querySelector(`[data-rack="${rack.id}"]`)!);
+      act(() => { vi.advanceTimersByTime(20_000); });
+      const panel = screen.getByRole("dialog", { name: rack.name });
+      expect(panel.querySelector("circle[data-fault]")).not.toBeNull();
+      fireEvent.click(panel.querySelector(`.rack-dev[aria-label="${dev.name}"]`)!);
+      const tag = panel.querySelector(`[data-device="${dev.id}"]`)!;
+      expect(tag.firstElementChild!.textContent).toContain(t("locations-1.failed"));
+      fireEvent.click(screen.getByRole("button", { name: t("locations-1.changeParts") }));
+      act(() => { vi.advanceTimersByTime(1000); });
+      const lid = panel.querySelector(`[data-lid="${dev.id}"]`)!;
+      const bad = lid.querySelector('[data-wear="bad"]')!;
+      expect(bad.querySelector("[data-fault]")).not.toBeNull();
+      fireEvent.click(bad);
+      const slot = lid.querySelector("[data-slot]")!;
+      expect(slot.textContent).toContain(t("locations-1.failed"));
+      const swap = [...slot.querySelectorAll("button")].find((b) => b.textContent!.startsWith(t("locations-1.replace")))!;
+      expect(swap.disabled).toBe(false);
+      expect(slot.querySelector("[data-order]")).not.toBeNull();
     } finally {
       vi.useRealTimers();
       vi.unstubAllGlobals();
