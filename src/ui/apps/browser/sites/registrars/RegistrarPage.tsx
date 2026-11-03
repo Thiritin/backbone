@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
-import { registrarById, TIERS, type Registrar, type RegistrarId } from "../../../../../sim/10-catalog/registrars";
+import { registrarById, registrarHost, TIERS, type Registrar, type RegistrarId } from "../../../../../sim/10-catalog/registrars";
 import type { Look } from "../../../../../sim/10-catalog/sites";
 import { derivedDomain } from "../../../../../sim/30-customers/domains";
 import { monthlyDomains, spinNames, TRANSFER_MINUTES, wholesale, yearlyAt } from "../../../../../sim/30-customers/registrar";
@@ -13,6 +13,7 @@ import { formatDay } from "../../../billing/format";
 import "./registrars.css";
 import { LOCALE } from "../../../../../i18n/lang";
 import { usePageAct } from "../../pageAct";
+import { displayHost } from "../../../../../sim/80-business/browser";
 
 export const REGISTRAR_HUE: Record<RegistrarId, number> = { nameCheep: 45, goDuddy: 150, interNetY: 250, openSrsly: 300 };
 
@@ -23,13 +24,21 @@ export const REGISTRAR_ERAS: Record<RegistrarId, { from: number; look: Look }[]>
   openSrsly: [{ from: 2005, look: "early" }, { from: 2016, look: "late" }],
 };
 
-export interface RegistrarProps { game: GameState; r: Registrar; look: Look; year: number }
+export interface RegistrarProps { game: GameState; r: Registrar; look: Look; year: number; go?: (url: string) => void }
 
 const factor = (x: number) => `${x.toFixed(2)}×`;
 export const own = (game: GameState, r: Registrar): boolean => game.registrar?.id === r.id;
+// A customer is the current partner or a former one this registrar has invoiced.
+export const customer = (game: GameState, r: Registrar): boolean => own(game, r) || game.payables.some((p) => p.name === r.name);
 const tierOf = (game: GameState, r: Registrar) => (own(game, r) ? game.registrar!.tier : 0);
 
 const Head = ({ title }: { title?: ReactNode }) => (title ? <h2>{title}</h2> : null);
+
+// The header link to the customer account, shown to customers.
+export function AccountLink({ game, r, go = () => {}, className = "rg-acct" }: { game: GameState; r: Registrar; go?: (url: string) => void; className?: string }) {
+  if (!customer(game, r)) return null;
+  return <a className={className} href="#/account" onClick={(e) => { e.preventDefault(); go(`${displayHost(registrarHost(r))}/account`); }}>{t("accounts.myAccount")}</a>;
+}
 
 // The domain search with its name spinner; Buy orders the company domain, then further domains under contract.
 export function DomainSearch({ game, r, title, button = t("browser-sites-1.rg.search") }: { game: GameState; r: Registrar; title?: ReactNode; button?: string }) {

@@ -54,7 +54,7 @@ export default {
   "error.shopUnpaid": () => "Il negozio ha una fattura non pagata.",
   "error.noInvoice": () => "Il negozio non offre ancora il pagamento con fattura.",
   "ticket.mail.invoice.subject": (p) => `Fattura ${p.number}`,
-  "ticket.mail.invoice.text": (p) => `In allegato trova la nostra fattura ${p.number} di ${money(p)}, con scadenza il ${day(p.due)}. La preghiamo di versare l'importo ${p.iban ? `all'IBAN ${p.iban}` : `sul conto ${p.account}, codice banca ${p.code}`} indicando il numero di fattura come causale. Può attivare l'addebito diretto su ${p.url}.`,
+  "ticket.mail.invoice.text": (p) => `In allegato trova la nostra fattura ${p.number} di ${money(p)}, con scadenza il ${day(p.due)}. La preghiamo di versare l'importo ${p.iban ? `all'IBAN ${p.iban}` : `sul conto ${p.account}, codice banca ${p.code}`} indicando il numero di fattura come causale. Può scegliere il metodo di pagamento su ${p.url}.`,
   "ticket.mail.debit.subject": (p) => `Fattura ${p.number}`,
   "ticket.mail.debit.text": (p) => `In allegato trova la nostra fattura ${p.number} di ${money(p)}. Abbiamo addebitato l'importo sul suo conto.`,
   "ticket.mail.consequence.throttle.subject": (p) => `Promemoria: fattura ${p.number}`,

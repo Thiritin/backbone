@@ -54,7 +54,7 @@ export const BANK_EN: Record<string, (p: Params) => string> = {
   "error.shopUnpaid": () => "The shop has an unpaid invoice.",
   "error.noInvoice": () => "The shop does not offer an invoice yet.",
   "ticket.mail.invoice.subject": (p) => `Invoice ${p.number}`,
-  "ticket.mail.invoice.text": (p) => `Please find attached our invoice ${p.number} over ${money(p)}, due on ${day(p.due)}. Please transfer the amount to ${p.iban ? `IBAN ${p.iban}` : `account ${p.account}, bank code ${p.code}`} with the invoice number as reference. You can set up a direct debit at ${p.url}.`,
+  "ticket.mail.invoice.text": (p) => `Please find attached our invoice ${p.number} over ${money(p)}, due on ${day(p.due)}. Please transfer the amount to ${p.iban ? `IBAN ${p.iban}` : `account ${p.account}, bank code ${p.code}`} with the invoice number as reference. You can choose how to pay at ${p.url}.`,
   "ticket.mail.debit.subject": (p) => `Invoice ${p.number}`,
   "ticket.mail.debit.text": (p) => `Please find attached our invoice ${p.number} over ${money(p)}. We have debited the amount from your account.`,
   "ticket.mail.consequence.throttle.subject": (p) => `Reminder: invoice ${p.number}`,

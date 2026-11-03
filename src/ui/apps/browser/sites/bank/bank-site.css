@@ -96,3 +96,6 @@
 .bks-card-bank { font-weight: bold; font-size: 13px; text-transform: none; }
 .bks-card-number { font: 15px "Courier New", monospace; letter-spacing: 0.06em; }
 .bks-card-foot { display: flex; justify-content: space-between; }
+.bks-top { margin-left: auto; display: flex; gap: 12px; }
+.bks-top a { color: #fff; font: bold 12px Arial, Helvetica, sans-serif; text-decoration: none; }
+.bks-top a:hover, .bks-top a[aria-current] { text-decoration: underline; }

@@ -54,7 +54,7 @@ export default {
   "error.shopUnpaid": () => "La boutique a une facture impayée.",
   "error.noInvoice": () => "La boutique ne propose pas encore le paiement sur facture.",
   "ticket.mail.invoice.subject": (p) => `Facture ${p.number}`,
-  "ticket.mail.invoice.text": (p) => `Vous trouverez ci-joint notre facture ${p.number} d'un montant de ${money(p)}, à régler avant le ${day(p.due)}. Merci de virer le montant ${p.iban ? `sur l'IBAN ${p.iban}` : `sur le compte ${p.account}, code banque ${p.code}`} en indiquant le numéro de facture comme référence. Vous pouvez configurer un prélèvement sur ${p.url}.`,
+  "ticket.mail.invoice.text": (p) => `Vous trouverez ci-joint notre facture ${p.number} d'un montant de ${money(p)}, à régler avant le ${day(p.due)}. Merci de virer le montant ${p.iban ? `sur l'IBAN ${p.iban}` : `sur le compte ${p.account}, code banque ${p.code}`} en indiquant le numéro de facture comme référence. Vous pouvez choisir le mode de paiement sur ${p.url}.`,
   "ticket.mail.debit.subject": (p) => `Facture ${p.number}`,
   "ticket.mail.debit.text": (p) => `Vous trouverez ci-joint notre facture ${p.number} d'un montant de ${money(p)}. Nous avons prélevé ce montant sur votre compte.`,
   "ticket.mail.consequence.throttle.subject": (p) => `Rappel : facture ${p.number}`,

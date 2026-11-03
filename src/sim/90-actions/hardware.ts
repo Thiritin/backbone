@@ -1,6 +1,6 @@
 import { rand } from "../00-core/rng";
 import { releaseGone } from "../60-infra/licence";
-import { HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance/payables";
+import { debitAllowed, HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance/payables";
 import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
 import { hourOf, dateOf, monthIndexOf, yearOf } from "../00-core/time";
@@ -72,6 +72,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   const bad = order && orderError(order);
   if (bad) return fail(bad);
   if (order?.payment.kind === "debit" && !s.bank) return fail("error.noBank");
+  if (order?.payment.kind === "debit" && !debitAllowed(dc.name)) return fail("error.debitAbroad");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };

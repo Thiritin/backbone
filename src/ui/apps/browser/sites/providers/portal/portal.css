@@ -24,3 +24,4 @@
 .ps-sheet-b h4 { margin: 12px 0 4px; }
 .ps-sheet-f { justify-content: flex-end; padding: 10px 14px; margin: 0 !important; border-top: 1px solid #dddddd; }
 .ps-invoice .books-preview { height: 760px; max-width: 560px; padding: 0; border: 0; }
+.ps-pay { margin: 0 0 12px; }

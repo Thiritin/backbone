@@ -17,8 +17,9 @@ export const REGISTRAR_VIEWS: Record<RegistrarId, ComponentType<RegistrarProps>>
 export function RegistrarSite({ game, id, path = "/", go = () => {} }: { game: GameState; id: RegistrarId; path?: string; go?: (url: string) => void }) {
   const year = yearOf(game.hour), View = REGISTRAR_VIEWS[id];
   const form = partnerOf(game).id === id && /^\/(register|transfer)(\?|$)/.exec(path);
-  const login = /^\/login(?:\/(dns|register|domain\/([^/?]+)))?(\?|$)/.exec(path);
-  if (login && panelOpen(game, registrarById(id)!)) return <RegistrarPanel game={game} r={registrarById(id)!} page={panelPage(game, login[1], login[2])} go={go} />;
-  if (form) return <RegistrarForm key={path} game={game} r={registrarById(id)!} transfer={form[1] === "transfer"} ticketId={new URLSearchParams(path.split("?")[1] ?? "").get("order") ?? ""} />;
-  return <View game={game} r={registrarById(id)!} look={eraOf(REGISTRAR_ERAS[id], year)} year={year} />;
+  // /login opens the panel on the domains, /account (the address on its invoices) on the account.
+  const login = /^\/(login|account)(?:\/(dns|register|account|domain\/([^/?]+)))?(\?|$)/.exec(path), r = registrarById(id)!;
+  if (login && panelOpen(game, r)) return <RegistrarPanel game={game} r={r} page={panelPage(game, r, login[2] ?? (login[1] === "account" ? "account" : undefined), login[3])} go={go} />;
+  if (form) return <RegistrarForm key={path} game={game} r={r} transfer={form[1] === "transfer"} ticketId={new URLSearchParams(path.split("?")[1] ?? "").get("order") ?? ""} />;
+  return <View game={game} r={r} look={eraOf(REGISTRAR_ERAS[id], year)} year={year} go={go} />;
 }

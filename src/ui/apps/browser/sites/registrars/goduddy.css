@@ -31,3 +31,4 @@
 .rg-goduddy.late main .wide { grid-column: 1 / -1; }
 .rg-goduddy.late footer { padding: 18px 40px; border-top: 1px solid #e5e5e5; color: #6b6b6b; font-size: 13px; }
 @media (max-width: 640px) { .rg-goduddy.early main { grid-template-columns: 1fr; } .rg-goduddy.late header, .rg-goduddy.late .hero, .rg-goduddy.late main, .rg-goduddy.late footer { padding-left: 16px; padding-right: 16px; } }
+.rg-goduddy.late header { display: flex; align-items: center; }

@@ -71,6 +71,8 @@ import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
 import { ParkedPage } from "./sites/registrars/Parked";
 import { SupplierSite } from "./sites/bank/SupplierSite";
+import { UtilitySite } from "./sites/bank/UtilitySite";
+import { UTILITY } from "../../../sim/46-finance/payables";
 import { BankSite } from "./sites/bank/BankSite";
 import { bankById } from "../../../sim/10-catalog/banks";
 import { siteTitle, WebspaceSite } from "./sites/webspace/WebspaceSite";
@@ -102,6 +104,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "parked": return p.domain;
     case "bank": return t("misc1.browser.onlineBanking", { name: bankById(p.id)!.name });
     case "supplier": return p.name;
+    case "utility": return UTILITY;
     case "host": return r.host;
     case "console": {
       const c = game.clusters.find((x) => x.id === p.clusterId), family = c && familyOf(c);
@@ -173,7 +176,8 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "provider") body = <ProviderSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "registrar") body = <RegistrarSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "parked") body = <ParkedPage game={game} registrar={p.registrar} domain={p.domain} />;
-  else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} />;
+  else if (p.kind === "supplier") body = <SupplierSite game={game} name={p.name} go={go} />;
+  else if (p.kind === "utility") body = <UtilitySite game={game} path={r.path} go={go} />;
   else if (p.kind === "bank") body = <BankSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "video") body = <VideoPage />;
   else if (p.kind === "notice") body = <NoticePage game={game} ticketId={p.ticketId} />;
