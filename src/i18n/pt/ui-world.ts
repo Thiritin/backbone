@@ -38,4 +38,11 @@ export default {
   "world.mainSwitch": () => "Disjuntor geral",
   "world.prevLetter": () => "Carta anterior",
   "world.nextLetter": () => "Próxima carta",
+  "world.work.hardware": () => "Trabalho de hardware",
+  "world.work.servers": () => "Trabalho de servidor",
+  "world.work.panels": () => "Trabalho de painel",
+  "world.work.mount": () => "Montagem",
+  "world.work.parts": () => "Troca de peça",
+  "world.work.cable": () => "Cabeamento",
+  "world.workUntil": (p) => `até ${p.time}`,
 } satisfies Dict;

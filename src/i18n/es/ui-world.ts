@@ -38,4 +38,11 @@ export default {
   "world.mainSwitch": () => "Interruptor general",
   "world.prevLetter": () => "Carta anterior",
   "world.nextLetter": () => "Carta siguiente",
+  "world.work.hardware": () => "Trabajo de hardware",
+  "world.work.servers": () => "Trabajo de servidor",
+  "world.work.panels": () => "Trabajo de panel",
+  "world.work.mount": () => "Montaje",
+  "world.work.parts": () => "Cambio de pieza",
+  "world.work.cable": () => "Cableado",
+  "world.workUntil": (p) => `hasta las ${p.time}`,
 } satisfies Dict;
