@@ -25,6 +25,7 @@ import { OverviewTab, StatementTab, StatisticsTab } from "./Reports";
 import { TaxTab } from "./TaxTab";
 import { Register } from "./Register";
 import { BooksSetup } from "./BooksSetup";
+import type { AppMenu } from "../../desktop/menu";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
 import type { Entry, Group } from "./layouts/types";
@@ -79,6 +80,7 @@ export function BooksProgram() {
     const f = got.kind === "url" ? got.inner : got;
     if (!f) return;
     if (f.kind === "register") return setRegister(true);
+    if (f.kind === "setup") return setSetup(true);
     const to = f.kind === "invoice" ? (hasFeature(game, "dunning") && game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
       : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : null;
     if (!to) return;
@@ -104,7 +106,7 @@ export function BooksProgram() {
     <div className="books" style={skin && { "--accent": skin.accent, "--bk-bar": skin.bar, "--bk-ink": skin.ink } as CSSProperties}>
       <Layout v={v!} entries={entries} active={current.id} pick={pick}>
         <div className="books-top">
-            <button className="btn" onClick={() => setSetup(true)}>{t("setup.title")}</button>
+            {v?.deployment === "browser" && current.id === "overview" && <button className="btn" onClick={() => setSetup(true)}>{t("setup.title")}</button>}
             {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
             {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
         </div>
@@ -128,3 +130,6 @@ function Offline({ v }: { v: BooksVendor }) {
     </div>
   );
 }
+
+// The installed program offers the setup wizard in its app menu; the web version on its overview.
+export const booksMenus = (): AppMenu[] => [{ id: "app", title: "", items: [{ label: t("setup.title"), run: () => useStore.getState().openApp("Books", { kind: "setup", id: "" }) }] }];
