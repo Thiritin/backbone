@@ -46,7 +46,7 @@ The first room is the basement of the player's parents' house in Frankfurt, avai
 - **Power.** The fuse box on the left wall stands open, with rows of breakers and a meter whose counter shows the power draw and whose disc turns faster as the draw grows. A conduit runs from it up the wall and along the right wall to the racks. A wall socket below it holds the phone line jack, where the line cable from the racks ends.
 - **Windows and climate.** Two cellar windows sit high in the right wall, one with a window fan in its pane. A thermometer on the wall shows the room temperature over the outside one.
 - **The house.** The gas boiler with its pipes stands in the corner, the washing machine and a drying rack beside it. A mat lies inside the door, a drain sits in the floor and a lamp hangs from the ceiling. None of these do anything when clicked.
-- **Light.** Daylight falls from the windows across the floor, warm and long in the morning and evening and short and white at noon. At night the room darkens and the ceiling lamp and the desk lamp throw warm pools.
+- **Light.** The windows and lamps are drawn as objects, with no light falling from them. At night the room turns one step darker and the bulbs of the ceiling lamp and the desk lamp are lit.
 
 ## Colocation rooms
 
