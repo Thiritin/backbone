@@ -10,7 +10,7 @@ export function pickUp(s: GameState, unitId: string): ActionResult {
   if (!d) return fail("error.unknownDevice");
   if (s.player.carrying) return fail("error.handsFull");
   if (d.chassisId) return fail("error.inChassis");
-  const at = d.door ?? d.store;
+  const at = d.door?.at ?? d.store;
   if (!at) return fail("error.notInStorage");
   if (!present(s, at)) return fail("error.notThere");
   if (d.maintenance) return fail("error.handWork");

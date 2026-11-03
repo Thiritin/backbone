@@ -321,7 +321,7 @@ export function tick(state: GameState): SimEvent[] {
       if (!d.chassisId) arrived.set(d.transitTo!, (arrived.get(d.transitTo!) ?? 0) + 1);
       // A datacenter's receiving desk shelves what arrives; at the player's own place it waits at the door.
       const dc = state.locations.find((l) => l.id === d.transitTo)?.dc;
-      return { ...d, [dc ? "store" : "door"]: d.transitTo, transitTo: null, arriveAt: null };
+      return { ...d, ...(dc ? { store: d.transitTo } : { door: { at: d.transitTo!, since: d.arriveAt } }), transitTo: null, arriveAt: null };
     });
     for (const [id, count] of arrived) {
       events.push({ app: "Locations", key: "event.stockArrived", params: { count, location: state.locations.find((l) => l.id === id)!.name } });

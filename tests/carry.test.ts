@@ -21,7 +21,7 @@ function delivered(s: GameState): string {
 describe("parcels and carrying", () => {
   it("lands a shipped unit at the door, outside storage", () => {
     const s = { ...newGame(7), cash: 100_000 }, id = delivered(s);
-    expect(s.devices.find((d) => d.id === id)).toMatchObject({ door: "loc1", store: null, transitTo: null });
+    expect(s.devices.find((d) => d.id === id)).toMatchObject({ door: { at: "loc1", since: s.hour }, store: null, transitTo: null });
     expect(err(mountDevice(s, id, "rack2", 5))).toBe("error.alreadyMounted");
     expect(err(sellDevice(s, id))).toBe("error.notInStorage");
   });
@@ -48,9 +48,9 @@ describe("parcels and carrying", () => {
   it("refuses a parcel at another location and travel while carrying", () => {
     const s = { ...newGame(7), cash: 100_000 }, id = delivered(s);
     const far = ok(addLocation(freeFloor(s), "hetzler-park", "share", 1));
-    s.devices.find((d) => d.id === id)!.door = far;
+    s.devices.find((d) => d.id === id)!.door = { at: far, since: s.hour };
     expect(err(pickUp(s, id))).toBe("error.notThere");
-    s.devices.find((d) => d.id === id)!.door = "loc1";
+    s.devices.find((d) => d.id === id)!.door = { at: "loc1", since: s.hour };
     ok(pickUp(s, id));
     expect(err(travelTo(s, far))).toBe("error.carrying");
     ok(putDown(s));

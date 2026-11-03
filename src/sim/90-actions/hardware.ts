@@ -113,7 +113,7 @@ function closeError(s: GameState, locationId: string): string | null {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return "error.unknownLocation";
   if (loc.space === "basement") return "error.cannotClose";
-  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId || d.door === locationId)) return "error.storageNotEmpty";
+  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId || d.door?.at === locationId)) return "error.storageNotEmpty";
   const racks = s.racks.filter((r) => r.locationId === locationId);
   if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id))) return "error.locationNotEmpty";
   return null;
