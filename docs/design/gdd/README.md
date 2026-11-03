@@ -9,6 +9,7 @@ Read only the section you need.
 - [The desktop](the-desktop.md)
 - [Locations and space](locations-and-space.md)
 - [The world](the-world.md)
+- [Multiplayer](multiplayer.md)
 - [Properties](properties.md)
 - [Travel](travel.md)
 - [Racks, hardware and cabling](racks-hardware-and-cabling.md)
