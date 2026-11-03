@@ -9,8 +9,8 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 - **The desktop is the source of truth.** Nothing exists only in the world. Every world interaction calls the same action in `src/sim/90-actions` the desktop would call.
 - **The world is a view over the simulation.** `src/sim` never imports anything from the world renderer. The world reads state and calls `act`, like any app.
 - **Presence costs time.** Walking to a rack, carrying a server, driving to the datacenter all take game time. The sim already tracks the player with `player: { at, until, doing }`. Presence is what makes the world worth visiting instead of a wallpaper.
-- **Isometric, drawn in code.** The world is SVG, like every device front in `src/ui/art`. Tiles, walls, racks, parcels, the player are all drawn with code, so every pun brand keeps one style and nothing needs a sprite sheet.
-- **Fake depth where it pays.** Doors swing, lids slide, racks open, walls cut away when the player stands behind them. Each is a drawn object with two or three states and a CSS transition, the way Project Zomboid draws doors in a 2D world. No 3D engine.
+- **Isometric pixel art.** The world is SVG, like every device front in `src/ui/art`. Racks, walls, the player and every branded object are drawn with code, so every pun brand keeps one style; plain furniture and floor come from free pixel sprites that match it.
+- **Fake depth where it pays.** Doors swing, lids slide, racks open, walls cut away when the player stands behind them. Each is a drawn object with two or three flat frames swapped in place, so a flat 2D drawing reads as a door opening into the room. No 3D engine.
 
 ## What lives where
 
@@ -32,14 +32,14 @@ The rule: if a real sysadmin in 2005 would have had to stand up for it, it is in
 
 ## The basement
 
-The first room is the basement of the player's parents' house in Frankfurt, availability zone fra1. Floor grid of about 12 by 9 tiles, isometric, two-to-one diamonds. Fixed objects:
+The first room is the basement of the player's parents' house in Frankfurt, availability zone fra1. Floor grid of 12 by 9 tiles, isometric, two-to-one diamonds. Only the two far sides have walls, the far-left and the far-right one; the two near sides are open, so nothing ever hides the player. Every fixed object stands against or hangs on a far wall:
 
-- **Desk with the PC.** Walking to the desk and using the PC opens the desktop fullscreen. The world keeps running underneath and resumes where the player stood. The scanner sits on the desk next to the PC.
-- **Door.** The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels and letters appear beside it.
-- **Letterbox.** Holds unread post. A count on the flap. Using it moves the letters into the player's hands; the desk opens them.
-- **Storage shelf.** Boxes stacked per delivery; the shelf shows how full the storage is. Using it opens the Storage view.
-- **Rack slots.** Any free floor tile against a wall takes a rack. The basement allows a handful, limited by the power the house gives.
-- **Power and cooling.** The fuse box on the wall and a window fan. They show the power draw and the room temperature from the sim.
+- **Desk with the PC.** Against the far-right wall. Walking to the desk and using the PC opens the desktop fullscreen. The world keeps running underneath and resumes where the player stood. The scanner sits on the desk next to the PC.
+- **Door.** A doorway with a frame in the far-left wall, dark behind it. The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels and letters appear beside it.
+- **Letterbox.** On the far-left wall next to the door. Holds unread post; letters stick out of the slot while there are unread ones. Using it moves the letters into the player's hands; the desk opens them.
+- **Storage shelf.** Against the far-left wall, open toward the room. Boxes stacked per delivery; the shelf shows how full the storage is. Using it opens the Storage view.
+- **Rack slots.** Any free floor tile against a far wall takes a rack. A rack loaded from a save on a tile that is no longer against a wall moves to the next free one. The basement allows a handful, limited by the power the house gives.
+- **Power and cooling.** The fuse box on the far-left wall and a window fan in the far-right wall. The fuse box meter shows the power draw, and a weather display under the window shows the outside weather and the room temperature from the sim.
 
 Later rooms (colo cage, own hall) are the same renderer with a different layout and a different set of fixed objects. A cage has a locked door, a cross-connect panel in the wall and a shared cold aisle; an own hall has rows, a loading dock and a NOC desk.
 
@@ -51,16 +51,22 @@ Interaction opens a small radial or list menu with only what the sim allows: at 
 
 ## Rendering
 
-- SVG in React, inside the existing store and i18n. Pan with drag and zoom with the wheel through the viewBox.
+- The look is the early-2000s isometric hotel-chat style. SVG in React, inside the existing store and i18n. Floor, desk, shelf and crates are CC0 pixel sprites under `public/world/`, credited in `public/world/CREDITS.md` and drawn as SVG images with pixelated scaling; walls, door, wall fixtures, the computer, the scanner and the avatar are drawn in code in the same style.
+- Pixel grid. A tile is a 64 by 32 diamond at zoom 1 and every coordinate is a whole number, drawn with crisp edges. The room opens fitted into the window with a small margin on a flat dark blue-grey backdrop. Wheel zoom steps keep one art pixel on a whole number of device pixels, so pixels stay square; drag pans. Standing up again shows the room at the zoom and position it was left at.
+- Flat shading. Every object has three flat tones, the top lightest, the left face mid and the right face darkest, and a one-pixel outline in a dark desaturated navy. No gradients, blur or soft shadows. Colours come from the `DESIGN.md` tokens where one fits and from variables in `world.css` otherwise.
+- Walls stand only on the two far sides, about one and a half tiles high: thin, with a lit top edge, a skirting line at the floor and flat pastel wallpaper. The near sides have no wall.
+- The tile under the mouse shows a one-pixel white diamond outline. A clicked object's outline lights up for a moment.
+- The avatar has a large head and a short body, about 48 pixels tall at zoom 1, drawn facing each of the four diagonal directions, with a two-frame walk that swaps the leg pixels at one tile per 400 ms. Clicking a tile walks there; arrow keys and WASD step tile by tile with the same collision, and a held key keeps walking. Keys do nothing while a dialog or menu is open.
+- No text floats in the room; every number sits on an object. A weather display under the window shows the outside sky and temperature over the room temperature in pixel digits, the fuse box has a meter with the power draw, unread letters stick out of the letterbox, and the shelf has one crate per stored device, up to four.
 - Objects sort by `x + y` for depth, with the player and carried item in the same sort.
-- Racks reuse `Isometric` and `RackFront` from `src/ui/art`. A rack is one box when the view is zoomed out and shows device fronts when zoomed in, so a 100-rack hall stays under a few thousand nodes.
-- Walls between the camera and the player drop to a low opacity so the player is never hidden. Doors swing on a `rotate` with `transform-origin` at the hinge. Lids slide. Each is a transition on an SVG group.
-- One `requestAnimationFrame` loop drives walking and LED blink; everything else re-renders from the store like any app.
+- Racks reuse `RackFront` from `src/ui/art`. A rack is one outlined three-tone box at zoom 1 and shows device fronts at zoom 2 and 3, so a 100-rack hall stays under a few thousand nodes.
+- The door panel pivots on its frame with a skew, shut, halfway, then open into the room. Lids slide the same way.
+- One `requestAnimationFrame` loop drives walking, the leg frames and LED blink; everything else re-renders from the store like any app.
 - If SVG measurably stutters on the own hall, the world layer moves to a WebGL 2D renderer with the same SVG art rasterised into textures. Nothing above that layer changes.
 
 ## Switching between surfaces
 
-- The desktop gains **Stand up** in the logo menu and a world button in the Locations app. The world shows the room where the player is.
+- The desktop shows the room the player is in as a button in the menu bar next to the time controls and as a desktop icon in the top right; both open the world. **Stand up** in the logo menu and a world button in the Locations app do the same. The world shows the room where the player is.
 - In the world, using the PC returns to the desktop. Escape in the world also returns.
 - Both surfaces share the store. The current surface is UI state and is not saved; a load starts on the desktop.
 - Notifications still slide in while the world is open, so the world is never a blind spot.

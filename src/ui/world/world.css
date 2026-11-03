@@ -1,31 +1,75 @@
+/* Hotel-chat style: flat tones, a one-pixel navy outline, no gradients or blur. */
 .world {
+  --w-line: oklch(0.27 0.045 262);
+  --w-bg: oklch(0.3 0.025 250);
+  --w-checker: oklch(0.27 0.045 262 / 0.08);
+  --w-paper-l: oklch(0.86 0.045 200);
+  --w-paper-r: oklch(0.8 0.045 200);
+  --w-wall-top: oklch(0.95 0.02 200);
+  --w-wall-end-l: oklch(0.7 0.04 200);
+  --w-wall-end-r: oklch(0.6 0.04 200);
+  --w-skirt: oklch(0.55 0.04 240);
+  --w-skin: oklch(0.84 0.06 60);
+  --w-hair: oklch(0.38 0.07 50);
+  --w-pants: oklch(0.36 0.05 262);
   position: fixed;
   inset: 0;
-  background: oklch(0.16 0.01 255);
+  background: var(--w-bg);
   user-select: none;
 }
 .world-svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 .world-svg:active { cursor: grabbing; }
-.w-tile { fill: oklch(0.62 0.006 255); stroke: oklch(0.52 0.006 255); stroke-width: 0.6; cursor: pointer; }
-.w-tile-b { fill: oklch(0.59 0.006 255); }
-.w-tile:hover { fill: oklch(0.68 0.02 262); }
-.w-wall { stroke: oklch(0.42 0.006 255); stroke-width: 1; stroke-linejoin: round; }
-.w-wall-l { fill: oklch(0.8 0.012 85); }
-.w-wall-r { fill: oklch(0.86 0.012 85); }
-.w-wall-near { fill: oklch(0.74 0.012 85); }
-.w-wall-x { fill: oklch(0.7 0.012 85); }
-.w-near { transition: opacity 0.25s; pointer-events: none; }
+
+.w-sprite { image-rendering: pixelated; }
+.w-tile { fill: transparent; cursor: pointer; }
+.w-tile-b { fill: var(--w-checker); }
+.w-cursor { fill: none; stroke: oklch(1 0 0); stroke-width: 1; pointer-events: none; }
+
+.w-walls polygon { stroke: var(--w-line); stroke-width: 1; pointer-events: none; }
+.w-wall-l { fill: var(--w-paper-l); }
+.w-wall-r { fill: var(--w-paper-r); }
+.w-wall-top { fill: var(--w-wall-top); }
+.w-wall-end-l { fill: var(--w-wall-end-l); }
+.w-wall-end-r { fill: var(--w-wall-end-r); }
+.w-skirt { fill: var(--w-skirt); }
+
+/* Each tone class sets the top, left and right face of a box. */
+.w-tone-wood { --top: oklch(0.7 0.08 65); --left: oklch(0.58 0.08 60); --right: oklch(0.48 0.07 55); }
+.w-tone-shelf { --top: oklch(0.64 0.015 255); --left: oklch(0.52 0.015 255); --right: oklch(0.32 0.015 255); }
+.w-tone-rack { --top: var(--metal-3); --left: var(--metal-2); --right: var(--metal); }
+.w-tone-pc { --top: oklch(0.92 0.01 90); --left: oklch(0.84 0.01 90); --right: oklch(0.72 0.01 90); }
+.w-tone-paper { --top: oklch(0.95 0.005 250); --left: oklch(0.82 0.005 250); --right: oklch(0.7 0.005 250); }
+.w-face-t { fill: var(--top); }
+.w-face-l { fill: var(--left); }
+.w-face-r { fill: var(--right); }
+.w-edge { fill: none; stroke: var(--w-line); stroke-width: 1; stroke-linejoin: miter; }
+.w-edge-fill { stroke: var(--w-line); stroke-width: 1; }
+.w-lit .w-edge, .w-lit .w-edge-fill { stroke: oklch(1 0 0); }
+.w-lit .w-sprite { filter: brightness(1.25); }
+.w-screen { fill: oklch(0.55 0.12 250); }
 .w-obj { cursor: pointer; }
-.w-obj:hover { filter: brightness(1.12); }
-.w-door { transform-origin: 0 0; transition: transform 0.5s ease-in-out; }
+
+.w-frame { fill: oklch(0.95 0.01 90); stroke: var(--w-line); stroke-width: 1; }
+.w-glass { fill: oklch(0.78 0.06 230); stroke: var(--w-line); stroke-width: 1; }
+.w-blade { fill: var(--metal-2); }
+.w-lcd { fill: oklch(0.24 0.04 250); stroke: var(--w-line); stroke-width: 1; }
+.w-digits { fill: oklch(0.88 0.12 190); }
+.w-digits-dim { fill: oklch(0.72 0.08 190); }
+.w-sun { fill: oklch(0.86 0.15 90); }
+.w-cloud { fill: oklch(0.9 0.01 250); }
+.w-rain { fill: oklch(0.7 0.13 240); }
+.w-snow { fill: oklch(1 0 0); }
+.w-switch { fill: var(--w-line); }
+.w-letter { fill: oklch(0.98 0.005 90); stroke: var(--w-line); stroke-width: 1; }
+.w-fuse { fill: oklch(0.82 0.01 250); stroke: var(--w-line); stroke-width: 1; }
+.w-brass { fill: oklch(0.76 0.13 85); }
+.w-slot { fill: var(--w-line); }
+.w-jamb { fill: oklch(0.62 0.07 60); }
+.w-doorway { fill: oklch(0.14 0.02 262); }
+.w-panel { fill: oklch(0.56 0.08 55); stroke: var(--w-line); stroke-width: 1; }
+.w-knob { fill: oklch(0.86 0.1 90); }
+.w-shadow { fill: oklch(0.27 0.045 262 / 0.35); }
+
 .w-led { fill: oklch(0.35 0.01 255); }
-.w-led-on { fill: var(--ok); transition: opacity 0.12s; }
+.w-led-on { fill: var(--ok); }
 .w-blink .w-led-on { opacity: 0.35; }
-.w-label {
-  font: 600 12px "JetBrains Mono", ui-monospace, monospace;
-  fill: oklch(0.98 0 0);
-  stroke: oklch(0.2 0.01 255);
-  stroke-width: 3px;
-  paint-order: stroke;
-  pointer-events: none;
-}
