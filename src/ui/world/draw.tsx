@@ -794,3 +794,37 @@ export function Phone({ f, ringing, cordless }: { f: Fixture; ringing: boolean; 
     </g>
   );
 }
+
+// The getting-started corkboard on the left wall, span tiles long towards the far wall: one index card per step, ticked and dimmed when done, the current one larger.
+// Cards of a finished chapter stay pinned underneath.
+export function Corkboard({ f, cards, current, under, span = 1, z = 92, alu = false }: {
+  f: Fixture; cards: boolean[]; current: number; under: number; span?: number; z?: number; alu?: boolean;
+}) {
+  const W = span * 32 - 8, H = 30, x0 = 4;
+  const grid = (n: number) => {
+    const cols = Math.max(1, Math.ceil(Math.sqrt((n * W) / H))), rows = Math.max(1, Math.ceil(n / cols));
+    return { cols, cw: (W - 4) / cols, ch: (H - 4) / rows };
+  };
+  const card = (i: number, n: number, dx = 0) => {
+    const { cols, cw, ch } = grid(n), w = cw * 0.78, h = ch * 0.78;
+    return { x: x0 + 2 + (i % cols) * cw + (cw - w) / 2 + dx, y: 2 + Math.floor(i / cols) * ch + (ch - h) / 2 + dx, w, h };
+  };
+  return (
+    <g transform={onX(0, f.y + 1, z)} data-corkboard>
+      <rect className={`w-cork-frame${alu ? " alu" : ""}`} x={x0 - 1.5} y="-1.5" width={W + 3} height={H + 3} />
+      <rect className="w-cork" x={x0} y="0" width={W} height={H} />
+      {Array.from({ length: under }, (_, i) => { const c = card(i, under, -0.8); return <rect key={`u${i}`} className="w-card under" x={c.x} y={c.y} width={c.w} height={c.h} />; })}
+      {cards.map((done, i) => {
+        const c = card(i, cards.length, under ? 0.8 : 0), k = i === current ? 1.3 : 1;
+        const w = c.w * k, h = c.h * k, x = c.x - (w - c.w) / 2, y = c.y - (h - c.h) / 2;
+        return (
+          <g key={i} data-card={i} data-done={done}>
+            <rect className={`w-card${done ? " done" : ""}`} x={x} y={y} width={w} height={h} />
+            <circle className="w-card-pin" cx={x + w / 2} cy={y + 0.6} r="0.6" />
+            {done && <path className="w-card-tick" d={`M${x + w * 0.25} ${y + h * 0.55}l${w * 0.18} ${h * 0.22}l${w * 0.35} ${-h * 0.5}`} />}
+          </g>
+        );
+      })}
+    </g>
+  );
+}

@@ -4,7 +4,7 @@ import { dateOf } from "../../sim/00-core/time";
 import { officeSeats, officeWalk, SECTION_W, type Fixture, type OfficePlan } from "../../sim/20-world/layout";
 import type { GameState, Location } from "../../sim/50-state";
 import { whoIsIn } from "../../sim/60-infra/properties";
-import { at3, Desk, DeskLamp, Monitor, onX, onY, Prism, pts, Tower, WALL } from "./draw";
+import { at3, Corkboard, Desk, DeskLamp, Monitor, onX, onY, Prism, pts, Tower, WALL } from "./draw";
 import { iso, type Pt } from "./grid";
 import "./office.css";
 
@@ -439,4 +439,9 @@ export function useOfficeStaff(game: GameState, loc: Location, plan: OfficePlan 
     }
   }
   return out;
+}
+
+// The reception's corkboard above the printer, in an aluminium frame.
+export function ReceptionBoard(p: { f: Fixture; cards: boolean[]; current: number; under: number }) {
+  return <Corkboard {...p} span={1} z={90} alu />;
 }

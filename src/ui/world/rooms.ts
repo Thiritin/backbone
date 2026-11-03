@@ -1,6 +1,6 @@
 import type { Fixture } from "../../sim/20-world/layout";
 
-export type Use = "desktop" | "storage" | "power" | "door" | "post" | "scan" | "stairs" | "light" | "phone";
+export type Use = "desktop" | "storage" | "power" | "door" | "post" | "scan" | "stairs" | "light" | "phone" | "board";
 
 // What using a fixture kind does. Wall ones, and flat marks on the floor, are drawn behind everything standing; top ones hang over the room; the rest are depth-sorted with the racks.
 // A fixture without a label is clutter, hidden from assistive tech.
@@ -41,6 +41,7 @@ export const ART: Record<string, FixtureArt> = {
   stairs: { label: "world.obj.stairs", use: "stairs", wall: true }, bossdesk: { label: "world.obj.pc", use: "desktop" }, owindow: { wall: true }, whiteboard: { wall: true },
   tray: { wall: true }, tube: { top: true }, kitchen: {}, printer: {}, reception: {}, plant: {}, bin: {}, partition: { depth: 0.5 }, codedoor: { depth: 0.5 },
   "odesk-s": {}, "odesk-n": {}, "ochair-s": {}, "ochair-n": {}, buckets: {}, ladder: {}, toolbox: {},
+  corkboard: { label: "world.obj.board", use: "board", wall: true },
 };
 
 export const artOf = (id: string, f: Fixture): FixtureArt => ART[f.kind ?? id];
