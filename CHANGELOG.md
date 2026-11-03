@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Trips across the sea now fly: a taxi takes you to the airport, a plane crosses the map along its arc, and a taxi drops you at the far end; the map marks those places with a plane and shows each trip's hours and fare on hover.
 - In the room a server opens pulled out of the rack on its rails with the lid off, and its parts are checked, swapped and installed on paper tags beside it.
 - Rented racks now come with the provider's patch panel in their top unit, where uplinks and cross-connects land; uplinks are booked by speed as the years allow, with a second line as an option; and cables between racks in rented space are ordered from the provider.
 - Every hands-on action now offers doing it yourself or remote hands as separate buttons, and choosing yourself starts the drive there and does the job on arrival.
