@@ -62,16 +62,16 @@ describe("chassis slots", () => {
 });
 
 describe("capacity from parts", () => {
-  it("equals the model's cores, RAM and RAID capacity for every server", () => {
+  it("books the model's threads and measures load against its cores, RAM and RAID capacity for every server", () => {
     for (const m of SERVERS) {
       const v = m.server!, { s, id } = withDevice(m.id), d = s.devices.find((x) => x.id === id)!;
       const n = d.components.filter((c) => c.ff).length, factor = { none: n, "1": n / 2, "5": n - 1, "6": n - 2, "10": n / 2 }[d.raid];
       expect(installedCores(d), m.id).toBe(presetCores(m));
       expect(installedRamGb(d), m.id).toBe(v.ramGb);
       expect(raidUsable(d), m.id).toBe(factor * (v.diskGb / v.drives));
-      const vcpu = Math.round((presetCores(m) + (installedThreads(d) - presetCores(m)) * SMT_SHARE) * 100) / 100;
-      expect(nodeCapacity(d), m.id).toEqual({ vcpu, ramGb: v.ramGb, diskGb: raidUsable(d) * OVERCOMMIT.disk });
-      expect(nodeUsage(s, id).physical, m.id).toEqual({ vcpu, ramGb: v.ramGb, diskGb: raidUsable(d) });
+      const compute = Math.round((presetCores(m) + (installedThreads(d) - presetCores(m)) * SMT_SHARE) * 100) / 100;
+      expect(nodeCapacity(d), m.id).toEqual({ vcpu: installedThreads(d), ramGb: v.ramGb, diskGb: raidUsable(d) * OVERCOMMIT.disk });
+      expect(nodeUsage(s, id).physical, m.id).toEqual({ vcpu: compute, ramGb: v.ramGb, diskGb: raidUsable(d) });
     }
   });
 

@@ -51,6 +51,7 @@ export default {
   "host.oversell": () => "Overselling",
   "host.accounts": () => "Account",
   "host.vcpu": () => "vCPU",
+  "host.compute": () => "Potenza di calcolo",
   "host.vcpuValue": (p) => `${p.booked} prenotate, ${p.used} usate su ${p.physical}`,
   "host.ram": () => "RAM",
   "host.ramValue": (p) => `${p.booked} prenotata su ${p.physical}`,

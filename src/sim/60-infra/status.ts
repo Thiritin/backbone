@@ -431,10 +431,10 @@ export const coreScore = (d: Device): number => {
 };
 // How much of one sold vCPU of work a core does at an hour: below 1 it takes more than a core's time, above 1 less.
 export const coreSpeed = (d: Device, hour: number): number => coreScore(d) / eraDemand(monthIndexOf(hour) / 12);
-// Threads of the working CPUs; a part without a name counts its cores.
+// Threads of the working CPUs, which is the vCPU a server can book; a part without a name counts its cores.
 export const installedThreads = (d: Device): number => d.components.reduce((n, c) => n + (c.kind === "cpu" && c.failedAt === null ? skuOf(c)?.threads ?? c.size ?? 0 : 0), 0);
-// vCPU of the working CPUs: their cores plus SMT_SHARE of a core for every second thread.
-export const installedVcpu = (d: Device): number => {
+// Work the CPUs do, in cores: every core plus SMT_SHARE of a core for every second thread.
+export const installedCompute = (d: Device): number => {
   const cores = installedCores(d);
   return Math.round((cores + (installedThreads(d) - cores) * SMT_SHARE) * 100) / 100;
 };
