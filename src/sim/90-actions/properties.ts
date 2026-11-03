@@ -2,7 +2,7 @@
 import { yearOf } from "../00-core/time";
 import { nextAz } from "../20-world/datacenters";
 import {
-  DEPOSIT_MONTHS, listingById, NOTICE_MONTHS, priceFor, RACKS_PER_SERVER_SECTION, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
+  DEPOSIT_MONTHS, FIT_POSITIONS, holdsDesks, listingById, NOTICE_MONTHS, priceFor, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
 } from "../20-world/properties";
 import { cents } from "../45-billing/billing";
 import type { GameState, LedgerEntry, Property, SectionFit } from "../50-state";
@@ -85,7 +85,7 @@ export function buyBuilding(s: GameState, buildingId: string): ActionResult {
   return { ok: true, id: p.id };
 }
 
-// The section is closed for the refit's days. A server room adds rack positions to the property's office zone.
+// The section is closed for the refit's days. A server room or closet adds rack positions to the property's office zone.
 export function refitSection(s: GameState, propertyId: string, sectionId: string, fit: SectionFit): ActionResult {
   const p = s.properties.find((x) => x.id === propertyId), x = p?.sections.find((k) => k.id === sectionId);
   if (!p || !x) return fail("error.unknownProperty");
@@ -93,18 +93,18 @@ export function refitSection(s: GameState, propertyId: string, sectionId: string
   if (x.fit === fit) return fail("error.sameFit");
   if (x.refitUntil > s.hour) return fail("error.refitting");
   if (p.noticeAt !== null) return fail("error.noticeGiven");
-  if (x.fit === "desks" && s.staff.some((e) => e.desk?.propertyId === p.id && e.desk.sectionId === x.id)) return fail("error.desksInUse");
-  const loc = s.locations.find((l) => l.id === p.locationId);
-  if (x.fit === "servers" && loc && s.racks.some((r) => r.locationId === loc.id && r.position > loc.positions - RACKS_PER_SERVER_SECTION)) return fail("error.racksInRoom");
+  if (holdsDesks(x.fit) && !holdsDesks(fit) && s.staff.some((e) => e.desk?.propertyId === p.id && e.desk.sectionId === x.id)) return fail("error.desksInUse");
+  const loc = s.locations.find((l) => l.id === p.locationId), gone = x.fit ? FIT_POSITIONS[x.fit] : 0;
+  if (gone && loc && s.racks.some((r) => r.locationId === loc.id && r.position > loc.positions - gone)) return fail("error.racksInRoom");
   const { cost, days } = REFIT[fit];
   if (s.cash < cost) return fail("error.noCash");
   book(s, "other", "ledger.refit", { building: p.building.name }, -cost);
-  if (x.fit === "servers" && loc) loc.positions -= RACKS_PER_SERVER_SECTION;
+  if (loc) loc.positions -= gone;
   x.fit = fit;
   x.refitUntil = s.hour + 24 * days;
-  if (fit === "servers") {
+  if (FIT_POSITIONS[fit]) {
     placeOffice(s, p, x.refitUntil);
-    s.locations.find((l) => l.id === p.locationId)!.positions += RACKS_PER_SERVER_SECTION;
+    s.locations.find((l) => l.id === p.locationId)!.positions += FIT_POSITIONS[fit];
   }
   return { ok: true };
 }

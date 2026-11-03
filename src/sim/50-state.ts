@@ -70,7 +70,7 @@ export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office";
 // A section's rent is the monthly price agreed when it was rented (0 once bought); fit is null for a bought section never fitted.
 // refitUntil is the hour a refit is done. locationId is the zone the property's server rooms (or the basement's racks) form.
 export type PropertyKind = "basement" | "office" | "own";
-export type SectionFit = "desks" | "servers";
+export type SectionFit = "desks" | "servers" | "closet";
 export interface Building { name: string; street: string; zip: string; city: string }
 export interface Section { id: string; floor: number; fit: SectionFit | null; since: number; refitUntil: number; rent: number }
 export interface Property {

@@ -247,6 +247,23 @@ export function CodeDoor({ f }: { f: Fixture }) {
   );
 }
 
+// The server closet: a tall sheet-metal cupboard over its rack tile, a vent at the top of its door and a cylinder lock by the handle.
+export const CLOSET_Z = 100;
+export function Closet({ f }: { f: Fixture }) {
+  const x0 = f.x + 0.03, x1 = f.x + 0.97, y1 = f.y + 0.97;
+  return (
+    <>
+      <Prism x0={x0} y0={f.y + 0.03} x1={x1} y1={y1} z1={CLOSET_Z} tone="w-tone-closet" />
+      <g transform={onY(x0, y1, CLOSET_Z)}>
+        <path className="w-closet-seam" d={`M2 3 H28 V${CLOSET_Z - 3} H2 Z`} fill="none" />
+        {[0, 1, 2, 3, 4].map((i) => <rect key={i} className="w-closet-slat" x="7" y={9 + i * 3} width="16" height="1.4" />)}
+        <rect className="w-closet-slat" x="24" y="44" width="1.6" height="12" />
+        <circle className="w-closet-lock" cx="24.8" cy="40" r="1.3" />
+      </g>
+    </>
+  );
+}
+
 // A cable tray along the far wall of a server room with the bundles in it.
 export function WallTray({ f }: { f: Fixture }) {
   const len = (f.w ?? 1) * 32;

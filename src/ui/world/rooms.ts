@@ -19,6 +19,8 @@ export const ART: Record<string, FixtureArt> = {
   window: { wall: true },
   hygrometer: { wall: true },
   jack: { wall: true },
+  // Drawn over its rack, so a click goes through to the rack inside.
+  closet: { label: "world.obj.closet", depth: 0.5 },
   duct: { wall: true },
   switch: { label: "world.obj.switch", use: "light", wall: true },
   mat: { wall: true },

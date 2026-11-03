@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { listingById, listingsIn, REFIT, rentFor, UPKEEP_PER_SECTION } from "../src/sim/20-world/properties";
+import { CLOSET_KW, listingById, listingsIn, REFIT, rentFor, UPKEEP_PER_SECTION } from "../src/sim/20-world/properties";
+import { fixtures, officePlan, wallTiles } from "../src/sim/20-world/layout";
+import { rackPower } from "../src/sim/60-infra/status";
+import { buyRack } from "../src/sim/90-actions/hardware";
 import { ownAddress } from "../src/sim/30-customers/addresses";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
@@ -81,6 +84,22 @@ describe("properties", () => {
     expect(loc.positions).toBe(0);
     s.hour += 24 * REFIT.desks.days;
     expect(desks(s)).toBe(4);
+  });
+
+  it("a closet keeps the desks and adds one rack on the section's own circuit", () => {
+    const s = rich(), id = rentFirst(s), p = s.properties.find((x) => x.id === id)!, sec = p.sections[0].id, cash = s.cash;
+    expect(refitSection(s, id, sec, "closet").ok).toBe(true);
+    expect(s.cash).toBe(cash - REFIT.closet.cost);
+    expect(REFIT.closet).toEqual({ cost: 4_000, days: 3 });
+    const loc = s.locations.find((l) => l.id === p.locationId)!;
+    expect(loc.positions).toBe(1);
+    s.hour += 24 * REFIT.closet.days;
+    expect(desks(s)).toBe(4);
+    const plan = officePlan(s, loc)!, fx = fixtures(loc, plan), [tile] = wallTiles(loc, plan);
+    expect(Object.values(fx).filter((f) => f.kind === "closet")).toEqual([{ x: tile.x, y: tile.y, kind: "closet" }]);
+    expect(buyRack(s, loc.id, "rack-24", 1).ok).toBe(true);
+    expect(rackPower(s, s.racks.find((x) => x.locationId === loc.id)!.id).limitWatts).toBe(CLOSET_KW * 1000);
+    expect(refitSection(s, id, sec, "desks")).toEqual({ ok: false, error: "error.racksInRoom" });
   });
 
   it("the address follows the office", () => {

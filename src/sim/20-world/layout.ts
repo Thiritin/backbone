@@ -1,5 +1,6 @@
 import type { GameState, Location, Rack, Section, SpaceKind } from "../50-state";
 import { datacenterById } from "./datacenters";
+import { holdsDesks } from "./properties";
 
 export type Facing = "n" | "e" | "s" | "w";
 // floor is set only in an office with more than one floor of server rooms; it counts from 1.
@@ -186,7 +187,7 @@ const SEATS = [{ dx: 1, y: 2, facing: "s" }, { dx: 3, y: 2, facing: "s" }, { dx:
 
 export function officeSeats(plan: OfficePlan): Seat[] {
   return officeFloors(plan.sections).flatMap((floor) => blocks({ ...plan, floor })
-    .filter(({ x }) => x.fit === "desks" && x.refitUntil <= plan.hour)
+    .filter(({ x }) => holdsDesks(x.fit) && x.refitUntil <= plan.hour)
     .flatMap(({ x, ox }) => SEATS.map((d, index) => ({ sectionId: x.id, index, floor, x: ox + d.dx, y: d.y, facing: d.facing }))));
 }
 
@@ -231,13 +232,17 @@ function officeRoom(plan: OfficePlan): OfficeRoom {
     } else {
       f[`window${id}`] = { x: ox + 1, y: 0, w: 2, kind: "owindow" };
       f[`board${id}`] = { x: ox + 3, y: 0, w: 2, kind: "whiteboard" };
-      f[`plant${id}`] = { x: ox + 5, y: 0, kind: "plant" };
+      // A closet stands in the far right corner over its one rack tile.
+      if (x.fit === "closet") {
+        f[`closet${id}`] = { x: ox + 5, y: 0, kind: "closet" };
+        racks.push({ x: ox + 5, y: 0, facing: "s" });
+      } else f[`plant${id}`] = { x: ox + 5, y: 0, kind: "plant" };
     }
     if (refit) {
       f[`buckets${id}`] = { x: ox + 2, y: 4, kind: "buckets" };
       f[`ladder${id}`] = { x: ox + 4, y: 1, kind: "ladder" };
       f[`tools${id}`] = { x: ox + 1, y: 5, kind: "toolbox" };
-    } else if (x.fit === "desks") {
+    } else if (holdsDesks(x.fit)) {
       SEATS.forEach((d, i) => {
         f[`desk${id}-${i}`] = { x: ox + d.dx, y: d.facing === "s" ? 3 : 4, w: 2, kind: d.facing === "s" ? "odesk-s" : "odesk-n" };
         f[`chair${id}-${i}`] = { x: ox + d.dx, y: d.y, w: 2, kind: d.facing === "s" ? "ochair-s" : "ochair-n" };

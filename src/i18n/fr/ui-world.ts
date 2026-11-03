@@ -8,6 +8,7 @@ export default {
   "world.obj.door": () => "Porte",
   "world.obj.switch": () => "Interrupteur",
   "world.obj.letterbox": () => "Boîte aux lettres",
+  "world.obj.closet": () => "Armoire serveur",
   "world.obj.shelf": () => "Étagère de stockage",
   "world.obj.fusebox": () => "Boîte à fusibles",
   "world.obj.fan": () => "Ventilateur de fenêtre",

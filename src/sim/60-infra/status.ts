@@ -8,6 +8,7 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, PARCEL, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
+import { CLOSET_KW } from "../20-world/properties";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
@@ -309,6 +310,9 @@ export const drawWatts = (s: GameState, d: Device, busy: Set<string | null>): nu
 };
 
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
+// ponytail: an office with closets only runs on the closet circuit; a closet beside a server room shares the room's limit, per-section circuits if that matters.
+const officeKw = (s: GameState, loc: Location): number =>
+  s.properties.some((p) => p.locationId === loc.id && p.sections.some((x) => x.fit === "servers")) ? circuitKw(loc) : CLOSET_KW;
 
 function computeRackPower(s: GameState, rackId: string): RackPower {
   const rack = s.racks.find((r) => r.id === rackId);
@@ -326,7 +330,7 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
   }
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
-  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : circuitKw(loc);
+  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc);
   // A flat-rate contract's kW replaces the position's limit.
   const limitWatts = rack.flatKw ? Math.round(1000 * rack.flatKw) : Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
   return { watts: a + b, a, b, limitWatts, tripped: a > limitWatts || b > limitWatts };
