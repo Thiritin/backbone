@@ -418,10 +418,10 @@ export function carry(s: GameState, chassis: Device) {
 }
 const withNodes = (s: GameState, d: Device): Device[] => [d, ...nodesOf(s, d.id)];
 
-// A shelf has no rails: patch panels, PDUs and anything taller than a board stay off it.
+// A shelf has no rails: patch panels, PDUs, 0U devices and anything taller than a board stay off it.
 const needsRails = (s: GameState, rackId: string, modelId: string): boolean => {
   const m = modelById(modelId);
-  return s.racks.find((r) => r.id === rackId)?.model === "shelf" && ((SHELF.railKinds as readonly string[]).includes(m.kind) || m.height > SHELF.maxHeight);
+  return s.racks.find((r) => r.id === rackId)?.model === "shelf" && ((SHELF.railKinds as readonly string[]).includes(m.kind) || m.height === 0 || m.height > SHELF.maxHeight);
 };
 
 export function mountError(s: GameState, d: Device, rackId: string, slot: number): string | null {
