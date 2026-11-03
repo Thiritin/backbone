@@ -20,9 +20,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The server inspector shows each CPU's cores and threads, and panel host settings show the host's compute next to its vCPU.
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
-
-## 2026-11-03
-
 - The bookkeeping categories now follow a standard chart of accounts: bank and payment charges, interest, fees and dues, travel, licences, domains, credits and other operating expenses each get their own line, and a trade registration no longer counts as a ransom.
 
 ## 2026-11-02
