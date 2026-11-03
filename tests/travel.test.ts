@@ -1,11 +1,18 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
+import { COUNTRY, DATACENTERS, listed } from "../src/sim/20-world/datacenters";
 import { CITIES } from "../src/ui/map/world-data";
 import { along, arc, driveMs, km, next, routeOf, type LL, type Stage, type TripEvent } from "../src/ui/travel/route";
 
 const city = (code: string) => CITIES.find((c) => c.code === code)!;
 
 describe("travel", () => {
+  it("lists only datacenters in European cities", () => {
+    const shown = DATACENTERS.filter((d) => listed(d.city));
+    expect(shown.length).toBeGreaterThan(0);
+    expect(shown.filter((d) => !["DE", "NL", "GB", "FR", "IT", "AT", "CH"].includes(COUNTRY[d.city])).map((d) => d.city)).toEqual([]);
+  });
+
   it("finds a stored route both ways", () => {
     const [a, b] = [CITIES[0], CITIES[1]].sort((p, q) => (p.code < q.code ? -1 : 1));
     const line: LL[] = [[a.lon, a.lat], [7, 50], [b.lon, b.lat]], routes = { [`${a.code}-${b.code}`]: line };

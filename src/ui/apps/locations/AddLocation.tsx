@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, Check, ExternalLink, Leaf, ShieldCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { DATACENTERS, inUs, LEAD_DAYS, SPACE_SIZES, spacePrice, type Datacenter } from "../../../sim/20-world/datacenters";
+import { DATACENTERS, inUs, LEAD_DAYS, listed, WORLD, SPACE_SIZES, spacePrice, type Datacenter } from "../../../sim/20-world/datacenters";
 import type { GameState, SpaceKind } from "../../../sim/50-state";
 import { dcAvailability, fits } from "../../../sim/60-infra/status";
 import { orderUrl } from "../../../sim/80-business/browser";
@@ -12,9 +12,9 @@ import { useStore } from "../../store";
 import { positionsLabel, shareLabel, shareUnits, Sheet } from "./ui";
 
 type Rented = Exclude<SpaceKind, "basement">;
-const CITIES = [...new Set(DATACENTERS.map((d) => d.city))];
+const CITIES = [...new Set(DATACENTERS.map((d) => d.city))].filter(listed);
 type Area = "eu" | "us";
-const AREAS: [Area, string, Bounds][] = [["eu", t("locations-1.europe"), { west: -1, south: 45, east: 17, north: 53 }], ["us", t("locations-1.northAmerica"), { west: -122, south: 28, east: -72, north: 46 }]];
+const AREAS = ([["eu", t("locations-1.europe"), { west: -1, south: 45, east: 17, north: 53 }], ["us", t("locations-1.northAmerica"), { west: -122, south: 28, east: -72, north: 46 }]] as [Area, string, Bounds][]).filter(([id]) => id === "eu" || WORLD === "all");
 const KINDS: [Rented, string][] = [["share", t("locations-1.rack")], ["cage", t("locations-1.cage")], ["suite", t("locations-1.suite")]];
 
 // Filters narrow the list, each one a requirement a datacenter either meets or not.
@@ -78,9 +78,9 @@ export function AddLocation({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title={t("locations-1.addLocation")} onClose={onClose} wide>
       <div className="loc-sheet-bar">
-        <div className="seg" role="group" aria-label={t("locations-1.area")}>
+        {AREAS.length > 1 && <div className="seg" role="group" aria-label={t("locations-1.area")}>
           {AREAS.map(([id, label]) => <button key={id} aria-pressed={area === id} onClick={() => { setArea(id); setCity(null); }}>{label}</button>)}
-        </div>
+        </div>}
         <span className="grow" />
         <div className="loc-cities">
           <div className="seg" role="group" aria-label={t("locations-1.city")}>

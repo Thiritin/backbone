@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The rack opens as a scene in the middle of the screen with depth and a paper tag for the picked unit, cables are dragged from port to port and vanish into the duct, and the map shows Europe only for now.
 - The basement walls have cable ducts and a light switch, the drying rack folds like a real one, the room drops its light beams and simply darkens at night with the lamps lit, parcels install straight from the rack view, and datacenters show their logos on arrival and on the map.
 - The basement is smaller and full of life, with cellar windows that let daylight in, a real fuse box, a chair at the desk, and the family's boiler and washing machine.
 - The rack and the other room views now open as a large popup in the middle of the screen.
