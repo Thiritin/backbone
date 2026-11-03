@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { t } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { bayTakes, COMPONENTS, fits, modelById, samePart, type ComponentKind } from "../../../sim/10-catalog/hardware";
+import { bayTakes, COMPONENTS, fits, modelById, partOffers, samePart, type ComponentKind, type PartSpec } from "../../../sim/10-catalog/hardware";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device } from "../../../sim/50-state";
 import { energized, hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
-import { installPart, removePart, replaceComponent, replaceSpares } from "../../../sim/90-actions/hardware";
+import { buyDevice, installPart, removePart, replaceComponent, replaceSpares, unitPrice } from "../../../sim/90-actions/hardware";
+import { formatDay } from "../../apps/billing/format";
 import { chassisSlots, GROUP_KINDS, GROUP_NAME, TopDown, type Slot, type Wear } from "../../art/TopDown";
 import { reduced } from "../../desktop/motion";
 import { ageYears, devName, isWorn, partLabel } from "../../apps/hw";
@@ -74,7 +75,7 @@ export function LidScene({ deviceId, onClose }: { deviceId: string; onClose: () 
 
 // A filled slot's tag names the part with Replace and Remove; an empty slot's tag lists the stored parts that fit.
 function SlotTag({ device, slot, wear, hand }: { device: Device; slot: Slot; wear: (c: Component) => Wear; hand: ReturnType<typeof useHandWork> }) {
-  const game = useStore((s) => s.game), model = modelById(device.model), c = slot.part;
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), model = modelById(device.model), c = slot.part;
   const busy = !!device.maintenance, live = !!device.rackId && energized(device);
   const zone = device.rackId ? locationOf(game, device) : game.locations.find((l) => l.id === device.store);
   const at = zone?.id;
@@ -88,7 +89,8 @@ function SlotTag({ device, slot, wear, hand }: { device: Device; slot: Slot; wea
     return (
       <div className="wr-tag-body" data-slot={slot.id}>
         <div className="wr-tag-h"><span className={`wr-led ${w}`} role="img" aria-label={state} /><strong>{partLabel(c)}</strong></div>
-        <div className="wr-model">{slotName(slot)} · {state}</div>
+        <div className={`wr-model${w === "bad" ? " wr-fault" : ""}`}>{slotName(slot)} · {state}</div>
+        {c.failedAt !== null && <div className="wr-model">{t("locations-1.failedOn", { day: formatDay(c.failedAt) })}</div>}
         <div className="wr-model">{age === null ? t("locations-1.unknown") : t("locations-1.ageOf", { age: age.toFixed(1), life: COMPONENTS[c.kind].life })}</div>
         <div className="wr-model">{euro(partPrice(c.kind, c.size, c.ff, yearOf(game.hour), c))}</div>
         <div className="wr-lines">
@@ -96,6 +98,7 @@ function SlotTag({ device, slot, wear, hand }: { device: Device; slot: Slot; wea
             <HandsButtons ways={rep} className="wr-line" disabled={!set} onRun={(how) => hand.start(game, { title: set > 1 ? t("locations-1.replaceCpus", { n: set }) : t("locations-1.replacePart", { part: partLabel(c) }), deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id }, how })}>{t("locations-1.replace")}</HandsButtons>
             {removable && <HandsButtons ways={rem} className="wr-line" onRun={(how) => hand.start(game, { title: t("locations-1.removePart", { part: partLabel(c) }), deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id }, how })}>{t("locations-1.remove")}</HandsButtons>}
           </>}
+          {w !== "ok" && at && <OrderLine c={c} order={(line) => act(buyDevice, line.model, line.brand, 1, at, { part: line.part })} />}
         </div>
       </div>
     );
@@ -121,6 +124,15 @@ function SlotTag({ device, slot, wear, hand }: { device: Device; slot: Slot; wea
       </div>
     </div>
   );
+}
+
+// A failed or worn part can be ordered from the Shop at its price; a part the Shop no longer sells says so.
+function OrderLine({ c, order }: { c: Component; order: (line: { model: string; brand: string; part: PartSpec }) => void }) {
+  const game = useStore((s) => s.game), year = yearOf(game.hour), want = specOf(c);
+  const part = partOffers(year).find((o) => samePart(o, want));
+  if (!part) return note(t("error.notInShop"));
+  const line = { model: `part-${c.kind}`, brand: "Generic", qty: 1, part };
+  return <button className="wr-line" data-order="" disabled={game.cash < unitPrice(line, year)} onClick={() => order(line)}>{t("locations-1.orderPart")} <span className="num">{euro(unitPrice(line, year))}</span></button>;
 }
 
 const note = (text: string) => <span className="wr-line" aria-disabled="true">{text}</span>;

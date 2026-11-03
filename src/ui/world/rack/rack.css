@@ -67,6 +67,7 @@
 .wr-tag-h { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
 .wr-tag-h .loc-label button { color: inherit; font: inherit; }
 .wr-tag .wr-model { display: block; margin-top: 2px; color: oklch(0.45 0.03 60); }
+.wr-tag .wr-fault { color: oklch(0.5 0.2 27); font-weight: 600; }
 .wr-lines { display: flex; flex-direction: column; margin-top: 10px; border-top: 1px solid oklch(0.8 0.03 80); }
 .wr-lines hr { height: 0; margin: 4px 0; border: 0; border-top: 1px dashed oklch(0.78 0.03 80); }
 .wr-line { padding: 4px 0; border: 0; border-bottom: 1px solid oklch(0.87 0.025 85); background: none; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }

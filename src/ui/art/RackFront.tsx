@@ -6,7 +6,7 @@ import { Back, bayRects, Cord, portSpots, psuInlets, type Side, type Spot } from
 import { Defs, Front, ledProps, PortJack, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
 
 // plugs holds whether each power supply is plugged in.
-export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; badge?: string; blink?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null; stick?: boolean }
+export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; badge?: string; blink?: boolean; fault?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null; stick?: boolean }
 // One cable end in this rack and the end it leads to, in this rack or on a remote box.
 export interface RackLink { id: string; end: End; peer: End; color: string }
 // A device outside the rack that the rack is or can be cabled to, drawn as a small box above it.
