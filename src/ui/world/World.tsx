@@ -14,6 +14,7 @@ import { RackFront } from "../art/RackFront";
 import { rackItems } from "../apps/locations/RackView";
 import { useStore } from "../store";
 import { center, facingOf, iso, key, pathTo, useTiles, type Pt } from "./iso";
+import { useTrip } from "../travel/route";
 import "./world.css";
 
 const WALL = 96, DOOR_H = 64, STEP_MS = 400, BLINK_MS = 500, FLASH_MS = 120, ZOOM_MAX = 4;
@@ -223,7 +224,7 @@ export function World() {
   const openDoor = () => {
     setDoor(1);
     setTimeout(() => setDoor(2), 150);
-    setTimeout(() => openApp("Weather"), 700);
+    setTimeout(() => { setDoor(0); useTrip.getState().send("door"); }, 700);
   };
 
   return (

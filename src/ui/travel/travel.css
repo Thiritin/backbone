@@ -1,0 +1,32 @@
+.travel {
+  position: fixed; inset: 0; z-index: 2100; outline: none;
+  --map-bg: oklch(0.24 0.025 250);
+  --map-label: oklch(0.72 0.01 250);
+  background: var(--map-bg);
+}
+.travel-map .wm { position: absolute; inset: 0; border: 0; border-radius: 0; --wm-land: oklch(0.31 0.012 250); --wm-coast: oklch(0.4 0.012 250); --text: oklch(0.97 0 0); --win: oklch(0.2 0.015 250); }
+.travel-map .wm-cables { display: none; }
+.travel-close {
+  position: absolute; top: 16px; right: 16px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid oklch(1 0 0 / 0.2);
+  background: oklch(0.18 0.01 250 / 0.85); color: white; font: 600 13px Inter, sans-serif; cursor: pointer;
+}
+.travel-error {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 8px 14px; border-radius: 8px;
+  background: oklch(0.18 0.01 250 / 0.9); color: var(--bad); font: 600 13px Inter, sans-serif;
+}
+
+.travel-road svg, .travel-scene svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.tr-land { fill: oklch(0.31 0.012 250); stroke: oklch(0.4 0.012 250); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+.tr-roads { fill: none; stroke: oklch(0.48 0.006 250); stroke-width: 0.8; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.tr-route { fill: none; stroke: var(--accent); stroke-linejoin: round; stroke-linecap: round; }
+.tr-trail { fill: none; stroke: color-mix(in oklch, var(--accent) 60%, white); stroke-linejoin: round; }
+.tr-end { fill: oklch(0.18 0.01 250); stroke: var(--accent); stroke-width: 2; }
+.tr-name { font: 600 11px Inter, sans-serif; fill: oklch(0.95 0 0); stroke: oklch(0.2 0.02 250); stroke-width: 3px; paint-order: stroke; }
+.tr-car { fill: oklch(0.97 0.02 95); }
+.tr-plate { font: 700 7px "JetBrains Mono", ui-monospace, monospace; fill: oklch(0.25 0.02 260); }
+.travel-clock {
+  position: absolute; top: 16px; left: 16px; display: grid; gap: 2px; padding: 8px 12px; border-radius: 8px;
+  background: oklch(0.16 0.01 250 / 0.85); color: white; font: 500 13px "JetBrains Mono", ui-monospace, monospace;
+}
+.travel-clock strong { color: var(--accent-soft); font-weight: 650; }
+.travel-fade { position: absolute; inset: 0; background: black; pointer-events: none; }
