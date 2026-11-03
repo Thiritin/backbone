@@ -4,7 +4,7 @@ import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState, Location, LogSev } from "../50-state";
 import { pushLog } from "./syslog";
 import { heatOf, THERMAL } from "./thermal";
-import { busyDevices, isPlugged, locationOf, rackPower, readOnlySweep, utilOf } from "./status";
+import { busyDevices, isPlugged, locationOf, rackPower, readOnlySweep, roomPower, utilOf } from "./status";
 
 // Fans run at 30% of their maximum up to 50 degrees CPU and reach full speed at 80.
 export const FAN_RPM = 12500, FAN_MIN = 0.3, FAN_LOW_C = 50, FAN_HIGH_C = 80;
@@ -17,11 +17,20 @@ export interface Sensors {
   psus: { id: string; state: "ok" | "failed" | "unplugged" }[];
 }
 
-// A datacenter hall holds 22 degrees and a basement follows the seasons from 17 to 27, plus the heat built up while
-// its cooling falls short (thermal.ts).
+// economy/hardware-power-and-failures.md, Cooling and overheating: a hall holds its set point with its cooling units; the
+// basement and an office follow the seasons from 17 to 27 degrees, plus degrees per kW drawn, fewer while the basement's
+// window fan runs. The heat built up while cooling falls short (thermal.ts) comes on top.
+export const ROOM = { hallC: 22, perKw: 2, fanPerKw: 1, fanOnC: 24 };
+const stillC = (s: GameState, loc: Location) => {
+  const base = 22 + 5 * Math.cos(((dateOf(s.hour).getUTCMonth() - 6.5) * Math.PI) / 6), kw = roomPower(s, loc).watts / 1000;
+  return { base, kw, fan: loc.space === "basement" && base + ROOM.perKw * kw > ROOM.fanOnC };
+};
+export const fanRuns = (s: GameState, loc: Location): boolean => !loc.dc && stillC(s, loc).fan;
 export function roomTemperature(s: GameState, loc: Location): number {
-  const month = dateOf(s.hour).getUTCMonth();
-  return (loc.dc ? 22 : 22 + 5 * Math.cos(((month - 6.5) * Math.PI) / 6)) + (s.ops.heat[loc.id] ?? 0);
+  const heat = s.ops.heat[loc.id] ?? 0;
+  if (loc.dc) return ROOM.hallC + heat;
+  const { base, kw, fan } = stillC(s, loc);
+  return base + (fan ? ROOM.fanPerKw : ROOM.perKw) * kw + heat;
 }
 
 // The room, up to 3 degrees more from the rack's load and 6 more behind a failed fan.

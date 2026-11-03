@@ -5,7 +5,8 @@ import { addLocation, buyRack, connect, mountDevice, mountStack, resetBreaker, s
 import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { breakerTick, TRIP_HOURS } from "../src/sim/60-infra/power";
 import { datacenterById } from "../src/sim/20-world/datacenters";
-import { nowHours } from "../src/sim/00-core/time";
+import { hourOfMonth, nowHours } from "../src/sim/00-core/time";
+import { fanRuns, ROOM, roomTemperature } from "../src/sim/60-infra/sensors";
 import { mountStack as mountPlugged } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { failComponents, powerPerHour, tick, tickMinute } from "../src/sim/88-tick/tick";
@@ -207,5 +208,26 @@ describe("main breaker", () => {
     const data = JSON.parse(serialize(rich()));
     for (const l of data.locations) delete l.tripped;
     expect(deserialize(JSON.stringify(data)).locations.every((l) => l.tripped === false)).toBe(true);
+  });
+});
+
+describe("room temperature", () => {
+  const basement = (s: GameState) => s.locations.find((l) => l.id === "loc1")!;
+  const idle = (s: GameState) => { const c = structuredClone(s); for (const d of c.devices) d.on = false; return roomTemperature(c, basement(c)); };
+
+  it("adds 2 degrees per kW in a cool basement and 1 while the window fan runs", () => {
+    const s = rich(), kw = roomPower(s, basement(s)).watts / 1000;
+    expect(kw).toBeGreaterThan(0);
+    expect(fanRuns(s, basement(s))).toBe(false);
+    expect(roomTemperature(s, basement(s)) - idle(s)).toBeCloseTo(ROOM.perKw * kw);
+    s.hour = hourOfMonth("2005-07");
+    expect(fanRuns(s, basement(s))).toBe(true);
+    expect(roomTemperature(s, basement(s)) - idle(s)).toBeCloseTo(ROOM.fanPerKw * kw);
+  });
+
+  it("holds a hall at its set point", () => {
+    const s = rich();
+    const id = ok(addLocation(freeFloor(s), "hetzler-park", "suite", 20));
+    expect(roomTemperature(s, s.locations.find((l) => l.id === id)!)).toBe(ROOM.hallC);
   });
 });

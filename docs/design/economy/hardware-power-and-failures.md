@@ -11,7 +11,7 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 | Location | PUE | Billing |
 | --- | --- | --- |
 | Basement | 1.0 | Household price |
-| Cage or suite | The datacenter's power factor | City business price × power factor; a rack above its position's kW limit trips |
+| Cage or suite | The datacenter's power factor | City business price × power factor; a room above its kW limit for an hour trips its breaker |
 | Own room | 1.6 | City business price |
 | Own datacenter | 1.4, or 1.2 with liquid cooling | City business price, or a custom contract: 3 years fixed at 10% below the current price |
 
@@ -60,7 +60,7 @@ Without a spare kit in stock, a repair waits for a delivery first.
 
 A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare; the shop sells parts at the prices of Part prices by year.
 
-**Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, and in the basement 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
+**Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, which its cooling units hold at any draw, and in the basement and an office 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July, plus 2 °C per kW the room draws. The basement's window fan runs while the room would pass 24 °C and halves that to 1 °C per kW. A tripped room draws nothing. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
 
 ```math
 \frac{dH}{dt} = \frac{0.5}{m}\,\big(P - C - s \cdot H\big) \quad \text{°C per minute}, \qquad H \ge 0
@@ -208,7 +208,7 @@ Used devices cannot be leased and resell from the price paid like any other devi
 | High-density feed | Doubles the position's kW limit | 60% of the position price per month |
 | Basement circuit | One extra household circuit, +3 kW | €400 once |
 
-**Breakers.** Every feed, the basement circuit included, carries 80% of its limit continuously, as the electrical code rates a breaker for loads that run three hours or more. A feed above its limit trips at once; a feed above 80% of it trips after three hours there. Servers that hang on the tripped feed alone switch off and stay off. Single-supply servers, network gear and customer equipment hang on feed A. A dual-fed server draws half its power from each feed, so when a feed fails or trips its whole draw moves to the other one; when that exceeds one feed's limit, the other feed trips as well and every server in the rack goes dark for the outage. Customer colocation is only placed in a rack while its whole draw stays under 80% of one feed.
+**Breakers.** Every feed, the basement circuit included, carries 80% of its limit continuously, as the electrical code rates a breaker for loads that run three hours or more. A room above its limit for one hour trips its main breaker: the house circuit in the basement, the office circuit in an office, any rack position's feed in a datacenter. Every device in the room loses power and stays switched on. In the basement and an office the player resets the breaker by hand in the fuse box, which holds only once the switched-on devices fit the limit; at a datacenter the provider's remote hands reset it after their response time and bill one hour at their rate. The devices then boot one after another, a minute apart. A feed above 80% of its limit trips after three hours there. Servers that hang on the tripped feed alone switch off and stay off. Single-supply servers, network gear and customer equipment hang on feed A. A dual-fed server draws half its power from each feed, so when a feed fails or trips its whole draw moves to the other one; when that exceeds one feed's limit, the other feed trips as well and every server in the rack goes dark for the outage. Customer colocation is only placed in a rack while its whole draw stays under 80% of one feed.
 
 **Monitoring.** Without monitoring, failures only show as lights on the device fronts. Monitoring is a tier 1 skill in Research.
 
