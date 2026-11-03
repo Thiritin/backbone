@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { defineConfig, type Plugin } from "vitest/config";
 import react from "@vitejs/plugin-react";
@@ -23,9 +23,20 @@ const versionFile = (): Plugin => ({
   },
 });
 
+// Test files share module scope for speed; files that mock modules or use the UI store singleton get a fresh one.
+const testFiles = readdirSync("tests").filter((f) => /\.test\.tsx?$/.test(f)).map((f) => `tests/${f}`);
+const isolated = testFiles.filter((f) => /vi\.(mock|doMock|resetModules|stubGlobal)\(|ui\/store"/.test(readFileSync(f, "utf8")));
+
 export default defineConfig({
   base: "./",
   define: { __BUILD_ID__: JSON.stringify(buildId), __CHANGELOG__: JSON.stringify(changelog) },
   plugins: [react(), versionFile()],
-  test: { environment: "node", include: ["tests/**/*.test.{ts,tsx}"], testTimeout: 20000 },
+  test: {
+    environment: "node",
+    testTimeout: 20000,
+    projects: [
+      { extends: true, test: { name: "shared", include: testFiles, exclude: isolated, isolate: false } },
+      { extends: true, test: { name: "isolated", include: isolated } },
+    ],
+  },
 });
