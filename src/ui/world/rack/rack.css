@@ -1,4 +1,4 @@
-/* The rack close-up: a dark slab in the room's pixel palette that slides up from the bottom edge. */
+/* The rack close-up: a dark slab that slides up from the bottom edge; cards inside use the dark theme's tokens. */
 .wr-veil { position: absolute; inset: 0; background: oklch(0.12 0.02 258 / 0.6); opacity: 0; transition: opacity 220ms ease; }
 .wr-veil.in { opacity: 1; }
 .wr-panel {
@@ -7,6 +7,12 @@
   background: oklch(0.24 0.022 255); color: oklch(0.95 0.01 250);
   border-top: 3px solid oklch(0.4 0.02 252); box-shadow: 0 -3px 0 oklch(0.17 0.02 258);
   font-family: var(--font-ui); user-select: none;
+  color-scheme: dark;
+  --win: oklch(0.235 0.012 258); --win-side: oklch(0.205 0.012 258); --win-bar: oklch(0.255 0.012 258);
+  --field: oklch(0.27 0.012 258); --hover: oklch(0.3 0.014 258); --line: oklch(0.33 0.013 258); --line-strong: oklch(0.4 0.014 258);
+  --text: oklch(0.95 0.006 258); --text-2: oklch(0.78 0.012 258); --text-3: oklch(0.64 0.014 258);
+  --accent-soft: oklch(0.34 0.07 262); --accent-text: oklch(0.78 0.12 262);
+  --ok-soft: oklch(0.32 0.06 150); --warn-soft: oklch(0.34 0.06 75); --warn-text: oklch(0.85 0.12 80); --bad-soft: oklch(0.33 0.07 25); --bad-text: oklch(0.8 0.13 25);
   transform: translateY(100%); transition: transform 220ms ease-out;
 }
 .wr-panel.in { transform: none; }
@@ -21,7 +27,9 @@
 
 .wr-body { flex: 1; min-height: 0; display: flex; gap: 20px; padding: 16px; overflow: auto; }
 .wr-rack { flex-shrink: 0; align-self: flex-start; }
-.wr-rack .w-sprite { image-rendering: pixelated; }
+.wr-frame { fill: var(--metal-2); stroke: var(--metal-line); stroke-width: 1; }
+.wr-frame-top { fill: oklch(0.46 0.01 255); }
+.wr-vent { fill: var(--metal); }
 .wr-rack .rack-dev:hover { filter: brightness(1.35) drop-shadow(0 0 2px var(--accent)); }
 .wr-rack .rack-free:hover rect { stroke: var(--accent); stroke-width: 1.5; fill: oklch(0.28 0.03 255); }
 .wr-side { flex: 1; min-width: 280px; max-width: 640px; display: flex; flex-direction: column; gap: 12px; }
@@ -44,3 +52,5 @@
 
 .wr-card .loc-shop-list { color: var(--text); background: var(--field); }
 .wr-side .lid-inline { border-radius: 4px; background: var(--win); color: var(--text); border: 3px solid oklch(0.17 0.02 258); }
+.wr-side .lid-inline { display: flex; flex-direction: column; min-height: 0; max-height: 100%; }
+.wr-side .lid-view { max-height: 30dvh; }

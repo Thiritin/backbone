@@ -17,13 +17,12 @@ import { LabelEdit, useDeviceMenu } from "../../apps/locations/Inspector";
 import { LidSheet } from "../../apps/locations/LidSheet";
 import { mountable, MountRow, rackItems } from "../../apps/locations/RackView";
 import { useStore } from "../../store";
-import { sheetUrl, SPRITES } from "../sprites";
 import "../../apps/locations/locations.css";
 import "./rack.css";
 
 export const SLIDE_MS = 220;
-// Pixel scale of the rack frame, and its border in source pixels: a cap above the units, sides and a foot.
-const K = 3, CAP = 22, SIDE = 8, FOOT = 8;
+// The rack frame's border in pixels: a cap above the units, sides and a foot.
+const CAP = 36, SIDE = 18, FOOT = 18;
 const CABLED = ["switch", "gateway", "firewall"];
 
 // The rack close-up that slides up over the room: the rack on the left, the picked unit's card on the right.
@@ -100,24 +99,19 @@ export function RackPanel({ rackId, onClose }: { rackId: string; onClose: () => 
   );
 }
 
-// The tileset's closed rack, sliced so its cap, sides and foot frame the drawn units at a readable size.
+// The rack's metal frame around the drawn units, sized so the units stay readable in the panel.
 function RackFrame({ units, children }: { units: number; children: (w: number, u: number) => ReactNode }) {
-  const r = SPRITES["rack-closed"];
-  const room = (typeof innerHeight === "number" ? innerHeight : 768) * 0.66 - 120 - (CAP + FOOT) * K;
+  const room = (typeof innerHeight === "number" ? innerHeight : 768) * 0.66 - 120 - CAP - FOOT;
   const u = Math.max(10, Math.min(24, Math.floor((room - 8) / units))), w = u * 19;
   // RackFront's front view without the cable channel it draws to the right.
-  const iw = w + 36, ih = units * u + 8, ow = iw + 2 * SIDE * K, oh = ih + (CAP + FOOT) * K;
-  if (!r) return <div className="wr-rack">{children(w, u)}</div>;
-  const cols = [[0, SIDE, 0, SIDE * K], [SIDE, r.w - 2 * SIDE, SIDE * K, iw], [r.w - SIDE, SIDE, SIDE * K + iw, SIDE * K]];
-  const rows = [[0, CAP, 0, CAP * K], [CAP, r.h - CAP - FOOT, CAP * K, ih], [r.h - FOOT, FOOT, CAP * K + ih, FOOT * K]];
+  const iw = w + 36, ih = units * u + 8, ow = iw + 2 * SIDE, oh = ih + CAP + FOOT;
   return (
     <svg className="wr-rack" width={ow} height={oh} viewBox={`0 0 ${ow} ${oh}`}>
-      {rows.flatMap(([sy, sh, y, h]) => cols.map(([sx, sw, x, w]) => (
-        <svg key={`${sx},${sy}`} x={x} y={y} width={w} height={h} viewBox={`${r.x + sx} ${r.y + sy} ${sw} ${sh}`} preserveAspectRatio="none">
-          <image className="w-sprite" href={sheetUrl(r.sheet)} />
-        </svg>
-      )))}
-      <svg x={SIDE * K} y={CAP * K} width={iw} height={ih} overflow="hidden">{children(w, u)}</svg>
+      <rect className="wr-frame" width={ow} height={oh} rx="4" />
+      <rect className="wr-frame-top" x="3" y="3" width={ow - 6} height={CAP - 8} rx="2" />
+      {[0, 1, 2, 3, 4].map((i) => <rect key={i} className="wr-vent" x={ow / 2 - 40 + i * 18} y="11" width="10" height={CAP - 24} rx="1" />)}
+      <rect className="wr-frame-top" x="3" y={oh - FOOT + 5} width={ow - 6} height={FOOT - 8} rx="2" />
+      <svg x={SIDE} y={CAP} width={iw} height={ih} overflow="hidden">{children(w, u)}</svg>
     </svg>
   );
 }
