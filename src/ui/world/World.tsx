@@ -27,8 +27,9 @@ const ART = `${import.meta.env.BASE_URL}world/`;
 const KEYS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0],
 };
-// Where the player stood per location, so the room resumes there.
+// Where the player stood and how the room was zoomed and panned, per location, so the room resumes there.
 const stood: Record<string, Pt> = {};
+const looked: Record<string, { zoom: number | null; org: Pt | null }> = {};
 
 const pts = (...p: Pt[]) => p.map((q) => `${q.x},${q.y}`).join(" ");
 const up = (p: Pt, h: number): Pt => ({ x: p.x, y: p.y - h });
@@ -66,8 +67,9 @@ export function World() {
 
   // The default view fits the room; zoom steps are whole device pixels, so pixels stay square.
   const [size, setSize] = useState({ w: 1024, h: 768 });
-  const [zoomSet, setZoom] = useState<number | null>(null);
-  const [org, setOrg] = useState<Pt | null>(null);
+  const [zoomSet, setZoom] = useState<number | null>(looked[loc.id]?.zoom ?? null);
+  const [org, setOrg] = useState<Pt | null>(looked[loc.id]?.org ?? null);
+  useEffect(() => { looked[loc.id] = { zoom: zoomSet, org }; }, [loc.id, zoomSet, org]);
   const box = { x: iso(0, h).x + OUT_L.x, y: -WALL + OUT_L.y - 8, w: (w + h) * 32 - 2 * OUT_L.x, h: (w + h) * 16 + WALL - OUT_L.y + 8 };
   const fit = Math.max(1 / dpr(), Math.floor(Math.min(size.w * 0.94 / box.w, size.h * 0.94 / box.h) * dpr()) / dpr());
   const zoom = zoomSet ?? fit;
