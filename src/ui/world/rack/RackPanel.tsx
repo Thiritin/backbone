@@ -7,7 +7,7 @@ import { freeSlots, heightIn, mountFrom, portPeers } from "../../../sim/60-infra
 import { installCarried } from "../../../sim/90-actions/carry";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
-import { RackFront } from "../../art/RackFront";
+import { RackFront, shelfPitch } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { deviceLamps } from "../../apps/hw";
@@ -75,7 +75,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
           <button className="wr-btn" aria-pressed={!back} onClick={() => { setBack(false); setPort(null); }}>{t("locations-2.front")}</button>
           <button className="wr-btn" aria-pressed={back} onClick={() => setBack(true)}>{t("locations-2.back")}</button>
         </div>
-        <span className="wr-num">{used} / {units} U</span>
+        <span className="wr-num">{rack.model === "shelf" ? `${t("rack.shelf")}, ${used} / ${units}` : `${used} / ${units} U`}</span>
       </>}>
       <div className="wr-body">
         {back ? (
@@ -84,7 +84,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
               selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title} />
           </div>
         ) : (
-          <RackFrame units={units}>
+          <RackFrame units={rack.model === "shelf" ? (units * shelfPitch(FRONT_U)) / FRONT_U : units}>
             {(w, u) => (
               <RackFront units={units} shelf={rack.model === "shelf"} items={items} w={w} u={u} selected={dev?.id ?? null}
                 onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => menus.entries(d))(e); }} />

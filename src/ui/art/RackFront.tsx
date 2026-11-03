@@ -80,7 +80,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
   const slid = useRef(false);
   const pad = 30, fs = Math.max(7, u * 0.4), at = new Map<number, RackItem>();
   // A board is tall enough for a 2U device; a device takes one board whatever its height.
-  const pitch = shelf ? Math.round(u * 2.4) : u, span = (it: RackItem) => (shelf ? 1 : it.model.height);
+  const pitch = shelf ? shelfPitch(u) : u, span = (it: RackItem) => (shelf ? 1 : it.model.height);
   for (const it of items) for (let k = 0; k < span(it); k++) at.set(it.slot + k, it);
   const slides = (it: RackItem) => !!onMove && !back && !it.plugs?.some(Boolean) && it.model.height > 0;
   const fitsAt = (it: RackItem, slot: number) =>
@@ -382,6 +382,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
   );
 }
 
+export const shelfPitch = (u: number) => Math.round(u * 2.4);
 const BOARD = 4, UPRIGHT = "oklch(0.6 0.01 250)";
 
 // A shelf board, its top edge at y, running between the uprights.
