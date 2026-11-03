@@ -87,6 +87,7 @@ export default {
   "apps.monitoring.noSoftware": () => "Sem software instalado",
 
   "apps.hw.cores": (p) => `${p.n} ${plural(p.n, "núcleo", "núcleos")}`,
+  "apps.hw.coresThreads": (p) => `${p.cores}C/${p.threads}T`,
   "apps.hw.cpusUpTo": (p) => `CPUs até ${p.cores}`,
   "apps.hw.slot.bay": () => "Baia",
   "apps.hw.slot.dimm": () => "DIMM",

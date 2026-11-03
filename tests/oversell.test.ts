@@ -6,7 +6,8 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setOversell } from "../src/sim/90-actions/oversell";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { panelVm, readyGame } from "./fixtures";
+import { coreSpeed, installedCompute, installedThreads } from "../src/sim/60-infra/status";
+import { BASEMENT_SERVER, newGame, panelServer, panelVm, readyGame, withServer } from "./fixtures";
 
 function setup() {
   const s = readyGame(1);
@@ -35,10 +36,18 @@ describe("oversell", () => {
     expect(setOversell(s, id, -1).ok).toBe(false);
   });
 
+  it("caps a server's bookings against its threads and its contention against its compute", () => {
+    const s = withServer(newGame(1)), id = panelServer(s, BASEMENT_SERVER), c = s.clusters.find((x) => x.id === id)!;
+    const d = s.devices.find((x) => x.id === BASEMENT_SERVER)!, p = physicalOf(s, c);
+    expect(p).toMatchObject({ vcpu: installedThreads(d), compute: installedCompute(d) });
+    expect(p.vcpu).toBeGreaterThan(p.compute);
+    expect(physicalOf(s, c, true).compute).toBeCloseTo(installedCompute(d) * coreSpeed(d, s.hour), 9);
+  });
+
   it("slows from ratio 4 and floors at 0.85", () => {
     const { s, host, add } = setup();
     add("a.com"); const w = s.workloads.find((x) => x.clusterId === host().id)!;
-    const phys = physicalOf(s, host(), true).vcpu;
+    const phys = physicalOf(s, host(), true).compute;
     w.vcpu = phys * 4;
     expect(hostPerf(s, host())).toBe(1);
     w.vcpu = phys * 6;
