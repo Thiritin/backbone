@@ -11,7 +11,7 @@ Leaving the room is a trip, and a trip is something to watch. The sim already de
 3. **On the road.** The map, dark and gamey. The route from origin to destination is drawn along real roads and a car marker drives it. The game clock in the corner runs ahead, with the speed multiplier shown, so the player sees how much game time the trip eats. The sim ticks at that speed and everything that happens in the meantime happens: mail arrives, tickets come in, money moves. The animation lasts a fixed stretch of real time scaled gently with distance, roughly six to twelve seconds, and arrives exactly at the game time the sim chose. Any key or click skips to arrival.
 4. **Arrival.** Fade from black into the side-view scene at the destination: the car pulls up, the door opens, the avatar gets out and walks through the building door. Then the destination room in the world.
 
-The car is the vehicle for every trip in the first build. Trips that cross the sea or go to the other continent follow the same sequence with a plane in a later build.
+A trip into or out of a country across the sea (London, Dublin) flies, by the table in [Hardware, power and failures](../economy/hardware-power-and-failures.md). A flight follows the same sequence with a taxi in place of the company car in both street scenes: the taxi door shuts, the taxi drives off to the airport, the map shows a plane marker along the great-circle arc between the two places with a dashed trail behind it and a jet rumble under it, and at the far end the taxi pulls up at the destination. Trips to the other continent will fly the same way once those sites are on offer.
 
 ## The map
 
@@ -20,13 +20,14 @@ The car is the vehicle for every trip in the first build. Trips that cross the s
 - Routes between every pair of game cities are precomputed once by a script with an open routing engine and committed as a compact JSON of simplified polylines. The game reads the file and never routes at runtime. Pairs without a road route get a great-circle arc.
 - Every place has its own spot in its city: each datacenter, the basement on Kellerweg and each office building. Pins and routes use the place, never the city centre.
 - Each game city has its main streets from OpenStreetMap, motorways down to residential streets where the file size allows, one lazily loaded file per city. Whenever streets are on screen the map shows the "© OpenStreetMap contributors" line the licence asks for.
-- The picker map opens at street zoom over the current city with every place as a named pin. Zoomed out, each city shows one pin with the number of places; clicking it zooms into that city.
+- The picker map opens at street zoom over the current city with every place as a named pin. Hovering a pin shows the trip's hours and fee; a pin that would be a flight has a small plane before its name. Zoomed out, each city shows one pin with the number of places; clicking it zooms into that city.
 - A route is the street-level leg out of the origin place (its first 3 km toward the destination city), the simplified city-to-city route, and the leg into the destination place. Drives between two places of one city are stored whole.
+- A flight shows the whole arc from the start, with no street phases.
 - The drive opens at street level over the origin with the car on its street, slows through the first and last 3 km, eases out to the whole route over the motorways in between and back in to the destination's streets, arriving at the place. The car follows the polyline, rotating with the heading.
 
 ## Sounds
 
-Car door, engine start, engine running, engine stop. The game's sound layer synthesises its sounds in code; the travel sounds follow that unless a free pack fits better. Any pack used is recorded in `public/world/CREDITS.md`.
+Car door, engine start, engine running, engine stop; for a flight a lighter taxi door and a jet rumble loop. The game's sound layer synthesises its sounds in code; the travel sounds follow that unless a free pack fits better. Any pack used is recorded in `public/world/CREDITS.md`.
 
 ## Pieces
 

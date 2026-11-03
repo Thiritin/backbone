@@ -10,6 +10,8 @@ export interface Marker {
   id: string; lon: number; lat: number; label: string;
   kind: "basement" | "location" | "datacenter";
   selected?: boolean; alert?: boolean; provider?: string | null; count?: number;
+  // A plane glyph before the label; hint is the hover text.
+  plane?: boolean; hint?: string;
   // Shown only at street zoom, or only above it; always when unset.
   zoom?: "street" | "region";
 }
@@ -221,14 +223,15 @@ function Pin({ m, y, onClick }: { m: Marker; y: number; onClick: () => void }) {
   return (
     <g className={`wm-pin wm-${m.kind}${m.selected ? " sel" : ""}`} transform={`translate(0 ${y})`} role="button" tabIndex={0} aria-label={m.label} aria-pressed={m.selected}
       onClick={onClick} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}>
-      <title>{m.label}</title>
+      <title>{m.hint ?? m.label}</title>
       <circle r="10" />
       <g transform="translate(-7 -7)">
         {m.kind === "datacenter" && !(m.provider && hasMark(m.provider)) ? <Warehouse width={14} height={14} strokeWidth={1.75} /> : <Logo provider={m.kind === "basement" ? null : m.provider ?? null} size={14} />}
       </g>
       {(m.count ?? 0) > 1 && <g className="wm-badge" transform="translate(9 -8)"><circle r="6" /><text y="3">{m.count}</text></g>}
       {m.alert && <circle className="wm-alert" cx="7.5" cy="-7.5" r="3.5" />}
-      <text className="wm-plabel" x="15" y="4">{m.label}</text>
+      {m.plane && <path className="wm-plane" transform="translate(21 0)" d="M6 0L4-1H1L-2-5H-3.5L-1.5-1H-4.5L-6-2.5H-7L-6 0L-7 2.5H-6L-4.5 1H-1.5L-3.5 5H-2L1 1H4Z" />}
+      <text className="wm-plabel" x={m.plane ? 29 : 15} y="4">{m.label}</text>
     </g>
   );
 }

@@ -34,9 +34,9 @@ describe("post in the letterbox", () => {
 
   it("fetches only with the player in the basement, and takes every letter", () => {
     const s = withPost();
-    s.player = { at: "loc1", until: s.hour + 3, doing: "travel", carrying: null };
+    s.player = { at: "loc1", until: s.hour + 3, doing: "travel", by: "drive", carrying: null };
     expect(fetchPost(s)).toEqual({ ok: false, error: "error.notThere" });
-    s.player = { at: "loc1", until: 0, doing: "work", carrying: null };
+    s.player = { at: "loc1", until: 0, doing: "work", by: "drive", carrying: null };
     expect(fetchPost(s)).toEqual({ ok: true });
     expect(inLetterbox(s)).toEqual([]);
     expect(atDesk(s)).toHaveLength(2);
@@ -54,10 +54,10 @@ describe("post in the letterbox", () => {
     run(s, 4);
     expect(boxAt(s, office)).toHaveLength(1);
     expect(boxAt(s, "loc1")).toHaveLength(2);
-    s.player = { at: office, until: 0, doing: "work", carrying: null };
+    s.player = { at: office, until: 0, doing: "work", by: "drive", carrying: null };
     expect(fetchPost(s)).toEqual({ ok: true });
     expect(boxAt(s, "loc1")).toHaveLength(2);
-    s.player = { at: "loc1", until: 0, doing: "work", carrying: null };
+    s.player = { at: "loc1", until: 0, doing: "work", by: "drive", carrying: null };
     expect(fetchPost(s)).toEqual({ ok: true });
     expect(inLetterbox(s)).toEqual([]);
     expect(fetchPost(s)).toEqual({ ok: false, error: "error.notThere" });

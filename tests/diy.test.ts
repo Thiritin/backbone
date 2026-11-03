@@ -34,9 +34,9 @@ const rolls = (hit: boolean) => { for (let x = 1; ; x++) if (rand({ s: x }) < 0.
 describe("hand work options", () => {
   it("prices the drive by distance from where the player is", () => {
     const at = (dc: string) => { const { s, loc } = setup(dc); return drive(s, loc); };
-    expect(at("interaction-fra")).toEqual({ hours: 1, fee: 20 });
-    expect(at("interaction-muc")).toEqual({ hours: 4, fee: 90 });
-    expect(at("ironmolehill-ams")).toEqual({ hours: 9, fee: 250 });
+    expect(at("interaction-fra")).toEqual({ hours: 1, fee: 20, by: "drive" });
+    expect(at("interaction-muc")).toEqual({ hours: 4, fee: 90, by: "drive" });
+    expect(at("ironmolehill-ams")).toEqual({ hours: 9, fee: 250, by: "drive" });
     const { s, loc } = setup("interaction-fra");
     expect(handWork(s, loc)!.friend).toMatchObject({ wait: 1, fee: FRIEND_FEE, left: 3 });
     expect(handWork(s, loc)!.hands).toMatchObject({ perHour: 120, wait: 2 });
@@ -76,14 +76,14 @@ describe("driving there", () => {
     ok(travelTo(s, loc));
     expect(s.cash).toBe(cash - 90);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.drive", amount: -90 });
-    expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", carrying: null });
+    expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", by: "drive", carrying: null });
     expect(err(travelTo(s, "loc1"))).toBe("error.away");
     s.hour = hour + 4;
     expect(handWork(s, loc)!.here).toBe(true);
     ok(installPart(s, id, part, undefined, "self"));
     expect(s.cash).toBe(cash - 90);
     expect(dev(s, id).maintenance!.doneAt).toBe(s.hour + 0.5);
-    expect(s.player).toEqual({ at: loc, until: s.hour + 0.5, doing: "work", carrying: null });
+    expect(s.player).toEqual({ at: loc, until: s.hour + 0.5, doing: "work", by: "drive", carrying: null });
   });
 
   it("pulls a plug on site without a fee and refuses a drive without cash", () => {
@@ -121,7 +121,7 @@ describe("driving there", () => {
   it("starts an old save at home", () => {
     const old = JSON.parse(serialize(newGame(1)));
     delete old.player;
-    expect(deserialize(JSON.stringify(old)).player).toEqual({ at: "loc1", until: 0, doing: "work", carrying: null });
+    expect(deserialize(JSON.stringify(old)).player).toEqual({ at: "loc1", until: 0, doing: "work", by: "drive", carrying: null });
   });
 });
 

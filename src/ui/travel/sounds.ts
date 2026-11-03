@@ -38,6 +38,15 @@ export function carDoor() {
   rattle(a.c, a.o, a.t, 0.35, 900, 0.08);
 }
 
+// Lighter than the company car's door, with a click of the handle first.
+export function taxiDoor() {
+  const a = out();
+  if (!a) return;
+  tone(a.c, a.o, 1400, a.t, 0.03, 0.15);
+  tone(a.c, a.o, 95, a.t + 0.05, 0.14, 0.45);
+  rattle(a.c, a.o, a.t + 0.05, 0.25, 1200, 0.06);
+}
+
 export function engineStart() {
   const a = out();
   if (!a) return;
@@ -76,5 +85,35 @@ export function engineRun(): () => void {
     g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
     osc.stop(now + 0.45);
     lfo.stop(now + 0.45);
+  };
+}
+
+// Jet rumble while in the air: low-passed noise with a faint turbine whine; the returned function fades it out.
+export function jetRun(): () => void {
+  const a = out();
+  if (!a) return () => {};
+  const buf = a.c.createBuffer(1, a.c.sampleRate * 2, a.c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const noise = a.c.createBufferSource(), lp = a.c.createBiquadFilter(), whine = a.c.createOscillator(), wg = a.c.createGain(), g = a.c.createGain();
+  noise.buffer = buf;
+  noise.loop = true;
+  lp.type = "lowpass";
+  lp.frequency.value = 220;
+  whine.frequency.value = 2400;
+  wg.gain.value = 0.015;
+  g.gain.setValueAtTime(0.0001, a.t);
+  g.gain.exponentialRampToValueAtTime(0.35, a.t + 0.8);
+  noise.connect(lp).connect(g);
+  whine.connect(wg).connect(g);
+  g.connect(a.o);
+  noise.start(a.t);
+  whine.start(a.t);
+  return () => {
+    const now = a.c.currentTime;
+    g.gain.cancelScheduledValues(now);
+    g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+    noise.stop(now + 0.65);
+    whine.stop(now + 0.65);
   };
 }
