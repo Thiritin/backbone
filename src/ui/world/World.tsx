@@ -7,7 +7,8 @@ import { datacenterById } from "../../sim/20-world/datacenters";
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { sky, temperature, type Sky } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
-import { inbox } from "../../sim/40-support/letters";
+import { inLetterbox, postLocation } from "../../sim/40-support/letters";
+import { fetchPost } from "../../sim/90-actions/post";
 import { pickUp, putDown } from "../../sim/90-actions/carry";
 import { powerByLocation } from "../../sim/88-tick/tick";
 import { roomTemperature } from "../../sim/60-infra/sensors";
@@ -21,6 +22,7 @@ import { Sprite } from "./Sprite";
 import { useTrip } from "../travel/route";
 import { artOf, WALLS, type Use } from "./rooms";
 import { RackPanel } from "./rack/RackPanel";
+import { ScanPanel } from "./scan/ScanPanel";
 import "./world.css";
 
 const STEP_MS = 400, BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 1, ZOOM_MAX = 3;
@@ -40,7 +42,7 @@ export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
 
 export function World() {
-  const game = useStore((s) => s.game), setSurface = useStore((s) => s.setSurface), openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface), openApp = useStore((s) => s.openApp);
   const loc = roomOf(game), home = loc.space === "basement";
   const { w, h } = roomSize(loc), walls = WALLS[loc.space];
   const tiles = useMemo(() => rackTiles(loc, game.racks), [loc, game.racks]);
@@ -61,6 +63,7 @@ export function World() {
   const [hover, setHover] = useState<Pt | null>(null);
   const [lit, setLit] = useState<string | null>(null);
   const [rackOpen, setRackOpen] = useState<string | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
   const at = useRef<Pt>(start), path = useRef<Pt[]>([]), then = useRef<(() => void) | null>(null), held = useRef<string[]>([]), tap = useRef<string | null>(null);
   const svg = useRef<SVGSVGElement>(null);
   // Arriving by a trip puts the player inside the destination's door.
@@ -70,7 +73,7 @@ export function World() {
     shown.current = loc.id;
     const p = entryTile(loc);
     at.current = p; path.current = []; then.current = null;
-    setPos(p); setFacing("e"); setZoom(null); setOrg(null); setRackOpen(null);
+    setPos(p); setFacing("e"); setZoom(null); setOrg(null); setRackOpen(null); setScanOpen(false);
   }, [loc]);
 
   // The default view fits the room with its walls.
@@ -209,7 +212,7 @@ export function World() {
   };
 
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
-  const unread = inbox(game).filter((l) => !l.read).length;
+  const waiting = loc.id === postLocation(game) ? inLetterbox(game).length : 0;
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   const parcels = game.devices.filter((d) => d.door?.at === loc.id && !d.chassisId);
   const carried = game.devices.find((d) => d.id === game.player.carrying);
@@ -237,8 +240,8 @@ export function World() {
     network: () => openApp("Locations", { kind: "network", id: loc.id }),
     power: () => openApp("Locations", { kind: "location", id: loc.id }),
     door: () => openDoor(),
-    post: () => openApp("Post"),
-    scan: () => openApp("DocuWhere"),
+    post: () => { if (waiting) act(fetchPost); openApp("Post"); },
+    scan: () => setScanOpen(true),
     none: () => {},
   };
   const carriers = loc.dc ? carriersAt(datacenterById(loc.dc)).map((c) => c.name) : [];
@@ -248,8 +251,9 @@ export function World() {
     pdu: <text className="w-num w-num-tag" x="24" y="30">{`${n(power)}W`}</text>,
     shelf: Array.from({ length: Math.min(stored, CRATES.length) }, (_, i) => <Sprite key={i} name="crate" x={CRATES[i].x} y={CRATES[i].y} />),
     letterbox: <>
-      {Array.from({ length: Math.min(unread, 3) }, (_, i) => <rect key={i} className="w-letter" x={5 + i * 4} y={2 + i} width="10" height="9" rx="0.5" />)}
+      {Array.from({ length: Math.min(waiting, 3) }, (_, i) => <rect key={i} className="w-letter" x={5 + i * 4} y={2 + i} width="10" height="9" rx="0.5" />)}
       <rect className="w-slot" x="5" y="8" width="18" height="3" rx="1.5" />
+      {waiting > 0 && <text className="w-num w-num-tag" data-letterbox-count x="26" y="8">{n(waiting)}</text>}
     </>,
   };
   const beside: Record<string, (f: Fixture) => ReactNode> = {
@@ -324,6 +328,7 @@ export function World() {
         {back}
         {things.map((x) => x.node)}
       </svg>
+      {scanOpen && <ScanPanel onClose={() => setScanOpen(false)} />}
       {rackOpen && <RackPanel key={rackOpen} rackId={rackOpen} onClose={() => setRackOpen(null)} />}
     </div>
   );

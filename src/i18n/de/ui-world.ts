@@ -7,6 +7,8 @@ export default {
   "world.obj.pc": () => "Computer",
   "world.obj.desk": () => "Schreibtisch",
   "world.obj.scanner": () => "Scanner",
+  "world.scan.done": () => "Eingescannt",
+  "world.scan.none": () => "Keine Briefe zum Einscannen.",
   "world.obj.door": () => "Tür",
   "world.obj.letterbox": () => "Briefkasten",
   "world.obj.shelf": () => "Lagerregal",
