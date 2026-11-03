@@ -7,4 +7,8 @@ export default {
   "travel.road": () => "Unterwegs",
   "travel.osm": () => "© OpenStreetMap contributors",
   "travel.speed": (p) => `${p.n}×`,
+  "travel.air": () => "In der Luft",
+  "travel.drive": (p) => `Fahrt, ${p.hours} h, ${p.fee}`,
+  "travel.flight": (p) => `Flug, ${p.hours} h, ${p.fee}`,
+  "ledger.fly": (p) => `Flug nach ${p.place}`,
 } satisfies Dict;
