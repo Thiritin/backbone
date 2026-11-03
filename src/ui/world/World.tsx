@@ -40,7 +40,7 @@ export function World() {
     ...Object.values(tiles).map((p) => key(p.x, p.y)),
   ]), [tiles, home]);
 
-  const start = stood[loc.id] ?? (home ? { x: 1, y: 5 } : { x: Math.floor(w / 2), y: h - 2 });
+  const start = stood[loc.id] ?? (home ? { x: FIXTURES.pc.x, y: FIXTURES.pc.y + 1 } : { x: Math.floor(w / 2), y: h - 2 });
   const [pos, setPos] = useState<Pt>(start);
   const [facing, setFacing] = useState<Facing>("w");
   const [door, setDoor] = useState(false);

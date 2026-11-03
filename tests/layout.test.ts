@@ -36,6 +36,26 @@ describe("rack tiles", () => {
     expect(tiles).toEqual(rackTiles(basement(s), s.racks));
   });
 
+  it("moves a loaded rack off a tile that is no longer against a wall", () => {
+    const s = newGame(11);
+    twoRacks(s);
+    const loc = basement(s);
+    // The near-side column of the old four-wall layout.
+    s.racks[0].tile = { x: 11, y: 3, facing: "w" };
+    const loaded = deserialize(serialize(s));
+    const tiles = rackTiles(basement(loaded), loaded.racks);
+    const walls = new Set(wallTiles(loc).map(key));
+    expect(walls.has("11,3")).toBe(false);
+    for (const r of loaded.racks.filter((x) => x.locationId === loc.id)) expect(walls.has(key(tiles[r.id]))).toBe(true);
+    expect(new Set(Object.values(tiles).map(key)).size).toBe(Object.keys(tiles).length);
+  });
+
+  it("puts every wall tile on the two far sides", () => {
+    const loc = basement(newGame(12));
+    for (const t of wallTiles(loc)) expect(t.y === 0 ? t.facing === "s" : t.x === 0 && t.facing === "e").toBe(true);
+    for (const f of Object.values(FIXTURES)) expect(f.x === 0 || f.y === 0).toBe(true);
+  });
+
   it("places a rack on a free wall tile and refuses a taken or inner one", () => {
     const s = newGame(9);
     twoRacks(s);
