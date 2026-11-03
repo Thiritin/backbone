@@ -94,7 +94,7 @@ export function decideBreach(s: GameState, t: Ticket, decision: Decision, events
   const host = s.clusters.find((c) => c.id === b.hostId), r = hashRng(s.seed, b.hour, idOf(t), 98);
   if (decision === "pay") {
     s.cash = cents(s.cash - b.ransom);
-    s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.ransom", params: { host: host?.name ?? "" }, amount: -b.ransom }];
+    s.ledger = [...s.ledger, { hour: s.hour, category: "other", key: "ledger.ransom", params: { host: host?.name ?? "" }, amount: -b.ransom }];
   }
   const sold = decision === "refuse" || chance(r, PAID_SOLD);
   Object.assign(t, { status: "resolved", updatedAt: s.hour, work: null, unread: false, outcome: decision === "pay" ? "ransomPaid" : "ransomRefused" });
@@ -126,7 +126,7 @@ export function breachTick(s: GameState): SimEvent[] {
     if (!fine) continue;
     const host = s.clusters.find((c) => c.id === b.hostId)?.name ?? "";
     s.cash = cents(s.cash - fine);
-    s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.fine", params: { host }, amount: -fine }];
+    s.ledger = [...s.ledger, { hour: s.hour, category: "other", key: "ledger.fine", params: { host }, amount: -fine }];
     events.push({ app: "Security", key: "event.breachFine", params: { host, amount: fine } });
   }
   return events;

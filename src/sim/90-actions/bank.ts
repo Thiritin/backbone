@@ -217,9 +217,9 @@ export function switchBank(s: GameState, id: BankId, plan: string): ActionResult
     s.ledger = [...s.ledger, { hour: s.hour, category, key, params: { bank: from.name }, amount }];
   };
   const owed = Math.round(old.interest * 100) / 100, credit = Math.round((old.credit ?? 0) * 100) / 100;
-  if (owed > 0) settle("fees", "ledger.overdraftInterest", -owed);
+  if (owed > 0) settle("interest", "ledger.overdraftInterest", -owed);
   if (credit > 0) settle("interest", "ledger.depositInterest", credit);
-  if (credit < 0) settle("fees", "ledger.custodyFee", credit);
+  if (credit < 0) settle("bankfees", "ledger.custodyFee", credit);
   s.bank = {
     ...openAccount(s, id, plan as PlanId), outgoing: old.outgoing, payees: old.payees ?? [],
     previous: { id: old.id, number: old.number, plan: old.plan, at: s.hour, closed: false, standingOrders: old.standingOrders, mandates: old.mandates },

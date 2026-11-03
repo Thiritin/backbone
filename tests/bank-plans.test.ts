@@ -27,7 +27,7 @@ const account = (bank = "sparklasse", plan?: string, form = "sole"): GameState =
 const book = (s: GameState, n: number) => {
   for (let i = 0; i < n; i++) s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
 };
-const feesAt = (s: GameState, hour: number) => s.ledger.filter((e) => e.hour === hour && e.category === "fees").map((e) => [e.key, e.amount, e.params.bank]);
+const feesAt = (s: GameState, hour: number) => s.ledger.filter((e) => e.hour === hour && e.category === "bankfees").map((e) => [e.key, e.amount, e.params.bank]);
 
 describe("bank plans", () => {
   it("derives every plan from the bank's old fees", () => {
@@ -42,7 +42,7 @@ describe("bank plans", () => {
   it("charges a month's bookings above the plan's free ones", () => {
     const s = account("sparklasse", "business", "partnership");
     book(s, 30);
-    const n = s.ledger.filter((e) => e.hour < FEB && e.amount !== 0 && e.category !== "fees").length;
+    const n = s.ledger.filter((e) => e.hour < FEB && e.amount !== 0 && !["bankfees", "interest"].includes(e.category)).length;
     run(s, FEB + 1);
     expect(feesAt(s, FEB)).toEqual([["ledger.bookingFee", -Math.round((n - 20) * 30) / 100, "Sparklasse"], ["ledger.bankFee", -12, "Sparklasse"]]);
 

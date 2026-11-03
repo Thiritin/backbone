@@ -105,7 +105,7 @@ describe("billing cycles", () => {
     const cash = s.cash;
     refundUnused(s, s.customers.find((c) => c.id === req.customerId)!);
     expect(cash - s.cash).toBeCloseTo(5 * 730 * svc.price, 1);
-    expect(s.ledger.at(-1)).toMatchObject({ category: "billing", key: "ledger.refundUnused", params: { months: 5 } });
+    expect(s.ledger.at(-1)).toMatchObject({ category: "credit", key: "ledger.refundUnused", params: { months: 5 } });
   });
 
   it("move the advertised price level, and with it lead conversion, at once", () => {

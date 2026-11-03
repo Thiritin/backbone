@@ -83,7 +83,7 @@ export function fraudTick(s: GameState): SimEvent[] {
     if (paid <= 0) continue;
     const fee = s.chargebackStrikes >= 2 ? WATCHED_FEE : CHARGEBACK_FEE;
     book("payments", "ledger.chargeback", { customer: c.name }, -paid);
-    book("fees", "ledger.chargebackFee", { customer: c.name }, -fee);
+    book("bankfees", "ledger.chargebackFee", { customer: c.name }, -fee);
     events.push({ app: "Books", key: "event.chargeback", params: { customer: c.name, amount: cents(paid + fee) } });
   }
   if (booked.length) s.ledger = [...s.ledger, ...booked];
@@ -91,7 +91,7 @@ export function fraudTick(s: GameState): SimEvent[] {
   if (s.screenChecks > 0) {
     const fee = cents(s.screenChecks * screenFee(yearOf(s.hour)));
     s.cash = cents(s.cash - fee);
-    s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.screening", params: { count: s.screenChecks }, amount: -fee }];
+    s.ledger = [...s.ledger, { hour: s.hour, category: "bankfees", key: "ledger.screening", params: { count: s.screenChecks }, amount: -fee }];
     s.screenChecks = 0;
   }
   const since = s.hour - PROVIDER.days * DAY;
@@ -110,7 +110,7 @@ export function fraudTick(s: GameState): SimEvent[] {
     events.push({ app: "Books", key: "event.chargebackWarning", params: { count: backs } });
   } else {
     s.cash = cents(s.cash - PROVIDER.monthlyFee);
-    s.ledger = [...s.ledger, { hour: s.hour, category: "fees", key: "ledger.chargebackProgram", params: {}, amount: -PROVIDER.monthlyFee }];
+    s.ledger = [...s.ledger, { hour: s.hour, category: "bankfees", key: "ledger.chargebackProgram", params: {}, amount: -PROVIDER.monthlyFee }];
     events.push({ app: "Books", key: "event.chargebackFees", params: { fee: PROVIDER.monthlyFee, chargeback: WATCHED_FEE } });
   }
   return events;

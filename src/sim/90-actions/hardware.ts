@@ -546,7 +546,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   if (s.cash < trip.price) return fail("error.noCash");
   for (const d of units) { Object.assign(d!, { store: null, transitTo: to.id, arriveAt: s.hour + trip.hours }); carry(s, d!); }
   if (self) {
-    book(s, "maintenance", "ledger.drive", { place: to.name }, -trip.price);
+    book(s, "travel", "ledger.drive", { place: to.name }, -trip.price);
     s.player = { at: to.id, until: s.hour + trip.hours, doing: "travel" };
   } else book(s, "moving", "ledger.ship", { count: units.length, location: to.name }, -trip.price);
   return { ok: true, id: units[0]!.id };
@@ -600,7 +600,7 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
     const fare = driveTo(s, to.id);
     if (!fare) return fail("error.tooFar");
     job = { cost: fare.fee, wait: fare.hours + work, commit: () => {
-      book(s, "maintenance", "ledger.drive", { place: to.name }, -fare.fee);
+      book(s, "travel", "ledger.drive", { place: to.name }, -fare.fee);
       s.player = { at: to.id, until: s.hour + fare.hours + work, doing: "travel" };
       return fare.hours + work;
     } };

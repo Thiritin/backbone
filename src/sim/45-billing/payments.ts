@@ -77,7 +77,7 @@ export function takeBack(s: GameState, inv: Invoice, kind: Exclude<BackKind, "re
   };
   const lines: LedgerEntry[] = kind === "chargeback"
     ? [{ hour: s.hour, category: "payments", key: "ledger.chargeback", params: { customer: c?.name ?? "" }, amount: -total },
-      { hour: s.hour, category: "fees", key: "ledger.chargebackFee", params: { customer: c?.name ?? "" }, amount: -fee }]
+      { hour: s.hour, category: "bankfees", key: "ledger.chargebackFee", params: { customer: c?.name ?? "" }, amount: -fee }]
     : [{ hour: s.hour, category: "payments", key: `ledger.${kind}`, params: { invoice: inv.number }, amount: -cents(total + fee) }];
   s.transfers = [...s.transfers, tr];
   s.cash = cents(s.cash - total - fee);

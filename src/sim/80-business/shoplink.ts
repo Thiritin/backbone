@@ -69,7 +69,7 @@ export function payoutTick(s: GameState): void {
     s.transfers = [...s.transfers, tr];
     s.cash = cents(s.cash + amount);
     s.ledger = [...s.ledger, { hour: s.hour, category: "payments", key: "ledger.transfer", params: { from }, amount: gross },
-      ...(fees > 0 ? [{ hour: s.hour, category: "fees", key: "ledger.paymentFees", params: { from }, amount: -fees }] : [])];
+      ...(fees > 0 ? [{ hour: s.hour, category: "bankfees", key: "ledger.paymentFees", params: { from }, amount: -fees }] : [])];
   }
   if (due.size) resolvePayouts(s);
 }

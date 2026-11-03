@@ -264,7 +264,7 @@ function bookingsIn(s: GameState, month: number, since: number): number {
   for (let i = s.ledger.length - 1; i >= 0; i--) {
     const e = s.ledger[i], m = monthIndexOf(e.hour);
     if (m < month || e.hour < since) break;
-    if (m === month && e.amount !== 0 && e.category !== "fees" && e.category !== "interest") n++;
+    if (m === month && e.amount !== 0 && !["bankfees", "interest"].includes(e.category)) n++;
   }
   return n;
 }
@@ -291,7 +291,7 @@ export function bankTick(s: GameState): SimEvent[] {
   if (card && s.hour === card.readyAt) deliverMail(s, bank.name, "bankCard", { bank: bank.name, limit: card.limit, last4: cardDetails(s)!.number.slice(-4) }, { source: "bank" });
   if (card && s.hour >= card.feeAt) {
     const free = bank.card.freeFirstYear && card.feeAt === card.readyAt;
-    if (bank.card.yearly > 0 && !free && !planById(bank, b.plan)?.card) book("fees", "ledger.cardFee", { bank: bank.name }, -bank.card.yearly);
+    if (bank.card.yearly > 0 && !free && !planById(bank, b.plan)?.card) book("bankfees", "ledger.cardFee", { bank: bank.name }, -bank.card.yearly);
     next = { ...next, card: { ...card, feeAt: card.feeAt + HOURS_PER_YEAR } };
   }
   if (next.overdraftAt !== null && s.hour >= next.overdraftAt) {
@@ -317,20 +317,20 @@ export function bankTick(s: GameState): SimEvent[] {
     // Last month's bookings under the old plan, then the plan change and the new month's fee.
     const form = s.registration?.form ?? "sole", perBooking = bookingFee(bank, next.plan);
     const count = perBooking > 0 ? Math.max(0, bookingsIn(s, monthIndexOf(s.hour) - 1, next.opened) - planById(bank, next.plan)!.free) : 0;
-    if (count > 0) book("fees", "ledger.bookingFee", { bank: bank.name, count }, -cents(count * perBooking));
+    if (count > 0) book("bankfees", "ledger.bookingFee", { bank: bank.name, count }, -cents(count * perBooking));
     if (next.planNext) next = { ...next, plan: next.planNext, planNext: undefined };
     const fee = monthlyFee(bank, next.plan, form);
-    if (fee > 0) book("fees", "ledger.bankFee", { bank: bank.name }, -fee);
+    if (fee > 0) book("bankfees", "ledger.bankFee", { bank: bank.name }, -fee);
     const old = next.previous, oldBank = old && !old.closed && bankById(old.id);
     if (oldBank) {
       const last = monthlyFee(oldBank, old.plan, form);
-      if (last > 0) book("fees", "ledger.bankFee", { bank: oldBank.name }, -last);
+      if (last > 0) book("bankfees", "ledger.bankFee", { bank: oldBank.name }, -last);
       next = { ...next, previous: { ...old, closed: true } };
     }
-    if (next.interest >= 0.01) book("fees", "ledger.overdraftInterest", { bank: bank.name }, -cents(next.interest));
+    if (next.interest >= 0.01) book("interest", "ledger.overdraftInterest", { bank: bank.name }, -cents(next.interest));
     const credit = cents(next.credit ?? 0);
     if (credit > 0) book("interest", "ledger.depositInterest", { bank: bank.name }, credit);
-    if (credit < 0) book("fees", "ledger.custodyFee", { bank: bank.name }, credit);
+    if (credit < 0) book("bankfees", "ledger.custodyFee", { bank: bank.name }, credit);
     next = { ...next, interest: 0, credit: 0 };
   }
   s.bank = next;

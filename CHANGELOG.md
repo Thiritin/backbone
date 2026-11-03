@@ -20,6 +20,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
 
+## 2026-11-03
+
+- The bookkeeping categories now follow a standard chart of accounts: bank and payment charges, interest, fees and dues, travel, licences, domains, credits and other operating expenses each get their own line, and a trade registration no longer counts as a ransom.
+
 ## 2026-11-02
 
 - Goggle's address now opens a search engine in every year that searches the web like Yahoy, with Goggle Search, I'm Feeling Lucky and a link that makes it your browser's home page, while the Goggle Apps product site moved to goggle.com/a/ and Yahoy can win the home page back with its own link.
