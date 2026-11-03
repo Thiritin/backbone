@@ -38,6 +38,7 @@
 .wm-pin.sel > circle:first-of-type { fill: var(--accent); stroke: var(--win); }
 .wm-pin.sel { color: var(--accent-ink); }
 .wm-plabel { font-weight: 600; fill: var(--text); }
+.wm-plane { fill: var(--text); }
 .wm-badge circle { fill: var(--accent); stroke: var(--win); stroke-width: 1.5px; }
 .wm-badge text { font: 650 8.5px "JetBrains Mono", monospace; text-anchor: middle; fill: var(--accent-ink); }
 .wm-pin.sel .wm-badge circle { fill: var(--win); stroke: var(--accent); }

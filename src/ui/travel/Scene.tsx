@@ -5,7 +5,7 @@ import type { Location } from "../../sim/50-state";
 import { hasMark, Logo } from "../art/logos";
 import { useStore } from "../store";
 import { useTrip } from "./route";
-import { carDoor, engineStart, engineStop } from "./sounds";
+import { carDoor, engineStart, engineStop, taxiDoor } from "./sounds";
 
 // Any key or click calls fn once.
 export function useSkip(fn: () => void) {
@@ -43,8 +43,8 @@ function sky(h: number): [string, string, boolean] {
   return ["oklch(0.42 0.1 300)", "oklch(0.68 0.14 40)", false];
 }
 
-// Side view of the street: the building, the company car at the kerb and the avatar.
-export function Scene({ place, leaving }: { place: Location; leaving: boolean }) {
+// Side view of the street: the building, the company car or a taxi at the kerb and the avatar.
+export function Scene({ place, leaving, taxi = false }: { place: Location; leaving: boolean; taxi?: boolean }) {
   const e = useElapsed(), send = useTrip((s) => s.send), hour = useStore((s) => dateOf(s.game.hour).getUTCHours());
   const fired = useRef(new Set<string>());
   const end = () => {
@@ -52,9 +52,10 @@ export function Scene({ place, leaving }: { place: Location; leaving: boolean })
     send("done");
   };
   useSkip(end);
+  const doorSound = taxi ? taxiDoor : carDoor;
   const cues: [string, number, () => void][] = leaving
-    ? [["shut", 1650, carDoor], ["start", 1900, engineStart]]
-    : [["stop", 1500, engineStop], ["open", 1700, carDoor], ["shut", 2350, carDoor]];
+    ? [["shut", 1650, doorSound], ["start", 1900, engineStart]]
+    : [["stop", 1500, engineStop], ["open", 1700, doorSound], ["shut", 2350, doorSound]];
   for (const [id, at, play] of cues) if (e >= at && !fired.current.has(id)) { fired.current.add(id); play(); }
   useEffect(() => { if (e >= (leaving ? LEAVE_MS : ARRIVE_MS)) end(); });
 
@@ -102,7 +103,7 @@ export function Scene({ place, leaving }: { place: Location; leaving: boolean })
         <rect y={GROUND + 2} width="320" height={178 - GROUND} fill="oklch(0.3 0.008 255)" />
         {Array.from({ length: 8 }, (_, i) => <rect key={i} x={i * 44 + 8} y="164" width="18" height="2" fill="oklch(0.82 0.03 90)" />)}
         <Lamp x={168} on={lights} />
-        <Car x={Math.round(carX)} open={open} lights={lights} />
+        <Car x={Math.round(carX)} open={open} lights={lights} taxi={taxi} />
         {puffs.map((p, i) => { const s = 2 + Math.round(p * 4); return <rect key={i} x={Math.round(carX - 3 - p * 14 - s)} y={Math.round(GROUND - 6 - p * 10)} width={s} height={s} fill={`oklch(0.85 0.005 255 / ${1 - p})`} />; })}
         {me !== null && <Avatar x={Math.round(me)} step={walking ? Math.floor(e / 140) % 2 : 0} />}
       </svg>
@@ -219,18 +220,20 @@ function Wheel({ x }: { x: number }) {
   );
 }
 
-function Car({ x, open, lights }: { x: number; open: boolean; lights: boolean }) {
-  const body = "oklch(0.93 0.01 255)", shade = "oklch(0.8 0.01 255)", glass = "oklch(0.55 0.06 235)";
+// The taxi is ivory with a roof sign and no company stripe.
+function Car({ x, open, lights, taxi }: { x: number; open: boolean; lights: boolean; taxi: boolean }) {
+  const body = taxi ? "oklch(0.92 0.045 95)" : "oklch(0.93 0.01 255)", shade = taxi ? "oklch(0.8 0.05 90)" : "oklch(0.8 0.01 255)", glass = "oklch(0.55 0.06 235)";
   return (
     <g transform={`translate(${x} 0)`}>
       {lights && <polygon points={`44,131 76,128 76,${GROUND} 44,135`} fill="oklch(0.95 0.12 95 / 0.22)" />}
       <rect x="11" y="119" width="20" height="1" fill={INK} />
+      {taxi && <><rect x="16" y="115" width="10" height="4" fill="oklch(0.88 0.15 95)" stroke={INK} strokeWidth="0.5" /><rect x="18" y="116" width="6" height="1" fill={INK} /></>}
       <polygon points="7,128 11,120 31,120 37,128" fill={body} stroke={INK} />
       <polygon points="10,127 13,122 20,122 20,127" fill={glass} />
       <polygon points="22,127 22,122 30,122 34,127" fill={glass} />
       <rect x="0" y="127" width="44" height="12" fill={body} stroke={INK} />
       <rect x="1" y="134" width="42" height="4" fill={shade} />
-      <rect x="1" y="132" width="42" height="1" fill="oklch(0.53 0.19 262)" />
+      {!taxi && <rect x="1" y="132" width="42" height="1" fill="oklch(0.53 0.19 262)" />}
       <rect x="0" y="129" width="2" height="3" fill="oklch(0.55 0.2 25)" />
       <rect x="42" y="129" width="2" height="3" fill={lights ? "oklch(0.97 0.12 95)" : "oklch(0.85 0.04 90)"} />
       <rect x="25" y="130" width="3" height="1" fill={INK} />
