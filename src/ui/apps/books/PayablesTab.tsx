@@ -24,7 +24,7 @@ export function PayablesTab() {
   const game = useStore((s) => s.game);
   const openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
   const rows = [...game.payables].reverse();
-  // Books shows what the payments assigned to each invoice cover, as lexoffice does.
+  // Books shows what the payments assigned to each invoice cover, as Rexoffice does.
   const status = (p: Payable) => !unbooked(p) ? t("bank.pay.paid") : p.booked > 0 ? t("bank.pay.partly", { amount: euroCents(p.amount - p.booked) })
     : lateInBooks(game, p) ? t("bank.pay.overdue") : t("bank.pay.open");
   return (

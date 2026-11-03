@@ -24,7 +24,7 @@ import "./supplier-invoice.css";
 
 // Suppliers without a site of their own in the game.
 const OWN: Record<string, string> = {
-  "E.OFF": "#e3241b", Alternatte: "#c8102e", Pear: "#4a4a4f", VeriSigh: "#1f4e9c", Finanzamt: "#1c3f8c", Lexwear: "#c8102e",
+  "E.OFF": "#e3241b", Alternatte: "#c8102e", Pear: "#4a4a4f", VeriSigh: "#1f4e9c", Finanzamt: "#1c3f8c",
 };
 const LAYOUTS = ["classic", "modern", "letterhead"] as const;
 

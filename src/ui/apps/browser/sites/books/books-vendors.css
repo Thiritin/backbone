@@ -34,3 +34,6 @@
 .bv.flat .bv-nav { background: #fff; padding: 0 18px; }
 .bv.flat .bv-main { padding: 20px 32px; max-width: 760px; }
 .bv.flat .bv-buy { border: 0; border-radius: 999px; padding: 6px 18px; font-size: 13px; }
+.wz-logo, .sg-logo, .om-logo, .lo-logo, .gc-logo, .cx-logo, .sd-logo { display: inline-flex; align-items: center; }
+.wz-logo .logo-mark, .sg-logo .logo-mark, .om-logo .logo-mark, .lo-logo .logo-mark, .gc-logo .logo-mark, .cx-logo .logo-mark, .sd-logo .logo-mark { flex: none; margin-right: 0.25em; }
+

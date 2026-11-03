@@ -10,13 +10,13 @@ const page = (month: string, path = "/") => {
   return renderToString(<SagaSite game={s} path={path} go={() => {}} />);
 };
 
-describe("Saga site", () => {
+describe("Thyme site", () => {
   it("lists the editions as plain bullets until 2009 and compares them in a table from 2010", () => {
     const early = page("2009-11");
     expect(early).toContain("sg-classic");
     expect(early).toContain("<li>");
     expect(early).not.toContain("bv-table");
-    expect(early).toContain("<h2>Saga Office Line Plus</h2>");
+    expect(early).toContain("<h2>Thyme 50 Office Line Plus</h2>");
     expect(early).not.toContain("Office Line Office Line");
     const late = page("2010-02");
     expect(late).toContain("sg-modern");

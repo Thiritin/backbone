@@ -1,4 +1,5 @@
 import type { CSSProperties, MouseEvent } from "react";
+import { BrandLogo } from "../../../../art/logos";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { booksVendor } from "../../../../../sim/10-catalog/bookkeeping";
@@ -19,7 +20,7 @@ export function SagaSite({ game, path, go }: SiteProps) {
     <div className={`sg sg-${look}`} style={BRAND}>
       <div className="sg-page">
         <header className="sg-head">
-          <span className="sg-logo">saga</span>
+          <span className="sg-logo"><BrandLogo brand="Thyme" size={34} />thyme</span>
           <span className="sg-tag">{t("books-vendors.about.saga")}</span>
         </header>
         <nav className="sg-nav">

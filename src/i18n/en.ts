@@ -262,7 +262,7 @@ export const en: Record<string, (p: Params) => string> = {
   "event.collected.title": () => "Sent to collections",
   "event.collected.text": (p) => `Invoice ${p.invoice} of ${p.customer} went to collections.`,
   "event.invoices.title": () => "Invoice drafts",
-  "event.invoices.text": (p) => `Lexwear created ${p.count} ${Number(p.count) === 1 ? "invoice draft" : "invoice drafts"} for ${euroCents(Number(p.total))}.`,
+  "event.invoices.text": (p) => `Taxware created ${p.count} ${Number(p.count) === 1 ? "invoice draft" : "invoice drafts"} for ${euroCents(Number(p.total))}.`,
   "event.loanMissed.title": () => "Repayment missed",
   "event.loanMissed.text": (p) => `The instalment on the ${euro(Number(p.amount))} loan was not paid, and the bank charged a ${euro(Number(p.fee))} fee.`,
   "event.loanCalled.title": () => "Loan called in",

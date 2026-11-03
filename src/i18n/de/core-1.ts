@@ -196,7 +196,7 @@ export default {
   "event.collected.title": () => "An Inkasso übergeben",
   "event.collected.text": (p) => `Rechnung ${p.invoice} von ${p.customer} ging ans Inkasso.`,
   "event.invoices.title": () => "Rechnungsentwürfe",
-  "event.invoices.text": (p) => `Lexwear hat ${plural(p.count, "Rechnungsentwurf", "Rechnungsentwürfe")} über ${euroCents(Number(p.total))} erstellt.`,
+  "event.invoices.text": (p) => `Taxware hat ${plural(p.count, "Rechnungsentwurf", "Rechnungsentwürfe")} über ${euroCents(Number(p.total))} erstellt.`,
   "event.loanMissed.title": () => "Rate nicht gezahlt",
   "event.loanMissed.text": (p) => `Die Rate für den Kredit über ${euro(Number(p.amount))} wurde nicht gezahlt, und die Bank hat ${euro(Number(p.fee))} Gebühr berechnet.`,
   "event.loanCalled.title": () => "Kredit gekündigt",

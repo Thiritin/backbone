@@ -341,7 +341,7 @@ function chase(s: GameState, inv: Invoice, events: SimEvent[]): void {
   const i = autoStep(s, inv);
   if (i !== null) {
     sendStep(s, inv, i);
-    automated(s, inv, STEPS[i].key, auto ? "Automation" : "Lexwear");
+    automated(s, inv, STEPS[i].key, auto ? "Automation" : "Taxware");
   }
   if (inv.status === "writtenOff") {
     if (c) events.push({ app: "Books", key: "event.collected", params: { customer: c.name, invoice: inv.number } });

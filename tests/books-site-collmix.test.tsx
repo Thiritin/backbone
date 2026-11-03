@@ -10,7 +10,7 @@ const page = (ym: string, path = "/") => {
   return renderToString(<CollmixSite game={s} path={path} go={() => {}} />);
 };
 
-describe("Collmix site", () => {
+describe("Kontomix site", () => {
   it("lists the editions as a plain list until 2011", () => {
     const html = page("2011-12");
     expect(html).toContain("cx-plain");
@@ -27,6 +27,6 @@ describe("Collmix site", () => {
   it("shows only the edition its path names", () => {
     const html = page("2008-05", "/edition/plus");
     expect(html.match(/class="bv-edition"/g)).toHaveLength(1);
-    expect(html).toContain("<h2>Collmix plus</h2>");
+    expect(html).toContain("<h2>Kontomix plus</h2>");
   });
 });

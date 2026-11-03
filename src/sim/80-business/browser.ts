@@ -37,7 +37,7 @@ import { t } from "../../i18n/en";
 import { bankById, BANKS, type BankId } from "../10-catalog/banks";
 import { CHANNELS, type Channel } from "../10-catalog/used";
 import { BOOKS_VENDORS, type BooksVendorId } from "../10-catalog/bookkeeping";
-import { booksHost, LEXWEAR_HOST } from "./bookkeeping";
+import { booksHost, LEXWEAR_HOST, oldBooksHost } from "./bookkeeping";
 import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { shopHost } from "./shoplink";
 import { HOSTTOAST_HOST } from "../10-catalog/hosttoast";
@@ -283,7 +283,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (named(OFFICE_HOST)) return out({ kind: "office" });
   if (named(DOHLE_HOST)) return out({ kind: "dohle" });
   if (named(WIKI_HOST)) return out({ kind: "wiki" });
-  if (named(LEXWEAR_HOST)) return out({ kind: "lexwear" });
+  if (named(LEXWEAR_HOST) || named("lexwear.de")) return out({ kind: "lexwear" });
   const market = CHANNELS.find((c) => named(c.host));
   if (market) return out({ kind: "market", channel: market.id });
   // Every shop system has its vendor's site, from the year it is sold.
@@ -299,7 +299,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (sw) return out({ kind: "software", id: sw.id });
   const program = PROGRAMS.find((p) => named(p.host) && p.from <= year);
   if (program) return out({ kind: "program", id: program.id });
-  const books = BOOKS_VENDORS.find((v) => v.id !== "lexwear" && named(booksHost(v)) && v.from <= year);
+  const books = BOOKS_VENDORS.find((v) => v.id !== "lexwear" && (named(booksHost(v)) || named(oldBooksHost(v))) && v.from <= year);
   if (books) return out({ kind: "books", id: books.id });
   const os = SERVER_OS.find((x) => named(x.site.host));
   if (os) return out({ kind: "os", id: os.id });

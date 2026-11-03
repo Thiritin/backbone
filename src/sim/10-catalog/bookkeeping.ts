@@ -7,7 +7,7 @@ export type Layout = "tree" | "icons" | "menus" | "tabs" | "web" | "flat" | "gtk
 
 export interface Edition {
   id: string; name: string; price: number;
-  // Lexwear's yearly update fee for the edition.
+  // Taxware's yearly update fee for the edition.
   update: number;
   features: Feature[];
   // Users the licence includes, the player among them (Infinity for a network version), and the price of one more seat (0: none sold).
@@ -39,17 +39,17 @@ const ed = (id: string, name: string, price: number, features: Feature[], more: 
   ({ id, name, price, update: 0, features, users: 1, seat: 0, ...more });
 
 export const BOOKS_VENDORS: BooksVendor[] = [
-  { id: "lexwear", name: "Lexwear", program: "Lexwear Office", from: 2005, deployment: "desktop", setupMb: 180, layout: "tree",
+  { id: "lexwear", name: "Taxware", program: "Taxware Office", from: 2005, deployment: "desktop", setupMb: 180, layout: "tree",
     editions: [ed("buchhalter", "buchhalter", 249, ["quotes", "monthly-run", "match-by-reference", "reports"], { update: 99 }),
       ed("financial-office", "financial office", 499, ["quotes", "monthly-run", "match-by-reference", "reports", "tax", "statistics"], { update: 149 }),
       ed("financial-office-pro", "financial office pro", 899, ["quotes", "monthly-run", "match-by-reference", "reports", "tax", "statistics", "dunning", "helpdesk-link"], { update: 199, users: NETWORK })],
     addons: { hbci: 99 },
     skin: { bar: "#d4d0c8", ink: "#1b1b1b", accent: "#0a246a" } },
-  { id: "wizo", name: "WIZO", program: "WIZO Mein Büro", from: 2005, deployment: "desktop", setupMb: 120, layout: "icons",
+  { id: "wizo", name: "WARUM", program: "WARUM Mein Büro", from: 2005, deployment: "desktop", setupMb: 120, layout: "icons",
     editions: [ed("s", "S", 149, ["quotes", "monthly-run"]), ed("m", "M", 249, ["quotes", "monthly-run", "match-by-reference", "hbci", "tax"]),
       ed("l", "L", 399, ["quotes", "monthly-run", "match-by-reference", "hbci", "tax", "reports", "statistics", "helpdesk-link"], { seat: 79 })],
     skin: { bar: "#1f5fa8", ink: "#ffffff", accent: "#1f5fa8" } },
-  { id: "saga", name: "Saga", program: "Saga Office Line", from: 2005, deployment: "desktop", setupMb: 350, layout: "menus",
+  { id: "saga", name: "Thyme", program: "Thyme 50", from: 2005, deployment: "desktop", setupMb: 350, layout: "menus",
     editions: [ed("office-line", "Office Line", 599, ALL.filter((f) => f !== "dunning")), ed("office-line-plus", "Office Line Plus", 999, ALL, { users: NETWORK })],
     skin: { bar: "#00704a", ink: "#ffffff", accent: "#00704a" } },
   { id: "orgamin", name: "orgaMIN", program: "orgaMIN", from: 2005, deployment: "desktop", setupMb: 90, layout: "tabs",
@@ -57,15 +57,15 @@ export const BOOKS_VENDORS: BooksVendor[] = [
       ed("professional", "Professional", 349, ["quotes", "helpdesk-link", "monthly-run", "match-by-reference", "hbci", "reports"]),
       ed("enterprise", "Enterprise", 549, ["quotes", "helpdesk-link", "monthly-run", "match-by-reference", "hbci", "reports", "tax", "statistics", "dunning"], { seat: 99 })],
     skin: { bar: "#e8731c", ink: "#ffffff", accent: "#c25a0c" } },
-  { id: "collmix", name: "Collmix", program: "Collmix", from: 2005, deployment: "browser", layout: "web",
+  { id: "collmix", name: "Kontomix", program: "Kontomix", from: 2005, deployment: "browser", layout: "web",
     editions: [ed("basic", "basic", 6, ["quotes", "hbci"]), ed("plus", "plus", 12, ["quotes", "hbci", "tax", "reports", "statistics", "dunning"], { users: 3 })],
     skin: { bar: "#3b4a5a", ink: "#ffffff", accent: "#2d6cdf" } },
-  { id: "sevdeck", name: "sevDeck", program: "sevDeck", from: 2013, deployment: "browser", layout: "flat",
+  { id: "sevdeck", name: "EightDesk", program: "EightDesk", from: 2013, deployment: "browser", layout: "flat",
     editions: [ed("rechnung", "Rechnung", 9, ["quotes", "monthly-run", "match-by-reference"], { seat: 8 }),
       ed("buchhaltung", "Buchhaltung", 19, ["quotes", "monthly-run", "match-by-reference", "hbci", "reports"], { seat: 8 }),
       ed("warenwirtschaft", "Warenwirtschaft", 39, ["quotes", "monthly-run", "match-by-reference", "hbci", "reports", "tax", "statistics", "helpdesk-link"], { seat: 8 })],
     skin: { bar: "#0f8b8d", ink: "#ffffff", accent: "#0f8b8d" } },
-  { id: "lexoffize", name: "lexoffize", program: "lexoffize", from: 2014, deployment: "browser", layout: "flat",
+  { id: "lexoffize", name: "Rexoffice", program: "Rexoffice", from: 2014, deployment: "browser", layout: "flat",
     editions: [ed("s", "S", 14, ["quotes", "monthly-run", "match-by-reference", "hbci", "tax"], { seat: 6 }),
       ed("m", "M", 24, ["quotes", "monthly-run", "match-by-reference", "hbci", "tax", "reports", "statistics"], { seat: 6 }),
       ed("l", "L", 44, ["quotes", "monthly-run", "match-by-reference", "hbci", "tax", "reports", "statistics", "dunning"], { seat: 6 })],

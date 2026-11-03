@@ -196,7 +196,7 @@ export default {
   "event.collected.title": () => "Enviada a cobro de deudas",
   "event.collected.text": (p) => `La factura ${p.invoice} de ${p.customer} pasó a cobro de deudas.`,
   "event.invoices.title": () => "Borradores de facturas",
-  "event.invoices.text": (p) => `Lexwear ha creado ${plural(p.count, "borrador de factura", "borradores de facturas")} por ${euroCents(Number(p.total))}.`,
+  "event.invoices.text": (p) => `Taxware ha creado ${plural(p.count, "borrador de factura", "borradores de facturas")} por ${euroCents(Number(p.total))}.`,
   "event.loanMissed.title": () => "Cuota impagada",
   "event.loanMissed.text": (p) => `No se pagó la cuota del préstamo de ${euro(Number(p.amount))}, y el banco cobró ${euro(Number(p.fee))} de comisión.`,
   "event.loanCalled.title": () => "Préstamo reclamado",

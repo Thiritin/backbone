@@ -3,7 +3,7 @@ import { t } from "../../../i18n/en";
 import { registerLicence } from "../../../sim/90-actions/licences";
 import { useStore } from "../../store";
 
-// Lexwear Office's Register dialog: a licence key from Lexwear's email turns its module on.
+// Taxware Office's Register dialog: a licence key from Taxware's email turns its module on.
 export function Register({ onClose }: { onClose: () => void }) {
   const act = useStore((s) => s.act);
   const [key, setKey] = useState("");

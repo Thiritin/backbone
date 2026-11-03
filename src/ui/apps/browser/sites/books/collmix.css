@@ -1,8 +1,8 @@
-/* Collmix: a sparse web-app page in Verdana, slate and link blue; from 2012 a slate band and a price table. */
+/* Kontomix: a sparse web-app page in Verdana, slate and link blue; from 2012 a slate band and a price table. */
 .cx { min-height: 100%; background: #fff; color: #222; font: 11px/1.5 Verdana, Geneva, sans-serif; }
 .cx a { color: #2d6cdf; }
 .cx-page { width: 740px; max-width: 100%; margin: 0 auto; }
-.cx-head { display: flex; align-items: baseline; gap: 12px; padding: 14px 8px 8px; }
+.cx-masthead { display: flex; align-items: baseline; gap: 12px; padding: 14px 8px 8px; }
 .cx-logo { font: 26px/1 Arial, Helvetica, sans-serif; letter-spacing: -1px; color: #2d6cdf; }
 .cx-logo b { color: #3b4a5a; }
 .cx-tag { color: #777; }
@@ -22,7 +22,7 @@
 /* 2012 on: slate header band, tabs in it, editions side by side. */
 .cx-table { background: #eceff2; font-size: 12px; }
 .cx-table .cx-page { background: #fff; border: 1px solid #c8cfd6; border-top: 0; }
-.cx-table .cx-head { background: #3b4a5a; padding: 16px 20px 10px; }
+.cx-table .cx-masthead { background: #3b4a5a; padding: 16px 20px 10px; }
 .cx-table .cx-logo, .cx-table .cx-logo b { color: #fff; }
 .cx-table .cx-logo b { opacity: 0.75; }
 .cx-table .cx-tag { color: #c8d2dc; }

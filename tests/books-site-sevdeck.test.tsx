@@ -10,7 +10,7 @@ const page = (month: string, path = "/") => {
   return renderToString(<SevdeckSite game={s} path={path} go={() => {}} />);
 };
 
-describe("sevDeck site", () => {
+describe("EightDesk site", () => {
   it("shows a pricing table from 2013 and rebrands in 2020", () => {
     const early = page("2013-06");
     expect(early).toContain("bv-table");

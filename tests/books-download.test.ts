@@ -60,7 +60,7 @@ describe("bookkeeping programs from the vendor's site", () => {
     expect(buyBooks(s, "lexoffize")).toEqual({ ok: true });
     expect(s.books).toMatchObject({ vendor: "lexoffize", download: null });
     expect(s.installed).toContain("Books");
-    expect(booksAppUrl(currentVendor(s)!)).toBe("www.lexoffize.de/app");
+    expect(booksAppUrl(currentVendor(s)!)).toBe("www.rexoffice.de/app");
   });
 
   it("a running program stays until the new one is installed", () => {

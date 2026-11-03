@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 import type { Resolved } from "../../../sim/80-business/browser";
 import type { GameState } from "../../../sim/50-state";
 import { customerSite } from "../../../sim/80-business/website";
-import { Logo } from "../../art/logos";
+import { BrandLogo, Logo } from "../../art/logos";
 import { familyOf } from "../../../sim/60-infra/vulns";
 import { consoleLook } from "../../../sim/80-business/consoles";
 import { BRAND } from "../products/parts";
@@ -47,11 +47,8 @@ export function Favicon({ game, r }: { game: GameState; r: Resolved }) {
       );
     }
     case "office": return <Tile fill="#1c3f8c"><path d="M8 3.2l4.6 2.3H3.4zM4.4 6.6h1.4v4.2H4.4zM7.3 6.6h1.4v4.2H7.3zM10.2 6.6h1.4v4.2h-1.4zM3.4 11.6h9.2v1.3H3.4z" fill="white" /></Tile>;
-    case "lexwear": return <Tile fill="#c8102e"><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">L</text></Tile>;
-    case "books": {
-      const v = booksVendor(p.id)!;
-      return <Tile fill={v.skin.accent}><text x="8" y="11.8" textAnchor="middle" fontSize="10" fontWeight="800" fill="white" fontFamily="Verdana, sans-serif">{v.name[0].toUpperCase()}</text></Tile>;
-    }
+    case "lexwear": return <BrandLogo brand="Taxware" size={16} />;
+    case "books": return <BrandLogo brand={booksVendor(p.id)!.name} size={16} />;
     case "mailProvider": return p.id.startsWith("lookout") ? <span className="fav fav-mark" style={{ "--tile": "#dc3c00" } as CSSProperties}><LookoutMark /></span>
       : p.id === "ionose" || p.id === "ionose-owa" ? <span className="fav fav-mark" style={{ "--tile": "#003d8f" } as CSSProperties}><IonoseMark /></span>
       : p.id === "goggle" ? <span className="fav fav-mark" style={{ "--tile": "#fff" } as CSSProperties}><GoggleMark /></span>

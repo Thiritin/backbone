@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { BrandLogo } from "../../../../art/logos";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { booksVendor } from "../../../../../sim/10-catalog/bookkeeping";
@@ -16,7 +17,7 @@ export function SevdeckSite({ game, path, go }: SiteProps) {
   return (
     <div className={`sd ${eraOf([...ERAS], year)}`}>
       <header className="sd-head">
-        <span className="sd-logo">sev<b>Deck</b></span>
+        <span className="sd-logo"><BrandLogo brand="EightDesk" size={26} />eight<b>Desk</b></span>
         <nav className="sd-nav">
           <a href="#home" aria-current={one ? undefined : "page"} onClick={link(booksUrl(v))}>{t("books-editions.nav")}</a>
         </nav>

@@ -10,7 +10,7 @@ const page = (ym: string, path = "/") => {
   return renderToString(<WizoSite game={s} path={path} go={() => {}} />).replaceAll("<!-- -->", "");
 };
 
-describe("WIZO site", () => {
+describe("WARUM site", () => {
   it("lists the editions as a plain bulleted list until 2010", () => {
     const html = page("2010-06");
     expect(html).toContain("wz-classic");
@@ -26,7 +26,7 @@ describe("WIZO site", () => {
 
   it("shows only the edition its path names", () => {
     const html = page("2006-03", "/edition/l");
-    expect(html).toContain("WIZO Mein Büro L");
-    expect(html).not.toContain("WIZO Mein Büro S");
+    expect(html).toContain("WARUM Mein Büro L");
+    expect(html).not.toContain("WARUM Mein Büro S");
   });
 });

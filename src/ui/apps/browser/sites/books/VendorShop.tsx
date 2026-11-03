@@ -13,11 +13,11 @@ export interface SiteProps { game: GameState; path: string; go: (url: string) =>
 // brand, ink, page and font give the vendor's look; flat drops the 2005 bevels for the cloud vendors.
 export interface Look { brand: string; ink: string; page: string; font: string; flat?: boolean }
 
-// The edition a site's path names, as in www.wizo.de/edition/l.
+// The edition a site's path names, as in www.warum.de/edition/l.
 export const editionIn = (path: string): string | undefined => /^\/edition\/([\w-]+)/.exec(path)?.[1];
 
 const amount = (v: BooksVendor, n: number) => (v.deployment === "browser" ? t("books-editions.perMonth", { price: euro(n) }) : euro(n));
-// The program and edition name without the words they share, as in Saga Office Line + Office Line Plus.
+// The program and edition name without the words they share.
 const titleOf = (v: BooksVendor, e: Edition) => {
   const p = v.program, i = [...p].findIndex((_, i) => (i === 0 || p[i - 1] === " ") && e.name.startsWith(p.slice(i)));
   return i < 0 ? `${p} ${e.name}` : p.slice(0, i) + e.name;
