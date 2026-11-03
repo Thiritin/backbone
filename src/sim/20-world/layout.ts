@@ -218,6 +218,8 @@ function officeRoom(plan: OfficePlan): OfficeRoom {
   }
   for (const { x, ox } of bs) {
     const id = x.id, refit = x.refitUntil > plan.hour;
+    // The office line's wall socket sits in the floor's first server room or closet.
+    if (!f.jack && (x.fit === "servers" || x.fit === "closet")) f.jack = { x: ox + 4, y: 0, kind: "jack" };
     f[`tube${id}`] = { x: ox + 2, y: 3, w: 2, kind: "tube" };
     if (x.fit === "servers") {
       // The glass partition runs one piece per row so it sorts between the blocks; its door sits on the walk row.

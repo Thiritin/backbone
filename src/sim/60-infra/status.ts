@@ -61,7 +61,7 @@ export const jacked = (s: GameState, gatewayId: string): boolean => {
 const climbing = new Set<string>();
 function lineUp(s: GameState, gatewayId: string): boolean {
   const d = s.devices.find((x) => x.id === gatewayId)!;
-  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
+  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && lineLive(s, locationOf(s, d)?.id));
   return sweepMemo(s, `up:${gatewayId}`, () => {
     const peer = peerOf(s, { device: gatewayId, port: uplinkPort(d) });
     if (!peer || isOobPort(peer.port) || climbing.has(gatewayId)) return false;
@@ -181,14 +181,19 @@ function cabled(s: GameState, from: string, goal: (id: string) => boolean, live:
 }
 
 // Whether a hop of a route is cut: a stopped device, or a basement without an internet line.
-export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && (!s.homeLine.id || lineCut(s)));
+export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && !lineLive(s, h.location));
+// An office runs on its own business line, the basement on the home line.
+function lineLive(s: GameState, locationId: string | undefined): boolean {
+  const loc = s.locations.find((l) => l.id === locationId);
+  return loc?.space === "office" ? !!loc.line : !!s.homeLine.id && !lineCut(s);
+}
 
 // The hops from a device out to its location's edge: the gateway, then the carrier line (basement) or the datacenter's uplink.
 function toEdge(s: GameState, id: string, loc: Location, live: boolean, exempt?: string): Hop[] | null {
   const ids = cabled(s, id, (x) => kindOf(s, x) === "gateway", live, exempt);
   if (!ids) return null;
   const hops = ids.map((x) => hopOf(s, x));
-  if (!loc.dc) return [...hops, { kind: "line", name: homeLineById(s.homeLine.id).isp || "line", location: loc.id }];
+  if (!loc.dc) return [...hops, { kind: "line", name: (loc.space === "office" ? loc.line?.name : homeLineById(s.homeLine.id).isp) || "line", location: loc.id }];
   const uplink: Hop = { kind: "uplink", name: datacenterById(loc.dc).name, location: loc.id };
   if (hops[hops.length - 1].kind === "uplink") hops[hops.length - 1] = { ...hops[hops.length - 1], ...uplink };
   else hops.push(uplink);

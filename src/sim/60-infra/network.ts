@@ -135,6 +135,7 @@ export function peersVia(s: GameState, exchange: string): Peer[] {
 interface Exit { id: string; tier: number; cap: number; used: number; share: number }
 
 export function exitsOf(s: GameState, loc: Location): Exit[] {
+  if (loc.space === "office") return [{ id: "home", tier: 2, cap: Math.min(loc.line?.mbit ?? 0, routerMbps(s, loc)), used: 0, share: 1 }];
   if (!loc.dc) return [{ id: "home", tier: 2, cap: Math.min(homeLineById(s.homeLine.id).up * lineFactor(s), routerMbps(s, loc)), used: 0, share: 1 }];
   const exits: Exit[] = [];
   const seen = new Set<string>();
