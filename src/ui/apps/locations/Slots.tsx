@@ -44,7 +44,7 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
   const [adding, setAdding] = useState<string | null>(null);
   const model = modelById(device.model);
   const zone = device.rackId ? locationOf(game, device) : game.locations.find((l) => l.id === device.store);
-  const held = device.maintenance ? t("locations-2.workUnderWay") : device.rackId || device.store ? null : t(device.door ? "locations-2.atDoor" : device.transitTo ? "locations-2.inTransit" : "world.inHands");
+  const held = device.maintenance ? t("locations-2.workUnderWay") : device.rackId || device.store ? null : t("locations-2.inTransit");
   const spares = (kinds: ComponentKind[]) => game.devices.filter((d) => d.store === zone?.id && kinds.some((k) => d.model === `part-${k}`));
   const swapSet = (c: Component) => (zone ? replaceSpares(game, device, c, zone.id).length : 0), spareFor = (c: Component) => swapSet(c) > 0;
   return (

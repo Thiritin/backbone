@@ -1,4 +1,4 @@
-import { Footprints, Hourglass, Map as MapIcon, Plus } from "lucide-react";
+import { Hourglass, Map as MapIcon, Plus } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
@@ -40,7 +40,7 @@ export function LocationsApp() {
   const rack = loc && game.racks.find((r) => r.id === rackId && r.locationId === loc.id);
   useHum(game, loc, rack);
   const tab: Tab = picked === "line" && loc?.space !== "basement" ? "floor" : picked;
-  const setOpenLoc = useStore((s) => s.setOpenLoc), setSurface = useStore((s) => s.setSurface);
+  const setOpenLoc = useStore((s) => s.setOpenLoc);
   const go = (v: string | null, r: string | null = null) => {
     setView(v); setRackId(r); setDeviceId(null);
     if (r) setTab("floor");
@@ -53,10 +53,6 @@ export function LocationsApp() {
       if (home) { go(home.id); setTab("line"); }
       return;
     }
-    const k = f.kind === "rack" && game.racks.find((x) => x.id === f.id);
-    if (k) return void go(k.locationId, k.id);
-    if (f.kind === "storage") { go(f.id); setTab("storage"); return; }
-    if (f.kind === "network") { go(f.id); setTab("network"); return; }
     if (f.kind !== "device" && f.kind !== "location") return;
     const d = f.kind === "device" ? game.devices.find((x) => x.id === f.id) : undefined;
     const l = d?.store ? game.locations.find((x) => x.id === d.store) : d ? locationOf(game, d) : game.locations.find((x) => x.id === f.id);
@@ -88,7 +84,6 @@ export function LocationsApp() {
           </div>
         ))}
         <span className="grow" />
-        {item("world", false, <><Footprints />{t("world.room")}</>, () => setSurface("world"))}
         {item("add", false, <><Plus />{t("locations-1.addLocation")}</>, () => setAdding(true))}
       </nav>
       <div className="loc-main">

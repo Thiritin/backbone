@@ -12,7 +12,6 @@ import { playerAt } from "../../sim/60-infra/handwork";
 import { sky } from "../../sim/20-world/weather";
 import { SkyIcon } from "../apps/weather/SkyIcon";
 import { degrees } from "../apps/weather/WeatherApp";
-import { roomOf } from "../world/World";
 import { DISCORD_URL, uiSound, useStore, type Win } from "../store";
 import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
@@ -25,7 +24,7 @@ import type { MenuEntry } from "./menu";
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
 export function MenuBar({ theme, onTheme, onBell }: Props) {
-  const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, toMenu, openNews, deleteProgress, minimize, close, setSurface } = useStore();
+  const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, toMenu, openNews, deleteProgress, minimize, close } = useStore();
   const guideGone = !game.docs.some((d) => d.kind === "guide");
   const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
   const appName = (w: Win) => (w.console ? t("desktop.menu.console") : appTitle(appFor(game, w.app)));
@@ -83,7 +82,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("backbone", "Backbone", [[t("world.standUp"), () => setSurface("world")], [t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <span className="mb-pear"><PearMark /></span>, "mb-logo")}
+      {item("backbone", "Backbone", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/backbone", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/backbone/issues/new?body=${encodeURIComponent(`\n\nBuild: ${BUILD_ID}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <span className="mb-pear"><PearMark /></span>, "mb-logo")}
       {front ? (extra.some((m) => m.id === "app") ? panel("app", appName(front), appList, "mb-app") : item("app", appName(front), appMenu(front), appName(front), "mb-app")) : <span className="mb-item mb-app">Backbone</span>}
       {extra.filter((m) => m.id !== "window" && m.id !== "app").map((m) => panel(m.id, m.title, () => fresh(m.id)))}
       {panel("window", t("desktop.menu.window"), windowList)}
@@ -91,8 +90,6 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <button className="mb-item mb-place" onClick={() => openApp("Weather")}>
         <SkyIcon kind={sky(here.city, game.hour)} />{degrees(here.city, game.hour)} {here.name}
       </button>
-      <span className="mb-sep" />
-      <button className="mb-item" onClick={() => setSurface("world")}>{roomOf(game).name}</button>
       <span className="mb-sep" />
       <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
         {SPEEDS.map((s: Speed, i) => {

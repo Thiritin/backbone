@@ -4,14 +4,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
-- Deliveries to your own place now arrive at the room's door, where you pick up each parcel and carry it to the shelf or straight to a rack to install it.
-- Letters now wait in the basement letterbox until you walk over and fetch them, and the scanner beside the desk files a fetched letter into DocuWhere.
-- Colocation sites are rooms of their own now, with a cage door, a cross-connect panel showing the carriers on site and a cold aisle in front of the racks, and the trip back starts from their door.
-- Clicking a rack in the room now opens a close-up of it right there, where you install devices from storage, remove them and open their lids without leaving the room.
-- The basement is now seen from above at a three-quarter angle, drawn with datacenter pixel art and placeholder art for the few things it does not have yet.
-- Leaving through the door now shows the drive: you get into the company car in front of the building, follow the route on a dark map while the clock runs ahead, and arrive at the other site before walking in.
-- The basement is drawn in a pixel hotel style with walls on the two far sides, a tile cursor and a walking avatar you can steer with the arrow keys, and a menu bar button and desktop icon take you there.
-- You can stand up from the desk and walk around the basement, where the racks, the storage shelf, the letterbox and the scanner open their apps and the door opens the way out.
 - The bookkeeping program opens its setup wizard from the app menu, and the web version shows it only on the overview page.
 - Mail server names in Pear Mail's account setup and record values in the PowerDNZ and cPanic zone editors are now picked from a list, with Other for typing a value by hand.
 - Every bookkeeping program now has a screen of its own: GnuCache's account tree with registers, Kontomix's form for booking a payment by document number, EightDesk's list that lines payments up with the invoices they match, Rexoffice's bank feed by day and Thyme 50's chart of accounts with account sheets.
@@ -27,6 +19,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The server inspector shows each CPU's cores and threads, and panel host settings show the host's compute next to its vCPU.
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
+
+## 2026-11-03
+
 - The bookkeeping categories now follow a standard chart of accounts: bank and payment charges, interest, fees and dues, travel, licences, domains, credits and other operating expenses each get their own line, and a trade registration no longer counts as a ransom.
 
 ## 2026-11-02

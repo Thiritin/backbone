@@ -18,7 +18,7 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 
 | App | What it does |
 | --- | --- |
-| Locations | Grid of your locations; opens rack front views. The room view lives in the world: Stand up in the logo menu or the Room button in Locations walks you into it, and Escape or the PC brings you back. |
+| Locations | Grid of your locations; opens room views and rack front views |
 | Shop | Servers, switches and patch panels by manufacturer and class, new or used, bought into storage |
 | Network | Europe map, uplinks, topology view, DDoS protection |
 | Products | Product lines, software licenses, clusters |
