@@ -130,6 +130,7 @@ export default {
   "error.rackTooTall": () => "Dieses Rack ist zu hoch für den Standort.",
   "error.rackNotEmpty": () => "Nimm zuerst alle Geräte aus dem Rack.",
   "error.rackMoving": () => "Das Rack ist unterwegs.",
+  "error.tileTaken": () => "Das Rack kann dort nicht stehen.",
   "error.locationNotEmpty": () => "Verschiebe oder verkaufe zuerst alle Racks an diesem Standort.",
   "error.cannotClose": () => "Der Keller lässt sich nicht schließen.",
   "error.badQuantity": () => "Gib eine Menge von eins oder mehr ein.",

@@ -128,7 +128,12 @@ export interface Store {
   // The location open in Locations; the Shop delivers there by default.
   openLoc: string | null;
   setOpenLoc: (id: string | null) => void;
+  // The desk computer or the room the player stands in; never saved.
+  surface: Surface;
+  setSurface: (surface: Surface) => void;
 }
+
+export type Surface = "desktop" | "world";
 
 export type { CartLine };
 // Two lines are the same item when model, brand, build and part match.
@@ -136,7 +141,7 @@ export const sameLine = (a: CartLine, b: CartLine): boolean =>
   a.model === b.model && a.brand === b.brand && a.vendor === b.vendor && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null, surface: "desktop" as Surface });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -266,6 +271,8 @@ export const useStore = create<Store>((set, get) => ({
   clearCart: () => set({ cart: [] }),
   openLoc: null,
   setOpenLoc: (openLoc) => set({ openLoc }),
+  surface: "desktop",
+  setSurface: (surface) => set({ surface }),
 
   // Steps game minutes, so hours may be fractional; the hourly tick runs on every sixtieth.
   advance: (hours) => {
@@ -326,6 +333,7 @@ export const useStore = create<Store>((set, get) => ({
       const m = target && (s.pearMail.local.messages.find(hit) ?? findMail(s, hit));
       return get().openApp("Pear Mail", m ? { kind: "message", id: m.id } : undefined, fresh);
     }
+    set({ surface: "desktop" });
     const ws = get().windows;
     const open = fresh ? undefined : ws.filter((w) => w.app === app && !w.draft).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
@@ -413,7 +421,7 @@ export const useStore = create<Store>((set, get) => ({
   clearUnseen: () => set({ unseen: 0 }),
   toMenu: () => {
     get().save();
-    set({ started: false, canContinue: true });
+    set({ started: false, canContinue: true, surface: "desktop" });
   },
   continueGame: () => set({ started: true }),
   save: () => {

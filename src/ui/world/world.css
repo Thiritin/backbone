@@ -1,0 +1,31 @@
+.world {
+  position: fixed;
+  inset: 0;
+  background: oklch(0.16 0.01 255);
+  user-select: none;
+}
+.world-svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.world-svg:active { cursor: grabbing; }
+.w-tile { fill: oklch(0.62 0.006 255); stroke: oklch(0.52 0.006 255); stroke-width: 0.6; cursor: pointer; }
+.w-tile-b { fill: oklch(0.59 0.006 255); }
+.w-tile:hover { fill: oklch(0.68 0.02 262); }
+.w-wall { stroke: oklch(0.42 0.006 255); stroke-width: 1; stroke-linejoin: round; }
+.w-wall-l { fill: oklch(0.8 0.012 85); }
+.w-wall-r { fill: oklch(0.86 0.012 85); }
+.w-wall-near { fill: oklch(0.74 0.012 85); }
+.w-wall-x { fill: oklch(0.7 0.012 85); }
+.w-near { transition: opacity 0.25s; pointer-events: none; }
+.w-obj { cursor: pointer; }
+.w-obj:hover { filter: brightness(1.12); }
+.w-door { transform-origin: 0 0; transition: transform 0.5s ease-in-out; }
+.w-led { fill: oklch(0.35 0.01 255); }
+.w-led-on { fill: var(--ok); transition: opacity 0.12s; }
+.w-blink .w-led-on { opacity: 0.35; }
+.w-label {
+  font: 600 12px "JetBrains Mono", ui-monospace, monospace;
+  fill: oklch(0.98 0 0);
+  stroke: oklch(0.2 0.01 255);
+  stroke-width: 3px;
+  paint-order: stroke;
+  pointer-events: none;
+}

@@ -130,6 +130,7 @@ export default {
   "error.rackTooTall": () => "Questo rack è troppo alto per la sede.",
   "error.rackNotEmpty": () => "Rimuovi prima tutti i dispositivi dal rack.",
   "error.rackMoving": () => "Il rack è in viaggio.",
+  "error.tileTaken": () => "Il rack non può stare lì.",
   "error.locationNotEmpty": () => "Sposta o vendi prima tutti i rack di questa sede.",
   "error.cannotClose": () => "Il seminterrato non si può chiudere.",
   "error.badQuantity": () => "Inserisci una quantità di almeno uno.",

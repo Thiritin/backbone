@@ -195,6 +195,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.rackTooTall": () => "This rack is too tall for the location.",
   "error.rackNotEmpty": () => "Take every device out of the rack first.",
   "error.rackMoving": () => "The rack is on its way.",
+  "error.tileTaken": () => "The rack cannot stand there.",
   "error.locationNotEmpty": () => "Move or sell every rack in this location first.",
   "error.cannotClose": () => "The basement cannot be closed.",
   "error.badQuantity": () => "Enter a quantity of one or more.",
