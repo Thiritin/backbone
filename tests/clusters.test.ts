@@ -9,7 +9,7 @@ import { supportTick } from "../src/sim/40-support/tick";
 import { invoiceTotal, SLA_KEPT_HAPPINESS } from "../src/sim/45-billing/billing";
 import { type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeUsed, vmOf, workloadsOf, workloadsOn } from "../src/sim/60-infra/cluster";
-import { deviceHealth, freeSlots, installedCores, installedRamGb, installedVcpu, rackPower } from "../src/sim/60-infra/status";
+import { deviceHealth, freeSlots, installedCores, installedRamGb, installedThreads, rackPower } from "../src/sim/60-infra/status";
 import { nodeUsage } from "../src/sim/60-infra/usage";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addNode, cordon, createVm, drain, evacuate, installPanelInVm, resizeVm, placeService, provisionService, removeNode, setPlacement, uncordon } from "../src/sim/90-actions/clusters";
@@ -133,7 +133,7 @@ describe("placement", () => {
   });
   it("fills a node's installed RAM first and books past it when every node is full, recording nothing on a disk refusal", () => {
     const { s, cluster, second, cus } = twoNodes();
-    expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 2.6, ramGb: 8, diskGb: 1000 });
+    expect(nodeCapacity(s.devices.find((d) => d.id === "dev3")!)).toEqual({ vcpu: 4, ramGb: 8, diskGb: 1000 });
     // Nodes within their installed 8 GB win: dev3 holds 3 VPS XL of 2 GB next to its control plane, the second node 4.
     for (let i = 0; i < 7; i++) ok(provisionService(s, cus, "vps", { label: `big ${i}`, spec: sizeSpec("vps", 3, yearOf(s.hour)) }));
     expect([nodeUsed(s, "dev3").ramGb, nodeUsed(s, second).ramGb]).toEqual([6, 8]);
@@ -339,7 +339,7 @@ describe("ballooning and resizing custom VMs", () => {
   it("holds the physical cores and RAM on every platform and books past them, balloon or not", () => {
     for (const [platform, year] of [["proxmocks", 2012], ["vmwhere", 2012], ["openstash", 2012], ["openveezee", 2012], ["hypervee", 2011]] as const) {
       const { s, cluster } = start(platform, year), d = dev3(s);
-      expect(nodeCapacity(d), platform).toMatchObject({ ramGb: installedRamGb(d), vcpu: installedVcpu(d) });
+      expect(nodeCapacity(d), platform).toMatchObject({ ramGb: installedRamGb(d), vcpu: installedThreads(d) });
       const big = { vcpu: installedCores(d) * 20, ramGb: installedRamGb(d) * 3, diskGb: 20 };
       expect(vmById(s, ok(createVm(s, cluster, big))).deviceId, platform).toBe("dev3");
       expect(nodeUsed(s, "dev3", true).ramGb, platform).toBeGreaterThan(installedRamGb(d));

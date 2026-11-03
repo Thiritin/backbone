@@ -5,7 +5,7 @@ import { presetPrice } from "../src/sim/10-catalog/parts";
 import { specFor } from "../src/sim/30-market/spec";
 import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeTakes } from "../src/sim/60-infra/cluster";
-import { deviceWatts, installedVcpu, perCoreOf } from "../src/sim/60-infra/status";
+import { deviceWatts, installedThreads, perCoreOf } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { setCompatMode } from "../src/sim/90-actions/cpus";
 import { installPart, replaceComponent, setPower } from "../src/sim/90-actions/hardware";
@@ -199,13 +199,13 @@ describe("installing from the UI", () => {
 });
 
 describe("speed, watts and demand", () => {
-  it("counts vCPU as cores whatever the speed of one core", () => {
+  it("counts vCPU as threads whatever the speed of one core", () => {
     const m = modelById("g2-compute");
     const indel = device("a", "g2-compute", "Dwell", null, 0, null, "a", 0);
     const amb = { ...indel, ...deviceDefaults(m.id, 0, componentParts(m, "amb")) };
     // Two Xenon E5420 at 1.09 per core, two Opteroni 2356 at 0.97.
-    expect(installedVcpu(indel)).toBe(8);
-    expect(installedVcpu(amb)).toBe(8);
+    expect(installedThreads(indel)).toBe(8);
+    expect(installedThreads(amb)).toBe(8);
     expect(perCoreOf(amb)).toBe(0.97);
     expect(nodeCapacity(amb).vcpu).toBe(8);
   });
@@ -248,9 +248,9 @@ describe("live migration across vendors", () => {
     expect(migrationDowntime(s, vm, 1, false, "other")).toBeGreaterThan(0);
     ok(setCompatMode(s, cluster, true));
     expect(migrationDowntime(s, vm, 1, false, "other")).toBe(0);
-    expect(nodeCapacity(dev(s, "dev3"), s).vcpu).toBe(Math.round(installedVcpu(dev(s, "dev3")) * 0.9 * 100) / 100);
+    expect(nodeCapacity(dev(s, "dev3"), s).vcpu).toBe(Math.round(installedThreads(dev(s, "dev3")) * 0.9 * 100) / 100);
     ok(setCompatMode(s, cluster, false));
-    expect(nodeCapacity(dev(s, "dev3"), s).vcpu).toBe(installedVcpu(dev(s, "dev3")));
+    expect(nodeCapacity(dev(s, "dev3"), s).vcpu).toBe(installedThreads(dev(s, "dev3")));
   });
 });
 

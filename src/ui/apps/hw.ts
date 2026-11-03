@@ -17,6 +17,11 @@ export const speed = (g: number) => (g >= 1000 ? `${+(g / 1000).toFixed(1)}T` : 
 export const ram = (gb: number) => (gb >= 1024 ? `${+(gb / 1024).toFixed(1)} TB` : `${gb} GB`);
 export const disk = (gb: number) => (gb >= 1000 ? `${+(gb / 1000).toFixed(1)} TB` : `${gb} GB`);
 export const cores = (n: number) => t("apps.hw.cores", { n });
+// One CPU's cores and threads ("12C/24T"); a part without a name has a thread per core.
+export const coresThreads = (cpu: Component | undefined, fallback: number) => {
+  const c = cpu?.size ?? fallback;
+  return t("apps.hw.coresThreads", { cores: c, threads: (cpu && skuOf(cpu)?.threads) ?? c });
+};
 const FF_LABEL = { "3.5": '3.5"', "2.5": '2.5"', nvme: "NVMe" } as const;
 // Size of a sized part ("16 GB", "4 TB, 3.5\"", "32 cores"), or a dash for parts without one.
 export const partSize = (c: Pick<Component, "kind" | "size" | "ff" | "sku">): string =>

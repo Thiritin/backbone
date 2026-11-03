@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Resources } from "../../../../../sim/10-catalog/products";
-import type { Cluster } from "../../../../../sim/60-infra/cluster";
+import { nodeVcpu, type Cluster } from "../../../../../sim/60-infra/cluster";
 import { vmStats } from "../../../../../sim/60-infra/stats";
 import { nodeUsage } from "../../../../../sim/60-infra/usage";
 import { mountableImages } from "../../../../../sim/90-actions/media";
@@ -28,7 +28,7 @@ const QUOTA_INSTANCES = 10;
 
 // The project Overview: the limit pies, then the day's usage summary and the usage per instance.
 export function Overview({ game, c, vms }: { game: GameState; c: Cluster; vms: Vm[] }) {
-  const cap = c.nodes.map((n) => nodeUsage(game, n.deviceId).physical).reduce((a, b) => ({ vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb }), { vcpu: 0, ramGb: 0, diskGb: 0 });
+  const cap = c.nodes.map((n) => { const d = game.devices.find((x) => x.id === n.deviceId); return { ...nodeUsage(game, n.deviceId).physical, vcpu: d ? nodeVcpu(game, d) : 0 }; }).reduce((a, b) => ({ vcpu: a.vcpu + b.vcpu, ramGb: a.ramGb + b.ramGb, diskGb: a.diskGb + b.diskGb }), { vcpu: 0, ramGb: 0, diskGb: 0 });
   const used = vms.reduce((n, v) => ({ vcpu: n.vcpu + v.w.vcpu, ramGb: n.ramGb + v.w.ramGb, diskGb: n.diskGb + v.w.diskGb }), { vcpu: 0, ramGb: 0, diskGb: 0 });
   const rows = vms.map((v) => ({ v, st: vmStats(game, v.id)! })), sum = (f: (x: (typeof rows)[number]) => number) => Math.round(rows.reduce((n, x) => n + f(x), 0) * 100) / 100;
   return (

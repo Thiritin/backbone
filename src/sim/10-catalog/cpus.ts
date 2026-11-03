@@ -123,7 +123,7 @@ export function defaultSku(vendor: Vendor, gen: number, cores: number, fast = fa
 export const skuOf = (p: { sku?: string; vendor?: Vendor; gen?: number; size?: number }): CpuSku | undefined =>
   (p.sku && skuById(p.sku)) || (p.vendor && p.gen && p.size !== undefined ? defaultSku(p.vendor, p.gen, p.size) : undefined);
 
-// A second thread on a core is worth this share of the core in vCPU.
+// A second thread on a core sells as a whole vCPU but adds this share of the core's work.
 export const SMT_SHARE = 0.3;
 // The highest boost clock among the parts on sale in a year: the current generation's and the one before.
 export const topBoost = (year: number): number => Math.max(0, ...CPU_SKUS.filter((c) => c.from <= year && c.gen >= generationAt(year)).map((c) => c.boost));

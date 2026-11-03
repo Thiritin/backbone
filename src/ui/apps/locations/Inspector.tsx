@@ -19,7 +19,7 @@ import { Confirm } from "../../desktop/Confirm";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
-import { CABLE_NAME, cores, deviceLamps, devName, disk, height, portLamps, portName, portsText, ram, speed } from "../hw";
+import { CABLE_NAME, coresThreads, deviceLamps, devName, disk, height, portLamps, portName, portsText, ram, speed } from "../hw";
 import { More } from "../More";
 import { HOST_NAME, softwareName } from "../products/parts";
 import { dcOf, Facts, UsageBars } from "./ui";
@@ -244,7 +244,7 @@ export function Inspector({ game, device, port, side = "front", onSelect, onHot,
       {show("parts") && <div className="loc-card">
         <div className="loc-card-h"><h3>{t("locations-1.specifications")}</h3></div>
         <Facts rows={[
-          ...(model.server ? [["CPU", `${model.server.sockets} × ${VENDOR_NAME[deviceVendor(device)]}, ${cores(device.components.find((c) => c.kind === "cpu")?.size ?? model.server.cores / model.server.sockets)}`], [t("locations-1.mainboard"), boardSpec(model, deviceVendor(device))?.name ?? ""], ["RAM", t("locations-1.nOfM", { n: ram(model.server.ramGb), m: ram(model.server.maxRamGb) })], [t("locations-1.disk"), t("locations-1.diskSpec", { size: disk(model.server.diskGb), type: model.server.disk, bays: bayCount(model.server) })]] as [string, string][] : []),
+          ...(model.server ? [["CPU", `${model.server.sockets} × ${VENDOR_NAME[deviceVendor(device)]}, ${coresThreads(device.components.find((c) => c.kind === "cpu"), model.server.cores / model.server.sockets)}`], [t("locations-1.mainboard"), boardSpec(model, deviceVendor(device))?.name ?? ""], ["RAM", t("locations-1.nOfM", { n: ram(model.server.ramGb), m: ram(model.server.maxRamGb) })], [t("locations-1.disk"), t("locations-1.diskSpec", { size: disk(model.server.diskGb), type: model.server.disk, bays: bayCount(model.server) })]] as [string, string][] : []),
           [t("locations-1.network"), portsText(model)],
           [t("locations-1.power"), model.idleWatts === Math.round(deviceWatts(device)) ? `${model.watts} W` : `${Math.round(model.idleWatts * wattsFactorOf(model, device.brand))}–${Math.round(deviceWatts(device))} W`],
           ...(model.height ? [[t("locations-1.height"), height(model)]] as [string, string][] : []),
