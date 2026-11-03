@@ -13,7 +13,7 @@ import { roomTemperature } from "../../sim/60-infra/sensors";
 import type { End, GameState, Location } from "../../sim/50-state";
 import { Defs } from "../art/fronts";
 import { rackItems } from "../apps/locations/RackView";
-import { useStore } from "../store";
+import { uiSound, useStore } from "../store";
 import { SpeedControl } from "../desktop/MenuBar";
 import { dateOf, formatClock } from "../../sim/00-core/time";
 import { iso, type Pt } from "./grid";
@@ -21,18 +21,21 @@ import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
   BeerCrate, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, darkness, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
-  Hygrometer, Letterbox, LightSwitch, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, RackBox, RaisedFloor, Scanner, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
+  CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, RackBox, RaisedFloor, Scanner, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { RoomCables } from "./rack/Cables";
 import { PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
+import { PhonePanel } from "./panel/PhonePanel";
+import { answerCall } from "../../sim/90-actions/staff";
+import type { Call } from "../../sim/47-staff/oncall";
 import {
   Bin, BossDesk, Buckets, chairAt, CodeDoor, Kitchen, Ladder, OfficeChair, OfficeDesk, OfficeFloor, OfficeWindow, Partition, Plant, Printer, Reception, StairsSign, Toolbox, Tube,
   useOfficeStaff, WallTray, Whiteboard,
 } from "./office";
 import "./world.css";
 
-const BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
+const BLINK_MS = 500, FLASH_MS = 120, RING_MS = 4000, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
 // Arrow keys and WASD pan the view, in screen directions.
 const KEYS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0],
@@ -61,7 +64,7 @@ export function World() {
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
   // The panel open over the room: storage, the post or the power of a fixture.
-  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power"; title: string; id?: string } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone"; title: string; id?: string; call?: Call | null } | null>(null);
   const [hand, setHand] = useState<Pt | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
@@ -184,6 +187,15 @@ export function World() {
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   const parcels = game.devices.filter((d) => d.door?.at === loc.id && !d.chassisId);
   const carried = game.devices.find((d) => d.id === game.player.carrying);
+  // The phone rings for every open call while this room with a phone is on screen.
+  const ringing = game.calls.find((c) => c.answeredAt === null), cordless = dateOf(game.hour).getUTCFullYear() >= CORDLESS_YEAR;
+  const rings = !!ringing && !!fx.phone;
+  useEffect(() => {
+    if (!rings) return;
+    uiSound("ring");
+    const id = setInterval(() => uiSound("ring"), RING_MS);
+    return () => clearInterval(id);
+  }, [rings]);
   const n = (v: number, digits = 0) => v.toLocaleString(LOCALE, { maximumFractionDigits: digits, minimumFractionDigits: digits });
 
 
@@ -227,6 +239,11 @@ export function World() {
     scan: () => setPanel({ kind: "scan", title: t(label) }),
     stairs: () => { const fs = officeFloors(plan?.sections ?? []); setFloor(fs[(fs.indexOf(plan?.floor ?? 1) + 1) % fs.length]); setRackOpen(null); },
     light: () => setLights((v) => !v),
+    phone: () => {
+      const g = useStore.getState().game, c = g.calls.find((x) => x.answeredAt === null) ?? g.calls[g.calls.length - 1] ?? null;
+      if (c?.answeredAt === null) act(answerCall, c.id);
+      setPanel({ kind: "phone", title: t(label), call: c });
+    },
   });
   const watts = `${n(power)}W`;
   const date = dateOf(game.hour), hd = date.getUTCHours() + game.minute / 60, month = date.getUTCMonth(), night = daylight(hd, month) < 0.5;
@@ -253,6 +270,7 @@ export function World() {
     mat: (f) => <Mat f={f} />,
     drain: (f) => <Drain f={f} />,
     lamp: (f) => <CeilingLamp f={f} on={lights} />,
+    phone: (f) => <Phone f={f} ringing={!!ringing} cordless={cordless} />,
     letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} />,
     door: (f) => <Door f={f} open={door} steel={!home && !office} />,
     extinguisher: (f) => <Extinguisher f={f} />,
@@ -326,6 +344,7 @@ export function World() {
       {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
       {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} kind={panel.id ?? ""} onClose={() => setPanel(null)} />}
       {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
+      {panel?.kind === "phone" && <PhonePanel title={panel.title} call={panel.call ?? null} cordless={cordless} onOpenRack={(id) => { setPanel(null); setRackOpen({ id }); }} onClose={() => setPanel(null)} />}
       {panel?.kind === "scan" && <ScanPanel title={panel.title} onClose={() => setPanel(null)} />}
       {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)} />}
     </div>
