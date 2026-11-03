@@ -99,7 +99,6 @@ describe("mounting hardware", () => {
   it("lets the player rack it free when standing in the datacenter", () => {
     const { s, loc, rack } = colo();
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
-    expect(err(mountDevice(s, id, rack, 1, "self"))).toBe("error.notThere");
     s.player = { ...s.player, at: loc };
     const cash = s.cash;
     ok(mountDevice(s, id, rack, 1, "self"));

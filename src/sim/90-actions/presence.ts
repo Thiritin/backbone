@@ -3,10 +3,11 @@
 import { datacenterById } from "../20-world/datacenters";
 // A cycle with hardware.ts, which calls viaHands; neither uses the other while loading.
 import type { GameState } from "../50-state";
-import { present, type How } from "../60-infra/handwork";
+import { playerAt, present, type How } from "../60-infra/handwork";
 import {
   connect, disconnect, installPart, mountDevice, mountStack, moveInRack, removePart, replaceComponent, setPlugged, unmountDevice, type ActionResult,
 } from "./hardware";
+import { travelTo } from "./travel";
 
 export type Hands = "own" | "remote" | "none";
 
@@ -41,22 +42,27 @@ const run = (s: GameState, action: HandsAction, args: unknown[]): ActionResult =
   (JOBS[action][0] as (g: GameState, ...a: unknown[]) => ActionResult)(s, ...args, "job");
 
 // Applies the presence rule to a hands-on action. Returns the way to do the work now, or the result: a refusal or a queued job.
-// A technician, a friend and a running job pass through.
+// A technician, a friend and a running job pass through. "self" from afar queues the job for the player's arrival and starts the drive.
 export function viaHands(s: GameState, action: HandsAction, args: unknown[], locationId: string, how: How | boolean): How | boolean | ActionResult {
   if (how === true || how === "tech" || how === "friend" || how === "job") return how;
   const h = hands(s, locationId);
   if (h === "own") return "self";
-  if (h === "none" || how === "self") return { ok: false, error: "error.notThere" };
+  const self = how === "self";
+  if (h === "none" && !self) return { ok: false, error: "error.notThere" };
   // ponytail: validates on a full copy of the game; a per-action check function if this gets slow.
   const trial = run(structuredClone(s), action, args);
   if (!trial.ok) return trial;
-  const q = jobQuote(s, locationId, jobKind(action))!;
+  const q = self ? { fee: 0, wait: 0 } : jobQuote(s, locationId, jobKind(action))!;
   if (s.cash < q.fee) return { ok: false, error: "error.noCash" };
+  if (self && playerAt(s).id !== locationId) {
+    const drove = travelTo(s, locationId);
+    if (!drove.ok) return drove;
+  }
   const id = `hj${s.nextId++}`, first = args[0];
   // The unit the job is about: a cable's first end, the first unit of a stack.
   const deviceId = action === "mountStack" ? trial.id! : typeof first === "object" ? (first as { device: string }).device : String(first);
   // A JSON round trip so the job saves as it loads.
-  s.handsJobs.push({ id, action, args: JSON.parse(JSON.stringify(args)) as unknown[], locationId, deviceId, dueAt: s.hour + q.wait, fee: q.fee });
+  s.handsJobs.push({ id, action, args: JSON.parse(JSON.stringify(args)) as unknown[], locationId, deviceId, dueAt: s.hour + q.wait, fee: q.fee, ...(self && { self: true as const }) });
   return { ok: true, id };
 }
 
@@ -66,13 +72,13 @@ export function cancelHandsJob(s: GameState, jobId: string): ActionResult {
   return { ok: true };
 }
 
-// Runs the jobs that are due and bills the ones that got done.
+// Runs the jobs that are due, the player's own once they stand there, and bills the remote ones that got done.
 export function handsJobsTick(s: GameState) {
-  const due = s.handsJobs.filter((j) => j.dueAt <= s.hour);
+  const due = s.handsJobs.filter((j) => j.dueAt <= s.hour && (!j.self || present(s, j.locationId)));
   if (!due.length) return;
-  s.handsJobs = s.handsJobs.filter((j) => j.dueAt > s.hour);
+  s.handsJobs = s.handsJobs.filter((j) => !due.includes(j));
   for (const j of due) {
-    if (!run(s, j.action as HandsAction, j.args).ok) continue;
+    if (!run(s, j.action as HandsAction, j.args).ok || j.self) continue;
     const d = s.devices.find((x) => x.id === j.deviceId), dc = s.locations.find((l) => l.id === j.locationId)?.dc ?? "";
     s.cash = Math.round((s.cash - j.fee) * 100) / 100;
     s.ledger.push({ hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device: d?.label ?? d?.name ?? "", hours: JOB_HOURS[jobKind(j.action as HandsAction)], dc, done: s.hour }, amount: -j.fee });

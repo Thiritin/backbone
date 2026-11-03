@@ -73,13 +73,11 @@ describe("driving there", () => {
   it("pays the fare, locks the player until arrival and then works on site", () => {
     const { s, loc, id } = setup("interaction-muc");
     const part = stick(s, loc), cash = s.cash, hour = s.hour;
-    expect(err(installPart(s, id, part, undefined, "self"))).toBe("error.notThere");
     ok(travelTo(s, loc));
     expect(s.cash).toBe(cash - 90);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.drive", amount: -90 });
     expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", carrying: null });
     expect(err(travelTo(s, "loc1"))).toBe("error.away");
-    expect(err(installPart(s, id, part, undefined, "self"))).toBe("error.notThere");
     s.hour = hour + 4;
     expect(handWork(s, loc)!.here).toBe(true);
     ok(installPart(s, id, part, undefined, "self"));
