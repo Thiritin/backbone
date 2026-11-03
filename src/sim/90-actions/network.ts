@@ -11,7 +11,7 @@ import { acceptChance, activeExchanges, coolingDown, type Network, type Uplink }
 import { locationOf, peerOf } from "../60-infra/status";
 import type { ActionResult } from "./hardware";
 import { opticFor, portOptic, uplinkBand, uplinkOffers } from "../10-catalog/uplinks";
-import { freeJack, panelOf } from "../60-infra/panels";
+import { freeJack, jackRoles, panelOf } from "../60-infra/panels";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const cents = (v: number) => Math.round(v * 100) / 100;
@@ -58,14 +58,15 @@ export function freeRouterPort(s: GameState, locationId: string, gbit: number, r
 
 // A line of gbit on the rack's router, landing on a free jack of the rack's provider panel. With a location id instead of a
 // rack, the line takes the zone's free router port and that router's rack.
-function addLink(s: GameState, u: Uplink, gbit: number, rackId?: string): ActionResult {
+function addLink(s: GameState, u: Uplink, gbit: number, rackId?: string, at?: number): ActionResult {
   const year = yearOf(s.hour);
   if (gbit < uplinkBand(year).floor) return fail("error.speedRetired");
   if (!uplinkOffers(year).includes(gbit)) return fail("error.speedLater");
   const port = freeRouterPort(s, u.locationId, gbit, rackId);
   if (!port) return fail(freeRouterPort(s, u.locationId, gbit, rackId, false) ? "error.needsModule" : "error.noRouterPort");
   const rack = s.devices.find((d) => d.id === port.device)?.rackId;
-  const jack = rack && freeJack(s, rack);
+  const p = at !== undefined && rack ? panelOf(s, rack) : undefined;
+  const jack = p ? (jackRoles(s, p.id)[at!] === "free" ? { device: p.id, port: at! } : null) : rack && freeJack(s, rack);
   if (!jack) return fail("error.noFreeJack");
   const link = { id: `lnk${s.nextId++}`, gbit, ...port, jack, readyAt: s.hour + LEAD_HOURS };
   set(s, { uplinks: [...s.network.uplinks.filter((x) => x.id !== u.id), { ...u, links: [...u.links, link] }] });
@@ -79,18 +80,19 @@ const placeOf = (s: GameState, where: string): { locationId: string; rackId?: st
 };
 
 // Signs a transit contract with a carrier on site: one link of gbit, with a commit share from COMMITS.
-export function orderTransit(s: GameState, where: string, carrierId: string, gbit: number, commit: number): ActionResult {
+// jack picks the provider panel jack of the router's rack; without it the first free one.
+export function orderTransit(s: GameState, where: string, carrierId: string, gbit: number, commit: number, jack?: number): ActionResult {
   const { locationId, rackId } = placeOf(s, where);
   const loc = zone(s, locationId);
   if (typeof loc === "string") return fail(loc);
   if (!carriersAt(datacenterById(loc.dc!)).some((c) => c.id === carrierId)) return fail("error.carrierAbsent");
   if (!COMMITS.some((c) => c.share === commit)) return fail("error.unknownCommit");
   const u: Uplink = { id: `up${s.nextId++}`, locationId, kind: "transit", partner: carrierId, commit, links: [], samples: [] };
-  return addLink(s, u, gbit, rackId);
+  return addLink(s, u, gbit, rackId, jack);
 }
 
 // Adds a port at the zone's exchange; the first port in a zone opens the exchange uplink there.
-export function orderExchangePort(s: GameState, where: string, gbit: number): ActionResult {
+export function orderExchangePort(s: GameState, where: string, gbit: number, jack?: number): ActionResult {
   const { locationId, rackId } = placeOf(s, where);
   const loc = zone(s, locationId);
   if (typeof loc === "string") return fail(loc);
@@ -99,7 +101,7 @@ export function orderExchangePort(s: GameState, where: string, gbit: number): Ac
   if (!s.network.memberships.includes(x.id)) return fail("error.notMember");
   const u = s.network.uplinks.find((v) => v.kind === "exchange" && v.partner === x.id && v.locationId === locationId)
     ?? { id: `up${s.nextId++}`, locationId, kind: "exchange" as const, partner: x.id, commit: 0, links: [], samples: [] };
-  return addLink(s, u, gbit, rackId);
+  return addLink(s, u, gbit, rackId, jack);
 }
 
 // A second line on the contract, billed like the first; the router bundles them.

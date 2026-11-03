@@ -87,6 +87,14 @@ describe("uplinks by year", () => {
     expect(jackRoles(s, panelOf(s, rack)!.id)[0]).toBe("uplink");
   });
 
+  it("lands a line on the jack the player picked and refuses a taken one", () => {
+    const s = game(2022);
+    const { rack } = cage(s, "edge-xl");
+    ok(orderTransit(s, rack, "cogentle", 1, 0.2, 5));
+    expect(s.network.uplinks[0].links[0].jack).toEqual({ device: panelOf(s, rack)!.id, port: 5 });
+    expect(err(orderTransit(s, rack, "cogentle", 1, 0.2, 5))).toBe("error.noFreeJack");
+  });
+
   it("needs a port of the kind and a module for a 25 Gbit/s line", () => {
     const s = game(2022);
     const { rack, router } = cage(s, "edge-xl");
