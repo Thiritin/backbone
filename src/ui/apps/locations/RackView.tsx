@@ -27,7 +27,7 @@ import { clusterOf } from "../../../sim/60-infra/cluster";
 import { rackAlarms } from "../../../sim/60-infra/alarms";
 import { present } from "../../../sim/60-infra/handwork";
 import { useSessionState } from "../../session";
-import { HandsJobs, HandsMode, handsMode, jobBadge, useHandWork, type HandTask } from "./HandSheet";
+import { HandsButtons, HandsJobs, handsWays, jobBadge, useHandWork, type HandsHow, type HandTask } from "./HandSheet";
 
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
@@ -255,7 +255,7 @@ export function MountRow({ game, rack, st, unit, onMount }: { game: GameState; r
   const m = modelById(st.model), h = heightIn(game, rack.id, st.model), max = mountMax(game, rack.id, h, st.ids.length, unit);
   const [count, setCount] = useState(1);
   const n = Math.min(count, max), from = mountFrom(game, rack.id, h, n, unit) ?? unit;
-  const mount = () => onMount(mountTask(st, rack.id, n, from)), mode = handsMode(game, rack.locationId, "mountDevice");
+  const mount = (how: HandsHow) => onMount({ ...mountTask(st, rack.id, n, from), how });
   return (
     <div className="loc-shop-row">
       <Isometric model={m} brand={st.brand} w={64} />
@@ -264,7 +264,7 @@ export function MountRow({ game, rack, st, unit, onMount }: { game: GameState; r
         <div className="loc-shop-specs num">{t("locations-2.nInStorage", { n: st.ids.length })}</div>
       </div>
       {max > 1 && <Stepper value={n} min={1} onChange={(v) => setCount(Math.min(v, max))} />}
-      <button className="btn primary" disabled={mode.off} onClick={mount}>{t("locations-2.mount")}<HandsMode mode={mode} /></button>
+      <HandsButtons className="btn primary" ways={handsWays(game, rack.locationId, "mountDevice")} onRun={mount}>{t("locations-2.mount")}</HandsButtons>
     </div>
   );
 }

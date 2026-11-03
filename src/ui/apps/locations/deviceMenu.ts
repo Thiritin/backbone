@@ -13,7 +13,7 @@ import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { consoleEntry } from "../products/parts";
 import { techItem } from "./TechButton";
-import { handsMode } from "./HandSheet";
+import { handsWays, wayLabel, type HandsHow } from "./HandSheet";
 import { frontOptions, handsLabel, powerOptions, type PowerOp } from "./power";
 import type { FrontOp } from "../../../sim/60-infra/power";
 
@@ -24,11 +24,11 @@ export interface DeviceUi {
   power: (on: boolean) => void;
   op: (op: PowerOp) => void;
   front: (op: FrontOp) => void;
-  plug: (psuId: string) => void;
+  plug: (psuId: string, how?: HandsHow) => void;
   maintain?: () => void;
   move?: (locationId: string) => void;
   rename: () => void;
-  unmount: () => void;
+  unmount: (how: HandsHow) => void;
   sell: () => void;
 }
 
@@ -37,9 +37,10 @@ export const secondPsuPrice = (d: Device): number | null => {
   return to ? priceOf(to, d.brand) - priceOf(modelById(d.model), d.brand) : null;
 };
 
-const psuEntries = (d: Device, ui: DeviceUi): MenuEntry[] => {
+const psuEntries = (game: GameState, d: Device, ui: DeviceUi): MenuEntry[] => {
   const psus = d.rackId ? d.components.filter((c) => c.kind === "psu") : [];
-  return psus.map((c, i) => ({ label: t(isPlugged(c) ? "locations-1.unplugPsu" : "locations-1.plugPsu", { n: psus.length > 1 ? i + 1 : 0 }), run: () => ui.plug(c.id) }));
+  const ways = handsWays(game, locationOf(game, d)?.id, "setPlugged");
+  return psus.flatMap((c, i) => ways.map((w) => ({ label: wayLabel(t(isPlugged(c) ? "locations-1.unplugPsu" : "locations-1.plugPsu", { n: psus.length > 1 ? i + 1 : 0 }), w), run: () => ui.plug(c.id, w.how) })));
 };
 
 // A mounted server's power entries: from afar, then at the machine (remote hands in a datacenter), then what a technician can do.
@@ -50,7 +51,7 @@ function serverPower(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
     ...options.map((o) => ({ label: via && o.op !== "bmc" ? t("locations-1.viaLabel", { label: o.label, via }) : o.label, disabled: o.disabled, run: () => ui.op(o.op) })),
     { label: handsLabel(game, d), items: [
       ...frontOptions(game, d).map((o) => ({ label: o.label, disabled: o.disabled, run: () => ui.front(o.op) })),
-      ...(psus > 1 ? [null, ...psuEntries(d, ui)] : []),
+      ...(psus > 1 ? [null, ...psuEntries(game, d, ui)] : []),
     ] },
     techItem(game, d.id, d.on ? "off" : "on"),
     d.hung && techItem(game, d.id, "reset"),
@@ -83,7 +84,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
       m.kind !== "patch" && !!(d.rackId || d.panel) && techItem(game, d.id, d.on ? "off" : "on"),
     ]),
     server && !!(d.rackId || d.store) && ui.lid && { label: t("locations-1.changeParts"), run: ui.lid },
-    ...(server ? [] : psuEntries(d, ui)),
+    ...(server ? [] : psuEntries(game, d, ui)),
     null,
     server && !!d.rackId && ui.maintain && { label: t("locations-1.planMaintenance"), run: ui.maintain },
     server && !!d.rackId && !cluster && { label: t("locations-1.burnIn"), disabled: !d.on || burning(game, d) || loads.length > 0, items: [
@@ -98,7 +99,7 @@ export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[
     lease && { label: t("locations-1.buyOutLease", { price: euro(lease.monthly * (lease.months - lease.paid)) }), run: () => act(buyOutLease, lease.id) },
     { label: t("locations-1.rename"), run: ui.rename },
     null,
-    !!d.rackId && ((h) => ({ label: `${t("locations-1.unmount")} · ${h.label}`, disabled: h.off, run: ui.unmount }))(handsMode(game, locationOf(game, d)?.id, "unmountDevice")),
+    ...(d.rackId ? handsWays(game, locationOf(game, d)?.id, "unmountDevice").map((w) => ({ label: wayLabel(t("locations-1.unmount"), w), run: () => ui.unmount(w.how) })) : []),
     m.kind !== "gateway" && { label: t("locations-1.sell"), run: ui.sell },
   ];
 }

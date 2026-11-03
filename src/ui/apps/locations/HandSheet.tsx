@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { t as tr } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
@@ -28,6 +28,8 @@ export interface HandTask {
   // The technician operation that does the same work, when there is one.
   tech?: { kind: OpKind; componentId?: string | null; partId?: string | null; slot?: number; count?: number };
   onDone?: () => void;
+  // Whose hands do hands-on work, as the button pressed chose: the player's own or remote hands.
+  how?: HandsHow;
 }
 
 // Whether the device sits in a datacenter, where hand work has more than one way to get done.
@@ -59,7 +61,7 @@ export function useHandWork(remote = false) {
   const start = (game: GameState, t: HandTask) => {
     const loc = workLocation(game, t), w = loc && handWork(game, loc.id);
     // Hands-on work queues remote hands at once; its button shows the price.
-    if (!t.at && handsAction(t.action)) run(t, "hands");
+    if (!t.at && handsAction(t.action)) run(t, t.how ?? "hands");
     else if (!w) { if (!remote) run(t, "hands"); }
     else if (w.here && !t.at && !remote) run(t, "self");
     else setTask({ t, ...pointer });
@@ -112,29 +114,38 @@ function HandPopover({ task, x, y, onClose }: { task: HandTask; x: number; y: nu
 const HANDS: string[] = ["mountDevice", "mountStack", "unmountDevice", "moveInRack", "installPart", "removePart", "replaceComponent", "connect", "disconnect", "setPlugged"] satisfies HandsAction[];
 const handsAction = (fn: unknown): HandsAction | null => { const n = actionName(fn); return n && HANDS.includes(n) ? n as HandsAction : null; };
 
-// How hands-on work at a location gets done, as its button shows it; off when nobody can.
-export function handsMode(game: GameState, locationId: string | undefined, action: HandsAction): { label: string; off: boolean } {
-  const h = locationId ? hands(game, locationId) : "own";
-  if (h === "own") return { label: tr("locations-2.handsOwn"), off: false };
-  if (h === "none") return { label: tr("locations-2.handsNone"), off: true };
-  const q = jobQuote(game, locationId!, jobKind(action))!;
-  return { label: tr("locations-2.handsRemote", { cost: euroPrice(q.fee), time: slotTime(game.hour, game.hour + q.wait) }), off: false };
-}
-export const HandsMode = ({ mode }: { mode: { label: string } }) => <span className="hands-mode">{mode.label}</span>;
+export type HandsHow = "self" | "hands";
+export interface HandsWay { how: HandsHow; label: string }
 
-// The due time of a queued job on the unit, for its badge.
+// The ways to do hands-on work at a location, one button each: at once on site, else the player's own hands and remote hands where the site has them.
+export function handsWays(game: GameState, locationId: string | undefined, action: HandsAction): HandsWay[] {
+  const h = locationId ? hands(game, locationId) : "own";
+  if (h === "own") return [{ how: "self", label: "" }];
+  const self: HandsWay = { how: "self", label: tr("locations-2.handsOwn") };
+  if (h === "none") return [self];
+  const q = jobQuote(game, locationId!, jobKind(action))!;
+  return [self, { how: "hands", label: tr("locations-2.handsRemote", { cost: euroPrice(q.fee), time: slotTime(game.hour, game.hour + q.wait) }) }];
+}
+export const wayLabel = (label: string, w: HandsWay) => (w.label ? `${label} · ${w.label}` : label);
+
+// One button per way of doing a hands-on action.
+export function HandsButtons({ ways, className = "btn", disabled, onRun, children }: { ways: HandsWay[]; className?: string; disabled?: boolean; onRun: (how: HandsHow) => void; children: ReactNode }) {
+  return <>{ways.map((w) => <button key={w.how} className={className} disabled={disabled} onClick={() => onRun(w.how)}>{children}{w.label && <span className="hands-mode">{w.label}</span>}</button>)}</>;
+}
+
+// The badge of a queued job on the unit: its due time, or that it waits for the player.
 export const jobBadge = (game: GameState, deviceId: string): string | undefined => {
   const j = game.handsJobs.find((x) => x.deviceId === deviceId);
-  return j && slotTime(game.hour, j.dueAt);
+  return j && (j.self ? tr("locations-2.selfOnArrival") : slotTime(game.hour, j.dueAt));
 };
 
-// The remote hands jobs queued at a location, each with its due time and a Cancel.
+// The hands-on jobs queued at a location, own and remote, each with a Cancel.
 export function HandsJobs({ game, locationId }: { game: GameState; locationId: string }) {
   const act = useStore((s) => s.act), jobs = game.handsJobs.filter((j) => j.locationId === locationId);
   if (!jobs.length) return null;
   return (
     <div className="loc-card">
-      <div className="loc-card-h"><h3>{tr("locations-2.handsJobs")}</h3></div>
+      <div className="loc-card-h"><h3>{tr("locations-2.handJobs")}</h3></div>
       {jobs.map((j) => {
         const d = game.devices.find((x) => x.id === j.deviceId);
         return (
@@ -142,8 +153,7 @@ export function HandsJobs({ game, locationId }: { game: GameState; locationId: s
             <span className="loc-k">{tr(`locations-2.job.${j.action}`)}</span>
             <span>{d?.label ?? d?.name}</span>
             <span className="grow" />
-            <span className="num">{slotTime(game.hour, j.dueAt)}</span>
-            <span className="num">{euroPrice(j.fee)}</span>
+            {j.self ? <span>{tr("locations-2.selfOnArrival")}</span> : <><span>{tr("locations-2.handsJobs")}</span><span className="num">{slotTime(game.hour, j.dueAt)}</span><span className="num">{euroPrice(j.fee)}</span></>}
             <button className="btn" onClick={() => act(cancelHandsJob, j.id)}>{tr("locations-2.cancel")}</button>
           </div>
         );

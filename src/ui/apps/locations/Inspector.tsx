@@ -41,7 +41,7 @@ import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { burning } from "../../../sim/60-infra/status";
 import { serverTaken } from "../../../sim/60-infra/cluster";
 import { frontOptions, handsAway, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
-import { atDatacenter, HandsMode, handsMode, useHandWork } from "./HandSheet";
+import { atDatacenter, HandsButtons, handsWays, useHandWork, wayLabel, type HandsHow } from "./HandSheet";
 import type { FrontOp } from "../../../sim/60-infra/power";
 import { LidSheet } from "./LidSheet";
 import { PlanButton, useMaintenance, Windows, windowsOnDevice } from "./Maintenance";
@@ -78,11 +78,11 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
       if (handsAway(game, d)) hand.start(game, { title: t("locations-1.labelDevice", { label, name: devName(d) }), deviceId: d.id, action: atServer, args: [d.id, op] });
       else guarded(t("locations-1.labelOnQ", { label, name: devName(d) }), label, atServer, d.id, op, "self");
     },
-    plug: (psu) => togglePlug(guarded, d, psu),
+    plug: (psu, how) => togglePlug(guarded, d, psu, how),
     maintain: () => mnt.plan({ kind: "device", id: d.id }),
     move: (to) => hand.start(game, { title: t("locations-1.moveDeviceTo", { name: devName(d), to: game.locations.find((l) => l.id === to)?.name ?? "" }), deviceId: d.id, at: to, action: moveServer, args: [d.id, to] }),
     rename: () => onRename(d.id),
-    unmount: () => hand.start(game, { title: t("locations-1.labelDevice", { label: t("locations-1.unmount"), name: devName(d) }), deviceId: d.id, action: unmountDevice, args: [d.id], tech: { kind: "unmount" }, onDone: () => onSelect(null) }),
+    unmount: (how) => hand.start(game, { title: t("locations-1.labelDevice", { label: t("locations-1.unmount"), name: devName(d) }), deviceId: d.id, action: unmountDevice, args: [d.id], tech: { kind: "unmount" }, how, onDone: () => onSelect(null) }),
     sell: () => setSelling(d),
   });
   const cables = selling ? game.cables.filter((c) => c.a.device === selling.id || c.b.device === selling.id).length : 0;
@@ -357,7 +357,7 @@ function PortTable({ game, device, peers, sel, onPick, onHover, onSelect }: { ga
       other && !other.panel && { label: t("locations-1.showDevice", { name: devName(other) }), run: () => onSelect(other.id) },
       null,
       cable && { label: t("locations-1.cableColour"), items: [...SWATCHES.map(([n, hex]) => ({ label: n, checked: cable.color === hex, run: () => act(setCableColor, cable.id, hex) })), null, { label: t("locations-1.kindDefault"), checked: cable.color === null, run: () => act(setCableColor, cable.id, null) }] },
-      cable && { label: `${t("locations-1.disconnect")} · ${handsMode(game, locationOf(game, device)?.id, "disconnect").label}`, disabled: handsMode(game, locationOf(game, device)?.id, "disconnect").off, run: () => act(disconnect, cable.id) },
+      ...(cable ? handsWays(game, locationOf(game, device)?.id, "disconnect").map((w) => ({ label: wayLabel(t("locations-1.disconnect"), w), run: () => act(disconnect, cable.id, w.how) })) : []),
     ];
   };
   return (
@@ -413,7 +413,6 @@ export function PortCard({ game, device, model, port, peer, onSelect }: { game: 
   const act = useStore((s) => s.act);
   const here = model.ports[port];
   const group = device.groups.findIndex((g) => g.includes(port));
-  const off = handsMode(game, locationOf(game, device)?.id, "disconnect");
   const title = <h3><EthernetPort />{portName(model, port)}</h3>;
 
   if (peer) {
@@ -424,7 +423,7 @@ export function PortCard({ game, device, model, port, peer, onSelect }: { game: 
         <div className="loc-card-h">
           {title}<span className="pill ok">{t("locations-1.up")}</span>{group >= 0 && <span className="pill">{t("locations-1.groupN", { n: group + 1 })}</span>}
           <span className="grow" />
-          <button className="btn danger" disabled={off.off} onClick={() => act(disconnect, cable.id)}><Unplug />{t("locations-1.disconnect")}<HandsMode mode={off} /></button>
+          <HandsButtons className="btn danger" ways={handsWays(game, locationOf(game, device)?.id, "disconnect")} onRun={(how) => act(disconnect, cable.id, how)}><Unplug />{t("locations-1.disconnect")}</HandsButtons>
         </div>
         <div className="loc-path">
           <div className="loc-node here"><span className="k">{devName(device)}</span><strong>{portName(model, port)}</strong></div>
@@ -458,8 +457,7 @@ function ConnectRow({ game, device, model, port }: { game: GameState; device: De
   if (!targets.length) return <div className="loc-row loc-muted">{t("locations-1.noCompatiblePorts")}</div>;
   const tg = targets.find(({ d }) => d.id === picked.device) ?? targets[0];
   const to = picked.port !== null && tg.free.includes(picked.port) ? picked.port : tg.free[0];
-  const go = () => act(connect, { device: device.id, port }, { device: tg.d.id, port: to });
-  const mode = handsMode(game, loc, "connect");
+  const go = (how: HandsHow) => act(connect, { device: device.id, port }, { device: tg.d.id, port: to }, how);
   return (
     <div className="loc-connect">
       <div className="picks" role="group" aria-label={t("locations-1.connectTo")}>
@@ -474,7 +472,7 @@ function ConnectRow({ game, device, model, port }: { game: GameState; device: De
           {tg.free.map((i) => <button key={i} className="num" aria-pressed={i === to} onClick={() => setPicked({ device: tg.d.id, port: i })}>{portName(tg.m, i).replace(/^Port /, "")}</button>)}
         </div>
         <span className="grow" />
-        <button className="btn primary" disabled={mode.off} onClick={go}><Cable />{t("locations-1.connect")}<HandsMode mode={mode} /></button>
+        <HandsButtons className="btn primary" ways={handsWays(game, loc, "connect")} onRun={go}><Cable />{t("locations-1.connect")}</HandsButtons>
       </div>
     </div>
   );
@@ -523,11 +521,11 @@ export function useOfflineGuard(game: GameState) {
 }
 
 // Plugs a power supply in, or pulls its plug after the offline check.
-export function togglePlug(guarded: ReturnType<typeof useOfflineGuard>["guarded"], device: Device, psu: string) {
+export function togglePlug(guarded: ReturnType<typeof useOfflineGuard>["guarded"], device: Device, psu: string, how: HandsHow | false = false) {
   const c = device.components.find((x) => x.id === psu);
   if (!c) return;
-  if (isPlugged(c)) guarded(t("locations-1.unplugQ", { name: devName(device) }), t("locations-1.unplug"), setPlugged, device.id, psu, false);
-  else useStore.getState().act(setPlugged, device.id, psu, true);
+  if (isPlugged(c)) guarded(t("locations-1.unplugQ", { name: devName(device) }), t("locations-1.unplug"), setPlugged, device.id, psu, false, how);
+  else useStore.getState().act(setPlugged, device.id, psu, true, how);
 }
 
 // Each power supply with its feed and plug, then the empty bay a second supply can fill.
