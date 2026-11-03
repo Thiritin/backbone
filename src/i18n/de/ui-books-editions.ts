@@ -26,6 +26,7 @@ export default {
   "books-editions.noSeat": () => `Kein Platz`,
   "books-editions.offline": () => `Buchhaltung offline`,
   "books-editions.offlineTitle": () => `Die Seite kann nicht angezeigt werden`,
+  "books.openWeb": (p) => `${p.program} öffnen`,
   "books.tab.overview": () => `Übersicht`,
   "books.tab.statistics": () => `Statistik`,
   "books.tab.tax": () => `Steuer`,

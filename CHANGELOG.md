@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
 
 ## 2026-11-02

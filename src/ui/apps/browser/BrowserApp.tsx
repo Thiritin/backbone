@@ -48,6 +48,8 @@ import { LexwearSite } from "./sites/lexwear/LexwearSite";
 import { MarketSite } from "./sites/market/MarketSite";
 import { channelName } from "../../../sim/10-catalog/used";
 import { BOOKS_SITES } from "./sites/books/sites";
+import { BooksProgram } from "../books/BooksApp";
+import { currentVendor } from "../../../sim/80-business/bookkeeping";
 import { booksVendor } from "../../../sim/10-catalog/bookkeeping";
 import { ShopVendorSite } from "./sites/shopvendors/registry";
 import { shopById } from "../../../sim/10-catalog/shops";
@@ -184,6 +186,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
   else if (p.kind === "market") body = <MarketSite game={game} channel={p.channel} path={r.path} go={go} />;
   else if (p.kind === "shop") body = <PortalSite game={game} host={r.host + (p.base ?? "")} path={r.path.slice((p.base ?? "").length) || "/"} go={go} />;
   else if (p.kind === "shopSetup") body = <ShopSetup game={game} page={p} host={r.host} path={r.path} go={go} />;
+  else if (p.kind === "books" && r.path.startsWith("/app") && currentVendor(game)?.id === p.id && booksVendor(p.id)!.deployment === "browser") body = <BooksProgram />;
   else if (p.kind === "books" && p.id !== "lexwear") { const Site = BOOKS_SITES[p.id]; body = <Site game={game} path={r.path} go={go} />; }
   else if (p.kind === "shopVendor") body = <ShopVendorSite game={game} id={p.id} path={r.path} go={go} />;
   else if (p.kind === "desk") body = <DeskSite game={game} id={p.id} host={r.host + (p.base ?? "")} path={r.path.slice((p.base ?? "").length) || "/"} go={go} />;

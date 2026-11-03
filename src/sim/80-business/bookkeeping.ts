@@ -20,6 +20,8 @@ export const LEXWEAR_HOST = "lexwear.de";
 export const booksHost = (v: BooksVendor): string => (v.id === "gnucache" ? "gnucache.org" : `${v.id}.de`);
 // The vendor's shop, or its page for one edition.
 export const booksUrl = (v: BooksVendor, edition?: string): string => `www.${booksHost(v)}/${edition ? `edition/${edition}` : ""}`;
+// Where a browser program runs.
+export const booksAppUrl = (v: BooksVendor): string => `www.${booksHost(v)}/app`;
 
 // A browser program is unusable while the internet line is missing, throttled or cut.
 export const booksOffline = (s: GameState): boolean => currentVendor(s)?.deployment === "browser" && (!s.homeLine.id || lineCut(s));

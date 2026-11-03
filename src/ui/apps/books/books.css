@@ -103,6 +103,7 @@
 .books-offline { flex: 1; padding: 40px 32px; background: #fff; color: #222; font: 13px Arial, Helvetica, sans-serif; }
 .books-offline h2 { font-size: 18px; margin: 0 0 10px; }
 .books-offline p { color: #555; }
+.books-link { align-items: center; justify-content: center; }
 
 .alert.books-markpaid { width: 360px; }
 .books-markpaid-pick { width: 100%; box-sizing: border-box; max-height: 240px; overflow: auto; display: grid; gap: 1px; margin: 4px 0 2px; padding: 4px; text-align: left; border: 0.5px solid var(--line-strong); border-radius: 8px; background: var(--field); }
