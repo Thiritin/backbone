@@ -13,11 +13,8 @@ const B1 = "tile-B-01.png", B2 = "tile-B-02.png", B4 = "tile-B-04.png", B5 = "ti
 const SPEC = {
   floor: { sheet: "Tile_A2-2.png", x: 24, y: 216, w: 48, h: 48 },
   "floor-alt": { sheet: "Tile_A2-2.png", x: 120, y: 216, w: 48, h: 48 },
-  "wall-top": { sheet: WALLS, w: 48, h: 48, parts: [[216, 552, 48, 24, 0, 0], [216, 600, 48, 24, 0, 24]] },
   wall: { sheet: WALLS, x: 216, y: 624, w: 48, h: 48 },
   "wall-base": { sheet: WALLS, x: 216, y: 672, w: 48, h: 48 },
-  "wall-side": { sheet: WALLS, x: 240, y: 552, w: 48, h: 48 },
-  "wall-side-right": { sheet: WALLS, x: 192, y: 552, w: 48, h: 48 },
   "rack-closed": { sheet: B2, x: 0, y: 96, w: 48, h: 96 },
   "rack-open": { sheet: B1, x: 240, y: 192, w: 48, h: 96 },
   desk: { sheet: B4, x: 0, y: 192, w: 96, h: 96 },

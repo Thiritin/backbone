@@ -63,7 +63,7 @@ export function World() {
   const [zoomSet, setZoom] = useState<number | null>(looked[loc.id]?.zoom ?? null);
   const [org, setOrg] = useState<Pt | null>(looked[loc.id]?.org ?? null);
   useEffect(() => { looked[loc.id] = { zoom: zoomSet, org }; }, [loc.id, zoomSet, org]);
-  const box = { x: -T, y: -3 * T, w: (w + 2) * T, h: (h + 3) * T };
+  const box = { x: -EDGE, y: -2 * T - EDGE, w: w * T + 2 * EDGE, h: (h + 2) * T + EDGE };
   const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, size.h * 0.94 / box.h);
   const zoom = zoomSet ?? fit;
   const o = org ?? { x: box.x + box.w / 2 - size.w / 2 / zoom, y: box.y + box.h / 2 - size.h / 2 / zoom };
@@ -242,11 +242,11 @@ export function World() {
         </defs>
         <g pointerEvents="none">
           <rect fill="url(#w-floor)" x={0} y={0} width={w * T} height={h * T} />
-          <rect fill="url(#w-wall-top)" x={0} y={-3 * T} width={w * T} height={T} />
           <rect fill="url(#w-wall)" x={0} y={-2 * T} width={w * T} height={T} />
           <rect fill="url(#w-wall-base)" x={0} y={-T} width={w * T} height={T} />
-          <rect fill="url(#w-wall-side)" x={-T} y={-3 * T} width={T} height={(h + 3) * T} />
-          <rect fill="url(#w-wall-side-right)" x={w * T} y={-3 * T} width={T} height={(h + 3) * T} />
+          <rect className="w-wall-edge" x={-EDGE} y={-2 * T - EDGE} width={w * T + 2 * EDGE} height={EDGE} />
+          <rect className="w-wall-edge" x={-EDGE} y={-2 * T} width={EDGE} height={(h + 2) * T} />
+          <rect className="w-wall-edge" x={w * T} y={-2 * T} width={EDGE} height={(h + 2) * T} />
         </g>
         {home && (
           <>
@@ -259,13 +259,13 @@ export function World() {
               </Sprite>
             </g>
             <g className={`w-obj${lit === "letterbox" ? " w-lit" : ""}`} role="button" aria-label={t("world.obj.letterbox")} onClick={use("letterbox", FIXTURES.letterbox, () => openApp("Post"))}>
-              <Sprite name="letterbox" x={-T + 10} y={(FIXTURES.letterbox.y + 1) * T - 8}>
+              <Sprite name="letterbox" x={2} y={(FIXTURES.letterbox.y + 1) * T - 8}>
                 {Array.from({ length: Math.min(unread, 3) }, (_, i) => <rect key={i} className="w-letter" x={5 + i * 4} y={2 + i} width="10" height="9" rx="0.5" />)}
                 <rect className="w-slot" x="5" y="8" width="18" height="3" rx="1.5" />
               </Sprite>
             </g>
             <g className={`w-obj${lit === "door" ? " w-lit" : ""}`} role="button" aria-label={t("world.obj.door")} onClick={use("door", FIXTURES.door, openDoor)}>
-              <Sprite name={DOOR[door]} x={-T} y={(FIXTURES.door.y + 1) * T} />
+              <Sprite name={DOOR[door]} x={0} y={(FIXTURES.door.y + 1) * T} />
             </g>
           </>
         )}
@@ -284,8 +284,9 @@ type Click = (e: MouseEvent) => void;
 
 const DIR: Record<Facing, string> = { s: "down", n: "up", w: "left", e: "right" };
 const DOOR = ["door-closed", "door-half", "door-open"];
-// The far wall is a cap row over a face two tiles tall; the side walls are one-tile strips.
-const TILED = ["floor", "wall-top", "wall", "wall-base", "wall-side", "wall-side-right"];
+// The far wall is a face two tiles tall; the walls' top edges are a flat band EDGE pixels thick.
+const TILED = ["floor", "wall", "wall-base"];
+const EDGE = 10;
 // Crate spots on the shelf, bottom-left corners in the shelf sprite's pixels.
 const CRATES: Pt[] = [{ x: 4, y: 40 }, { x: 24, y: 40 }, { x: 4, y: 72 }, { x: 24, y: 72 }];
 // The front panel of the rack sprites, in their pixels, where device fronts go when zoomed in.

@@ -14,6 +14,7 @@
 .world-svg:active { cursor: grabbing; }
 
 .w-sprite { image-rendering: pixelated; }
+.w-wall-edge { fill: oklch(0.36 0.012 252); }
 .w-tile { fill: transparent; cursor: pointer; }
 .w-cursor { fill: var(--accent); fill-opacity: 0.3; pointer-events: none; }
 .w-obj { cursor: pointer; }
