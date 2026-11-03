@@ -62,7 +62,6 @@ export function StoragePanel({ loc, onClose }: Props) {
             </div>
           )}
         </div>
-        <div className="wp-floor" />
       </div>
     </Slab>
   );
@@ -89,7 +88,7 @@ export function PostPanel({ title, onClose }: { title: string; onClose: () => vo
   );
   return (
     <Slab title={title} onClose={onClose} data={{ "post-panel": "" }}>
-      <div className="wp-scene wp-desk">
+      <div className="wp-scene">
         <div className="wp-papers">
           <div className="wp-side">{stack(at, "prev")}</div>
           {l && (
@@ -131,7 +130,6 @@ export function ScanPanel({ title, onClose }: { title: string; onClose: () => vo
           </div>
           {done && <div key={out!.n} className="wp-out" data-scanned={done.id}>{sheet(done)}</div>}
         </div>
-        <div className="wp-floor desk" />
       </div>
     </Slab>
   );
