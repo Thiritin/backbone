@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { formatClock, MS_PER_HOUR, nowHours } from "../../sim/00-core/time";
-import { datacenterById } from "../../sim/20-world/datacenters";
+import { datacenterById, listed } from "../../sim/20-world/datacenters";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
 import { cityNamed, LAND, WorldMap, X, XF, Y, type Marker } from "../map/WorldMap";
@@ -34,7 +34,7 @@ function TravelMap() {
   // Every reachable place as a pin at street zoom; above it, one pin per city with the count.
   const spots = useMemo(() => game.locations.flatMap((l) => {
     const c = cityNamed(l.city), p = placeOf(game, l.id) ?? c;
-    if (!p || (l.id !== here.id && !drive(game, l.id))) return [];
+    if (!p || !listed(l.city) || (l.id !== here.id && !drive(game, l.id))) return [];
     return [{ l, lon: p.lon, lat: p.lat }];
   }), [game, here.id]);
   const markers = useMemo(() => {

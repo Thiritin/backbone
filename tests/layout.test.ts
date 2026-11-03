@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { coldAisles, entryTile, FIXTURES, fixtureTiles, freeRackTiles, rackTiles, roomSize, wallTiles } from "../src/sim/20-world/layout";
+import { hourOf } from "../src/sim/00-core/time";
+import {
+  cage, entryTile, FIXTURES, fixtures, fixtureTiles, freeRackTiles, LOBBY_W, neighbourRacks, officeFloors, officePlan, officeSeats, officeWalk, rackTiles, roomSize, SECTION_H, SECTION_W,
+  walkways, wallTiles, type Fixture,
+} from "../src/sim/20-world/layout";
+import { listingById } from "../src/sim/20-world/properties";
+import { desks } from "../src/sim/60-infra/properties";
+import { freeSections, refitSection, rentSection } from "../src/sim/90-actions/properties";
 import type { GameState } from "../src/sim/50-state";
 import { addLocation, buyRack, moveRack } from "../src/sim/90-actions/hardware";
 import { placeRack } from "../src/sim/90-actions/layout";
@@ -98,7 +105,7 @@ describe("rack tiles", () => {
       if (!res.ok) throw new Error(res.error);
       return s.racks.find((x) => x.id === res.id)!;
     });
-    expect(roomSize(loc)).toEqual({ w: 12, h: 8 });
+    expect(roomSize(loc)).toEqual({ w: 14, h: 11 });
     expect(bought[0].tile).toEqual(wallTiles(loc)[0]);
     expect(bought[1].tile).toEqual(wallTiles(loc)[1]);
     const old = s.racks[0];
@@ -107,23 +114,60 @@ describe("rack tiles", () => {
     expect(old.tile).toEqual(wallTiles(loc)[2]);
   });
 
-  for (const [space, size] of [["share", 1], ["cage", 16], ["suite", 40]] as const) {
-    it(`lays out a ${space} with its fixtures inside and room for every rack`, () => {
-      const loc = { ...basement(newGame(20)), id: "loc9", dc: "interaction-fra", space, positions: size };
-      const { w, h } = roomSize(loc);
-      const fixed = fixtureTiles(loc);
-      for (const f of fixed) expect(f.x >= 0 && f.y >= 0 && f.x < w && f.y < h).toBe(true);
-      expect(new Set(fixed.map(key)).size).toBe(fixed.length);
-      const spots = wallTiles(loc), taken = new Set(fixed.map(key));
-      expect(spots.length).toBeGreaterThanOrEqual(loc.positions);
-      expect(new Set(spots.map(key)).size).toBe(spots.length);
-      for (const t of spots) expect(taken.has(key(t)) || t.x < 0 || t.y < 0 || t.x >= w || t.y >= h).toBe(false);
-      const entry = entryTile(loc);
-      expect(taken.has(key(entry)) || spots.some((t) => key(t) === key(entry))).toBe(false);
-      for (const a of coldAisles(loc)) expect(spots.some((t) => t.y === a.y)).toBe(false);
-      expect(Object.keys(FIXTURES[space])).toEqual(expect.arrayContaining(["door", "xconnect", "cooling", "shelf", "extinguisher"]));
-    });
-  }
+  // interaction-fra runs hot and cold aisles, hetzler-park does not.
+  for (const dc of ["interaction-fra", "hetzler-park"])
+    for (const [space, size] of [["share", 1], ["cage", 4], ["cage", 8], ["cage", 16], ["suite", 20], ["suite", 40]] as const) {
+      it(`lays out a ${space} of ${size} at ${dc} with its fixtures inside and room for every rack`, () => {
+        const loc = { ...basement(newGame(20)), id: "loc9", dc, space, positions: size };
+        const { w, h } = roomSize(loc);
+        const fixed = fixtureTiles(loc);
+        for (const f of fixed) expect(f.x >= 0 && f.y >= 0 && f.x < w && f.y < h).toBe(true);
+        expect(new Set(fixed.map(key)).size).toBe(fixed.length);
+        const spots = wallTiles(loc), others = neighbourRacks(loc), taken = new Set(fixed.map(key));
+        expect(spots.length).toBeGreaterThanOrEqual(loc.positions);
+        const all = [...spots, ...others];
+        expect(new Set(all.map(key)).size).toBe(all.length);
+        for (const t of all) expect(taken.has(key(t)) || t.x < 0 || t.y < 0 || t.x >= w || t.y >= h).toBe(false);
+        const entry = entryTile(loc);
+        expect(taken.has(key(entry)) || all.some((t) => key(t) === key(entry))).toBe(false);
+        for (const a of walkways(loc)) expect(all.some((t) => t.y === a.y)).toBe(false);
+        expect(Object.keys(FIXTURES[space])).toEqual(expect.arrayContaining(["door", "cooling", "shelf", "extinguisher", "pdu", "cart"]));
+        expect(Object.keys(FIXTURES[space])).not.toContain("xconnect");
+        // The player's racks are one contiguous run per row, their fronts in view.
+        for (const y of new Set(spots.map((t) => t.y))) {
+          const xs = spots.filter((t) => t.y === y).map((t) => t.x);
+          expect(Math.max(...xs) - Math.min(...xs) + 1).toBe(xs.length);
+        }
+        expect(spots.some((t) => t.facing === "s")).toBe(true);
+        const facings = new Set(all.map((t) => t.facing));
+        expect(facings).toEqual(new Set(dc === "hetzler-park" ? ["s"] : ["s", "n"]));
+        expect(others.length > 0).toBe(space !== "suite");
+        const c = cage(loc);
+        expect(!!c).toBe(space === "cage");
+        if (c) {
+          for (const t of spots) expect(t.x > c.x0 && t.x < c.x1 && t.y > c.y0 && t.y < c.y1).toBe(true);
+          for (const t of others) expect(t.x < c.x0 || t.x > c.x1 || t.y < c.y0 || t.y > c.y1).toBe(true);
+        }
+      });
+    }
+
+  for (const dc of ["interaction-fra", "hetzler-park"])
+    for (const [space, size] of [["share", 1], ["cage", 8], ["suite", 20]] as const) {
+      it(`gives a loaded ${space} rack at ${dc} on a tile of an older layout a new rack tile`, () => {
+        const s = newGame(22);
+        const loc = { ...basement(s), id: "loc9", dc, space, positions: size };
+        s.locations.push(loc);
+        s.racks.push({ ...structuredClone(s.racks[0]), id: "rack8", locationId: loc.id, position: 1, tile: { x: 5, y: 2, facing: "s" } });
+        s.racks.push({ ...structuredClone(s.racks[0]), id: "rack9", locationId: loc.id, position: 2, tile: { x: 2, y: 0, facing: "s" } });
+        const loaded = deserialize(serialize(s));
+        const tiles = rackTiles(loaded.locations.find((l) => l.id === loc.id)!, loaded.racks);
+        const spots = new Set(wallTiles(loc).map(key));
+        const mine = ["rack8", "rack9"].filter((id) => tiles[id]);
+        expect(mine.length).toBe(Math.min(2, spots.size));
+        for (const id of mine) expect(spots.has(key(tiles[id]))).toBe(true);
+        expect(new Set(mine.map((id) => key(tiles[id]))).size).toBe(mine.length);
+      });
+    }
 
   it("puts the suite's NOC desk in front of every rack row, where no rack hides it", () => {
     const loc = { ...basement(newGame(20)), id: "loc9", dc: "interaction-fra", space: "suite" as const, positions: 40 };
@@ -147,5 +191,67 @@ describe("rack tiles", () => {
     const spots = new Set(wallTiles(loc).map(key));
     for (const x of here) expect(spots.has(key(tiles[x.id]))).toBe(true);
     expect(new Set(here.map((x) => key(tiles[x.id]))).size).toBe(2);
+  });
+});
+
+describe("office room", () => {
+  const office = (n: number) => {
+    const s = newGame(31);
+    s.cash = 5_000_000;
+    s.hour = hourOf(new Date(Date.UTC(2012, 2, 12, 10)));
+    expect(rentSection(s, "zeilwerk", freeSections(s, listingById("zeilwerk")!)[0]).ok).toBe(true);
+    const p = s.properties.at(-1)!;
+    // More sections than any listing has free, three to a floor.
+    p.sections = Array.from({ length: n }, (_, i) => ({ ...p.sections[0], id: `${Math.floor(i / 3) + 1}.${(i % 3) + 1}`, floor: Math.floor(i / 3) + 1 }));
+    return { s, p, loc: s.locations.find((l) => l.id === p.locationId)! };
+  };
+  const tiles = (fx: Record<string, Fixture>, kind: RegExp) =>
+    Object.entries(fx).filter(([id, f]) => kind.test(f.kind ?? id)).flatMap(([, f]) => Array.from({ length: f.w ?? 1 }, (_, i) => key({ x: f.x + i, y: f.y })));
+
+  for (const n of [1, 2, 5]) {
+    it(`builds consistent rooms from ${n} section(s) with a seat per desk`, () => {
+      const { s, p, loc } = office(n), floors = officeFloors(p.sections), plan = officePlan(s, loc)!;
+      expect(officeSeats(plan)).toHaveLength(desks(s));
+      expect(desks(s)).toBe(4 * n);
+      for (const floor of floors) {
+        const fp = { ...plan, floor }, { w, h } = roomSize(loc, fp), fx = fixtures(loc, fp);
+        const count = p.sections.filter((x) => x.floor === floor).length;
+        expect(w).toBe(count * SECTION_W + (floor === p.sections[0].floor ? LOBBY_W : 0));
+        expect(h).toBe(SECTION_H);
+        for (const t of fixtureTiles(loc, fp)) expect(t.x >= 0 && t.y >= 0 && t.x < w && t.y < h).toBe(true);
+        const solid = tiles(fx, /^(odesk|ochair|chair|reception|kitchen|bossdesk|printer|plant)/);
+        expect(new Set(solid).size).toBe(solid.length);
+        expect(solid).not.toContain(key(entryTile(loc, fp)));
+        expect(!!fx.stairs).toBe(floors.length > 1);
+        expect(!!fx.letterbox).toBe(floor === p.sections[0].floor);
+        for (const seat of officeSeats(plan).filter((x) => x.floor === floor)) {
+          const path = officeWalk(plan, seat), end = path.at(-1)!;
+          expect(end).toEqual({ x: seat.x + 0.5, y: seat.y + 0.5 });
+          for (let i = 1; i < path.length; i++) {
+            const a = path[i - 1], b = path[i];
+            expect(a.x === b.x || a.y === b.y).toBe(true);
+            for (let k = 0; k <= 8; k++) {
+              const q = { x: Math.floor(a.x + ((b.x - a.x) * k) / 8), y: Math.floor(a.y + ((b.y - a.y) * k) / 8) };
+              if (i < path.length - 1 || k < 8) expect(tiles(fx, /^(odesk|reception|kitchen|bossdesk|printer|plant|bin)/)).not.toContain(key(q));
+            }
+          }
+        }
+      }
+    });
+  }
+
+  it("turns a server section into four rack tiles a bought rack stands on", () => {
+    const { s, p, loc } = office(2), sec = p.sections[1];
+    expect(refitSection(s, p.id, sec.id, "servers").ok).toBe(true);
+    const plan = officePlan(s, loc)!, fx = fixtures(loc, { ...plan, floor: sec.floor });
+    expect(fx[`buckets${sec.id}`]).toBeDefined();
+    expect(desks(s)).toBe(4);
+    s.hour += 24 * 14;
+    loc.readyAt = s.hour;
+    expect(wallTiles(loc, officePlan(s, loc))).toHaveLength(4);
+    const r = buyRack(s, loc.id, "rack-47", 1);
+    if (!r.ok) throw new Error(r.error);
+    expect(s.racks.find((x) => x.id === r.id)!.tile).toEqual(wallTiles(loc, officePlan(s, loc))[0]);
+    expect(fixtures(loc, officePlan(s, loc, sec.floor))[`buckets${sec.id}`]).toBeUndefined();
   });
 });

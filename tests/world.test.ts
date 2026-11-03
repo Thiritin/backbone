@@ -7,6 +7,8 @@ import { useStore } from "../src/ui/store";
 import { roomOf, World } from "../src/ui/world/World";
 import { tick } from "../src/sim/88-tick/tick";
 import { buyDevice } from "../src/sim/90-actions/hardware";
+import { atDesk, inLetterbox, post } from "../src/sim/40-support/letters";
+import { OFFICE_NAME } from "../src/sim/80-business/paperwork";
 import { readyGame } from "./fixtures";
 import { devName } from "../src/ui/apps/hw";
 import { connectError, portPeers } from "../src/sim/60-infra/status";
@@ -126,5 +128,76 @@ describe("world", () => {
       vi.useRealTimers();
       vi.unstubAllGlobals();
     }
+  });
+
+  it("drags a cable from port to port on the rack back and a drop elsewhere cancels it", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "setTimeout", "clearTimeout", "performance"] });
+    const at = document.elementFromPoint;
+    try {
+      const s = readyGame(7);
+      useStore.setState({ game: s, speed: 0, surface: "world" });
+      const { container } = render(createElement(World));
+      const rack = s.racks.find((r) => r.locationId === roomOf(s).id)!;
+      fireEvent.click(container.querySelector(`[data-rack="${rack.id}"]`)!);
+      act(() => { vi.advanceTimersByTime(20_000); });
+      const panel = screen.getByRole("dialog", { name: rack.name });
+      fireEvent.click(screen.getByRole("button", { name: t("locations-2.back") }));
+      act(() => { vi.advanceTimersByTime(1000); });
+      const end = (el: Element): End => { const [device, port] = el.getAttribute("data-end")!.split(":"); return { device, port: Number(port) }; };
+      const g = () => useStore.getState().game;
+      const free = [...panel.querySelectorAll(".rack-port[data-end]")].filter((el) => { const e = end(el); return s.devices.find((d) => d.id === e.device)?.rackId === rack.id && !portPeers(g(), e.device)[e.port]; });
+      const a = free[0], b = free.find((el) => end(el).device !== end(a).device && !connectError(g(), end(a), end(el)))!;
+      const drag = (to: Element) => {
+        document.elementFromPoint = () => to;
+        fireEvent.pointerDown(a, { button: 0 });
+        fireEvent.pointerUp(window);
+      };
+
+      const before = g().cables.length;
+      drag(panel);
+      expect(g().cables.length).toBe(before);
+      expect(panel.querySelector("[data-hand]")).toBeNull();
+      drag(b);
+      expect(g().cables.length).toBe(before + 1);
+      expect(portPeers(g(), end(a).device)[end(a).port]).toEqual(end(b));
+    } finally {
+      document.elementFromPoint = at;
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+  it("fetches the post into a stack of sheets, browses them and scans them all", () => {
+    const s = readyGame(7);
+    s.letters = [];
+    post(s, OFFICE_NAME, "officeRegistered", { name: "Kellerhost", reg: "4711" }, 1);
+    post(s, OFFICE_NAME, "officeRegistered", { name: "Kellerhost", reg: "4712" }, 1);
+    for (let i = 0; i < 4 * 24; i++) tick(s);
+    expect(inLetterbox(s)).toHaveLength(2);
+    useStore.setState({ game: s, speed: 0, surface: "world" });
+    render(createElement(World));
+    fireEvent.click(screen.getByRole("button", { name: t("world.obj.letterbox") }));
+    const panel = screen.getByRole("dialog", { name: t("world.obj.letterbox") });
+    const first = panel.querySelector("[data-letter]")!.getAttribute("data-letter");
+    fireEvent.click(screen.getByRole("button", { name: t("world.nextLetter") }));
+    expect(panel.querySelector("[data-letter]")!.getAttribute("data-letter")).not.toBe(first);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(panel.querySelector("[data-letter]")!.getAttribute("data-letter")).toBe(first);
+    fireEvent.click(screen.getByRole("button", { name: t("world.scanAll") }));
+    expect(atDesk(useStore.getState().game).every((l) => l.scanned)).toBe(true);
+  });
+
+  it("pulls every unit's plug with the fuse box main switch and boots them again", () => {
+    const s = readyGame(7);
+    useStore.setState({ game: s, speed: 0, surface: "world" });
+    render(createElement(World));
+    const here = roomOf(s).id, mine = () => useStore.getState().game.devices.filter((d) => d.rackId && useStore.getState().game.racks.find((r) => r.id === d.rackId)?.locationId === here);
+    expect(mine().some((d) => d.on)).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: t("world.obj.fusebox") }));
+    const main = screen.getByRole("switch", { name: t("world.mainSwitch") });
+    fireEvent.click(main);
+    expect(mine().every((d) => !d.on)).toBe(true);
+    fireEvent.click(main);
+    expect(mine().every((d) => d.on || d.chassisId)).toBe(true);
   });
 });

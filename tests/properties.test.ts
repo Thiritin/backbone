@@ -41,6 +41,8 @@ describe("properties", () => {
     const id = rentFirst(s);
     expect(s.cash).toBe(cash - 3 * rent);
     expect(s.properties.find((p) => p.id === id)).toMatchObject({ kind: "office", deposit: 3 * rent });
+    const loc = s.locations.find((l) => l.id === s.properties.find((p) => p.id === id)!.locationId);
+    expect(loc).toMatchObject({ space: "office", positions: 0, dc: null });
     monthStart(s, 2005, 4);
     expect(ledger(s, "ledger.officeRent").map((e) => e.amount)).toEqual([-rent]);
     expect(desks(s)).toBe(4);

@@ -1,6 +1,6 @@
 import { t } from "../../i18n/en";
 import { rand } from "../00-core/rng";
-import { freeRackTiles, rackTiles } from "../20-world/layout";
+import { freeRackTiles, officePlan, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
 import { debitAllowed, HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance/payables";
 import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
@@ -203,7 +203,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   if (error) return fail(error);
   if (s.cash < spec.price) return fail("error.noCash");
   const name = model === "shelf" ? t("rack.shelf") : nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
-  const tile = freeRackTiles(s.locations.find((l) => l.id === locationId)!, s.racks)[0];
+  const at = s.locations.find((l) => l.id === locationId)!, tile = freeRackTiles(at, s.racks, officePlan(s, at))[0];
   const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null }, tile };
   s.racks.push(rack);
   book(s, "hardware", "ledger.hardware", { model: spec.id === "shelf" ? "shelf" : `${spec.units}U rack`, device: name }, -spec.price);
@@ -236,7 +236,7 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   // The power contract belongs to the position too; the new one starts on its site's default.
   if (to.id !== from.id) {
     Object.assign(rack, { flatKw: flatDefault(s, to.id), flatKwAt: null, overSince: { a: null, b: null }, tile: undefined });
-    rack.tile = rackTiles(to, s.racks)[rack.id];
+    rack.tile = rackTiles(to, s.racks, officePlan(s, to))[rack.id];
   }
   book(s, "moving", "ledger.move", { rack: rack.name, location: to.name }, -move.price);
   return { ok: true, id: rack.id };

@@ -58,7 +58,8 @@ export function Scene({ place, leaving }: { place: Location; leaving: boolean })
   for (const [id, at, play] of cues) if (e >= at && !fired.current.has(id)) { fired.current.add(id); play(); }
   useEffect(() => { if (e >= (leaving ? LEAVE_MS : ARRIVE_MS)) end(); });
 
-  const house = place.space === "basement", door = house ? 84 : 38, seat = KERB + 16;
+  const house = place.space === "basement", office = place.space === "office", door = house ? 84 : office ? 60 : 38, seat = KERB + 16;
+  const company = useStore((s) => s.game.company.name);
   let carX: number, open: boolean, me: number | null, fade: number;
   if (leaving) {
     carX = KERB + 200 * ease(2600, 3500, e) ** 2;
@@ -94,7 +95,7 @@ export function Scene({ place, leaving }: { place: Location; leaving: boolean })
         <rect width="320" height="70" fill={top} />
         <rect y="70" width="320" height="76" fill={low} />
         {night && [[20, 12], [70, 30], [130, 8], [190, 24], [250, 14], [300, 40], [160, 50], [40, 56]].map(([x, y]) => <rect key={x} x={x} y={y} width="1" height="1" fill="oklch(0.95 0.02 90)" />)}
-        {house ? <House door={door} night={night} /> : <Datacenter door={door} name={place.dc ? dcProvider(datacenterById(place.dc).provider).name : place.name} provider={place.dc ? datacenterById(place.dc).provider : null} />}
+        {house ? <House door={door} night={night} /> : office ? <OfficeFront door={door} name={company} building={place.name} night={night} /> : <Datacenter door={door} name={place.dc ? dcProvider(datacenterById(place.dc).provider).name : place.name} provider={place.dc ? datacenterById(place.dc).provider : null} />}
         <rect y={GROUND - 6} width="320" height="6" fill="oklch(0.7 0.006 255)" />
         {Array.from({ length: 20 }, (_, i) => <rect key={i} x={i * 16} y={GROUND - 6} width="1" height="6" fill="oklch(0.62 0.006 255)" />)}
         <rect y={GROUND} width="320" height="2" fill="oklch(0.55 0.006 255)" />
@@ -140,6 +141,28 @@ function House({ door, night }: { door: number; night: boolean }) {
       <rect x={door - 4} y="126" width="8" height="10" fill="oklch(0.4 0.07 50)" />
       <rect x={door + 3} y="126" width="2" height="1" fill="oklch(0.85 0.12 90)" />
       <rect x={door - 9} y={GROUND - 7} width="18" height="1" fill="oklch(0.6 0.006 255)" />
+    </g>
+  );
+}
+
+// An office building: rows of windows over a glass entrance, the company's plate beside the door and the building's name above it.
+function OfficeFront({ door, name, building, night }: { door: number; name: string; building: string; night: boolean }) {
+  return (
+    <g>
+      <rect x="10" y="30" width="140" height={GROUND - 6 - 30} fill="url(#tr-plaster)" stroke={INK} />
+      {[38, 58, 78].map((y) => [18, 40, 62, 84, 106, 128].map((x, i) => <rect key={`${x}-${y}`} x={x} y={y} width="16" height="12" fill={night && (x + y + i) % 3 === 0 ? "oklch(0.86 0.13 85)" : "oklch(0.55 0.05 225)"} stroke="oklch(0.92 0.005 255)" />))}
+      <rect x="36" y="96" width="48" height="8" fill="oklch(0.96 0.005 255)" stroke={INK} />
+      <text x="60" y="102" textAnchor="middle" className="tr-plate">{building}</text>
+      <rect x={door - 13} y="108" width="26" height="32" fill="oklch(0.42 0.01 255)" stroke={INK} />
+      <rect x={door - 11} y="110" width="10" height="30" fill="oklch(0.62 0.05 225)" />
+      <rect x={door + 1} y="110" width="10" height="30" fill="oklch(0.62 0.05 225)" />
+      <rect x={door - 9} y="111" width="2" height="10" fill="oklch(0.76 0.05 225)" />
+      <rect x={door + 3} y="111" width="2" height="10" fill="oklch(0.76 0.05 225)" />
+      <rect x={door - 2} y="122" width="1" height="6" fill="oklch(0.85 0.01 255)" />
+      <rect x={door + 1} y="122" width="1" height="6" fill="oklch(0.85 0.01 255)" />
+      <rect x={door + 17} y="114" width="34" height="12" fill="oklch(0.8 0.08 80)" stroke={INK} strokeWidth="0.5" />
+      <text x={door + 34} y="122" textAnchor="middle" className="tr-plate" textLength="30" lengthAdjust="spacingAndGlyphs">{name}</text>
+      {[124, 128, 132].map((y) => <rect key={y} x={door + 19} y={y} width="6" height="2" fill="oklch(0.8 0.08 80)" stroke={INK} strokeWidth="0.4" />)}
     </g>
   );
 }
