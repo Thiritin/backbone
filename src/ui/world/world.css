@@ -1,17 +1,10 @@
-/* Hotel-chat style: flat tones, a one-pixel navy outline, no gradients or blur. */
+/* Three-quarter top-down pixel tiles; code-drawn placeholders use flat tones from the product palette. */
 .world {
-  --w-line: oklch(0.27 0.045 262);
   --w-bg: oklch(0.3 0.025 250);
-  --w-checker: oklch(0.27 0.045 262 / 0.08);
-  --w-paper-l: oklch(0.86 0.045 200);
-  --w-paper-r: oklch(0.8 0.045 200);
-  --w-wall-top: oklch(0.95 0.02 200);
-  --w-wall-end-l: oklch(0.7 0.04 200);
-  --w-wall-end-r: oklch(0.6 0.04 200);
-  --w-skirt: oklch(0.55 0.04 240);
   --w-skin: oklch(0.84 0.06 60);
-  --w-hair: oklch(0.38 0.07 50);
-  --w-pants: oklch(0.36 0.05 262);
+  --w-hair: oklch(0.42 0.06 50);
+  --w-pants: oklch(0.4 0.04 262);
+  --w-ink: oklch(0.25 0.02 258);
   position: fixed;
   inset: 0;
   background: var(--w-bg);
@@ -21,54 +14,37 @@
 .world-svg:active { cursor: grabbing; }
 
 .w-sprite { image-rendering: pixelated; }
+.w-wall-edge { fill: oklch(0.36 0.012 252); }
 .w-tile { fill: transparent; cursor: pointer; }
-.w-tile-b { fill: var(--w-checker); }
-.w-cursor { fill: none; stroke: oklch(1 0 0); stroke-width: 1; pointer-events: none; }
-
-.w-walls polygon { stroke: var(--w-line); stroke-width: 1; pointer-events: none; }
-.w-wall-l { fill: var(--w-paper-l); }
-.w-wall-r { fill: var(--w-paper-r); }
-.w-wall-top { fill: var(--w-wall-top); }
-.w-wall-end-l { fill: var(--w-wall-end-l); }
-.w-wall-end-r { fill: var(--w-wall-end-r); }
-.w-skirt { fill: var(--w-skirt); }
-
-/* Each tone class sets the top, left and right face of a box. */
-.w-tone-wood { --top: oklch(0.7 0.08 65); --left: oklch(0.58 0.08 60); --right: oklch(0.48 0.07 55); }
-.w-tone-shelf { --top: oklch(0.64 0.015 255); --left: oklch(0.52 0.015 255); --right: oklch(0.32 0.015 255); }
-.w-tone-rack { --top: var(--metal-3); --left: var(--metal-2); --right: var(--metal); }
-.w-tone-pc { --top: oklch(0.92 0.01 90); --left: oklch(0.84 0.01 90); --right: oklch(0.72 0.01 90); }
-.w-tone-paper { --top: oklch(0.95 0.005 250); --left: oklch(0.82 0.005 250); --right: oklch(0.7 0.005 250); }
-.w-face-t { fill: var(--top); }
-.w-face-l { fill: var(--left); }
-.w-face-r { fill: var(--right); }
-.w-edge { fill: none; stroke: var(--w-line); stroke-width: 1; stroke-linejoin: miter; }
-.w-edge-fill { stroke: var(--w-line); stroke-width: 1; }
-.w-lit .w-edge, .w-lit .w-edge-fill { stroke: oklch(1 0 0); }
-.w-lit .w-sprite { filter: brightness(1.25); }
-.w-screen { fill: oklch(0.55 0.12 250); }
+.w-cursor { fill: var(--accent); fill-opacity: 0.3; pointer-events: none; }
 .w-obj { cursor: pointer; }
+.w-obj:hover, .w-lit { filter: drop-shadow(0 0 1.5px var(--accent)); }
 
-.w-frame { fill: oklch(0.95 0.01 90); stroke: var(--w-line); stroke-width: 1; }
-.w-glass { fill: oklch(0.78 0.06 230); stroke: var(--w-line); stroke-width: 1; }
-.w-blade { fill: var(--metal-2); }
-.w-lcd { fill: oklch(0.24 0.04 250); stroke: var(--w-line); stroke-width: 1; }
-.w-digits { fill: oklch(0.88 0.12 190); }
-.w-digits-dim { fill: oklch(0.72 0.08 190); }
-.w-sun { fill: oklch(0.86 0.15 90); }
+.w-ph-back { fill: oklch(0.83 0.012 252); }
+.w-ph-face { fill: oklch(0.962 0.007 250); }
+.w-ph-weather .w-ph-back { fill: oklch(0.38 0.02 250); }
+.w-ph-weather .w-ph-face { fill: oklch(0.26 0.03 250); }
+.w-ph-letterbox .w-ph-back { fill: oklch(0.66 0.1 80); }
+.w-ph-letterbox .w-ph-face { fill: oklch(0.76 0.1 85); }
+.w-ph-crate .w-ph-back { fill: oklch(0.55 0.07 60); }
+.w-ph-crate .w-ph-face { fill: oklch(0.68 0.07 65); }
+
+.w-num { font-family: var(--font-ui); font-size: 8px; font-weight: 500; font-variant-numeric: tabular-nums; text-anchor: end; fill: oklch(0.95 0.02 220); }
+.w-num-dim { fill: oklch(0.75 0.03 220); }
+.w-num-tag { text-anchor: middle; paint-order: stroke; stroke: oklch(0.2 0.02 258); stroke-width: 2.5px; }
+.w-sun { fill: oklch(0.86 0.14 90); }
 .w-cloud { fill: oklch(0.9 0.01 250); }
-.w-rain { fill: oklch(0.7 0.13 240); }
+.w-rain { fill: oklch(0.72 0.11 240); }
 .w-snow { fill: oklch(1 0 0); }
-.w-switch { fill: var(--w-line); }
-.w-letter { fill: oklch(0.98 0.005 90); stroke: var(--w-line); stroke-width: 1; }
-.w-fuse { fill: oklch(0.82 0.01 250); stroke: var(--w-line); stroke-width: 1; }
-.w-brass { fill: oklch(0.76 0.13 85); }
-.w-slot { fill: var(--w-line); }
-.w-jamb { fill: oklch(0.62 0.07 60); }
-.w-doorway { fill: oklch(0.14 0.02 262); }
-.w-panel { fill: oklch(0.56 0.08 55); stroke: var(--w-line); stroke-width: 1; }
-.w-knob { fill: oklch(0.86 0.1 90); }
-.w-shadow { fill: oklch(0.27 0.045 262 / 0.35); }
+.w-letter { fill: oklch(0.98 0.005 90); stroke: oklch(0.82 0.01 90); stroke-width: 0.5; }
+.w-slot { fill: oklch(0.35 0.03 70); }
+
+.w-shadow { fill: oklch(0.2 0.02 262 / 0.25); }
+.w-skin { fill: var(--w-skin); }
+.w-hair { fill: var(--w-hair); }
+.w-pants { fill: var(--w-pants); }
+.w-shirt { fill: var(--accent); }
+.w-eye { fill: var(--w-ink); }
 
 .w-led { fill: oklch(0.35 0.01 255); }
 .w-led-on { fill: var(--ok); }

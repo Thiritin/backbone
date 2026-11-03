@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The basement is now seen from above at a three-quarter angle, drawn with datacenter pixel art and placeholder art for the few things it does not have yet.
 - Leaving through the door now shows the drive: you get into the company car in front of the building, follow the route on a dark map while the clock runs ahead, and arrive at the other site before walking in.
 - The basement is drawn in a pixel hotel style with walls on the two far sides, a tile cursor and a walking avatar you can steer with the arrow keys, and a menu bar button and desktop icon take you there.
 - You can stand up from the desk and walk around the basement, where the racks, the storage shelf, the letterbox and the scanner open their apps and the door opens the way out.

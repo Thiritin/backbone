@@ -40,19 +40,19 @@ describe("rack tiles", () => {
     const s = newGame(11);
     twoRacks(s);
     const loc = basement(s);
-    // The near-side column of the old four-wall layout.
-    s.racks[0].tile = { x: 11, y: 3, facing: "w" };
+    // The near row of the old four-wall layout.
+    s.racks[0].tile = { x: 3, y: 8, facing: "n" };
     const loaded = deserialize(serialize(s));
     const tiles = rackTiles(basement(loaded), loaded.racks);
     const walls = new Set(wallTiles(loc).map(key));
-    expect(walls.has("11,3")).toBe(false);
+    expect(walls.has("3,8")).toBe(false);
     for (const r of loaded.racks.filter((x) => x.locationId === loc.id)) expect(walls.has(key(tiles[r.id]))).toBe(true);
     expect(new Set(Object.values(tiles).map(key)).size).toBe(Object.keys(tiles).length);
   });
 
-  it("puts every wall tile on the two far sides", () => {
-    const loc = basement(newGame(12));
-    for (const t of wallTiles(loc)) expect(t.y === 0 ? t.facing === "s" : t.x === 0 && t.facing === "e").toBe(true);
+  it("puts every wall tile along the far wall and the two side walls", () => {
+    const loc = basement(newGame(12)), { w } = roomSize(loc);
+    for (const t of wallTiles(loc)) expect(t.y === 0 ? t.facing === "s" : t.x === 0 ? t.facing === "e" : t.x === w - 1 && t.facing === "w").toBe(true);
     for (const f of Object.values(FIXTURES)) expect(f.x === 0 || f.y === 0).toBe(true);
   });
 

@@ -13,18 +13,16 @@ import { Defs } from "../art/fronts";
 import { RackFront } from "../art/RackFront";
 import { rackItems } from "../apps/locations/RackView";
 import { useStore } from "../store";
-import { center, facingOf, iso, key, pathTo, useTiles, type Pt } from "./iso";
+import { facingOf, key, pathTo, T, useTiles, type Pt } from "./grid";
+import { Sprite } from "./Sprite";
 import { useTrip } from "../travel/route";
 import "./world.css";
 
-const WALL = 96, DOOR_H = 64, STEP_MS = 400, BLINK_MS = 500, FLASH_MS = 120, ZOOM_MAX = 4;
+const STEP_MS = 400, BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 1, ZOOM_MAX = 3;
 // Rack art is drawn 110 wide with 10 per unit, about a 19-inch front.
 const RACK_W = 110, ART_U = 10;
-const SOLID = ["desk", "pc", "scanner", "shelf"];
-// A quarter tile of wall thickness, outward from the far-left and the far-right wall.
-const OUT_L: Pt = iso(-0.25, 0), OUT_R: Pt = iso(0, -0.25);
-const ART = `${import.meta.env.BASE_URL}world/`;
-// Arrow keys and WASD step along the grid: up is away from the camera to the upper right.
+const SOLID = ["desk", "pc", "scanner", "shelf", "fusebox"];
+// Arrow keys and WASD step along the grid; up is toward the far wall.
 const KEYS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0],
 };
@@ -32,13 +30,7 @@ const KEYS: Record<string, [number, number]> = {
 const stood: Record<string, Pt> = {};
 const looked: Record<string, { zoom: number | null; org: Pt | null }> = {};
 
-const pts = (...p: Pt[]) => p.map((q) => `${q.x},${q.y}`).join(" ");
-const up = (p: Pt, h: number): Pt => ({ x: p.x, y: p.y - h });
-const add = (p: Pt, q: Pt): Pt => ({ x: p.x + q.x, y: p.y + q.y });
 const lerp = (a: Pt, b: Pt, k: number): Pt => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
-const dpr = () => (typeof window !== "undefined" && window.devicePixelRatio) || 1;
-// Rounds to whole device pixels at zoom z.
-const snap = (v: number, z: number) => Math.round(v * z * dpr()) / (z * dpr());
 
 export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
@@ -66,18 +58,18 @@ export function World() {
   const at = useRef<Pt>(start), path = useRef<Pt[]>([]), then = useRef<(() => void) | null>(null), held = useRef<string[]>([]), tap = useRef<string | null>(null);
   const svg = useRef<SVGSVGElement>(null);
 
-  // The default view fits the room; zoom steps are whole device pixels, so pixels stay square.
+  // The default view fits the room with its walls.
   const [size, setSize] = useState({ w: 1024, h: 768 });
   const [zoomSet, setZoom] = useState<number | null>(looked[loc.id]?.zoom ?? null);
   const [org, setOrg] = useState<Pt | null>(looked[loc.id]?.org ?? null);
   useEffect(() => { looked[loc.id] = { zoom: zoomSet, org }; }, [loc.id, zoomSet, org]);
-  const box = { x: iso(0, h).x + OUT_L.x, y: -WALL + OUT_L.y - 8, w: (w + h) * 32 - 2 * OUT_L.x, h: (w + h) * 16 + WALL - OUT_L.y + 8 };
-  const fit = Math.max(1 / dpr(), Math.floor(Math.min(size.w * 0.94 / box.w, size.h * 0.94 / box.h) * dpr()) / dpr());
+  const box = { x: -EDGE, y: -2 * T - EDGE, w: w * T + 2 * EDGE, h: (h + 2) * T + EDGE };
+  const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, size.h * 0.94 / box.h);
   const zoom = zoomSet ?? fit;
-  const o = org ?? { x: snap(box.x + box.w / 2 - size.w / 2 / zoom, zoom), y: snap(box.y + box.h / 2 - size.h / 2 / zoom, zoom) };
+  const o = org ?? { x: box.x + box.w / 2 - size.w / 2 / zoom, y: box.y + box.h / 2 - size.h / 2 / zoom };
   const view = useRef({ zoom, o, fit });
   view.current = { zoom, o, fit };
-  const zoomed = zoom >= 1.5;
+  const zoomed = zoom >= 2;
 
   useEffect(() => {
     const el = svg.current;
@@ -143,22 +135,18 @@ export function World() {
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", release); window.removeEventListener("blur", clear); };
   }, [setSurface]);
 
-  // Wheel steps the zoom by one device pixel per art pixel around the pointer; small trackpad deltas add up to a step.
+  // Wheel zooms around the pointer.
   useEffect(() => {
     const el = svg.current;
     if (!el) return;
-    let acc = 0;
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
-      acc += e.deltaY;
-      if (Math.abs(acc) < 40) return;
-      const { zoom: z0, o, fit } = view.current, step = 1 / dpr();
-      const z1 = Math.min(ZOOM_MAX, Math.max(Math.min(fit, 1), Math.round((z0 + (acc < 0 ? step : -step)) / step) * step));
-      acc = 0;
+      const { zoom: z0, o, fit } = view.current;
+      const z1 = Math.min(ZOOM_MAX, Math.max(Math.min(fit, ZOOM_MIN), z0 * Math.exp(-e.deltaY * 0.002)));
       if (z1 === z0) return;
       const r = el.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
       setZoom(z1);
-      setOrg({ x: snap(o.x + sx / z0 - sx / z1, z1), y: snap(o.y + sy / z0 - sy / z1, z1) });
+      setOrg({ x: o.x + sx / z0 - sx / z1, y: o.y + sy / z0 - sy / z1 });
     };
     el.addEventListener("wheel", wheel, { passive: false });
     return () => el.removeEventListener("wheel", wheel);
@@ -173,7 +161,7 @@ export function World() {
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (!dragged.current && Math.hypot(dx, dy) < 4) return;
     dragged.current = true;
-    setOrg({ x: snap(d.o.x - dx / zoom, zoom), y: snap(d.o.y - dy / zoom, zoom) });
+    setOrg({ x: d.o.x - dx / zoom, y: d.o.y - dy / zoom });
   };
 
   const walk = (targets: Pt[], run?: () => void) => {
@@ -200,27 +188,41 @@ export function World() {
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   const n = (v: number, digits = 0) => v.toLocaleString(LOCALE, { maximumFractionDigits: digits, minimumFractionDigits: digits });
 
-  // Depth-sorted things standing on the floor.
+  // Things standing on the floor, sorted by their row so nearer ones overlap farther ones.
   const things: { depth: number; node: ReactNode }[] = racks.map((r) => ({
-    depth: tiles[r.id].x + tiles[r.id].y,
-    node: <RackBox key={r.id} rack={r} tile={tiles[r.id]} game={game} zoomed={zoomed} lit={lit === r.id} onClick={use(r.id, tiles[r.id], () => openApp("Locations", { kind: "rack", id: r.id }))} />,
+    depth: tiles[r.id].y,
+    node: <RackSprite key={r.id} rack={r} tile={tiles[r.id]} game={game} zoomed={zoomed} lit={lit === r.id} onClick={use(r.id, tiles[r.id], () => openApp("Locations", { kind: "rack", id: r.id }))} />,
   }));
   if (home) {
-    const f = FIXTURES, desk = (id: string, label: string, run: () => void, art: ReactNode) => ({
-      depth: f[id].x + f[id].y,
-      node: <Desk key={id} at={f[id]} label={label} lit={lit === id} onClick={use(id, f[id], run)}>{art}</Desk>,
+    const f = FIXTURES, obj = (id: string, label: string, run: () => void, art: ReactNode, k = 0) => ({
+      depth: f[id].y + k,
+      node: <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={label} onClick={use(id, f[id], run)}>{art}</g>,
     });
     things.push(
-      desk("scanner", t("world.obj.scanner"), () => openApp("DocuWhere"), <Scanner />),
-      desk("desk", t("world.obj.desk"), () => {}, <Keyboard />),
-      desk("pc", t("world.obj.pc"), () => setSurface("desktop"), <Pc />),
-      { depth: f.shelf.x + f.shelf.y, node: <Shelf key="shelf" at={f.shelf} count={stored} label={t("world.obj.shelf")} lit={lit === "shelf"} onClick={use("shelf", f.shelf, () => openApp("Locations", { kind: "storage", id: loc.id }))} /> },
+      obj("scanner", t("world.obj.scanner"), () => openApp("DocuWhere"), <Sprite name="scanner" x={f.scanner.x * T} y={(f.scanner.y + 1) * T} />),
+      obj("desk", t("world.obj.desk"), () => {}, <Sprite name="desk" x={f.desk.x * T} y={(f.desk.y + 1) * T} />),
+      // The tower stands at the desk's right end, beside the chair.
+      obj("pc", t("world.obj.pc"), () => setSurface("desktop"), <Sprite name="pc" x={f.pc.x * T + 16} y={(f.pc.y + 1) * T} />, 0.001),
+      {
+        depth: f.fusebox.y,
+        node: (
+          <g key="fusebox" aria-label={t("world.obj.fusebox")} pointerEvents="none">
+            <Sprite name="fusebox" x={f.fusebox.x * T} y={(f.fusebox.y + 1) * T}>
+              <text className="w-num w-num-tag" x="34" y="12">{`${n(power)}W`}</text>
+            </Sprite>
+          </g>
+        ),
+      },
+      obj("shelf", t("world.obj.shelf"), () => openApp("Locations", { kind: "storage", id: loc.id }), (
+        <Sprite name="shelf" x={f.shelf.x * T} y={(f.shelf.y + 1) * T}>
+          {Array.from({ length: Math.min(stored, CRATES.length) }, (_, i) => <Sprite key={i} name="crate" x={CRATES[i].x} y={CRATES[i].y} />)}
+        </Sprite>
+      )),
     );
   }
-  things.push({ depth: pos.x + pos.y + 0.01, node: <Player key="player" at={pos} facing={facing} stride={stride} /> });
+  things.push({ depth: pos.y + 0.01, node: <Sprite key="player" name={`player-${DIR[facing]}-${stride % 2}`} x={pos.x * T} y={(pos.y + 1) * T} /> });
   things.sort((a, b) => a.depth - b.depth);
 
-  const O = iso(0, 0), X = iso(w, 0), Y = iso(0, h), top = up(O, WALL);
   const openDoor = () => {
     setDoor(1);
     setTimeout(() => setDoor(2), 150);
@@ -229,32 +231,49 @@ export function World() {
 
   return (
     <div className="world" aria-label={loc.name}>
-      <svg ref={svg} className="world-svg" viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet" shapeRendering="crispEdges"
+      <svg ref={svg} className="world-svg" viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; setHover(null); }}>
         <Defs />
-        <g className="w-walls">
-          <polygon className="w-wall-l" points={pts(O, Y, up(Y, WALL), top)} />
-          <polygon className="w-wall-r" points={pts(O, X, up(X, WALL), top)} />
-          <polygon className="w-skirt" points={pts(O, Y, up(Y, 4), up(O, 4))} />
-          <polygon className="w-skirt" points={pts(O, X, up(X, 4), up(O, 4))} />
-          <polygon className="w-wall-end-l" points={pts(Y, add(Y, OUT_L), up(add(Y, OUT_L), WALL), up(Y, WALL))} />
-          <polygon className="w-wall-end-r" points={pts(X, add(X, OUT_R), up(add(X, OUT_R), WALL), up(X, WALL))} />
-          <polygon className="w-wall-top" points={pts(top, up(Y, WALL), add(up(Y, WALL), OUT_L), add(top, OUT_L), up(top, -2 * OUT_L.y), add(top, OUT_R), add(up(X, WALL), OUT_R), up(X, WALL))} />
+        {/* Repeating tiles fill one rect each, so no seams show between them at any zoom. */}
+        <defs>
+          {TILED.map((name) => (
+            <pattern key={name} id={`w-${name}`} width={T} height={T} patternUnits="userSpaceOnUse"><Sprite name={name} x={0} y={T} /></pattern>
+          ))}
+        </defs>
+        <g pointerEvents="none">
+          <rect fill="url(#w-floor)" x={0} y={0} width={w * T} height={h * T} />
+          <rect fill="url(#w-wall)" x={0} y={-2 * T} width={w * T} height={T} />
+          <rect fill="url(#w-wall-base)" x={0} y={-T} width={w * T} height={T} />
+          <rect className="w-wall-edge" x={-EDGE} y={-2 * T - EDGE} width={w * T + 2 * EDGE} height={EDGE} />
+          <rect className="w-wall-edge" x={-EDGE} y={-2 * T} width={EDGE} height={(h + 2) * T} />
+          <rect className="w-wall-edge" x={w * T} y={-2 * T} width={EDGE} height={(h + 2) * T} />
         </g>
-        {home && <Window at={FIXTURES.fan} sky={sky(loc.city, game.hour)} outside={`${n(temperature(loc.city, game.hour))}°C`} inside={`${n(roomTemperature(game, loc), 1)}°C`} />}
-        {home && <FuseBox at={FIXTURES.fusebox} reading={`${n(power)}W`} />}
-        {home && <Letterbox at={FIXTURES.letterbox} count={unread} label={t("world.obj.letterbox")} lit={lit === "letterbox"} onClick={use("letterbox", FIXTURES.letterbox, () => openApp("Post"))} />}
-        {Array.from({ length: w * h }, (_, i) => {
-          const x = i % w, y = Math.floor(i / w), p = iso(x, y);
-          return <image key={`f${i}`} className="w-sprite" href={`${ART}floor.png`} x={p.x - 32} y={p.y} width="64" height="32" />;
-        })}
+        {home && (
+          <>
+            <g aria-label={t("world.obj.fan")} pointerEvents="none">
+              <Sprite name="fan" x={FIXTURES.fan.x * T - 12} y={-T + 2} />
+              <Sprite name="weather" x={FIXTURES.fan.x * T + 4} y={-8}>
+                <g transform="translate(4 6)">{SKY[sky(loc.city, game.hour)]}</g>
+                <text className="w-num" x="37" y="11">{`${n(temperature(loc.city, game.hour))}°C`}</text>
+                <text className="w-num w-num-dim" x="37" y="21">{`${n(roomTemperature(game, loc), 1)}°C`}</text>
+              </Sprite>
+            </g>
+            <g className={`w-obj${lit === "letterbox" ? " w-lit" : ""}`} role="button" aria-label={t("world.obj.letterbox")} onClick={use("letterbox", FIXTURES.letterbox, () => openApp("Post"))}>
+              <Sprite name="letterbox" x={2} y={(FIXTURES.letterbox.y + 1) * T - 8}>
+                {Array.from({ length: Math.min(unread, 3) }, (_, i) => <rect key={i} className="w-letter" x={5 + i * 4} y={2 + i} width="10" height="9" rx="0.5" />)}
+                <rect className="w-slot" x="5" y="8" width="18" height="3" rx="1.5" />
+              </Sprite>
+            </g>
+            <g className={`w-obj${lit === "door" ? " w-lit" : ""}`} role="button" aria-label={t("world.obj.door")} onClick={use("door", FIXTURES.door, openDoor)}>
+              <Sprite name={DOOR[door]} x={0} y={(FIXTURES.door.y + 1) * T} />
+            </g>
+          </>
+        )}
         {Array.from({ length: w * h }, (_, i) => {
           const x = i % w, y = Math.floor(i / w);
-          return <polygon key={i} className={`w-tile${(x + y) % 2 ? " w-tile-b" : ""}`} points={pts(iso(x, y), iso(x + 1, y), iso(x + 1, y + 1), iso(x, y + 1))}
-            onPointerEnter={() => setHover({ x, y })} onClick={click(() => walk([{ x, y }]))} />;
+          return <rect key={i} className="w-tile" x={x * T} y={y * T} width={T} height={T} onPointerEnter={() => setHover({ x, y })} onClick={click(() => walk([{ x, y }]))} />;
         })}
-        {hover && <polygon className="w-cursor" points={pts(iso(hover.x, hover.y), iso(hover.x + 1, hover.y), iso(hover.x + 1, hover.y + 1), iso(hover.x, hover.y + 1))} />}
-        {home && <Door at={FIXTURES.door} open={door} label={t("world.obj.door")} lit={lit === "door"} onClick={use("door", FIXTURES.door, openDoor)} />}
+        {hover && <rect className="w-cursor" x={hover.x * T + 2} y={hover.y * T + 2} width={T - 4} height={T - 4} rx="4" />}
         {things.map((x) => x.node)}
       </svg>
     </div>
@@ -263,236 +282,48 @@ export function World() {
 
 type Click = (e: MouseEvent) => void;
 
-// Footprint corners of a tile around its centre; dx is the even half-width in pixels.
-function corners(tile: Pt, dx = 28) {
-  const c = center(tile.x, tile.y);
-  return { c, L: { x: c.x - dx, y: c.y }, B: { x: c.x, y: c.y + dx / 2 }, R: { x: c.x + dx, y: c.y }, T: { x: c.x, y: c.y - dx / 2 } };
-}
+const DIR: Record<Facing, string> = { s: "down", n: "up", w: "left", e: "right" };
+const DOOR = ["door-closed", "door-half", "door-open"];
+// The far wall is a face two tiles tall; the walls' top edges are a flat band EDGE pixels thick.
+const TILED = ["floor", "wall", "wall-base"];
+const EDGE = 10;
+// Crate spots on the shelf, bottom-left corners in the shelf sprite's pixels.
+const CRATES: Pt[] = [{ x: 4, y: 40 }, { x: 24, y: 40 }, { x: 4, y: 72 }, { x: 24, y: 72 }];
+// The front panel of the rack sprites, in their pixels, where device fronts go when zoomed in.
+const RACK_FACE = { x: 8, y: 22, w: 32, h: 66 };
 
-// Three flat faces in the tones of its class, then the silhouette outline on top.
-function Box({ tile, height, dx, tone }: { tile: Pt; height: number; dx?: number; tone: string }) {
-  const { L, B, R, T } = corners(tile, dx);
-  return (
-    <g className={`w-box ${tone}`}>
-      <polygon className="w-face-l" points={pts(L, B, up(B, height), up(L, height))} />
-      <polygon className="w-face-r" points={pts(B, R, up(R, height), up(B, height))} />
-      <polygon className="w-face-t" points={pts(up(T, height), up(R, height), up(B, height), up(L, height))} />
-      <polygon className="w-edge" points={pts(L, B, R, up(R, height), up(T, height), up(L, height))} />
-    </g>
-  );
-}
-
-function RackBox({ rack, tile, game, zoomed, lit, onClick }: { rack: Rack; tile: Tile; game: GameState; zoomed: boolean; lit: boolean; onClick: Click }) {
-  const units = rackUnits(rack.model), H = Math.round(24 + units * 1.6), { L, B, R } = corners(tile);
-  // Only a front facing the camera shows: the south face is the lower left, the east face the lower right.
-  const face = tile.facing === "s" ? { o: up(L, H), u: B.x - L.x, v: B.y - L.y } : tile.facing === "e" ? { o: up(B, H), u: R.x - B.x, v: R.y - B.y } : null;
+function RackSprite({ rack, tile, game, zoomed, lit, onClick }: { rack: Rack; tile: Tile; game: GameState; zoomed: boolean; lit: boolean; onClick: Click }) {
+  const units = rackUnits(rack.model), { x, y, w, h } = RACK_FACE;
   // RackFront's front view: unit numbers, rails and devices span RACK_W, the cable channel beyond it is cut off.
   const artW = RACK_W + 36, artH = units * ART_U + 8;
   return (
     <g className={`w-obj w-rack${lit ? " w-lit" : ""}`} data-rack={rack.id} role="button" aria-label={rack.name} onClick={onClick}>
-      <Box tile={tile} height={H} tone="w-tone-rack" />
-      {face && (
-        <g transform={`matrix(${face.u / artW} ${face.v / artW} 0 ${H / artH} ${face.o.x} ${face.o.y})`}>
-          {zoomed ? (
-            <svg width={artW} height={artH} viewBox={`0 0 ${artW} ${artH}`} preserveAspectRatio="none" overflow="hidden" pointerEvents="none" shapeRendering="auto">
-              <RackFront units={units} items={rackItems(game, rack.id)} w={RACK_W} u={ART_U} onDevice={() => {}} onFree={() => {}} />
-            </svg>
-          ) : (
-            <>
-              <rect x="4" y="2" width={artW - 8} height={artH - 4} fill="var(--rack)" />
-              {game.devices.filter((d) => d.rackId === rack.id && !d.chassisId).map((d) => (
-                <rect key={d.id} className={d.on ? "w-led w-led-on" : "w-led"} x="10" y={4 + (units - d.slot - modelById(d.model).height + 1) * ART_U} width="10" height="5" />
-              ))}
-            </>
-          )}
-        </g>
-      )}
+      <Sprite name={zoomed ? "rack-open" : "rack-closed"} x={tile.x * T} y={(tile.y + 1) * T}>
+        {zoomed ? (
+          <svg x={x} y={y} width={w} height={h} viewBox={`0 0 ${artW} ${artH}`} preserveAspectRatio="none" pointerEvents="none">
+            <RackFront units={units} items={rackItems(game, rack.id)} w={RACK_W} u={ART_U} onDevice={() => {}} onFree={() => {}} />
+          </svg>
+        ) : (
+          game.devices.filter((d) => d.rackId === rack.id && !d.chassisId).map((d) => (
+            <rect key={d.id} className={d.on ? "w-led w-led-on" : "w-led"} x={x + 2} y={y + h - (d.slot + modelById(d.model).height - 1) * (h / units) - 3} width="2" height="2" />
+          ))
+        )}
+      </Sprite>
     </g>
   );
 }
 
-// One table sprite per desk tile, its items around the table top's centre.
-function Desk({ at, label, lit, onClick, children }: { at: Pt; label: string; lit: boolean; onClick: Click; children: ReactNode }) {
-  const { c } = corners(at);
-  return (
-    <g className={`w-obj${lit ? " w-lit" : ""}`} role="button" aria-label={label} onClick={onClick}>
-      <image className="w-sprite" href={`${ART}table.png`} x={c.x - 28} y={c.y - 28} width="56" height="42" />
-      <g transform={`translate(${c.x} ${c.y - 18})`}>{children}</g>
-    </g>
-  );
-}
-
-// Faces as [points, class] pairs with one outline around them, drawn at twice the coordinates given.
-const dbl = (p: string) => p.replace(/-?\d+/g, (v) => String(Number(v) * 2));
-const Solid = ({ faces, edge }: { faces: [string, string][]; edge: string }) => (
-  <>
-    {faces.map(([p, cls]) => <polygon key={p} className={cls} points={dbl(p)} />)}
-    <polygon className="w-edge" points={dbl(edge)} />
-  </>
-);
-
-// The screen faces the room's lower left.
-const Pc = () => (
-  <g className="w-box w-tone-pc">
-    <Solid edge="-6,-3 4,2 8,0 8,-12 -2,-17 -6,-15" faces={[
-      ["-6,-3 4,2 4,-10 -6,-15", "w-face-l"],
-      ["4,2 8,0 8,-12 4,-10", "w-face-r"],
-      ["-6,-15 4,-10 8,-12 -2,-17", "w-face-t"],
-      ["-5,-5 3,-1 3,-9 -5,-13", "w-screen"],
-    ]} />
+// Weather icons in a 9 by 10 box.
+const Cloud = () => (
+  <g className="w-cloud">
+    <circle cx="3" cy="4.5" r="2" /><circle cx="5.2" cy="3.6" r="2.5" /><rect x="1" y="4.5" width="6.8" height="2.5" rx="1.25" />
   </g>
 );
-const Scanner = () => (
-  <g className="w-box w-tone-paper">
-    <Solid edge="-8,0 0,-4 8,0 8,3 0,7 -8,3" faces={[
-      ["-8,0 0,4 0,7 -8,3", "w-face-l"],
-      ["0,4 8,0 8,3 0,7", "w-face-r"],
-      ["-8,0 0,-4 8,0 0,4", "w-face-t"],
-    ]} />
-  </g>
-);
-const Keyboard = () => (
-  <g className="w-box w-tone-paper">
-    <Solid edge="-6,1 4,6 0,8 -10,3" faces={[["-6,1 4,6 0,8 -10,3", "w-face-t"]]} />
-  </g>
-);
-
-// The shelf sprite against the wall, turned to face the room, with one crate per stored device in front, up to four.
-const CRATES: Pt[] = [{ x: 14, y: 2 }, { x: 0, y: 9 }, { x: 14, y: -16 }, { x: 0, y: -9 }];
-function Shelf({ at, count, label, lit, onClick }: { at: Pt; count: number; label: string; lit: boolean; onClick: Click }) {
-  const { c } = corners(at);
-  return (
-    <g className={`w-obj${lit ? " w-lit" : ""}`} role="button" aria-label={label} onClick={onClick}>
-      <image className="w-sprite" href={`${ART}shelf.png`} x={-(c.x - 20 + 32)} y={c.y - 58} width="32" height="57" transform="scale(-1 1)" />
-      {CRATES.slice(0, Math.min(count, CRATES.length)).map((p, i) => (
-        <image key={i} className="w-sprite" href={`${ART}crate.png`} x={c.x + p.x - 16} y={c.y + p.y - 24} width="32" height="32" />
-      ))}
-    </g>
-  );
-}
-
-// A point on the far wall behind fixture tile f, u along the tile toward the near end and z above the floor.
-const wallAt = (f: Pt, u: number, z: number): Pt => up(f.x === 0 ? iso(0, f.y + u) : iso(f.x + u, 0), z);
-
-// Flat drawing on the wall plane: local x runs left to right across u0..u1, local y down from height z.
-function OnWall({ f, u0, u1, z, children }: { f: Pt; u0: number; u1: number; z: number; children: ReactNode }) {
-  const left = f.x === 0 ? wallAt(f, u1, z) : wallAt(f, u0, z), k = f.x === 0 ? -0.5 : 0.5;
-  return <g transform={`matrix(1 ${k} 0 1 ${left.x} ${left.y})`}>{children}</g>;
-}
-
-// 3 by 5 pixel glyphs, read row by row.
-const GLYPHS: Record<string, string> = {
-  0: "111101101101111", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001",
-  5: "111100111001111", 6: "111100111101111", 7: "111001001001001", 8: "111101111101111", 9: "111101111001111",
-  "-": "000000111000000", ".": "000000000000010", ",": "000000000010100", "°": "010101010000000", C: "111100100100111", W: "101101111111101",
+const Drops = ({ cls }: { cls: string }) => <>{[1.6, 4, 6.4].map((x) => <circle key={x} className={cls} cx={x} cy="8.6" r="0.7" />)}</>;
+const SKY: Record<Sky, ReactNode> = {
+  sun: <circle className="w-sun" cx="4" cy="4.5" r="3" />,
+  partly: <><circle className="w-sun" cx="3" cy="3" r="2.4" /><g transform="translate(1 1.8)"><Cloud /></g></>,
+  cloud: <g transform="translate(0 0.8)"><Cloud /></g>,
+  rain: <><Cloud /><Drops cls="w-rain" /></>,
+  snow: <><Cloud /><Drops cls="w-snow" /></>,
 };
-const textWidth = (s: string) => [...s].filter((ch) => GLYPHS[ch]).length * 4 - 1;
-function PixelText({ x, y, text, className }: { x: number; y: number; text: string; className: string }) {
-  const rects: ReactNode[] = [];
-  [...text].filter((ch) => GLYPHS[ch]).forEach((ch, i) => {
-    [...GLYPHS[ch]].forEach((bit, j) => {
-      if (bit === "1") rects.push(<rect key={`${i}-${j}`} x={x + i * 4 + (j % 3)} y={y + Math.floor(j / 3)} width="1" height="1" />);
-    });
-  });
-  return <g className={className}>{rects}</g>;
-}
-
-// 7 by 7 pixel weather icons as x, y, width, height and class.
-const SKY: Record<Sky, [number, number, number, number, string][]> = {
-  sun: [[2, 0, 3, 1, "w-sun"], [1, 1, 5, 5, "w-sun"], [0, 2, 7, 3, "w-sun"], [2, 6, 3, 1, "w-sun"]],
-  partly: [[0, 0, 4, 4, "w-sun"], [3, 3, 3, 1, "w-cloud"], [1, 4, 6, 2, "w-cloud"]],
-  cloud: [[2, 1, 3, 1, "w-cloud"], [0, 2, 7, 3, "w-cloud"]],
-  rain: [[2, 0, 3, 1, "w-cloud"], [0, 1, 7, 3, "w-cloud"], [1, 5, 1, 1, "w-rain"], [3, 6, 1, 1, "w-rain"], [5, 5, 1, 1, "w-rain"]],
-  snow: [[2, 0, 3, 1, "w-cloud"], [0, 1, 7, 3, "w-cloud"], [1, 5, 1, 1, "w-snow"], [3, 6, 1, 1, "w-snow"], [5, 5, 1, 1, "w-snow"]],
-};
-
-// The window with its fan, and below it a weather display with the outside sky and temperature over the room temperature.
-function Window({ at, sky, outside, inside }: { at: Pt; sky: Sky; outside: string; inside: string }) {
-  return (
-    <g aria-label={t("world.obj.fan")}>
-      <OnWall f={at} u0={0.0625} u1={0.9375} z={86}>
-        <rect className="w-frame" x="0" y="0" width="28" height="26" />
-        <rect className="w-glass" x="3" y="3" width="22" height="20" />
-        <rect className="w-blade" x="13" y="5" width="2" height="16" />
-        <rect className="w-blade" x="6" y="12" width="16" height="2" />
-      </OnWall>
-      <OnWall f={at} u0={0.0625} u1={0.9375} z={52}>
-        <rect className="w-lcd" x="0" y="0" width="28" height="20" />
-        <g transform="translate(2 2)">{SKY[sky].map(([x, y, w, h, c], i) => <rect key={i} className={c} x={x} y={y} width={w} height={h} />)}</g>
-        <PixelText className="w-digits" x={26 - textWidth(outside)} y={3} text={outside} />
-        <PixelText className="w-digits w-digits-dim" x={26 - textWidth(inside)} y={12} text={inside} />
-      </OnWall>
-    </g>
-  );
-}
-
-function FuseBox({ at, reading }: { at: Pt; reading: string }) {
-  const wid = Math.max(26, textWidth(reading) + 6);
-  return (
-    <g aria-label={t("world.obj.fusebox")}>
-      <OnWall f={at} u0={0.5 - wid / 64} u1={0.5 + wid / 64} z={68}>
-        <rect className="w-fuse" x="0" y="0" width={wid} height="30" />
-        <rect className="w-lcd" x="3" y="3" width={wid - 6} height="9" />
-        <PixelText className="w-digits" x={wid - 5 - textWidth(reading)} y={5} text={reading} />
-        {[0, 1, 2].map((i) => <rect key={i} className="w-switch" x={4 + i * 7} y="17" width="4" height="8" />)}
-      </OnWall>
-    </g>
-  );
-}
-
-// Unread letters stick out of the slot, up to three.
-function Letterbox({ at, count, label, lit, onClick }: { at: Pt; count: number; label: string; lit: boolean; onClick: Click }) {
-  return (
-    <g className={`w-obj${lit ? " w-lit" : ""}`} role="button" aria-label={label} onClick={onClick}>
-      <OnWall f={at} u0={0.25} u1={0.75} z={52}>
-        {Array.from({ length: Math.min(count, 3) }, (_, i) => <rect key={i} className="w-letter" x={3 + i * 3} y={-5 + i} width="9" height="8" />)}
-        <rect className="w-brass w-edge-fill" x="0" y="0" width="16" height="20" />
-        <rect className="w-slot" x="3" y="4" width="10" height="2" />
-      </OnWall>
-    </g>
-  );
-}
-
-// A doorway in the far wall; the panel hinges at the near jamb and is skewed shut, halfway, then into the room.
-function Door({ at, open, label, lit, onClick }: { at: Pt; open: number; label: string; lit: boolean; onClick: Click }) {
-  const hinge = wallAt(at, 0.875, 0), pw = wallAt(at, 0.125, 0).x - hinge.x, k = [-0.5, 0, 0.5][open];
-  return (
-    <g className={`w-obj${lit ? " w-lit" : ""}`} role="button" aria-label={label} onClick={onClick}>
-      <OnWall f={at} u0={0} u1={1} z={DOOR_H + 6}>
-        <rect className="w-jamb w-edge-fill" x="0" y="0" width="32" height={DOOR_H + 6} />
-        <rect className="w-doorway" x="4" y="6" width="24" height={DOOR_H} />
-      </OnWall>
-      <g transform={`matrix(1 ${k} 0 1 ${hinge.x} ${hinge.y})`}>
-        <rect className="w-panel" x="0" y={-DOOR_H} width={pw} height={DOOR_H} />
-        <rect className="w-knob" x={pw - 5} y={-DOOR_H / 2} width="3" height="3" />
-      </g>
-    </g>
-  );
-}
-
-// Pixel parts as x, y, width, height and fill, feet at 0,0, facing the lower left; drawn at two screen pixels per part pixel.
-type Part = [number, number, number, number, string];
-const SKIN = "var(--w-skin)", HAIR = "var(--w-hair)", SHIRT = "var(--accent)", PANTS = "var(--w-pants)", INK = "var(--w-line)";
-const LEGS: Part[][] = [
-  [[-3, -5, 2, 5, PANTS], [1, -5, 2, 5, PANTS]],
-  [[-4, -5, 2, 5, PANTS], [2, -5, 2, 4, PANTS]],
-  [[-4, -5, 2, 4, PANTS], [2, -5, 2, 5, PANTS]],
-];
-const BODY: Part[] = [[-5, -12, 1, 6, SKIN], [4, -12, 1, 6, SKIN], [-4, -13, 8, 8, SHIRT]];
-const FRONT: Part[] = [[-5, -24, 10, 11, SKIN], [-5, -24, 10, 3, HAIR], [4, -21, 1, 4, HAIR], [-3, -19, 1, 2, INK], [0, -19, 1, 2, INK]];
-const BACK: Part[] = [[-5, -24, 10, 11, SKIN], [-5, -24, 10, 9, HAIR], [-5, -19, 1, 3, SKIN]];
-
-// Front view for the two downward facings, back view for the two upward ones, mirrored for the right-hand side.
-function Player({ at, facing, stride }: { at: Pt; facing: Facing; stride: number }) {
-  const c = center(at.x, at.y), flip = facing === "e" || facing === "n";
-  const parts = [...LEGS[stride], ...BODY, ...(facing === "s" || facing === "e" ? FRONT : BACK)];
-  return (
-    <g className="w-player" transform={`translate(${Math.round(c.x)} ${Math.round(c.y)})`} aria-label={t("world.you")} pointerEvents="none">
-      <polygon className="w-shadow" points="-16,0 0,-8 16,0 0,8" />
-      <g transform={flip ? "scale(-1 1)" : undefined}>
-        {parts.map(([px, py, pw, ph], i) => <rect key={`o${i}`} x={px * 2 - 1} y={py * 2 - 1} width={pw * 2 + 2} height={ph * 2 + 2} fill={INK} />)}
-        {parts.map(([px, py, pw, ph, fill], i) => <rect key={i} x={px * 2} y={py * 2} width={pw * 2} height={ph * 2} fill={fill} />)}
-      </g>
-    </g>
-  );
-}
