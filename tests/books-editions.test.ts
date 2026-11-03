@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { BOOKS_VENDORS, booksVendor, LARGE, MEDIUM } from "../src/sim/10-catalog/bookkeeping";
+import { BOOKS_VENDORS, booksVendor } from "../src/sim/10-catalog/bookkeeping";
 import { billingTick, owed } from "../src/sim/45-billing/billing";
 import { openAccount } from "../src/sim/46-finance/bank";
 import { cashFlow, INSOLVENT_DAYS, monthlyStats, profitBetween, yearStart } from "../src/sim/46-finance/finance";
@@ -60,17 +60,17 @@ function ledger(seed = 9) {
   Object.assign(s.transfers[0], { reference: "books.ref.invoice", params: { number: inv(b).number } });
   return { s, A: () => inv(a), B: () => inv(b), C: () => inv(c) };
 }
-const run = (s: GameState, vendor: string, edition: string) => { s.books = { vendor: vendor as never, installedAt: s.hour, edition, seats: 0, download: null }; };
+const run = (s: GameState, vendor: string, edition: string) => { s.books = { vendor: vendor as never, installedAt: s.hour, edition, seats: 0, download: null, addons: [] }; };
 
 describe("editions", () => {
   it("lists every vendor's editions from smallest to largest, GnuCache free", () => {
     expect(BOOKS_VENDORS.map((v) => v.id)).toEqual(["lexwear", "wizo", "saga", "orgamin", "collmix", "sevdeck", "lexoffize", "gnucache"]);
     for (const v of BOOKS_VENDORS) expect(v.editions.map((e) => e.price)).toEqual([...v.editions.map((e) => e.price)].sort((a, b) => a - b));
     expect(booksVendor("lexwear")!.editions.map((e) => [e.name, e.price, e.update])).toEqual([["buchhalter", 249, 99], ["financial office", 499, 149], ["financial office pro", 899, 199]]);
-    expect(booksVendor("saga")!.editions[0].features).toEqual(MEDIUM);
+    expect(booksVendor("saga")!.editions[0].features).not.toContain("dunning");
     expect(booksVendor("collmix")!.editions[0].features).toContain("hbci");
     expect(booksVendor("collmix")!.editions.some((e) => e.features.includes("helpdesk-link"))).toBe(false);
-    expect(booksVendor("gnucache")!.editions).toEqual([expect.objectContaining({ price: 0, users: 1, features: ["quotes", "hbci", "reports"] })]);
+    expect(booksVendor("gnucache")!.editions).toEqual([expect.objectContaining({ price: 0, users: 1, features: ["quotes", "reports"] })]);
     expect(resolve(game(), "www.gnucache.org/").page).toEqual({ kind: "books", id: "gnucache" });
   });
 
@@ -91,12 +91,12 @@ describe("editions", () => {
   it("switches a browser plan's fee from the next month and bills its seats", () => {
     const s = game(2014);
     own(s, "lexoffize");
-    expect(s.payables.at(-1)).toMatchObject({ name: "lexoffize", amount: 7 });
+    expect(s.payables.at(-1)).toMatchObject({ name: "lexoffize", amount: 14 });
     expect(upgradeBooks(s, "l")).toEqual({ ok: true });
     expect(setSeats(s, 2)).toEqual({ ok: true });
     s.hour = at(2014, 4, 1, 0);
     booksTick(s);
-    expect(s.payables.at(-1)).toMatchObject({ name: "lexoffize", amount: 19 + 2 * 6 });
+    expect(s.payables.at(-1)).toMatchObject({ name: "lexoffize", amount: 44 + 2 * 6 });
     expect(setSeats(s, 1)).toEqual({ ok: true });
     expect(s.books.seats).toBe(1);
   });
@@ -114,9 +114,9 @@ describe("editions", () => {
 });
 
 describe("features follow the edition", () => {
-  it("runs the monthly run and match by reference from the medium edition on, not before", () => {
+  it("runs the monthly run and match by reference only in editions that have them", () => {
     const { s, A, B, C } = ledger();
-    run(s, "lexwear", "buchhalter");
+    run(s, "gnucache", "free");
     s.hour = at(2005, 2, 1, 9);
     booksTick(s);
     expect(A().status).toBe("draft");
@@ -141,10 +141,9 @@ describe("features follow the edition", () => {
     expect(s.transfers.find((x) => x.id === "trf900")!.invoiceId).toBeNull();
   });
 
-  it("gives the helpdesk link and statistics only to the large editions", () => {
-    for (const v of BOOKS_VENDORS) for (const e of v.editions) {
-      expect(e.features.includes("helpdesk-link")).toBe(e.features.length >= LARGE.length && v.id !== "collmix");
-    }
+  it("gives the helpdesk link to every Orgamin edition and none of the browser bank programs", () => {
+    expect(booksVendor("orgamin")!.editions.every((e) => e.features.includes("helpdesk-link"))).toBe(true);
+    for (const id of ["collmix", "lexoffize"]) expect(booksVendor(id)!.editions.some((e) => e.features.includes("helpdesk-link"))).toBe(false);
   });
 });
 
@@ -159,7 +158,8 @@ describe("old saves", () => {
 
   it("run the smallest Lexwear edition that covers the modules they owned", () => {
     expect(old([]).books.edition).toBe("buchhalter");
-    expect(old(["monthly-run", "hbci"]).books.edition).toBe("financial-office");
+    expect(old(["monthly-run", "hbci"]).books).toMatchObject({ edition: "buchhalter", addons: ["hbci"] });
+    expect(old(["monthly-run"]).books.addons).toEqual([]);
     expect(old(["helpdesk-link"]).books.edition).toBe("financial-office-pro");
     expect(old(["auto-reminders"], "wizo").books.edition).toBe("s");
   });
@@ -345,14 +345,14 @@ describe("Finance in old saves", () => {
   it("installs Books in place of Finance, with GnuCache when no program ran", () => {
     const raw = JSON.parse(serialize(game()));
     raw.installed = [...raw.installed.filter((id: string) => id !== "Books"), "Finance"];
-    raw.books = { vendor: null, installedAt: 0, edition: null, seats: 0, download: null };
+    raw.books = { vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] };
     const s = deserialize(JSON.stringify(raw));
     expect(s.installed).toContain("Books");
     expect(s.installed).not.toContain("Finance");
     expect(s.books).toMatchObject({ vendor: "gnucache", edition: "free", seats: 0 });
 
     raw.installed = [...raw.installed, "Books"];
-    raw.books = { vendor: "wizo", installedAt: 0, edition: "m", seats: 0, download: null };
+    raw.books = { vendor: "wizo", installedAt: 0, edition: "m", seats: 0, download: null, addons: [] };
     expect(deserialize(JSON.stringify(raw)).books).toMatchObject({ vendor: "wizo", edition: "m" });
   });
 });

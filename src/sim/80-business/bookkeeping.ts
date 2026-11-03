@@ -9,7 +9,7 @@ import type { GameState, LedgerEntry } from "../50-state";
 
 export const YEAR_HOURS = 365 * 24;
 export const MONTHLY_RUN_HOUR = 9;
-export const LICENCE_KEY = "ledger.booksLicence", MONTHLY_KEY = "ledger.booksMonthly", UPDATE_KEY = "ledger.booksUpdate", SEAT_KEY = "ledger.booksSeat";
+export const LICENCE_KEY = "ledger.booksLicence", MONTHLY_KEY = "ledger.booksMonthly", UPDATE_KEY = "ledger.booksUpdate", SEAT_KEY = "ledger.booksSeat", HBCI_KEY = "ledger.booksHbci";
 
 export const currentVendor = (s: GameState): BooksVendor | undefined => booksVendor(s.books.vendor);
 export const currentEdition = (s: GameState): Edition | undefined => {
@@ -25,8 +25,11 @@ export const booksAppUrl = (v: BooksVendor): string => `www.${booksHost(v)}/app`
 
 // A browser program is unusable while the internet line is missing, throttled or cut.
 export const booksOffline = (s: GameState): boolean => currentVendor(s)?.deployment === "browser" && (!s.homeLine.id || lineCut(s));
-// The edition has the feature; works says whether it runs right now.
-export const hasFeature = (s: GameState, f: Feature): boolean => !!currentEdition(s)?.features.includes(f);
+// The edition or a bought add-on has the feature; works says whether it runs right now.
+export const hasFeature = (s: GameState, f: Feature): boolean => {
+  const e = currentEdition(s);
+  return !!e && (e.features.includes(f) || s.books.addons.includes(f));
+};
 export const works = (s: GameState, f: Feature): boolean => hasFeature(s, f) && !booksOffline(s);
 
 // Staff who may work in the program besides the player: the licence's further users and the bought seats.

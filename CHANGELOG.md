@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Each bookkeeping program now has its own strengths and gaps, so the free program offers reports without HBCI or tax filing, some programs include HBCI and payment matching in their smallest edition, and one sells HBCI as an add-on in its shop.
+- Two browser bookkeeping programs changed their monthly prices to match their place in the market.
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
 
