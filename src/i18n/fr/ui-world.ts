@@ -18,4 +18,6 @@ export default {
   "world.obj.extinguisher": () => "Extincteur",
   "world.obj.noc": () => "Poste NOC",
   "world.obj.dock": () => "Quai de chargement",
+  "world.inHands": () => "Dans tes mains",
+  "world.obj.parcels": (p) => `${p.n} colis`,
 } satisfies Dict;

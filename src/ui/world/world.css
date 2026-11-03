@@ -28,6 +28,11 @@
 .w-ph-letterbox .w-ph-face { fill: oklch(0.76 0.1 85); }
 .w-ph-crate .w-ph-back { fill: oklch(0.55 0.07 60); }
 .w-ph-crate .w-ph-face { fill: oklch(0.68 0.07 65); }
+.w-ph-parcel .w-ph-back { fill: oklch(0.58 0.08 65); }
+.w-ph-parcel .w-ph-face { fill: oklch(0.7 0.08 70); }
+.w-parcel-tape { fill: oklch(0.8 0.05 80); }
+.w-parcel-label { fill: oklch(0.97 0.005 90); }
+.w-parcel-brand { font-family: var(--font-ui); font-size: 4px; font-weight: 600; text-anchor: middle; fill: oklch(0.25 0.02 258); }
 
 .w-num { font-family: var(--font-ui); font-size: 8px; font-weight: 500; font-variant-numeric: tabular-nums; text-anchor: end; fill: oklch(0.95 0.02 220); }
 .w-num-dim { fill: oklch(0.75 0.03 220); }

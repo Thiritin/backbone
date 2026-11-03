@@ -3,7 +3,10 @@ import { X } from "lucide-react";
 import { t } from "../../../i18n/en";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
-import type { Rack } from "../../../sim/50-state";
+import type { GameState, Rack } from "../../../sim/50-state";
+import { freeSlots, mountFrom } from "../../../sim/60-infra/status";
+import { installCarried } from "../../../sim/90-actions/carry";
+import { Isometric } from "../../art/Isometric";
 import { RackFront } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
@@ -29,7 +32,8 @@ export function RackPanel({ rackId, onClose }: { rackId: string; onClose: () => 
   const rack = game.racks.find((r) => r.id === rackId);
   const [shown, setShown] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
-  const [free, setFree] = useState<number | null>(null);
+  // A carried unit opens the panel on the lowest free unit it fits.
+  const [free, setFree] = useState<number | null>(() => carriedFit(game, rackId)[0] ?? null);
   const [lid, setLid] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const ref = useRef<HTMLDivElement>(null), closing = useRef(false);
@@ -69,7 +73,7 @@ export function RackPanel({ rackId, onClose }: { rackId: string; onClose: () => 
   let side: ReactNode = null;
   if (lid && dev) side = <LidSheet key={lid} deviceId={lid} inline onClose={() => setLid(null)} />;
   else if (dev) side = <DeviceCard deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => menus.entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => ports(dev.id) : undefined} />;
-  else if (free !== null) side = <InstallCard rack={rack} unit={free} onMount={(task) => hand.start(game, { ...task, onDone: () => pick(task.deviceId) })} />;
+  else if (free !== null) side = <InstallCard rack={rack} unit={free} onMount={(task) => hand.start(game, { ...task, onDone: () => pick(task.deviceId) })} onPick={pick} />;
 
   return (
     <>
@@ -146,16 +150,42 @@ function Act({ e }: { e: MenuItem }) {
   return <button className="wr-btn" disabled={e.disabled} onClick={e.items ? menuOn(() => e.items!) : e.run}>{e.label}{e.items && " ›"}</button>;
 }
 
-function InstallCard({ rack, unit, onMount }: { rack: Rack; unit: number; onMount: Parameters<typeof MountRow>[0]["onMount"] }) {
+function InstallCard({ rack, unit, onMount, onPick }: { rack: Rack; unit: number; onMount: Parameters<typeof MountRow>[0]["onMount"]; onPick: (id: string) => void }) {
   const game = useStore((s) => s.game);
   const rows = mountable(game, rack, unit);
   return (
     <div className="wr-card" data-free={unit}>
       <div className="wr-card-h"><h2>{`U${unit}`}</h2><span className="wr-model">{t("locations-1.empty")}</span></div>
       <div className="loc-shop-list">
+        {carriedFit(game, rack.id).includes(unit) && <CarriedRow game={game} rack={rack} unit={unit} onDone={onPick} />}
         {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMount={onMount} />)}
-        {!rows.length && <div className="loc-shop-none">{t("locations-2.noStoredFits")}</div>}
+        {!rows.length && !carriedFit(game, rack.id).includes(unit) && <div className="loc-shop-none">{t("locations-2.noStoredFits")}</div>}
       </div>
+    </div>
+  );
+}
+
+// Free units the carried unit can go into, one per start slot and every unit of its run.
+function carriedFit(game: GameState, rackId: string): number[] {
+  const d = game.devices.find((x) => x.id === game.player.carrying), rack = game.racks.find((r) => r.id === rackId);
+  if (!d || !rack || rack.locationId !== game.player.at) return [];
+  const h = modelById(d.model).height;
+  if (modelById(d.model).kind === "part" || !h) return [];
+  return freeSlots(game, rackId, 1).filter((u) => mountFrom(game, rackId, h, 1, u) !== undefined);
+}
+
+function CarriedRow({ game, rack, unit, onDone }: { game: GameState; rack: Rack; unit: number; onDone: (id: string) => void }) {
+  const act = useStore((s) => s.act);
+  const d = game.devices.find((x) => x.id === game.player.carrying)!, m = modelById(d.model);
+  const from = mountFrom(game, rack.id, m.height, 1, unit)!;
+  return (
+    <div className="loc-shop-row" data-carried={d.id}>
+      <Isometric model={m} brand={d.brand} w={64} />
+      <div className="loc-shop-main">
+        <div className="loc-shop-name">{m.kind === "server" ? `${d.brand} ` : ""}{m.name}</div>
+        <div className="loc-shop-specs">{t("world.inHands")}</div>
+      </div>
+      <button className="btn primary" onClick={() => { if (act(installCarried, rack.id, from).ok) onDone(d.id); }}>{t("locations-2.mount")}</button>
     </div>
   );
 }

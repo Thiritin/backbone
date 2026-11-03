@@ -6,6 +6,7 @@ import { sheetUrl, SPRITES, type SpriteMap } from "./sprites";
 const PLACEHOLDERS: Record<string, { w: number; h: number }> = {
   letterbox: { w: 28, h: 30 },
   crate: { w: 16, h: 12 },
+  parcel: { w: 28, h: 16 },
   weather: { w: 40, h: 26 },
 };
 

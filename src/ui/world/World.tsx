@@ -8,6 +8,7 @@ import { rackUnits } from "../../sim/20-world/datacenters";
 import { sky, temperature, type Sky } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
 import { inbox } from "../../sim/40-support/letters";
+import { pickUp, putDown } from "../../sim/90-actions/carry";
 import { powerByLocation } from "../../sim/88-tick/tick";
 import { roomTemperature } from "../../sim/60-infra/sensors";
 import type { GameState, Location, Rack } from "../../sim/50-state";
@@ -39,7 +40,7 @@ export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
 
 export function World() {
-  const game = useStore((s) => s.game), setSurface = useStore((s) => s.setSurface), openApp = useStore((s) => s.openApp);
+  const game = useStore((s) => s.game), setSurface = useStore((s) => s.setSurface), openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
   const loc = roomOf(game), home = loc.space === "basement";
   const { w, h } = roomSize(loc), walls = WALLS[loc.space];
   const tiles = useMemo(() => rackTiles(loc, game.racks), [loc, game.racks]);
@@ -210,6 +211,8 @@ export function World() {
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const unread = inbox(game).filter((l) => !l.read).length;
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
+  const parcels = game.devices.filter((d) => d.door?.at === loc.id && !d.chassisId);
+  const carried = game.devices.find((d) => d.id === game.player.carrying);
   const n = (v: number, digits = 0) => v.toLocaleString(LOCALE, { maximumFractionDigits: digits, minimumFractionDigits: digits });
 
   // Things standing on the floor, sorted by their row so nearer ones overlap farther ones.
@@ -217,9 +220,20 @@ export function World() {
     depth: tiles[r.id].y,
     node: <RackSprite key={r.id} rack={r} tile={tiles[r.id]} game={game} zoomed={zoomed} lit={lit === r.id} onClick={use(r.id, tiles[r.id], () => setRackOpen(r.id))} />,
   }));
+  // Parcels stack on the floor tile beside the door, clear of its frame, the newest on top.
+  if (parcels.length && fx.door) {
+    const p = { x: fx.door.x + 1, y: fx.door.y - 1 }, top = parcels[parcels.length - 1];
+    things.push({ depth: p.y, node: (
+      <g key="parcels" className={`w-obj${lit === "parcels" ? " w-lit" : ""}`} role="button" data-parcels={parcels.length} aria-label={t("world.obj.parcels", { n: parcels.length })}
+        onClick={use("parcels", p, () => act(pickUp, top.id))}>
+        {parcels.slice(-PARCEL_STACK).map((d, i) => <Parcel key={d.id} brand={d.brand} x={p.x * T + 10} y={(p.y + 1) * T - 4 - i * PARCEL_H} />)}
+        {parcels.length > 1 && <text className="w-num w-num-tag" x={p.x * T + 24} y={(p.y + 1) * T - 8 - Math.min(parcels.length, PARCEL_STACK) * PARCEL_H}>{n(parcels.length)}</text>}
+      </g>
+    ) });
+  }
   const run: Record<Use, () => void> = {
     desktop: () => setSurface("desktop"),
-    storage: () => openApp("Locations", { kind: "storage", id: loc.id }),
+    storage: () => (carried ? act(putDown) : openApp("Locations", { kind: "storage", id: loc.id })),
     network: () => openApp("Locations", { kind: "network", id: loc.id }),
     power: () => openApp("Locations", { kind: "location", id: loc.id }),
     door: () => openDoor(),
@@ -270,6 +284,7 @@ export function World() {
     else things.push({ depth: f.y + (a.depth ?? 0), node });
   }
   things.push({ depth: pos.y + 0.01, node: <Sprite key="player" name={`player-${DIR[facing]}-${stride % 2}`} x={pos.x * T} y={(pos.y + 1) * T} /> });
+  if (carried) things.push({ depth: pos.y + 0.02, node: <g key="carried" data-carried={carried.id} pointerEvents="none"><Parcel brand={carried.brand} x={pos.x * T + 10} y={pos.y * T + 8} /></g> });
   things.sort((a, b) => a.depth - b.depth);
 
   const openDoor = () => {
@@ -323,6 +338,17 @@ const TILED = ["floor", "wall", "wall-base", "fence", "fence-base", "grate"];
 const EDGE = 10;
 // Crate spots on the shelf, bottom-left corners in the shelf sprite's pixels.
 const CRATES: Pt[] = [{ x: 4, y: 40 }, { x: 24, y: 40 }, { x: 4, y: 72 }, { x: 24, y: 72 }];
+// Parcels drawn per stack before the count takes over, and each one's height in pixels.
+const PARCEL_STACK = 3, PARCEL_H = 14;
+
+// A parcel with the maker's name on its label.
+const Parcel = ({ brand, x, y }: { brand: string; x: number; y: number }) => (
+  <Sprite name="parcel" x={x} y={y}>
+    <rect className="w-parcel-tape" x="12" y="1" width="4" height="14" />
+    {brand && <><rect className="w-parcel-label" x="4" y="9" width="20" height="6" rx="0.5" /><text className="w-parcel-brand" x="14" y="13.6">{brand}</text></>}
+  </Sprite>
+);
+
 // The front panel of the rack sprites, in their pixels, where device fronts go when zoomed in.
 const RACK_FACE = { x: 8, y: 22, w: 32, h: 66 };
 
