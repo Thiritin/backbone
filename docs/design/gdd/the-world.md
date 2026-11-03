@@ -17,7 +17,7 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Thing | World | Desktop |
 | --- | --- | --- |
 | Rack placement, moving racks | Place a rack on a floor tile, turn it, push it | Locations app lists racks and their tiles |
-| Installing and removing devices | Carry from storage to rack, slide into a unit | Rack front view stays as the detail overlay the world opens |
+| Installing and removing devices | A rack opens a close-up panel over the room: pick a free unit to mount a device from the location's storage, pick a device to power it, open its lid or unmount it back to storage | Cabling and ports stay in the Locations app, opened from the panel |
 | Server internals | Lid slides off at the rack, parts go in by hand | The lid view stays, opened from the rack |
 | Cabling | Cables run visibly between racks and into the wall | Port inspector, port groups, speeds |
 | Deliveries | Parcels arrive at the door; carry them to storage, unbox | Shop buys, tracking in Storage |
@@ -87,4 +87,4 @@ Friends running their own companies in the same market is a later layer, and it 
 
 ## Demo scope
 
-The first demo is the basement with the player walking, the PC that opens the desktop, racks on their tiles that open the rack front view, parcels at the door that open Storage, a letterbox that opens the post, a scanner that opens the document app, a door that swings open and opens the map. Everything opened is the existing app. The sim change is rack tiles. The rest of the table above comes feature by feature.
+The first demo is the basement with the player walking, the PC that opens the desktop, racks on their tiles that open a close-up of the rack inside the room, where devices are mounted, removed and opened, parcels at the door that open Storage, a letterbox that opens the post, a scanner that opens the document app, a door that swings open and opens the map. Everything else opened is the existing app. The sim change is rack tiles. The rest of the table above comes feature by feature.

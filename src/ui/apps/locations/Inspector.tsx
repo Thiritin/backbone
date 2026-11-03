@@ -54,11 +54,13 @@ export function SellConfirm({ game, name, price, boughtAt, value = resaleValue(g
 }
 
 // The device menu's state: the offline check, the sell sheet, and what the view does on select and rename.
-export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => void, onRename: (id: string) => void) {
+// A view that shows the lid itself passes its own lid state.
+export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => void, onRename: (id: string) => void, lidState?: [string | null, (id: string | null) => void]) {
   const act = useStore((s) => s.act);
   const { guarded, dialog } = useOfflineGuard(game);
   const [selling, setSelling] = useState<Device | null>(null);
-  const [lid, setLid] = useState<string | null>(null);
+  const own = useState<string | null>(null);
+  const [lid, setLid] = lidState ?? own;
   const mnt = useMaintenance();
   const hand = useHandWork();
   const ui = (d: Device, open: boolean): DeviceUi => ({
@@ -96,7 +98,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
         {dialog}
         {mnt.dialog}
         {hand.dialog}
-        {lid && <LidSheet deviceId={lid} onClose={() => setLid(null)} />}
+        {lid && !lidState && <LidSheet deviceId={lid} onClose={() => setLid(null)} />}
         {selling && (
           <SellConfirm game={game} name={devName(selling)} price={selling.price} boughtAt={selling.boughtAt} value={deviceValue(game, selling)} cables={cables}
             onCancel={() => setSelling(null)}
@@ -475,7 +477,7 @@ function ConnectRow({ game, device, model, port }: { game: GameState; device: De
 }
 
 // The name doubles as the label field: click to rename, Enter or leaving the field saves, Escape cancels, empty clears.
-function LabelEdit({ device, editing, onEditing }: { device: Device; editing: boolean; onEditing: (on: boolean) => void }) {
+export function LabelEdit({ device, editing, onEditing }: { device: Device; editing: boolean; onEditing: (on: boolean) => void }) {
   const act = useStore((s) => s.act);
   const [text, setText] = useState(device.label ?? "");
   const cancel = useRef(false);

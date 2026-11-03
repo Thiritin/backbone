@@ -16,6 +16,7 @@ import { useStore } from "../store";
 import { facingOf, key, pathTo, T, useTiles, type Pt } from "./grid";
 import { Sprite } from "./Sprite";
 import { useTrip } from "../travel/route";
+import { RackPanel } from "./rack/RackPanel";
 import "./world.css";
 
 const STEP_MS = 400, BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 1, ZOOM_MAX = 3;
@@ -55,6 +56,7 @@ export function World() {
   const [door, setDoor] = useState(0);
   const [hover, setHover] = useState<Pt | null>(null);
   const [lit, setLit] = useState<string | null>(null);
+  const [rackOpen, setRackOpen] = useState<string | null>(null);
   const at = useRef<Pt>(start), path = useRef<Pt[]>([]), then = useRef<(() => void) | null>(null), held = useRef<string[]>([]), tap = useRef<string | null>(null);
   const svg = useRef<SVGSVGElement>(null);
 
@@ -118,6 +120,7 @@ export function World() {
     const down = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !busy(e)) { setSurface("desktop"); return; }
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if ((k === "Enter" || k === "e") && !busy(e)) { actOn.current(); return; }
       if (!KEYS[k] || busy(e)) return;
       e.preventDefault();
       then.current = null;
@@ -183,6 +186,15 @@ export function World() {
     });
   });
 
+  // The action key uses the rack the player faces.
+  const actOn = useRef(() => {});
+  actOn.current = () => {
+    const [dx, dy] = AHEAD[facing];
+    const p = { x: at.current.x + dx, y: at.current.y + dy };
+    const r = racks.find((x) => tiles[x.id].x === p.x && tiles[x.id].y === p.y);
+    if (r && !path.current.length) setRackOpen(r.id);
+  };
+
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const unread = inbox(game).filter((l) => !l.read).length;
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
@@ -191,7 +203,7 @@ export function World() {
   // Things standing on the floor, sorted by their row so nearer ones overlap farther ones.
   const things: { depth: number; node: ReactNode }[] = racks.map((r) => ({
     depth: tiles[r.id].y,
-    node: <RackSprite key={r.id} rack={r} tile={tiles[r.id]} game={game} zoomed={zoomed} lit={lit === r.id} onClick={use(r.id, tiles[r.id], () => openApp("Locations", { kind: "rack", id: r.id }))} />,
+    node: <RackSprite key={r.id} rack={r} tile={tiles[r.id]} game={game} zoomed={zoomed} lit={lit === r.id} onClick={use(r.id, tiles[r.id], () => setRackOpen(r.id))} />,
   }));
   if (home) {
     const f = FIXTURES, obj = (id: string, label: string, run: () => void, art: ReactNode, k = 0) => ({
@@ -276,6 +288,7 @@ export function World() {
         {hover && <rect className="w-cursor" x={hover.x * T + 2} y={hover.y * T + 2} width={T - 4} height={T - 4} rx="4" />}
         {things.map((x) => x.node)}
       </svg>
+      {rackOpen && <RackPanel key={rackOpen} rackId={rackOpen} onClose={() => setRackOpen(null)} />}
     </div>
   );
 }
@@ -283,6 +296,7 @@ export function World() {
 type Click = (e: MouseEvent) => void;
 
 const DIR: Record<Facing, string> = { s: "down", n: "up", w: "left", e: "right" };
+const AHEAD: Record<Facing, [number, number]> = { s: [0, 1], n: [0, -1], w: [-1, 0], e: [1, 0] };
 const DOOR = ["door-closed", "door-half", "door-open"];
 // The far wall is a face two tiles tall; the walls' top edges are a flat band EDGE pixels thick.
 const TILED = ["floor", "wall", "wall-base"];
