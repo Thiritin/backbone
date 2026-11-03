@@ -143,6 +143,9 @@ export const COUNTRY: Record<string, string> = {
 };
 export const regionOf =(loc: { city: string }) => REGIONS.find((r) => r.city === loc.city)!;
 export const inUs = (city: string): boolean => REGIONS.some((r) => r.city === city && r.us);
+// The part of the world on offer; "all" brings the North American sites back to the map and the datacenter list.
+export const WORLD = "eu" as "eu" | "all";
+export const listed = (city: string): boolean => WORLD === "all" || !inUs(city);
 // The region code plus the next free number in that region: fra1, fra2, ams1.
 export function nextAz(locations: { city: string; az?: string }[], city: string): string {
   const code = regionOf({ city }).id;
