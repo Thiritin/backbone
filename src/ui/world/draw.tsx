@@ -178,16 +178,16 @@ export function Shelf({ at, count }: { at: Pt; count: number }) {
   );
 }
 
-// A cellar window high in the far wall; the fan window carries a fan in its pane. Glass dims at night.
+// A cellar window high in the far wall; the fan window carries a fan in its pane, spinning while it runs. Glass dims at night.
 const WIN_Z = 84, WIN_H = 20;
-export function CellarWindow({ f, fan, night }: { f: Fixture; fan?: boolean; night: boolean }) {
+export function CellarWindow({ f, fan, spin, night }: { f: Fixture; fan?: boolean; spin?: boolean; night: boolean }) {
   const glass = night ? "w-glass w-glass-night" : "w-glass";
   return (
     <g transform={wallT(f, WIN_Z)}>
       <rect className="w-reveal" x="3" y="-1" width="26" height={WIN_H + 1} />
       <rect className="w-frame" x="4" y="0" width="24" height={WIN_H} />
       <rect className={glass} x="6" y="3" width="20" height={WIN_H - 6} />
-      {fan ? <Fan cx={16} cy={WIN_H / 2} r={6.2} /> : (
+      {fan ? <Fan cx={16} cy={WIN_H / 2} r={6.2} spin={!!spin} /> : (
         <>
           <rect className="w-frame" x="15.2" y="3" width="1.6" height={WIN_H - 6} />
           <path className="w-glint" d={`M8,${WIN_H - 5} L12,5 M18,${WIN_H - 5} L21.5,6`} />
@@ -199,12 +199,12 @@ export function CellarWindow({ f, fan, night }: { f: Fixture; fan?: boolean; nig
 }
 
 // Window fan: square housing, grille rings and struts over four blades on a hub.
-function Fan({ cx, cy, r }: { cx: number; cy: number; r: number }) {
+function Fan({ cx, cy, r, spin }: { cx: number; cy: number; r: number; spin: boolean }) {
   return (
-    <g>
+    <g data-fan={spin ? "on" : "off"}>
       <rect className="w-fan-box" x={cx - r - 1.2} y={cy - r - 1.2} width={2 * r + 2.4} height={2 * r + 2.4} />
       <circle className="w-fan-hole" cx={cx} cy={cy} r={r} />
-      <g className="w-fan-rotor">
+      <g className={`w-fan-rotor${spin ? " on" : ""}`}>
         {[0, 90, 180, 270].map((a) => (
           <path key={a} className="w-fan-blade" transform={`translate(${cx} ${cy}) rotate(${a}) scale(${r / 6})`} d="M0,0 C1.2,-2.6 4.6,-5.2 5.6,-2.4 C5.2,-0.8 2.4,0.4 0,0 Z" />
         ))}
@@ -633,6 +633,18 @@ export function Parcel({ cx, cy, z, brand }: { cx: number; cy: number; z: number
 }
 
 export const rackHeight = (units: number) => Math.round(24 + units * 1.6);
+
+// Heat rising off a rack near its power limit: three wavy lines drifting up from its top.
+export function Shimmer({ tile, z }: { tile: Tile; z: number }) {
+  const c = at3(tile.x + 0.5, tile.y + 0.5, z + 4);
+  return (
+    <g className="w-shimmer" pointerEvents="none" data-shimmer="">
+      {[-8, 0, 8].map((dx, i) => (
+        <path key={dx} style={{ animationDelay: `${-i * 1.1}s` }} d={`M${c.x + dx},${c.y} q3,-4 0,-8 t0,-8 t0,-8`} />
+      ))}
+    </g>
+  );
+}
 
 // A rack is a dark box; a front facing the camera shows one LED per device, or from zoom 2 the rack front art scaled onto it. In a datacenter the face in view, front or rear, is a closed mesh door over that; a neighbour's rack is muted, its door shut on a few LEDs and a blank label plate. A share is the bottom section of a provider's cabinet of `cabinet` units.
 export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {

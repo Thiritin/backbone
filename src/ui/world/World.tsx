@@ -9,7 +9,8 @@ import { atDesk, boxAt } from "../../sim/40-support/letters";
 import { fetchPost } from "../../sim/90-actions/post";
 import { pickUp, putDown } from "../../sim/90-actions/carry";
 import { powerByLocation } from "../../sim/88-tick/tick";
-import { roomTemperature } from "../../sim/60-infra/sensors";
+import { fanRuns, roomTemperature } from "../../sim/60-infra/sensors";
+import { rackPower } from "../../sim/60-infra/status";
 import type { End, GameState, Location } from "../../sim/50-state";
 import { Defs } from "../art/fronts";
 import { rackItems } from "../apps/locations/RackView";
@@ -21,7 +22,7 @@ import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
   at3, BeerCrate, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, darkness, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
-  CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, rackHeight, RackBox, RaisedFloor, Scanner, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
+  CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, rackHeight, RackBox, RaisedFloor, Scanner, Shimmer, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { PairPanel } from "./rack/PairPanel";
@@ -38,6 +39,8 @@ import {
 import { Closet } from "./office";
 import "./world.css";
 
+// How dark a tripped room is drawn, darker than a night with the lights off.
+const TRIPPED_DARK = 0.45;
 const BLINK_MS = 500, FLASH_MS = 120, RING_MS = 4000, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
 // Arrow keys and WASD pan the view, in screen directions.
 const KEYS: Record<string, [number, number]> = {
@@ -221,7 +224,8 @@ export function World() {
 
   // Things standing on the floor, sorted by x + y so nearer ones overlap farther ones; a fixture sorts by its farthest tile.
   const things: { depth: number; node: ReactNode }[] = racks.map((r) => {
-    const tile = tiles[r.id], glow = (cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id) || (from && from.rack !== r.id), leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on, top: d.slot + modelById(d.model).height - 1 }));
+    const tile = tiles[r.id], glow = (cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id) || (from && from.rack !== r.id), leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on && !loc.tripped, top: d.slot + modelById(d.model).height - 1 }));
+    const p = rackPower(game, r.id), hot = !loc.tripped && r.model !== "shelf" && p.limitWatts > 0 && p.watts >= 0.9 * p.limitWatts;
     return {
       depth: tile.x + tile.y,
       node: (
@@ -230,8 +234,9 @@ export function World() {
           onPointerDown={(e) => { if (!e.button && r.model !== "shelf") { e.stopPropagation(); link.current = r.id; dragged.current = false; } }}
           onContextMenu={menuOn(() => [{ label: t("world.newConnection"), run: () => setFrom({ rack: r.id }) }])}>
           {r.model === "shelf"
-            ? <ShelfUnit tile={tile} units={rackUnits(r.model)} devices={game.devices.filter((d) => d.rackId === r.id).map((d) => ({ id: d.id, slot: d.slot, height: modelById(d.model).height, on: d.on }))} />
+            ? <ShelfUnit tile={tile} units={rackUnits(r.model)} devices={game.devices.filter((d) => d.rackId === r.id).map((d) => ({ id: d.id, slot: d.slot, height: modelById(d.model).height, on: d.on && !loc.tripped }))} />
             : <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} mesh={!home} cabinet={r.provided ? 42 : undefined} />}
+          {hot && <Shimmer tile={tile} z={rackHeight(rackUnits(r.model))} />}
         </g>
       ),
     };
@@ -279,7 +284,7 @@ export function World() {
     pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x} on={lights} />}</>,
     noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} y={f.y} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} y={f.y} />)}</>,
     shelf: (f) => <Shelf at={f} count={stored} />,
-    fan: (f) => <CellarWindow f={f} fan night={night} />,
+    fan: (f) => <CellarWindow f={f} fan spin={!loc.tripped && fanRuns(game, loc)} night={night} />,
     window: (f) => <CellarWindow f={f} night={night} />,
     hygrometer: (f) => <Hygrometer f={f} inside={`${n(roomTemperature(game, loc), 1)}°`} outside={`${n(temperature(loc.city, game.hour))}°`} />,
     fusebox: (f) => <FuseBox f={f} reading={watts} turn={turn} w={w} />,
@@ -323,9 +328,11 @@ export function World() {
     toolbox: (f) => <Toolbox f={f} />,
     closet: (f) => <Closet f={f} />,
   };
-  const back: ReactNode[] = [], over: ReactNode[] = [];
+  // A tripped room goes dark; its windows and lit bulbs are drawn again over the dark.
+  const back: ReactNode[] = [], over: ReactNode[] = [], bright: ReactNode[] = [];
   for (const [id, f] of Object.entries(fx)) {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
+    if (loc.tripped && (["fan", "window", "owindow"].includes(f.kind ?? id) || (lights && ["lamp", "tube"].includes(f.kind ?? id)))) bright.push(<g key={`b${id}`} pointerEvents="none" aria-hidden>{art}</g>);
     const node = a.use && a.label
       ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use])}>{art}</g>
       : <g key={id} aria-label={a.label && t(a.label)} aria-hidden={!a.label || undefined} pointerEvents="none">{art}</g>;
@@ -352,7 +359,8 @@ export function World() {
           : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={w} h={h} />}
         {back}
         {things.map((x) => x.node)}
-        {(home || office) && <Night w={w} h={h} opacity={darkness(hd, month, lights)} />}
+        {(home || office) && <Night w={w} h={h} opacity={loc.tripped ? TRIPPED_DARK : darkness(hd, month, lights)} />}
+        {bright}
         {!home && !office && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
         {!home && !office && <TubeLight w={w} h={h} ways={ways} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
