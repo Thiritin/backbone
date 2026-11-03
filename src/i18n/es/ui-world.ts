@@ -2,11 +2,11 @@ import type { Dict } from "../lang";
 
 export default {
   "world.standUp": () => "Levantarse",
-  "world.room": () => "Sala",
   "world.obj.pc": () => "Ordenador",
   "world.obj.desk": () => "Escritorio",
   "world.obj.scanner": () => "Escáner",
   "world.obj.door": () => "Puerta",
+  "world.obj.switch": () => "Interruptor",
   "world.obj.letterbox": () => "Buzón",
   "world.obj.shelf": () => "Estantería del almacén",
   "world.obj.fusebox": () => "Caja de fusibles",

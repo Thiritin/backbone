@@ -52,7 +52,7 @@ interface Props {
 const MONO = "JetBrains Mono, monospace", DIM = "oklch(0.62 0.01 255)";
 // Port hit areas reach past the jack to the neighbour's edge, so a dragged plug finds its port.
 const HIT_X = 2.5, HIT_Y = 3;
-const LANE = 5, ROW = 5, STEP = 11, VSTEP = 16, PER_ROW = 24, BOX_H = 32, BOX_GAP = 8;
+const LANE = 5, ROW = 5, STEP = 11, VSTEP = 16, PER_ROW = 24, BOX_H = 32, BOX_GAP = 8, SOCK = 24;
 
 const press = (fn: (el: Element) => void) => ({
   role: "button",
@@ -232,6 +232,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
   if (back) {
     let bx = 4, by = 2, rowH = 0;
     for (const r of remotes) {
+      if (r.model.kind === "jack") continue;
       const per = Math.min(PER_ROW, r.ports.length), rows = Math.ceil(r.ports.length / PER_ROW);
       const bw = Math.max(per * STEP + 10, r.label.length * 6 + 16), bh = BOX_H + (rows - 1) * VSTEP;
       if (bx + bw > W - 4 && bx > 4) { bx = 4; by += rowH + BOX_GAP; rowH = 0; }
@@ -242,7 +243,17 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
     }
     if (boxes.length) boxesH = by + rowH + 4;
   }
-  const head = boxesH + (up.length ? 12 + up.length * ROW : 0), top = head + 4;
+  // The wall socket sits in the duct column under the boxes, its port over the lane its cable climbs.
+  const jack = back ? remotes.find((r) => r.model.kind === "jack") : undefined;
+  const sockets: { r: RackRemote; x: number; y: number; px: number }[] = [];
+  if (jack) {
+    const k = up.findIndex((p) => p.l.peer.device === jack.id), lx = k < 0 ? rail + 5 + channel / 2 : lane0 + (inner.length + k) * LANE;
+    const px = Math.min(rail + 3 + channel - SOCK / 2, Math.max(rail + 8 + SOCK / 2, lx));
+    sockets.push({ r: jack, x: px - SOCK / 2, y: boxesH + 2, px: lx });
+    remotePort.set(endKey({ device: jack.id, port: 0 }), { x: lx, y: boxesH + 2 + SOCK / 2 });
+    boxesH += SOCK + 6;
+  }
+  const head = boxesH + (up.some((p) => p.l.peer.device !== jack?.id) ? 12 + up.length * ROW : 0), top = head + 4;
   const H = top + y + 4;
 
   const wires: ReactNode[] = [];
@@ -254,7 +265,8 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
   up.forEach(({ l, a }, k) => {
     const i = inner.length + k, lx = lane0 + i * LANE, da = a.h / 2 + 2 + (i % 3) * 1.4;
     const p = remotePort.get(endKey(l.peer))!, gy = head - 6 - k * ROW;
-    wires.push(<Wire key={l.id} color={l.color} hot={isHot(l.id)} d={route([[a.x, a.y + top], [a.x, a.y + top + da], [lx, a.y + top + da], [lx, gy], [p.x, gy], [p.x, p.y]])} />);
+    const rise: [number, number][] = l.peer.device === jack?.id ? [[lx, p.y]] : [[lx, gy], [p.x, gy], [p.x, p.y]];
+    wires.push(<Wire key={l.id} color={l.color} hot={isHot(l.id)} d={route([[a.x, a.y + top], [a.x, a.y + top + da], [lx, a.y + top + da], ...rise])} />);
   });
 
   const cords: ReactNode[] = [];
@@ -365,11 +377,23 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
           })}
         </g>
       ))}
+      {sockets.map(({ r, x, y: sy, px }) => {
+        const end = { device: r.id, port: 0 };
+        return (
+          <g key={r.id} className="rack-remote" aria-label={r.title}>
+            <title>{r.title}</title>
+            <rect x={x} y={sy} width={SOCK} height={SOCK} rx="2" fill="oklch(0.9 0.01 85)" stroke="oklch(0.72 0.012 85)" strokeWidth="0.8" />
+            <rect x={x + 4} y={sy + 4} width={SOCK - 8} height={SOCK - 8} rx="1.5" fill="oklch(0.84 0.01 85)" />
+            {[sy + 2.5, sy + SOCK - 2.5].map((cy) => <circle key={cy} cx={x + SOCK / 2} cy={cy} r="1" fill="oklch(0.65 0.01 85)" />)}
+            <PortJack media={r.model.ports[0]?.media ?? "rj45"} x={px - 4} y={sy + SOCK / 2 - 4} w={8} h={8} st={r.ports[0]} />
+            <rect {...tap(end)} data-end={endKey(end)} x={px - 5} y={sy + SOCK / 2 - 5} width="10" height="10" rx="1" onPointerDown={grab(end, px, sy + SOCK / 2)} />
+          </g>
+        );
+      })}
       <rect y={top - 4} width={W} height={H - top + 4} rx="4" fill="var(--rack)" />
       <g transform={`translate(0 ${top})`}>
-        {shelf && <Bundle x={pad + w * 0.15} w={w * 0.7} h={y} seed={units} />}
-        <rect x={pad - 6} y="-2" width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
-        <rect x={rail} y="-2" width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
+        {shelf && [...placed.values()].map(({ it, y: dy, h }) => <Loops key={it.id} x={pad + w / 2} y={dy + h} drop={pitch} n={it.ports.filter((p) => p !== "off").length} />)}
+        {shelf ? [pad - 6, rail].map((x) => <Upright key={x} x={x} h={y} />) : [pad - 6, rail].map((x) => <rect key={x} x={x} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />)}
         {back && !shelf && (
           <g aria-label={t("art.cableChannel")}>
             <rect x={rail + 8} y="-2" width={channel - 10} height={y + 4} rx="2" fill="oklch(0.11 0.004 255)" />
@@ -380,7 +404,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       </g>
       <g pointerEvents="none">
         {cords}
-        <rect x={pad - 6} y={top - 2} width="5" height={y + 4} rx="1" fill={shelf ? UPRIGHT : "var(--metal-2)"} />
+        {shelf ? <g transform={`translate(0 ${top})`}><Upright x={pad - 6} h={y} /></g> : <rect x={pad - 6} y={top - 2} width="5" height={y + 4} rx="1" fill="var(--metal-2)" />}
         {wires}
         {back && duct && (
           <g className="rack-duct" aria-hidden="true">
@@ -398,27 +422,37 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
 }
 
 export const shelfPitch = (u: number) => Math.round(u * 2.4);
-const BOARD = 4, UPRIGHT = "oklch(0.6 0.01 250)";
+const BOARD = 5;
 
-// A shelf board, its top edge at y, running between the uprights.
-function Board({ x, y, w }: { x: number; y: number; w: number }) {
+// A punched shelf upright.
+function Upright({ x, h }: { x: number; h: number }) {
   return (
     <g pointerEvents="none">
-      <rect x={x - 6} y={y - BOARD} width={w + 12} height={BOARD} rx="0.6" fill="oklch(0.66 0.008 250)" />
-      <rect x={x - 6} y={y - 1.2} width={w + 12} height="1.2" fill="oklch(0.5 0.01 250)" />
+      <rect x={x} y="-2" width="5" height={h + 4} fill="oklch(0.62 0.008 250)" />
+      <rect x={x + 4} y="-2" width="1" height={h + 4} fill="oklch(0.5 0.01 250)" />
+      {Array.from({ length: Math.floor(h / 8) }, (_, k) => <rect key={k} x={x + 1.5} y={2 + k * 8} width="2" height="3" fill="oklch(0.3 0.006 255)" />)}
     </g>
   );
 }
 
-// The loose cables hanging behind a shelf's boards, swinging left and right on the way down.
-function Bundle({ x, w, h, seed }: { x: number; w: number; h: number; seed: number }) {
-  const tones = ["oklch(0.3 0.01 255)", "oklch(0.45 0.09 250)", "oklch(0.55 0.12 60)", "oklch(0.35 0.06 150)", "oklch(0.25 0.006 255)"];
+// A shelf board, its top edge at y: the lit top, the front lip and its shadowed underside.
+function Board({ x, y, w }: { x: number; y: number; w: number }) {
+  return (
+    <g pointerEvents="none">
+      <rect x={x - 6} y={y - BOARD} width={w + 12} height="1.5" fill="oklch(0.78 0.006 250)" />
+      <rect x={x - 6} y={y - BOARD + 1.5} width={w + 12} height={BOARD - 2.5} fill="oklch(0.64 0.008 250)" />
+      <rect x={x - 6} y={y - 1} width={w + 12} height="1" fill="oklch(0.46 0.01 250)" />
+    </g>
+  );
+}
+
+// The cables of a device on a board, hanging in loops behind the board below it.
+function Loops({ x, y, drop, n }: { x: number; y: number; drop: number; n: number }) {
   return (
     <g pointerEvents="none" aria-hidden="true">
-      {tones.map((c, i) => {
-        const x0 = x + (w * (i + 0.5)) / tones.length, swing = 10 + ((seed * 7 + i * 13) % 9);
-        const d = Array.from({ length: 4 }, (_, k) => `Q${x0 + (k % 2 ? -swing : swing)} ${(h * (k + 0.5)) / 4} ${x0 + (k === 3 ? i * 2 : 0)} ${(h * (k + 1)) / 4}`).join("");
-        return <path key={i} d={`M${x0} -2${d}`} fill="none" stroke={c} strokeWidth="2.4" strokeLinecap="round" opacity="0.85" />;
+      {Array.from({ length: Math.min(3, n) }, (_, k) => {
+        const x0 = x - 40 + k * 34, d = drop * (0.45 + k * 0.12);
+        return <path key={k} d={`M${x0} ${y - 2}C${x0} ${y + d} ${x0 + 26} ${y + d} ${x0 + 26} ${y - 2}`} fill="none" stroke="oklch(0.36 0.01 255)" strokeWidth="2.2" />;
       })}
     </g>
   );

@@ -129,13 +129,10 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
           <div ref={scene} className={`wr-scene${tag || floor ? (wide ? " tagged wide" : " tagged") : ""}`}>
             <div className={`wr-cab${shelf ? " shelf" : ""}`}>
               <div className="wr-plate" data-plate=""><b>{rack.name}</b><span>{shelf ? `${used} / ${units}` : `${used} / ${units} U`}</span></div>
-              <button className="wr-turn" aria-label={t(back ? "locations-2.front" : "locations-2.back")} aria-pressed={back} onClick={() => turn(!back)}>
-                <svg viewBox="0 0 32 32" aria-hidden="true"><path className="wr-turn-arc" d="M7 19a10 7 0 1 0 6-11" /><path className="wr-turn-head" d="M9 3 15 8 9 13Z" /></svg>
-              </button>
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
               <div className={`wr-face${turning !== null ? " in" : ""}`}>{face(back)}</div>
             </div>
-            <div className="wr-shadow" />
+            <Turntable back={back} onTurn={() => turn(!back)} />
             {tag && (
               <div ref={tagEl} className="wr-tag" style={pin && !wide ? { top: pin.top } : undefined}>{tag}</div>
             )}
@@ -152,6 +149,21 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
       {menus.dialog}
       {work.dialog}
     </Slab>
+  );
+}
+
+// The disc the rack stands on: a click turns it, the side facing the room is the darker word on its near edge.
+function Turntable({ back, onTurn }: { back: boolean; onTurn: () => void }) {
+  return (
+    <svg className="wr-table" viewBox="0 0 400 44" role="button" tabIndex={0} aria-label={t(back ? "locations-2.front" : "locations-2.back")} aria-pressed={back}
+      onClick={onTurn} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onTurn(); } }}>
+      <ellipse className="wr-table-rim" cx="200" cy="24" rx="196" ry="14" />
+      <rect className="wr-table-rim" x="4" y="18" width="392" height="6" />
+      <ellipse className="wr-table-top" cx="200" cy="18" rx="196" ry="14" />
+      <path className="wr-table-mark" d="M290 30.6Q340 27.5 366 22.5M366 22.5l-7.5-1M366 22.5l-5.5 4.6" />
+      <text className={`wr-table-word${back ? "" : " on"}`} x="165" y="30" textAnchor="end">{t("locations-2.front")}</text>
+      <text className={`wr-table-word${back ? " on" : ""}`} x="235" y="30">{t("locations-2.back")}</text>
+    </svg>
   );
 }
 

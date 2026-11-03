@@ -1,8 +1,6 @@
 /* Close-ups: one object drawn large in flat tones, lit from the upper left, centred over the dimmed room. */
 .wp-scene { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; overflow: auto; padding: 48px 24px 24px; box-sizing: border-box; }
 .wp-art { display: block; max-width: 100%; max-height: 100%; }
-.wp-floor { align-self: stretch; height: 28px; margin: -24px -24px -24px; flex-shrink: 0; background: oklch(0.56 0.006 250); border-top: 1px solid oklch(0.5 0.008 250); }
-.wp-floor.desk { background: oklch(0.52 0.06 60); border-top-color: oklch(0.46 0.06 58); }
 
 /* Paper labels on units, parcels and the rack. */
 .wp-label { display: grid; gap: 1px; padding: 3px 6px; background: oklch(0.96 0.02 90); color: oklch(0.3 0.02 60); font-size: 11px; line-height: 1.2; text-align: left; max-width: 140px; }
@@ -22,12 +20,11 @@
 .wp-parcel .wp-label { position: relative; max-width: 100px; }
 
 /* The letters on the desk: the current DIN A4 sheet, the stacks either side and the drawn scan key. */
-.wp-desk { background: oklch(0.5 0.06 60); margin: 0; }
 .wp-papers { display: flex; align-items: center; gap: 40px; }
 .wp-side { width: 120px; display: flex; justify-content: center; }
 .wp-sheet { position: relative; width: min(560px, calc((100vh - 220px) * 210 / 297)); }
 .wp-sheet .letter-fit { max-width: none; }
-.wp-corner { position: absolute; top: 0; right: 0; width: 104px; height: 104px; padding: 0 0 8px 8px; border: 0; display: flex; align-items: flex-end; justify-content: flex-start; font: 600 11px var(--font-ui); color: oklch(0.35 0.02 60); background: linear-gradient(225deg, oklch(0.5 0.06 60) 50%, oklch(0.9 0.01 90) 50%); cursor: pointer; transform-origin: top right; }
+.wp-corner { position: absolute; top: 0; right: 0; width: 104px; height: 104px; padding: 0 0 8px 8px; border: 0; display: flex; align-items: flex-end; justify-content: flex-start; font: 600 11px var(--font-ui); color: oklch(0.35 0.02 60); background: linear-gradient(225deg, transparent 50%, oklch(0.9 0.01 90) 50%); cursor: pointer; transform-origin: top right; }
 .wp-corner:hover { color: var(--accent); }
 .wp-stamp { position: absolute; top: 28px; right: 24px; padding: 4px 10px; border: 3px solid oklch(0.55 0.15 150); color: oklch(0.5 0.15 150); font: 700 14px var(--font-ui); text-transform: uppercase; letter-spacing: 0.08em; transform: rotate(-8deg); }
 .wp-stack { position: relative; width: 105px; height: 148px; padding: 0; border: 0; background: none; cursor: pointer; }

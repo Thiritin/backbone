@@ -321,12 +321,12 @@ export function CableDuct({ w, h, door, socket }: { w: number; h: number; door?:
 }
 
 // Light switch at hand height just past the latch side of the door on tile f, so it takes no rack tile of its own.
-export function LightSwitch({ f }: { f: Fixture }) {
+export function LightSwitch({ f, on }: { f: Fixture; on: boolean }) {
   return (
     <g transform={wallT(f, 37)}>
       <rect className="w-socket" x="35" y="0" width="5" height="5" />
       <rect className="w-socket-in" x="36" y="1" width="3" height="3" />
-      <rect className="w-rocker" x="36.5" y="1.5" width="2" height="1" />
+      <rect className="w-rocker" data-on={on} x="36.5" y={on ? 1.5 : 2.5} width="2" height="1" />
     </g>
   );
 }
@@ -433,7 +433,7 @@ export function BeerCrate({ x }: { x: number }) {
 
 // Desk lamp between the scanner and the screen, its shade turned toward the keyboard; it is on at night.
 export function DeskLamp({ x, on }: { x: number; on: boolean }) {
-  const b = { x: x + 0.02, y: 0.16 }, foot = at3(b.x + 0.05, b.y + 0.05, DESK_Z + 2), elbow = at3(b.x + 0.04, b.y + 0.02, DESK_Z + 24), head = at3(b.x + 0.22, b.y + 0.16, DESK_Z + 26);
+  const b = { x: x + 0.02, y: 0.16 }, foot = at3(b.x + 0.05, b.y + 0.05, DESK_Z + 2), elbow = at3(b.x + 0.04, b.y + 0.02, DESK_Z + 13), head = at3(b.x + 0.22, b.y + 0.16, DESK_Z + 15);
   return (
     <>
       <Prism x0={b.x} y0={b.y} x1={b.x + 0.1} y1={b.y + 0.1} z0={DESK_Z} z1={DESK_Z + 2} tone="w-tone-dark" />
@@ -507,12 +507,18 @@ export function Concrete({ w, h }: { w: number; h: number }) {
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-// Share of daylight at hour of day hd: none at night, full from mid-morning to early evening.
-export const daylight = (hd: number) => clamp01((hd - 6) / 1.5) * clamp01((20.5 - hd) / 1.5);
+// Hours the evening runs later and the morning earlier than in March, by month from January.
+const SEASON = [-1, -0.5, 0, 0.5, 0.5, 1, 1, 0.5, 0, 0, -0.5, -1];
+const ease = (v: number) => { const x = clamp01(v); return x * x * (3 - 2 * x); };
+// Share of daylight at hour of day hd in month m (0 is January): full from 08:00 to 17:00 in March, fading out to 19:30 and in from 05:30.
+export const daylight = (hd: number, m: number) => { const s = SEASON[m] ?? 0; return ease((hd - 5.5 + s) / 2.5) * ease((19.5 + s - hd) / 2.5); };
+export const NIGHT = 0.32;
+// How dark the room is drawn; lit lamps leave a quarter of the night.
+export const darkness = (hd: number, m: number, lit = false) => (1 - daylight(hd, m)) * NIGHT * (lit ? 0.25 : 1);
 
-// At night the whole room, walls and floor, is one flat step darker.
-export function Night({ w, h }: { w: number; h: number }) {
-  return <polygon className="w-dark" pointerEvents="none" points={pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h))} />;
+// The whole room, walls and floor, darkens as one flat step.
+export function Night({ w, h, opacity }: { w: number; h: number; opacity: number }) {
+  return <polygon className="w-dark" pointerEvents="none" style={{ opacity }} points={pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h))} />;
 }
 
 // Waiting letters stick out of the slot, up to three, with their count beside the box.

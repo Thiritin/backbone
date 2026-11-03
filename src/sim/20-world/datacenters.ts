@@ -17,6 +17,8 @@ export interface Datacenter {
   visitBooking: boolean;
   // How a rack position bills power: per kWh, as a flat-rate contract, or either.
   power: "metered" | "flat" | "both";
+  // The site's spot in its city.
+  lat: number; lon: number;
   // Hot and cold aisles: rack rows face each other across an aisle instead of all facing one way.
   aisles: boolean;
 }
@@ -102,10 +104,32 @@ const SIZE_OF: Record<string, Datacenter["size"]> = {
 const topPrice = (city: string) => Math.max(...ROWS.filter((r) => r[3] === city).map((r) => r[11]));
 const rivals = (city: string) => ROWS.filter((r) => r[3] === city).length > 1;
 
+// Where each site stands in its city: industrial estates and edge-of-town plots, [lat, lon].
+const POS: Record<string, [number, number]> = {
+  "equinox-fr5": [50.1185, 8.735], "interaction-fra": [50.1095, 8.7385], "mainqubes-fra": [50.129, 8.6], "hetzler-park": [50.127, 8.765],
+  "tellyhouse-north": [51.5105, -0.0035], "globalsnitch-lon": [51.524, -0.083], "docklands-data": [51.507, 0.028],
+  "equinox-am3": [52.356, 4.953], "ironmolehill-ams": [52.394, 4.832],
+  "tellyhouse-voltaire": [48.859, 2.38], "data5-marcoussis": [48.75, 2.35],
+  "ntd-berlin1": [52.44, 13.38], "spree-colo": [52.505, 13.44],
+  "data5-milano": [45.478, 9.07], "arubaba-hub": [45.487, 9.24],
+  "interaction-vie": [48.265, 16.4], "nextlair-vie": [48.17, 16.43],
+  "equinox-zh4": [47.43, 8.56], "greenchz-lupfig": [47.397, 8.448],
+  "equinox-du1": [51.23, 6.73], "interaction-dus": [51.27, 6.78], "ntd-dus1": [51.175, 6.865], "myloch-dus": [51.212, 6.745],
+  "skyblink-eygelshoven": [50.892, 6.065],
+  "hetzler-nbg": [49.43, 11.07], "boris-nbg": [49.41, 11.045],
+  "hetzler-fsn": [50.48, 12.345],
+  "equinox-mu1": [48.145, 11.7], "interaction-muc": [48.18, 11.51],
+  "equinox-dc2": [39.017, -77.462], "digitalreality-ash": [39.03, -77.45], "corespite-va1": [39.005, -77.49],
+  "equinox-ny4": [40.778, -74.07], "telex-60hudson": [40.718, -74.008],
+  "digitalreality-cermak": [41.853, -87.618], "corespite-ch1": [41.881, -87.64],
+  "equinox-da1": [32.8, -96.82], "digitalreality-dfw": [32.782, -96.799],
+  "corespite-la1": [34.0485, -118.256], "equinox-la1": [34.053, -118.24],
+};
+
 export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages, power, aisles]) => ({
   id, name, provider, city, carriers, exchange: ex ? { name: ex, onSite } : null, feeds: ab ? "ab" : "single", backup, green,
   kwPerPosition: kw, positionPrice: price, powerFactor: factor, crossConnect: cross, remoteHands: { perHour, responseHours }, certified, cages, power, aisles,
-  size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city),
+  size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city), lat: POS[id][0], lon: POS[id][1],
 }));
 
 export const dcProvider = (id: string): Provider => PROVIDERS.find((p) => p.id === id)!;

@@ -5,5 +5,6 @@ export default {
   "travel.map": () => "Map",
   "travel.close": () => "Close",
   "travel.road": () => "On the road",
+  "travel.osm": () => "© OpenStreetMap contributors",
   "travel.speed": (p) => `${p.n}×`,
 } satisfies Dict;
