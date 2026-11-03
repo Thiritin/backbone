@@ -16,8 +16,8 @@ import { HandsButtons, handsWays, useHandWork } from "./HandSheet";
 import { Facts, Sheet } from "./ui";
 
 export const LID_MS = 600;
-const COUNTED: Group[] = ["cpu", "ram", "bay", "pcie", "psu", "fan"];
-const slotName = (s: Slot) => (s.group === "pcie" ? `PCIe ${s.index + 1}` : s.group === "board" ? t("locations-1.onboard") : partSlot(GROUP_KINDS[s.group][0], s.index + 1));
+export const COUNTED: Group[] = ["cpu", "ram", "bay", "pcie", "psu", "fan"];
+export const slotName = (s: Slot) => (s.group === "pcie" ? `PCIe ${s.index + 1}` : s.group === "board" ? t("locations-1.onboard") : partSlot(GROUP_KINDS[s.group][0], s.index + 1));
 
 // The lid-off view of a server: the lid slides off, every slot opens its part, and Close puts the lid back. A running server only
 // takes hot-swap work. The lid is UI state of this sheet; the sheet closes itself when the server is gone.

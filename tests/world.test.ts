@@ -15,6 +15,7 @@ import { connectError, portPeers } from "../src/sim/60-infra/status";
 import type { End } from "../src/sim/50-state";
 import { dateOf } from "../src/sim/00-core/time";
 import { NIGHT } from "../src/ui/world/draw";
+import { modelById } from "../src/sim/10-catalog/hardware";
 
 afterEach(cleanup);
 
@@ -61,6 +62,36 @@ describe("world", () => {
       act(() => { vi.advanceTimersByTime(1000); });
       expect(screen.queryByRole("dialog")).toBeNull();
       expect(useStore.getState().surface).toBe("world");
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("pulls a server out with the lid off, tags a slot and pushes it back into the rack", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "setTimeout", "clearTimeout", "performance"] });
+    try {
+      const s = readyGame(7);
+      useStore.setState({ game: s, speed: 0, surface: "world" });
+      const { container } = render(createElement(World));
+      const rack = s.racks.find((r) => r.locationId === roomOf(s).id)!;
+      const dev = s.devices.find((d) => d.rackId === rack.id && !d.chassisId && modelById(d.model).kind === "server")!;
+      fireEvent.click(container.querySelector(`[data-rack="${rack.id}"]`)!);
+      act(() => { vi.advanceTimersByTime(20_000); });
+      const panel = screen.getByRole("dialog", { name: rack.name });
+      fireEvent.click(panel.querySelector(`.rack-dev[aria-label="${dev.name}"]`)!);
+      fireEvent.click(screen.getByRole("button", { name: t("locations-1.changeParts") }));
+      act(() => { vi.advanceTimersByTime(1000); });
+      const lid = panel.querySelector(`[data-lid="${dev.id}"]`)!;
+      expect(lid.querySelector(".lid-view")).not.toBeNull();
+      expect(lid.querySelector("[data-spec]")).not.toBeNull();
+      fireEvent.click(lid.querySelector(".lid-slot")!);
+      expect(lid.querySelector("[data-slot]")).not.toBeNull();
+      fireEvent.click(lid.querySelector("[data-spec] button")!);
+      act(() => { vi.advanceTimersByTime(2000); });
+      expect(panel.querySelector("[data-lid]")).toBeNull();
+      expect(screen.getByRole("dialog", { name: rack.name })).toBe(panel);
     } finally {
       vi.useRealTimers();
       vi.unstubAllGlobals();
