@@ -12,7 +12,7 @@ import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
 import { deviceLamps } from "../../apps/hw";
-import { handsMode, useHandWork, type HandTask } from "../../apps/locations/HandSheet";
+import { handsWays, useHandWork, wayLabel, type HandTask } from "../../apps/locations/HandSheet";
 import { LabelEdit, PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { LidSheet } from "../../apps/locations/LidSheet";
 import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
@@ -215,7 +215,7 @@ function HandTag({ name, onAway, onDrop }: { name: string; onAway: () => void; o
 function FloorUnits({ rack, unit, onMount, onPick }: { rack: Rack; unit: number; onMount: (task: HandTask) => void; onPick: (id: string) => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const held = carriedFit(game, rack.id).includes(unit) ? game.devices.find((x) => x.id === game.player.carrying) : undefined;
-  const hand = [...(held ? [held] : []), ...doorFit(game, rack, unit)], mode = handsMode(game, rack.locationId, "mountDevice");
+  const hand = [...(held ? [held] : []), ...doorFit(game, rack, unit)], ways = handsWays(game, rack.locationId, "mountDevice");
   const box = (k: string, model: string, brand: string, label: string, run: () => void, off = false, data: Record<string, string> = {}) => {
     const m = modelById(model);
     return (
@@ -236,7 +236,7 @@ function FloorUnits({ rack, unit, onMount, onPick }: { rack: Rack; unit: number;
       })}
       {mountable(game, rack, unit).map((st) => {
         const from = mountFrom(game, rack.id, heightIn(game, rack.id, st.model), 1, unit) ?? unit;
-        return box(`${st.model}|${st.brand}`, st.model, st.brand, t("locations-2.nInStorage", { n: st.ids.length }), () => onMount(mountTask(st, rack.id, 1, from)), mode.off);
+        return ways.map((w) => box(`${st.model}|${st.brand}|${w.how}`, st.model, st.brand, wayLabel(t("locations-2.nInStorage", { n: st.ids.length }), w), () => onMount({ ...mountTask(st, rack.id, 1, from), how: w.how })));
       })}
     </div>
   );

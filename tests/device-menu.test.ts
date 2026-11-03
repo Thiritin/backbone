@@ -15,8 +15,14 @@ describe("device menu", () => {
     const g = withServer(newGame(7));
     expect(labels(g, "dev3", { open: () => {} })).toEqual([
       "Show details", "-", "Shut down", "Reboot", "At the server", "-", "Burn-in", "-",
-      "Add second power supply, 250 €", "Rename…", "-", "Unmount · In person", "Sell…",
+      "Add second power supply, 250 €", "Rename…", "-", "Unmount", "Sell…",
     ]);
+  });
+
+  it("offers removal by the player's own hands while away from the basement", () => {
+    const g = withServer(newGame(7));
+    g.player = { ...g.player, doing: "travel", until: g.hour + 1 };
+    expect(labels(g, "dev3").slice(-2)).toEqual(["Unmount · In person", "Sell…"]);
   });
 
   it("routes a server's power through its management controller when it has one", () => {
