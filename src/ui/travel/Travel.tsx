@@ -45,7 +45,7 @@ function TravelMap() {
     for (const x of spots) cities.set(x.l.city, [...(cities.get(x.l.city) ?? []), x]);
     return [...spots.map((x) => pin(x, "street")), ...[...cities].map(([city, g]): Marker => {
       const c = cityNamed(city)!;
-      return g.length === 1 ? pin(g[0], "region")
+      return g.length === 1 ? { ...pin(g[0], "region"), id: `region:${g[0].l.id}` }
         : { id: `city:${city}`, lon: c.lon, lat: c.lat, label: city, zoom: "region", kind: "location", count: g.length, plane: g.some((x) => x.d?.by === "fly"), selected: g.some((x) => x.l.id === here.id) };
     })];
   }, [spots, here.id]);
@@ -59,8 +59,9 @@ function TravelMap() {
     return () => window.removeEventListener("keydown", key, true);
   }, [send]);
 
-  const pick = (id: string) => {
-    if (id.startsWith("city:")) return setFocus(id.slice(5));
+  const pick = (raw: string) => {
+    if (raw.startsWith("city:")) return setFocus(raw.slice(5));
+    const id = raw.replace(/^region:/, "");
     if (id === here.id) return;
     const s = useStore.getState(), from = playerAt(s.game), start = nowHours(s.game);
     const r = s.act(travelTo, id);
