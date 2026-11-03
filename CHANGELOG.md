@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The basement is drawn in a pixel hotel style with walls on the two far sides, a tile cursor under the mouse and a walking avatar with your company name above its head.
 - You can stand up from the desk and walk around the basement, where the racks, the storage shelf, the letterbox and the scanner open their apps and the door opens the way out.
 - The bookkeeping program opens its setup wizard from the app menu, and the web version shows it only on the overview page.
 - Mail server names in Pear Mail's account setup and record values in the PowerDNZ and cPanic zone editors are now picked from a list, with Other for typing a value by hand.
