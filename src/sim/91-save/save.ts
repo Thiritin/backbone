@@ -112,8 +112,6 @@ export function deserialize(raw: string): GameState {
     billingRules: { ...base.billingRules, ...data.billingRules },
     // Quotes from before the shop wrote its own were all written in Books.
     quotes: (data.quotes ?? []).map((q) => ({ ...q, origin: q.origin ?? "books" })),
-    // Letters from before the letterbox lie at the desk, and the delivered ones are filed in DocuWhere.
-    letters: (data.letters ?? base.letters).map((l) => ({ ...l, box: l.box ?? null, scanned: l.scanned ?? l.arrived })),
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
     // Saves from before contracts get one per rented location at today's price.
     contracts: data.contracts?.map((c: Contract) => ({ ...c, retainedAt: c.retainedAt ?? null })) ?? locations.filter((l) => l.dc).map((l, i) => {
@@ -128,7 +126,7 @@ export function deserialize(raw: string): GameState {
     network: { ...base.network, ...data.network },
     ops: { ...base.ops, ...data.ops },
     friendFavours: { ...base.friendFavours, ...data.friendFavours },
-    player: { ...base.player, at: locations[0].id, ...data.player },
+    player: data.player ?? { ...base.player, at: locations[0].id },
     security: { ...base.security, ...data.security },
     sites: { ...base.sites, ...data.sites },
     // Saves from before paid lines had the free DSL line from the start.

@@ -52,7 +52,7 @@ export function monthNet(ledger: LedgerEntry[], hour: number): number {
 
 let ctx: AudioContext | null = null;
 
-export function audio(): AudioContext | null {
+function audio(): AudioContext | null {
   try {
     ctx ??= new AudioContext();
     return ctx;
@@ -68,7 +68,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("keydown", wake, { once: true });
 }
 
-export function tone(c: AudioContext, out: AudioNode, hz: number, at: number, dur: number, peak: number, type: OscillatorType = "sine") {
+function tone(c: AudioContext, out: AudioNode, hz: number, at: number, dur: number, peak: number, type: OscillatorType = "sine") {
   const g = c.createGain(), o = c.createOscillator();
   o.type = type;
   o.frequency.value = hz;
@@ -87,7 +87,7 @@ function note(c: AudioContext, out: AudioNode, v: Voice, hz: number, at: number,
 }
 
 // Noise whose band glides from one pitch to another: a window swooshing into the dock.
-export function sweep(c: AudioContext, out: AudioNode, from: number, to: number, at: number, secs: number, peak: number) {
+function sweep(c: AudioContext, out: AudioNode, from: number, to: number, at: number, secs: number, peak: number) {
   const len = Math.floor(c.sampleRate * secs), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
   for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.sin((Math.PI * i) / len);
   const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
@@ -101,7 +101,7 @@ export function sweep(c: AudioContext, out: AudioNode, from: number, to: number,
 }
 
 // A short band-passed noise burst: the drawer of a cash register, or at a short length and other pitch a key press.
-export function rattle(c: AudioContext, out: AudioNode, at: number, peak: number, hz = 3200, secs = 0.06) {
+function rattle(c: AudioContext, out: AudioNode, at: number, peak: number, hz = 3200, secs = 0.06) {
   const len = Math.floor(c.sampleRate * secs), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
   for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
   const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();

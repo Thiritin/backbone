@@ -36,7 +36,7 @@ export const playerAt = (s: GameState): Location => s.locations.find((l) => l.id
 export const present = (s: GameState, locationId: string): boolean =>
   playerAt(s).id === locationId && !(s.player.doing === "travel" && s.player.until > s.hour);
 // Claims the player's time for hand work on site.
-const workOnSite = (s: GameState, hours: number) => { s.player = { ...s.player, until: Math.max(s.player.until, s.hour) + hours, doing: "work" }; };
+const workOnSite = (s: GameState, hours: number) => { s.player = { at: s.player.at, until: Math.max(s.player.until, s.hour) + hours, doing: "work" }; };
 
 export const favoursLeft = (s: GameState): number =>
   FAVOURS_PER_YEAR - (s.friendFavours.year === yearOf(s.hour) ? s.friendFavours.used : 0);

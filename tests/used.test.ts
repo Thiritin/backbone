@@ -110,7 +110,7 @@ describe("used listings", () => {
     expect(d.components.length).toBe(parts);
     if (l.defect !== "psu") expect(d.components.map((c) => Math.round((at - c.installedAt) / HOURS_PER_YEAR * 10) / 10)).toEqual(l.wear);
     while (s.hour < d.arriveAt!) tick(s);
-    expect(s.devices.find((x) => x.id === d.id)!.door?.at).toBe("loc1");
+    expect(s.devices.find((x) => x.id === d.id)!.store).toBe("loc1");
     expect(s.used.some((x) => x.id === l.id)).toBe(false);
   });
 

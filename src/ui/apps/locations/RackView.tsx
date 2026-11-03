@@ -234,7 +234,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
 function MountPop({ game, rack, unit, top, left, onClose, onMount }: { game: GameState; rack: Rack; unit: number; top: number; left: number; onClose: () => void; onMount: (task: HandTask) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, onClose);
-  const rows = mountable(game, rack, unit);
+  const rows = storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
   const where = `U${unit}`;
   return (
     <div className="loc-shop" ref={ref} style={{ top, left }} role="dialog" aria-label={t("locations-2.mountAt", { where })}>
@@ -247,10 +247,7 @@ function MountPop({ game, rack, unit, top, left, onClose, onMount }: { game: Gam
   );
 }
 
-export const mountable = (game: GameState, rack: Rack, unit: number) =>
-  storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
-
-export function MountRow({ game, rack, st, unit, onMount }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMount: (task: HandTask) => void }) {
+function MountRow({ game, rack, st, unit, onMount }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMount: (task: HandTask) => void }) {
   const m = modelById(st.model), max = mountMax(game, rack.id, m.height, st.ids.length, unit);
   const [count, setCount] = useState(1);
   const n = Math.min(count, max), from = mountFrom(game, rack.id, m.height, n, unit) ?? unit;

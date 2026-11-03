@@ -1,4 +1,4 @@
-import { ArrowDownToLine, Package, Router, Truck } from "lucide-react";
+import { ArrowDownToLine, Router, Truck } from "lucide-react";
 import { useState } from "react";
 import { isOfficeRouter, modelById } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
@@ -126,18 +126,10 @@ export function Storage({ game, loc, onMounted }: { game: GameState; loc: Locati
     const k = `${d.model}|${d.brand}|${d.transitTo}|${d.arriveAt}`;
     transit.set(k, [...(transit.get(k) ?? []), d]);
   }
-  const door = game.devices.filter((x) => x.door?.at === loc.id && !x.chassisId);
   return (
     <div className="loc-card">
       <div className="loc-card-h"><h3>{t("locations-2.storage")}</h3><Zone loc={loc} /><span className="grow" /><span className="num loc-muted">{stacks.reduce((n, s) => n + s.ids.length, 0)}</span></div>
       {stacks.length ? <div className="loc-stack-grid">{stacks.map((s) => <StackRow key={`${s.model}|${s.brand}`} game={game} stack={s} onMounted={onMounted} />)}</div> : <div className="loc-row loc-muted">{t("locations-2.empty")}</div>}
-      {door.length > 0 && <div className="loc-card-h loc-sub" data-door={door.length}><h3><Package />{t("locations-2.atDoor")}</h3></div>}
-      {door.map((d) => (
-        <div key={d.id} className="loc-row loc-transit">
-          <span>{d.brand} {modelById(d.model).name}</span><span className="grow" />
-          <span className="num loc-muted">{t("locations-2.arrived", { day: day(d.door!.since) })}</span>
-        </div>
-      ))}
       {transit.size > 0 && <div className="loc-card-h loc-sub"><h3><Truck />{t("locations-2.inTransit")}</h3></div>}
       {[...transit].map(([k, ds]) => {
         const m = modelById(ds[0].model), to = game.locations.find((l) => l.id === ds[0].transitTo)!;

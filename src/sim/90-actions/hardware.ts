@@ -1,5 +1,4 @@
 import { rand } from "../00-core/rng";
-import { freeRackTiles, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
 import { debitAllowed, HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance/payables";
 import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
@@ -113,7 +112,7 @@ function closeError(s: GameState, locationId: string): string | null {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return "error.unknownLocation";
   if (loc.space === "basement") return "error.cannotClose";
-  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId || d.door?.at === locationId)) return "error.storageNotEmpty";
+  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId)) return "error.storageNotEmpty";
   const racks = s.racks.filter((r) => r.locationId === locationId);
   if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id))) return "error.locationNotEmpty";
   return null;
@@ -197,8 +196,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   if (error) return fail(error);
   if (s.cash < spec.price) return fail("error.noCash");
   const name = nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
-  const tile = freeRackTiles(s.locations.find((l) => l.id === locationId)!, s.racks)[0];
-  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null }, tile };
+  const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null } };
   s.racks.push(rack);
   book(s, "hardware", "ledger.hardware", { model: `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
@@ -228,10 +226,7 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   // Feeds belong to rented positions, so the basement has none.
   if (!to.dc) Object.assign(rack, { feedB: false, highDensity: false });
   // The power contract belongs to the position too; the new one starts on its site's default.
-  if (to.id !== from.id) {
-    Object.assign(rack, { flatKw: flatDefault(s, to.id), flatKwAt: null, overSince: { a: null, b: null }, tile: undefined });
-    rack.tile = rackTiles(to, s.racks)[rack.id];
-  }
+  if (to.id !== from.id) Object.assign(rack, { flatKw: flatDefault(s, to.id), flatKwAt: null, overSince: { a: null, b: null } });
   book(s, "moving", "ledger.move", { rack: rack.name, location: to.name }, -move.price);
   return { ok: true, id: rack.id };
 }
@@ -407,8 +402,8 @@ export function buyOutLease(s: GameState, leaseId: string): ActionResult {
 }
 
 // A chassis's nodes stand, travel and wait where the chassis does.
-export function carry(s: GameState, chassis: Device) {
-  for (const n of nodesOf(s, chassis.id)) Object.assign(n, { rackId: chassis.rackId, slot: chassis.slot, store: chassis.store, transitTo: chassis.transitTo, arriveAt: chassis.arriveAt, door: chassis.door });
+function carry(s: GameState, chassis: Device) {
+  for (const n of nodesOf(s, chassis.id)) Object.assign(n, { rackId: chassis.rackId, slot: chassis.slot, store: chassis.store, transitTo: chassis.transitTo, arriveAt: chassis.arriveAt });
 }
 const withNodes = (s: GameState, d: Device): Device[] => [d, ...nodesOf(s, d.id)];
 
@@ -544,7 +539,6 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   if (self) {
     if (!present(s, from)) return fail("error.notThere");
     if (s.player.until > s.hour) return fail("error.away");
-    if (s.player.carrying) return fail("error.carrying");
     const fare = driveTo(s, to.id);
     if (!fare) return fail("error.tooFar");
     trip = { price: fare.fee, hours: fare.hours };
@@ -553,7 +547,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   for (const d of units) { Object.assign(d!, { store: null, transitTo: to.id, arriveAt: s.hour + trip.hours }); carry(s, d!); }
   if (self) {
     book(s, "travel", "ledger.drive", { place: to.name }, -trip.price);
-    s.player = { ...s.player, at: to.id, until: s.hour + trip.hours, doing: "travel" };
+    s.player = { at: to.id, until: s.hour + trip.hours, doing: "travel" };
   } else book(s, "moving", "ledger.ship", { count: units.length, location: to.name }, -trip.price);
   return { ok: true, id: units[0]!.id };
 }
@@ -603,12 +597,11 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
   if (how === "self") {
     if (!present(s, from.id)) return fail("error.notThere");
     if (s.player.until > s.hour) return fail("error.away");
-    if (s.player.carrying) return fail("error.carrying");
     const fare = driveTo(s, to.id);
     if (!fare) return fail("error.tooFar");
     job = { cost: fare.fee, wait: fare.hours + work, commit: () => {
       book(s, "travel", "ledger.drive", { place: to.name }, -fare.fee);
-      s.player = { ...s.player, at: to.id, until: s.hour + fare.hours + work, doing: "travel" };
+      s.player = { at: to.id, until: s.hour + fare.hours + work, doing: "travel" };
       return fare.hours + work;
     } };
   } else {
@@ -664,7 +657,6 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   if (d.lease) return fail("error.leased");
   if (d.chassisId) return fail("error.inChassis");
   if (d.transitTo) return fail("error.inTransit");
-  if (d.door || s.player.carrying === d.id) return fail("error.notInStorage");
   const gone = new Set(withNodes(s, d).map((x) => x.id));
   if ([...gone].some((id) => serverTaken(s, id))) return fail("error.serverInUse");
   unplug(s, gone);

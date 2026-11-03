@@ -8,8 +8,6 @@ Read only the section you need.
 - [Core loop](core-loop.md)
 - [The desktop](the-desktop.md)
 - [Locations and space](locations-and-space.md)
-- [The world](the-world.md)
-- [Travel](travel.md)
 - [Racks, hardware and cabling](racks-hardware-and-cabling.md)
 - [Clusters and products](clusters-and-products.md)
 - [Customers and market](customers-and-market.md)
