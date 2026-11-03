@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
-import { coldAisles, fixtures, rackTiles, roomSize, type Fixture } from "../../sim/20-world/layout";
+import { fixtures, rackTiles, roomSize, type Fixture } from "../../sim/20-world/layout";
 import { carriersAt } from "../../sim/10-catalog/network";
 import { datacenterById } from "../../sim/20-world/datacenters";
 import { rackUnits } from "../../sim/20-world/datacenters";
@@ -22,7 +22,7 @@ import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
-  BeerCrate, Boiler, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox, Grate,
+  BeerCrate, Boiler, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
   Hygrometer, Letterbox, Light, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
@@ -241,6 +241,7 @@ export function World() {
     door: (f) => <Door f={f} open={door} cage={!home} />,
     extinguisher: (f) => <Extinguisher f={f} />,
     xconnect: (f) => <CrossConnect f={f} carriers={carriers} />,
+    cart: () => null,
     cooling: (f) => <Cooling f={f} />,
     pdu: (f) => <Pdu f={f} reading={watts} />,
     dock: (f) => <Dock f={f} />,
@@ -272,7 +273,6 @@ export function World() {
         <Defs />
         <Walls w={w} h={h} fenced={!home} />
         <polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} />
-        {coldAisles(loc).map((a) => <Grate key={a.y} {...a} />)}
         {home && <Concrete w={w} h={h} />}
         {!home && <path className="w-tile" d={grid} />}
         {back}
