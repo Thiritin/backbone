@@ -1,6 +1,6 @@
 // docs/design/plans/billing-by-hand.md, 9c and 9d: the installed bookkeeping program, its edition, fees, seats and chores.
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
-import { booksVendor, editionById, featuresIn, type BooksVendor, type Edition, type Feature } from "../10-catalog/bookkeeping";
+import { booksVendor, editionById, featuresIn, type BooksVendor, type BooksVendorId, type Edition, type Feature } from "../10-catalog/bookkeeping";
 import { bookTransfer, cents, isUnpaid, issue, owed, payerOf, synced, type Invoice, type Transfer } from "../45-billing/billing";
 import { invoice, invoicing, lineCut } from "../46-finance/payables";
 import { deliverMail } from "../42-mail/sources";
@@ -17,8 +17,13 @@ export const currentEdition = (s: GameState): Edition | undefined => {
   const v = currentVendor(s);
   return v && editionById(v, s.books.edition);
 };
-export const LEXWEAR_HOST = "lexwear.de";
-export const booksHost = (v: BooksVendor): string => (v.id === "gnucache" ? "gnucache.org" : `${v.id}.de`);
+const HOSTS: Record<BooksVendorId, string> = {
+  lexwear: "taxware.de", wizo: "warum.de", saga: "thyme.de", orgamin: "orgamin.de", collmix: "kontomix.de", sevdeck: "eightdesk.de", lexoffize: "rexoffice.de", gnucache: "gnucache.org",
+};
+export const LEXWEAR_HOST = HOSTS.lexwear;
+export const booksHost = (v: BooksVendor): string => HOSTS[v.id];
+// The host before the vendors were renamed, still answered for tabs and links in older saves.
+export const oldBooksHost = (v: BooksVendor): string => `${v.id}.de`;
 // The vendor's shop, or its page for one edition.
 export const booksUrl = (v: BooksVendor, edition?: string): string => `www.${booksHost(v)}/${edition ? `edition/${edition}` : ""}`;
 // Where a browser program runs.
@@ -48,7 +53,7 @@ export const seated = (s: GameState, e: Employee): boolean => {
   return !clerk(e) || i < seatsFor(s);
 };
 
-// An unpaid Lexwear update stops upgrades until it is paid.
+// An unpaid Taxware update stops upgrades until it is paid.
 export const updateOpen = (s: GameState): boolean => s.payables.some((p) => p.paidAt === null && p.lines.some((e) => e.key === UPDATE_KEY));
 
 // What the program has cost so far, so a reinstall or an upgrade pays only the difference.

@@ -196,7 +196,7 @@ export default {
   "event.collected.title": () => "Envoyé en recouvrement",
   "event.collected.text": (p) => `La facture ${p.invoice} de ${p.customer} est partie en recouvrement.`,
   "event.invoices.title": () => "Brouillons de factures",
-  "event.invoices.text": (p) => `Lexwear a créé ${plural(p.count, "brouillon de facture", "brouillons de factures")} pour ${euroCents(Number(p.total))}.`,
+  "event.invoices.text": (p) => `Taxware a créé ${plural(p.count, "brouillon de facture", "brouillons de factures")} pour ${euroCents(Number(p.total))}.`,
   "event.loanMissed.title": () => "Échéance manquée",
   "event.loanMissed.text": (p) => `L'échéance du prêt de ${euro(Number(p.amount))} n'a pas été payée, et la banque a facturé ${euro(Number(p.fee))} de frais.`,
   "event.loanCalled.title": () => "Prêt exigible",

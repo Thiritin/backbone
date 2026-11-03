@@ -9,7 +9,7 @@ import { SevdeckSite } from "./SevdeckSite";
 import type { SiteProps } from "./VendorShop";
 import { WizoSite } from "./WizoSite";
 
-// Lexwear keeps its own site in ../lexwear.
+// Taxware keeps its own site in ../lexwear.
 export const BOOKS_SITES: Record<Exclude<BooksVendorId, "lexwear">, ComponentType<SiteProps>> = {
   wizo: WizoSite, saga: SagaSite, orgamin: OrgaminSite, collmix: CollmixSite, sevdeck: SevdeckSite, lexoffize: LexoffizeSite, gnucache: GnuCacheSite,
 };

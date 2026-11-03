@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "vendor-sites.module.shop-link": () => "Shop-Anbindung",
-  "vendor-sites.pitch.shop-link": () => "Die Shop-Anbindung überträgt jeden Kunden und jede Rechnung aus Ihrem Shop sofort in Lexwear Office und markiert eine Rechnung im Shop als bezahlt, sobald Books die Zahlung verbucht.",
+  "vendor-sites.pitch.shop-link": () => "Die Shop-Anbindung überträgt jeden Kunden und jede Rechnung aus Ihrem Shop sofort in Taxware Office und markiert eine Rechnung im Shop als bezahlt, sobald Books die Zahlung verbucht.",
   "ledger.module.shop-link": () => "Lizenz Shop-Anbindung",
   "ticket.mail.shop-link.licence.subject": (p) => `Ihr Lizenzschlüssel für ${p.module}`,
   "ticket.mail.shop-link.licence.text": (p) => `Vielen Dank für den Kauf von ${p.module} für ${p.shop}. Ihr Lizenzschlüssel lautet ${p.key}. Geben Sie ihn in Books unter Registrieren ein, um Ihren Shop anzubinden.`,

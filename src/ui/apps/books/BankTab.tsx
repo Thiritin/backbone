@@ -13,7 +13,7 @@ import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { Locked } from "./Locked";
 
-// Every booking on the account, newest first, after lexoffice's Umsätze: To assign holds what no document covers yet, All
+// Every booking on the account, newest first, after Rexoffice's Umsätze: To assign holds what no document covers yet, All
 // the rest too. A selected booking lists the documents it can pay, the suggestion first, or shows the one it is assigned to.
 // ponytail: the latest SHOWN only; a search field once players chase older bookings.
 const SHOWN = 100;
@@ -43,7 +43,7 @@ export function BankTab() {
     setSelected(null);
     setInvoice(null);
   };
-  // Equal amounts book at once; a differing one asks how, as lexoffice's Differenz festgestellt does.
+  // Equal amounts book at once; a differing one asks how, as Rexoffice's Differenz festgestellt does.
   const pick = (tr: Transfer, inv: Invoice) => {
     setSelected(tr.id);
     if (tr.back || tr.amount === owed(inv)) return book(tr.id, inv.id);

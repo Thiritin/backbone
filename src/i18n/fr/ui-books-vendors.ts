@@ -17,7 +17,7 @@ export default {
   "books-vendors.about.orgamin": () => "Le logiciel de bureau des petites entreprises.",
   "books-vendors.about.collmix": () => "La comptabilité qui tourne dans votre navigateur.",
   "books-vendors.about.sevdeck": () => "La comptabilité dans le cloud avec synchronisation bancaire.",
-  "books-vendors.about.lexoffize": () => "Le bureau de Lexwear dans le cloud.",
+  "books-vendors.about.lexoffize": () => "Le bureau de Taxware dans le cloud.",
   "books-vendors.footer": (p) => `© ${p.year} ${p.name}`,
   "ledger.booksLicence": (p) => `Licence ${p.program}`,
   "ledger.booksMonthly": (p) => `Abonnement mensuel ${p.program}`,

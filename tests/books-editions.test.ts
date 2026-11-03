@@ -91,12 +91,12 @@ describe("editions", () => {
   it("switches a browser plan's fee from the next month and bills its seats", () => {
     const s = game(2014);
     own(s, "lexoffize");
-    expect(s.payables.at(-1)).toMatchObject({ name: "lexoffize", amount: 14 });
+    expect(s.payables.at(-1)).toMatchObject({ name: "Rexoffice", amount: 14 });
     expect(upgradeBooks(s, "l")).toEqual({ ok: true });
     expect(setSeats(s, 2)).toEqual({ ok: true });
     s.hour = at(2014, 4, 1, 0);
     booksTick(s);
-    expect(s.payables.at(-1)).toMatchObject({ name: "lexoffize", amount: 44 + 2 * 6 });
+    expect(s.payables.at(-1)).toMatchObject({ name: "Rexoffice", amount: 44 + 2 * 6 });
     expect(setSeats(s, 1)).toEqual({ ok: true });
     expect(s.books.seats).toBe(1);
   });
@@ -152,11 +152,11 @@ describe("old saves", () => {
     const raw = JSON.parse(serialize(newGame(4)));
     raw.books = { vendor, installedAt: 0 };
     raw.modules = [...modules, "shop-link"];
-    raw.tickets.push({ ...raw.tickets[0] ?? {}, id: "tktold", kind: "mail", topic: "lexwear.newsletter", mail: { from: "Lexwear", params: { module: "hbci" } } });
+    raw.tickets.push({ ...raw.tickets[0] ?? {}, id: "tktold", kind: "mail", topic: "lexwear.newsletter", mail: { from: "Taxware", params: { module: "hbci" } } });
     return deserialize(JSON.stringify(raw));
   };
 
-  it("run the smallest Lexwear edition that covers the modules they owned", () => {
+  it("run the smallest Taxware edition that covers the modules they owned", () => {
     expect(old([]).books.edition).toBe("buchhalter");
     expect(old(["monthly-run", "hbci"]).books).toMatchObject({ edition: "buchhalter", addons: ["hbci"] });
     expect(old(["monthly-run"]).books.addons).toEqual([]);
@@ -195,7 +195,7 @@ describe("seats", () => {
     expect(A().status).toBe("open");
   });
 
-  it("seats every bookkeeper with a network version and three users on Collmix plus", () => {
+  it("seats every bookkeeper with a network version and three users on Kontomix plus", () => {
     const { s } = ledger();
     const a = clerk(s), b = clerk(s), c = clerk(s);
     run(s, "lexwear", "financial-office-pro");

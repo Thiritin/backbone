@@ -25,7 +25,7 @@ import { Page } from "./InvoicesTab";
 // The drag type of a quote row; the order ticket's attachment strip takes it.
 export const QUOTE_DRAG = "application/x-lexwear-quote";
 const PILL: Record<QuoteStatus, string> = { draft: "", sent: "accent", accepted: "ok", countered: "warn", declined: "", invoiced: "" };
-// GnuCache follows GnuCash, which has no quotes: a quote is an unposted invoice, and posting it carries it forward.
+// GnuCache has no quotes: a quote is an unposted invoice, and posting it carries it forward.
 const unposted = (game: GameState) => currentVendor(game)?.id === "gnucache";
 export const quoteTitle = (game: GameState, number: string) => t(unposted(game) ? "orderSteps.unposted" : "orderSteps.quote", { number });
 export const QuotePill = ({ q }: { q: Quote }) => <span className={`pill ${PILL[q.status]}`}>{t(`orderSteps.status.${q.status}`)}</span>;

@@ -196,7 +196,7 @@ export default {
   "event.collected.title": () => "Enviada para cobrança",
   "event.collected.text": (p) => `A fatura ${p.invoice} de ${p.customer} foi para cobrança.`,
   "event.invoices.title": () => "Rascunhos de faturas",
-  "event.invoices.text": (p) => `O Lexwear criou ${plural(p.count, "rascunho de fatura", "rascunhos de faturas")} no valor de ${euroCents(Number(p.total))}.`,
+  "event.invoices.text": (p) => `O Taxware criou ${plural(p.count, "rascunho de fatura", "rascunhos de faturas")} no valor de ${euroCents(Number(p.total))}.`,
   "event.loanMissed.title": () => "Prestação em falta",
   "event.loanMissed.text": (p) => `A prestação do empréstimo de ${euro(Number(p.amount))} não foi paga, e o banco cobrou ${euro(Number(p.fee))} de comissão.`,
   "event.loanCalled.title": () => "Empréstimo exigido",
