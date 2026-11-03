@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
+import { euro } from "../../sim/00-core/money";
 import { formatClock, MS_PER_HOUR, nowHours } from "../../sim/00-core/time";
 import { datacenterById, listed } from "../../sim/20-world/datacenters";
 import { playerAt } from "../../sim/60-infra/handwork";
@@ -8,18 +9,18 @@ import { drive, travelTo } from "../../sim/90-actions/travel";
 import { cityNamed, LAND, WorldMap, X, XF, Y, type Marker } from "../map/WorldMap";
 import { useStore } from "../store";
 import { placeOf } from "../../sim/20-world/places";
-import { along, driveMs, driveOf, km, loadRoutes, loadStreets, useTrip, type LL, type RouteData, type Trip } from "./route";
+import { along, arc, driveMs, driveOf, km, loadRoutes, loadStreets, useTrip, type LL, type RouteData, type Trip } from "./route";
 import { Scene, useSkip } from "./Scene";
-import { engineRun } from "./sounds";
+import { engineRun, jetRun } from "./sounds";
 import "./travel.css";
 
 export function Travel() {
   const stage = useTrip((s) => s.stage), trip = useTrip((s) => s.trip);
   if (stage === "map") return <TravelMap />;
   if (!trip) return null;
-  if (stage === "leave") return <Scene key="leave" place={trip.from} leaving />;
+  if (stage === "leave") return <Scene key="leave" place={trip.from} leaving taxi={trip.by === "fly"} />;
   if (stage === "road") return <Road trip={trip} />;
-  if (stage === "arrive") return <Scene key="arrive" place={trip.to} leaving={false} />;
+  if (stage === "arrive") return <Scene key="arrive" place={trip.to} leaving={false} taxi={trip.by === "fly"} />;
   return null;
 }
 
@@ -33,19 +34,19 @@ function TravelMap() {
   useEffect(() => { let on = true; void loadStreets(focus).then((l) => on && setStreets(toPath(l))); return () => { on = false; }; }, [focus]);
   // Every reachable place as a pin at street zoom; above it, one pin per city with the count.
   const spots = useMemo(() => game.locations.flatMap((l) => {
-    const c = cityNamed(l.city), p = placeOf(game, l.id) ?? c;
-    if (!p || !listed(l.city) || (l.id !== here.id && !drive(game, l.id))) return [];
-    return [{ l, lon: p.lon, lat: p.lat }];
+    const c = cityNamed(l.city), p = placeOf(game, l.id) ?? c, d = l.id === here.id ? null : drive(game, l.id);
+    if (!p || !listed(l.city) || (l.id !== here.id && !d)) return [];
+    return [{ l, lon: p.lon, lat: p.lat, d }];
   }), [game, here.id]);
   const markers = useMemo(() => {
-    const pin = ({ l, lon, lat }: (typeof spots)[number], zoom: Marker["zoom"]): Marker =>
-      ({ id: l.id, lon, lat, label: l.name, zoom, kind: l.space === "basement" ? "basement" : l.dc ? "datacenter" : "location", provider: l.dc ? datacenterById(l.dc).provider : null, selected: l.id === here.id });
+    const pin = ({ l, lon, lat, d }: (typeof spots)[number], zoom: Marker["zoom"]): Marker =>
+      ({ id: l.id, lon, lat, label: l.name, zoom, plane: d?.by === "fly", hint: d ? `${l.name}\n${t(d.by === "fly" ? "travel.flight" : "travel.drive", { hours: d.hours, fee: euro(d.fee) })}` : undefined, kind: l.space === "basement" ? "basement" : l.dc ? "datacenter" : "location", provider: l.dc ? datacenterById(l.dc).provider : null, selected: l.id === here.id });
     const cities = new Map<string, typeof spots>();
     for (const x of spots) cities.set(x.l.city, [...(cities.get(x.l.city) ?? []), x]);
     return [...spots.map((x) => pin(x, "street")), ...[...cities].map(([city, g]): Marker => {
       const c = cityNamed(city)!;
-      return g.length === 1 ? pin(g[0], "region")
-        : { id: `city:${city}`, lon: c.lon, lat: c.lat, label: city, zoom: "region", kind: "location", count: g.length, selected: g.some((x) => x.l.id === here.id) };
+      return g.length === 1 ? { ...pin(g[0], "region"), id: `region:${g[0].l.id}` }
+        : { id: `city:${city}`, lon: c.lon, lat: c.lat, label: city, zoom: "region", kind: "location", count: g.length, plane: g.some((x) => x.d?.by === "fly"), selected: g.some((x) => x.l.id === here.id) };
     })];
   }, [spots, here.id]);
   const inFocus = spots.filter((x) => x.l.city === focus), lons = inFocus.map((x) => x.lon), lats = inFocus.map((x) => x.lat);
@@ -58,14 +59,15 @@ function TravelMap() {
     return () => window.removeEventListener("keydown", key, true);
   }, [send]);
 
-  const pick = (id: string) => {
-    if (id.startsWith("city:")) return setFocus(id.slice(5));
+  const pick = (raw: string) => {
+    if (raw.startsWith("city:")) return setFocus(raw.slice(5));
+    const id = raw.replace(/^region:/, "");
     if (id === here.id) return;
     const s = useStore.getState(), from = playerAt(s.game), start = nowHours(s.game);
     const r = s.act(travelTo, id);
     if (!r.ok) return setError(t(r.error, r.params));
     const g = useStore.getState().game;
-    const trip: Trip = { from, to: playerAt(g), start, until: g.player.until, resume: s.speed };
+    const trip: Trip = { from, to: playerAt(g), start, until: g.player.until, resume: s.speed, by: g.player.by };
     s.setSpeed(0);
     void loadRoutes();
     void loadRoads();
@@ -99,19 +101,22 @@ function Road({ trip }: { trip: Trip }) {
   const [data, setData] = useState<{ rd: RouteData; roads: string; streets: string } | null>(null);
   useEffect(() => {
     void Promise.all([loadRoutes(), loadRoads(), loadStreets(trip.from.city), loadStreets(trip.to.city)])
-      .then(([rd, roads, a, b]) => setData({ rd, roads, streets: toPath(a === b ? a : [...a, ...b]) }));
+      .then(([rd, roads, a, b]) => setData({ rd, roads, streets: trip.by === "fly" ? "" : toPath(a === b ? a : [...a, ...b]) }));
   }, [trip]);
   return data ? <Drive trip={trip} {...data} /> : <div className="travel travel-road" />;
 }
 
 function Drive({ trip, rd, roads, streets }: { trip: Trip; rd: RouteData; roads: string; streets: string }) {
   const game = useStore((s) => s.game), advance = useStore((s) => s.advance), send = useTrip((s) => s.send);
+  const fly = trip.by === "fly";
   const route = useMemo(() => {
-    const g = useStore.getState().game;
+    const g = useStore.getState().game, at = (l: Trip["from"]): LL | null => { const p = placeOf(g, l.id) ?? cityNamed(l.city); return p ? [p.lon, p.lat] : null; };
+    const a = at(trip.from), b = at(trip.to);
+    if (fly) return a && b ? arc(a, b) : [];
     return driveOf({ city: trip.from.city, place: placeOf(g, trip.from.id) }, { city: trip.to.city, place: placeOf(g, trip.to.id) }, rd);
-  }, [trip, rd]);
+  }, [trip, rd, fly]);
   const pts = useMemo(() => route.map(([lon, lat]) => ({ x: XF(lon), y: Y(lat) })), [route]);
-  const length = km(route), long = length > STREET_KM * 3;
+  const length = km(route), long = !fly && length > STREET_KM * 3;
   const ms = driveMs(length) + (long ? STREET_MS : 0), hours = trip.until - trip.start;
   const [e, setE] = useState(0);
   const [{ vw, vh }] = useState(() => ({ vw: window.innerWidth || 1280, vh: window.innerHeight || 720 }));
@@ -124,7 +129,7 @@ function Drive({ trip, rd, roads, streets }: { trip: Trip; rd: RouteData; roads:
   const finish = () => { catchUp(1); send("done"); };
 
   useEffect(() => {
-    const stop = engineRun(), t0 = performance.now();
+    const stop = fly ? jetRun() : engineRun(), t0 = performance.now();
     let raf = requestAnimationFrame(function frame(now) {
       const f = Math.min(1, (now - t0) / ms);
       setE(now - t0);
@@ -158,7 +163,7 @@ function Drive({ trip, rd, roads, streets }: { trip: Trip; rd: RouteData; roads:
   const streetsOn = !!streets && z < 0.95;
 
   return (
-    <div className="travel travel-road" role="dialog" aria-label={t("travel.road")}>
+    <div className="travel travel-road" role="dialog" aria-label={t(fly ? "travel.air" : "travel.road")}>
       <svg viewBox={`${cx - w / 2} ${cy - h / 2} ${w} ${h}`} preserveAspectRatio="xMidYMid slice">
         <path className="tr-land" d={LAND} />
         <path className="tr-roads" d={roads} style={{ opacity: z }} />
@@ -172,6 +177,7 @@ function Drive({ trip, rd, roads, streets }: { trip: Trip; rd: RouteData; roads:
           </g>
         ))}
         <g transform={`translate(${car.x} ${car.y}) rotate(${car.deg}) scale(${px})`} shapeRendering="crispEdges">
+          {fly ? <g transform="scale(1.5)"><Plane /></g> : <>
           <rect x="-8" y="-5" width="16" height="10" fill="oklch(0.15 0.01 250 / 0.5)" />
           <rect x="-7" y="-4" width="14" height="8" className="tr-car" />
           <rect x="1" y="-3" width="3" height="6" fill="oklch(0.45 0.06 235)" />
@@ -180,6 +186,7 @@ function Drive({ trip, rd, roads, streets }: { trip: Trip; rd: RouteData; roads:
           <rect x="6" y="2" width="1" height="2" fill="oklch(0.97 0.14 95)" />
           <rect x="-7" y="-4" width="1" height="2" fill="oklch(0.6 0.2 25)" />
           <rect x="-7" y="2" width="1" height="2" fill="oklch(0.6 0.2 25)" />
+          </>}
         </g>
       </svg>
       {streetsOn && <div className="travel-osm">{t("travel.osm")}</div>}
@@ -188,5 +195,22 @@ function Drive({ trip, rd, roads, streets }: { trip: Trip; rd: RouteData; roads:
         <strong>{t("travel.speed", { n: mult.toLocaleString(LOCALE) })}</strong>
       </div>
     </div>
+  );
+}
+
+// Top view of a jet pointing along +x, with its shadow.
+function Plane() {
+  return (
+    <>
+      <polygon points="-9,-1 7,-1 10,0 7,1 -9,1" transform="translate(2 3)" fill="oklch(0.15 0.01 250 / 0.4)" />
+      <polygon points="-1,-1 -5,-10 -3,-10 4,-1" className="tr-car" />
+      <polygon points="-1,1 -5,10 -3,10 4,1" className="tr-car" />
+      <polygon points="-10,-1 -12,-5 -10,-5 -7,-1" className="tr-car" />
+      <polygon points="-10,1 -12,5 -10,5 -7,1" className="tr-car" />
+      <polygon points="-11,-1.5 7,-1.5 10,0 7,1.5 -11,1.5" className="tr-car" />
+      <rect x="6" y="-1" width="2" height="2" fill="oklch(0.45 0.06 235)" />
+      <rect x="-4" y="-9" width="1" height="1" fill="oklch(0.6 0.2 25)" />
+      <rect x="-4" y="8" width="1" height="1" fill="oklch(0.7 0.18 145)" />
+    </>
   );
 }
