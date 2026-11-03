@@ -19,12 +19,12 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Rack placement, moving racks | Place a rack on a floor tile, turn it, push it | Locations app lists racks and their tiles |
 | Installing and removing devices | A rack opens a close-up panel over the room: pick a free unit to mount a device from the location's storage or the one in your hands, pick a device to power it, open its lid or unmount it back to storage | Remote hands job at a datacenter, read-only in the basement |
 | Server internals | Lid slides off at the rack, parts go in by hand | Remote hands job at a datacenter, read-only in the basement |
-| Cabling | Rack back in the room, cables run along the trays. The rack panel flips to the back, where a click on a free port takes the cable in hand and a click on a second port plugs it in, also on another rack or the cross-connect panel; the technician PC on a port comes later | Remote hands job at a datacenter, read-only in the basement |
+| Cabling | Rack back in the room, cables run along the trays. The rack panel flips to the back, where a click on a free port takes the cable in hand and a click on a second port plugs it in, also on another rack or the carrier panel shown on every rack's back; the technician PC on a port comes later | Remote hands job at a datacenter, read-only in the basement |
 | Deliveries | Parcels arrive at the door of the player's own place; pick one up and carry it to the shelf or straight into a rack. The shelf opens a storage panel in the room listing stored units and parcels at the door, either of which can be picked up. At a datacenter the receiving desk shelves them | Shop buys, tracking in Storage, an "At the door" group |
 | Post | Letters land in the letterbox of the basement and stay there, with their deadlines running, until the player clicks the letterbox and fetches them; the letterbox shows how many wait, and fetching opens a post panel in the room where each fetched letter can be read and scanned | The Post app lists waiting letters greyed under "In the letterbox"; fetched letters are read, paid and scanned there |
 | Scanner | On the desk; using it opens the same post panel | The scanned letter appears in DocuWhere, which holds only scanned letters |
 | Travel | Walk out the door, pick a destination on the map, watch the drive ([Travel](travel.md)) | Locations app shows where you are and when you arrive |
-| Network and power | The cross-connect panel opens a panel with the carriers on site and the uplinks with their cross-connects; the PDU and the fuse box open a panel with the power draw and the room temperature | The Locations app orders and changes them |
+| Network and power | Cross-connects are cabled on the rack's back; the PDU and the fuse box open a panel with the power draw and the room temperature | The Locations app orders and changes them |
 | Desk PC | Opens the desktop | Everything on the desktop |
 | Faults | Blinking LED on the rack, the technician PC plugs into a port | Monitoring, alarms, the port inspector diagram |
 | Phone | Rings on the wall at night when on call | Support tickets, pager text |
@@ -50,13 +50,17 @@ The first room is the basement of the player's parents' house in Frankfurt, avai
 
 ## Colocation rooms
 
-Rented space uses the same renderer with its own layout per space kind. A cage fence of wire mesh between metal posts stands along both far walls with a cable tray above it, and the hall's raised floor shows lighter grated panels with a fine grid along the cold aisle in front of the rack fronts. The door is a mesh cage door in the left wall; arriving by a trip puts the player on the tile inside it, and using it opens the map for the trip back. A fire extinguisher stands beside the door.
+Rented space uses the same renderer with a hall per space kind. Every datacenter floor is uniform raised-floor tiles in one tone with a fine grid; the basement keeps its concrete. The door is a normal steel datacenter door with a badge reader in the left wall; arriving by a trip puts the player on the tile inside it, and using it opens the map for the trip back. Every hall has cable trays with cables along both far walls, fluorescent tubes under the ceiling above the racks with a faint cool wash on the floor, two cooling units on the far wall, a floor-standing PDU at a row's end, a fire extinguisher, a parts shelf and a parts cart.
 
-- **Share.** An 8 by 6 room: one row of four rack tiles facing the cold aisle, a cross-connect panel on the far wall, a cooling unit and a parts shelf.
-- **Cage.** A 12 by 8 room: two rows of eight rack tiles facing one cold aisle, a cross-connect panel, two cooling units, a shelf and a floor-standing PDU on the right wall.
-- **Suite.** A 16 by 11 room: four rows of ten rack tiles around two cold aisles, a cross-connect panel, a NOC desk in front of the rack rows, two cooling units, a shelf, a PDU and a loading-dock door in the far wall.
+Hot and cold aisles are a property of the datacenter. With aisles, rack rows face each other across a one-tile cold aisle and stand back to back across the hot one; without them, every row faces the near side with a one-tile walkway in front. The player's racks always stand in the rows nearest the viewer, so no other rack hides them.
 
-The NOC desk opens the desktop. Every other fixture opens a panel in the room: the cross-connect panel shows the carriers on site, which are also on a plate beside it, and the uplinks with their cross-connects; the PDU shows the power draw and the room temperature; the shelf shows the storage. A rack loaded from a save on a tile that is no longer a rack tile moves to the next free one.
+- **Share.** A 12 by 8 slice of the hall with three rack rows. The player's share is one rack in the nearest row, the bottom section of the provider's full-height cabinet, with other tenants' racks on both sides and in the rows behind. There is no fence.
+- **Cage.** A 14 by 11 hall with four rack rows. A mesh fence on square posts stands one tile clear around the player's positions in the two nearest rows (one row of four, two rows of four or two rows of eight), with a mesh door, a lock and a badge reader in its near side. Other tenants' racks fill the rows behind and the rest of the cage's rows outside the fence.
+- **Suite.** A 16 by 11 room of the player's own: four rows of ten rack tiles, a NOC desk in front of the rows and a loading-dock door in the far wall. No other tenant's rack stands in it.
+
+Every rack on a datacenter floor has a closed mesh door on the face in view: a front door over the rack's front, or a rear door over its power strips and cable bundle. Other tenants' racks are scenery from the layout, muted and slightly dimmed, with a few LEDs and a blank label plate; they cannot be clicked. The player's racks show their LEDs, and from zoom 2 the rack front art, through a lighter mesh, and open the rack popup.
+
+No wall carries a cross-connect panel. The site's carrier panel appears on the back of every rack of the location, beside its patch panel, and a cross-connect is cabled there in the rack popup. A cable from a rack to the carrier panel runs along the tray to the player's first rack, which holds the panel. The NOC desk opens the desktop, the PDU shows the power draw and the room temperature, and the shelf shows the storage. A rack loaded from a save on a tile that is no longer one of the player's rack tiles moves to the next free one.
 
 ## Movement and interaction
 

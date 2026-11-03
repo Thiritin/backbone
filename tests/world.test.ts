@@ -127,4 +127,42 @@ describe("world", () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it("drags a cable from port to port on the rack back and a drop elsewhere cancels it", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "setTimeout", "clearTimeout", "performance"] });
+    const at = document.elementFromPoint;
+    try {
+      const s = readyGame(7);
+      useStore.setState({ game: s, speed: 0, surface: "world" });
+      const { container } = render(createElement(World));
+      const rack = s.racks.find((r) => r.locationId === roomOf(s).id)!;
+      fireEvent.click(container.querySelector(`[data-rack="${rack.id}"]`)!);
+      act(() => { vi.advanceTimersByTime(20_000); });
+      const panel = screen.getByRole("dialog", { name: rack.name });
+      fireEvent.click(screen.getByRole("button", { name: t("locations-2.back") }));
+      act(() => { vi.advanceTimersByTime(1000); });
+      const end = (el: Element): End => { const [device, port] = el.getAttribute("data-end")!.split(":"); return { device, port: Number(port) }; };
+      const g = () => useStore.getState().game;
+      const free = [...panel.querySelectorAll(".rack-port[data-end]")].filter((el) => { const e = end(el); return s.devices.find((d) => d.id === e.device)?.rackId === rack.id && !portPeers(g(), e.device)[e.port]; });
+      const a = free[0], b = free.find((el) => end(el).device !== end(a).device && !connectError(g(), end(a), end(el)))!;
+      const drag = (to: Element) => {
+        document.elementFromPoint = () => to;
+        fireEvent.pointerDown(a, { button: 0 });
+        fireEvent.pointerUp(window);
+      };
+
+      const before = g().cables.length;
+      drag(panel);
+      expect(g().cables.length).toBe(before);
+      expect(panel.querySelector("[data-hand]")).toBeNull();
+      drag(b);
+      expect(g().cables.length).toBe(before + 1);
+      expect(portPeers(g(), end(a).device)[end(a).port]).toEqual(end(b));
+    } finally {
+      document.elementFromPoint = at;
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
 });
