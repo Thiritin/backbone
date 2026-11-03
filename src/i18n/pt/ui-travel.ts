@@ -11,4 +11,5 @@ export default {
   "travel.drive": (p) => `Viagem, ${p.hours} h, ${p.fee}`,
   "travel.flight": (p) => `Voo, ${p.hours} h, ${p.fee}`,
   "ledger.fly": (p) => `Voo para ${p.place}`,
+  "ledger.drive": (p) => `Viagem para ${p.place}`,
 } satisfies Dict;
