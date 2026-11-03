@@ -7,15 +7,17 @@ import { modelById } from "../../sim/10-catalog/hardware";
 import { inbox } from "../../sim/40-support/letters";
 import { powerByLocation } from "../../sim/88-tick/tick";
 import { roomTemperature } from "../../sim/60-infra/sensors";
-import type { Device, GameState, Location, Rack } from "../../sim/50-state";
-import { Defs, Front } from "../art/fronts";
+import type { GameState, Location, Rack } from "../../sim/50-state";
+import { Defs } from "../art/fronts";
+import { RackFront } from "../art/RackFront";
+import { rackItems } from "../apps/locations/RackView";
 import { useStore } from "../store";
 import { center, facingOf, iso, key, pathTo, TH, TW, useTiles, type Pt } from "./iso";
 import "./world.css";
 
 const WALL = 120, LOW = 58, STEP_MS = 200, BLINK_MS = 500, PAD = 48;
 // Rack art is drawn 110 wide with 10 per unit, about a 19-inch front.
-const ART_W = 110, ART_U = 10;
+const RACK_W = 110, ART_U = 10;
 const SOLID = ["desk", "pc", "scanner", "shelf"];
 // Where the player stood per location, so the room resumes there.
 const stood: Record<string, Pt> = {};
@@ -50,7 +52,7 @@ export function World() {
     return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   }, [w, h]);
   const [vb, setVb] = useState(base);
-  const zoomed = vb.w < base.w * 0.55;
+  const zoomed = vb.w < base.w * 0.7;
 
   // Walking and LED blink share one frame loop.
   useEffect(() => {
@@ -136,7 +138,7 @@ export function World() {
   // Depth-sorted things standing on the floor.
   const things: { depth: number; node: ReactNode }[] = racks.map((r) => ({
     depth: tiles[r.id].x + tiles[r.id].y,
-    node: <RackBox key={r.id} rack={r} tile={tiles[r.id]} devices={game.devices} zoomed={zoomed} onClick={use(tiles[r.id], () => openApp("Locations", { kind: "rack", id: r.id }))} />,
+    node: <RackBox key={r.id} rack={r} tile={tiles[r.id]} game={game} zoomed={zoomed} onClick={use(tiles[r.id], () => openApp("Locations", { kind: "rack", id: r.id }))} />,
   }));
   if (home) {
     const f = FIXTURES;
@@ -202,28 +204,29 @@ function Box({ tile, height, s, top, left, right }: { tile: Pt; height: number; 
   );
 }
 
-function RackBox({ rack, tile, devices, zoomed, onClick }: { rack: Rack; tile: Tile; devices: Device[]; zoomed: boolean; onClick: Click }) {
+function RackBox({ rack, tile, game, zoomed, onClick }: { rack: Rack; tile: Tile; game: GameState; zoomed: boolean; onClick: Click }) {
   const units = rackUnits(rack.model), H = 24 + units * 1.6, { L, B, R } = corners(tile);
-  const mounted = devices.filter((d) => d.rackId === rack.id && !d.chassisId);
   // Only a front facing the camera shows: the south face is the lower left, the east face the lower right.
   const face = tile.facing === "s" ? { o: up(L, H), u: B.x - L.x, v: B.y - L.y } : tile.facing === "e" ? { o: up(B, H), u: R.x - B.x, v: R.y - B.y } : null;
-  const artH = units * ART_U;
+  // RackFront's front view: unit numbers, rails and devices span RACK_W, the cable channel beyond it is cut off.
+  const artW = RACK_W + 36, artH = units * ART_U + 8;
   return (
     <g className="w-obj w-rack" data-rack={rack.id} role="button" aria-label={rack.name} onClick={onClick}>
       <Box tile={tile} height={H} top="var(--metal-3)" left="var(--metal-2)" right="var(--metal)" />
       {face && (
-        <g transform={`matrix(${face.u / ART_W} ${face.v / ART_W} 0 ${H / artH} ${face.o.x} ${face.o.y})`}>
-          <rect x="4" y="2" width={ART_W - 8} height={artH - 4} fill="var(--rack)" />
-          {mounted.map((d) => {
-            const m = modelById(d.model), y = (units - d.slot - m.height + 1) * ART_U;
-            if (m.height < 1) return null;
-            return (
-              <g key={d.id} transform={`translate(0 ${y})`}>
-                {zoomed && <Front model={m} brand={d.brand} name="" state={d.on ? "ok" : "off"} ports={[]} w={ART_W} h={m.height * ART_U} />}
-                <rect className={d.on ? "w-led w-led-on" : "w-led"} x="8" y="3" width="6" height="4" />
-              </g>
-            );
-          })}
+        <g transform={`matrix(${face.u / artW} ${face.v / artW} 0 ${H / artH} ${face.o.x} ${face.o.y})`}>
+          {zoomed ? (
+            <svg width={artW} height={artH} viewBox={`0 0 ${artW} ${artH}`} preserveAspectRatio="none" overflow="hidden" pointerEvents="none">
+              <RackFront units={units} items={rackItems(game, rack.id)} w={RACK_W} u={ART_U} onDevice={() => {}} onFree={() => {}} />
+            </svg>
+          ) : (
+            <>
+              <rect x="4" y="2" width={artW - 8} height={artH - 4} fill="var(--rack)" />
+              {game.devices.filter((d) => d.rackId === rack.id && !d.chassisId).map((d) => (
+                <rect key={d.id} className={d.on ? "w-led w-led-on" : "w-led"} x="10" y={4 + (units - d.slot - modelById(d.model).height + 1) * ART_U} width="10" height="5" />
+              ))}
+            </>
+          )}
         </g>
       )}
     </g>
