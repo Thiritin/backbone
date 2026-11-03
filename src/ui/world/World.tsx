@@ -22,8 +22,8 @@ import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
-  BeerCrate, Boiler, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox, Grate,
-  Hygrometer, Letterbox, Light, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
+  BeerCrate, Boiler, CableDuct, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox, Grate,
+  Hygrometer, Letterbox, LightSwitch, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { JackPanel, RoomCables } from "./rack/Cables";
@@ -230,6 +230,8 @@ export function World() {
     hygrometer: (f) => <Hygrometer f={f} inside={`${n(roomTemperature(game, loc), 1)}°`} outside={`${n(temperature(loc.city, game.hour))}°`} />,
     fusebox: (f) => <FuseBox f={f} reading={watts} turn={turn} w={w} />,
     jack: (f) => <WallJack f={f} />,
+    duct: () => <CableDuct w={w} h={h} door={fx.door} socket={fx.jack} />,
+    switch: (f) => <LightSwitch f={f} />,
     boiler: (f) => <Boiler f={f} />,
     washer: (f) => <Washer f={f} />,
     dryer: (f) => <DryingRack f={f} />,
@@ -277,9 +279,9 @@ export function World() {
         {!home && <path className="w-tile" d={grid} />}
         {back}
         {things.map((x) => x.node)}
-        {over}
-        {home && <Light w={w} h={h} hd={hd} windows={[fx.window, fx.fan].flatMap((f) => (f ? [f.x] : []))} lamp={fx.lamp} desk={fx.pc?.x} />}
+        {home && night && <Night w={w} h={h} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
+        {over}
         {carried && hand && (
           <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>
         )}
