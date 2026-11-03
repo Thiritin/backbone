@@ -8,6 +8,8 @@ import { CRON_PRESETS, cronLoad, scheduleOf, webZone, zoneNames } from "../../..
 import { createCronJob, deleteWebRecord, saveWebRecord } from "../../../../../sim/90-actions/webdomains";
 import { deleteCron } from "../../../../../sim/90-actions/webspace";
 import { usePageAct } from "../../pageAct";
+import { zoneChoices } from "../../../../../sim/60-infra/zone-choices";
+import { ChoiceField } from "../../../../ChoiceField";
 
 const TYPES: DnsType[] = ["A", "AAAA", "CNAME", "MX", "TXT", "NS"];
 
@@ -27,7 +29,7 @@ export function ZoneEditor({ game, ws, simple }: { game: GameState; ws: Webspace
         <label className="cx-field"><span>{t("cpd.zone.name")}</span><input value={name} onChange={(e) => setName(e.target.value)} /></label>
         {!simple && <label className="cx-field"><span>{t("cpd.zone.ttl")}</span><select value={ttl} onChange={(e) => setTtl(Number(e.target.value))}>{TTLS.map((x) => <option key={x}>{x}</option>)}</select></label>}
         <label className="cx-field"><span>{t("cpd.zone.type")}</span><select value={type} onChange={(e) => setType(e.target.value as DnsType)}>{types.map((x) => <option key={x}>{x}</option>)}</select></label>
-        <label className="cx-field"><span>{simple ? t(type === "A" ? "cpd.zone.address" : "cpd.zone.cname") : t("cpd.zone.record")}</span><input value={data} onChange={(e) => setData(e.target.value)} /></label>
+        <label className="cx-field"><span>{simple ? t(type === "A" ? "cpd.zone.address" : "cpd.zone.cname") : t("cpd.zone.record")}</span><ChoiceField key={`${zone} ${type}`} value={data} choices={zoneChoices(game, zone, type, z.records)} onChange={setData} /></label>
         <button type="submit" className="cx-btn primary">{t(simple ? (type === "A" ? "cpd.zone.addA" : "cpd.zone.addCname") : "cpd.zone.add")}</button>
       </form>
       <table className="cx-table">

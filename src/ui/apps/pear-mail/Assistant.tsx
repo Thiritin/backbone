@@ -6,7 +6,7 @@ import { mailBuild, mailHas } from "../../../sim/10-catalog/pear-mail";
 import { companyDomain } from "../../../sim/30-customers/domains";
 import { MAIL_LOGIN } from "../../../sim/42-mail/accounts";
 import { accountByAddress } from "../../../sim/42-mail/address";
-import { clientError, hostOwner } from "../../../sim/43-pear-mail/check";
+import { clientError, hostChoices, hostOwner } from "../../../sim/43-pear-mail/check";
 import { autoServers, draftClient, type AccountInput } from "../../../sim/43-pear-mail/setup";
 import type { ClientAccount } from "../../../sim/43-pear-mail/state";
 import type { GameState } from "../../../sim/50-state";
@@ -14,6 +14,7 @@ import { getMail, setClientPassword, setupClientAccount } from "../../../sim/90-
 import { PearMailMark } from "../../art/mailmarks";
 import { useStore } from "../../store";
 import { offerLogin, savedLogin } from "../../vault";
+import { ChoiceField } from "../../ChoiceField";
 
 // The password KeePassive holds for the address, the same entry the webmail sign-in uses; empty until it names a mailbox.
 export const savedPassword = (game: GameState, address: string): string =>
@@ -83,9 +84,9 @@ export function Assistant({ onClose }: { onClose: () => void }) {
             </select>
           </Field>
           <Field label={t("pearMail.add.description")}>{text("description")}</Field>
-          <Field label={t("pearMail.add.incoming")}>{text("host")}</Field>
+          <Field label={t("pearMail.add.incoming")}><ChoiceField key={f.protocol} className="field" value={f.host} choices={hostChoices(game, f.protocol)} onChange={(host) => setF({ ...f, host })} /></Field>
         </>}
-        {page === "outgoing" && <Field label={t("pearMail.add.outgoing")}>{text("smtp")}</Field>}
+        {page === "outgoing" && <Field label={t("pearMail.add.outgoing")}><ChoiceField className="field" value={f.smtp} choices={hostChoices(game, "smtp")} onChange={(smtp) => setF({ ...f, smtp })} /></Field>}
         {page === "summary" && <>
           <dl className="pm-summary">
             <dt>{t("pearMail.add.type")}</dt><dd>{t(`pearMail.type.${found?.protocol ?? f.protocol}`)}</dd>

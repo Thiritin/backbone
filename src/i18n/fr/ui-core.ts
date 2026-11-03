@@ -43,6 +43,7 @@ export default {
   "core.notify.software": () => "Logiciels",
   "core.notify.internet": () => "Internet",
   "core.notify.market": () => "Marché",
+  "core.choice.other": () => "Autre…",
   "core.notify.other": () => "Autre",
   "core.twistLine": (p) => `Ligne domestique ${p.name}`,
   "core.twistDc": (p) => `Place libre uniquement à ${p.name}`,

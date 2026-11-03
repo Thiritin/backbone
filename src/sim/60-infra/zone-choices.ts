@@ -6,7 +6,7 @@ import type { GameState } from "../50-state";
 import { machineOf } from "./cluster";
 import { PARKING } from "./company-zone";
 import { panelMachine } from "./licence";
-import type { DnsType } from "./netsvc-dns";
+import { defaultRecords, type DnsRecord, type DnsType } from "./netsvc-dns";
 import { managedRecords } from "./zone-hosts";
 
 // priority is the MX priority the provider prints for its host.
@@ -43,4 +43,12 @@ export function recordChoices(s: GameState, type: DnsType): RecordChoice[] {
     }
   }
   return out;
+}
+
+// The values a zone editor offers for a record of one zone: the company presets for its own domain, then what the zone's
+// default and current records already point at. MX values carry their priority, as the zone editors store them.
+export function zoneChoices(s: GameState, zone: string, type: DnsType, records: DnsRecord[]): string[] {
+  const own = zone === s.company.domain ? recordChoices(s, type).map((c) => (type === "MX" ? `${c.priority ?? 10} ${c.value}` : c.value)) : [];
+  const rest = [...defaultRecords(s, zone), ...records].filter((r) => r.type === type).map((r) => r.data);
+  return [...new Set([...own, ...rest])];
 }
