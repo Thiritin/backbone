@@ -26,7 +26,7 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Travel | Walk out the door, pick a destination on the map, watch the drive ([Travel](travel.md)) | Locations app shows where you are and when you arrive |
 | Network and power | Cross-connects are cabled on the rack's back; the fuse box opens with its door open, the draw on the meter's display and its breakers on their rails, and its main switch pulls the plug of every unit in the room or boots them all again; the PDU opens with its display and an LED per outlet | The Locations app orders and changes them |
 | Desk PC | Opens the desktop | Everything on the desktop |
-| Faults | Blinking LED on the rack, the technician PC plugs into a port | Monitoring, alarms, the port inspector diagram |
+| Faults | Blinking LED on the rack, the technician PC plugs into a port; a technician working an operation stands at the rack for that hour, the datacenter's remote hands in their provider's colours for the last hour before a job is due, and the rack close-up shows a paper tag on its side with who works there, what and until when | Monitoring, alarms, the port inspector diagram |
 | Phone | Hangs by the basement door and in the office reception; rings at night when the player is on call, and picking it up shows the call on a notepad | Support tickets, pager text |
 | Everything software | | Billing, mail, consoles, network, products, customers, staff |
 
@@ -85,7 +85,7 @@ Every click calls an existing action. Only the desk PC and the NOC desk open the
 
 **Phone.** A wall phone hangs beside the basement door and in the office reception: a beige corded set in 2005, a cordless handset in its wall base from 2010. Between 21:00 and 06:00 the player is on call for every location with no technician on call or on shift. A part failing there, or an attack saturating its links, rings the phone: the handset shakes and a bell rings every few seconds while a room with a phone is on screen, and the inbox gets the page as before. Clicking the phone answers. The close-up shows the phone with its handset off the hook and a notepad with the site, what happened and when; for a failed part the notepad opens the rack close-up when the player is at the site, or offers going there in person and remote hands when away. A call left ringing for 30 minutes is missed and costs every active customer 5 happiness.
 
-Staff may later appear in rooms as figures at their desks, the way tycoon games show employees.
+A technician who takes an operation stands in front of the rack of its device for that hour, facing it, with a hand reaching into it every few seconds; they walk in from the door over the first minutes and back out over the last. The on-call technician appears the same way when called out at night, so the basement stays empty unless someone is called out there. A remote hands job brings the provider's technician, in the provider's colour with a small badge, for the last hour before it is due. A person hidden behind a rack row shows through as a faint outline. Pointing at a standing figure shows the name on a small plate on the floor at its feet, the provider's name for their technician. The player is never drawn.
 
 ## Rendering
 

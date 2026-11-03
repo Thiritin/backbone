@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Technicians and the datacenter's remote hands are now seen standing at the rack while they work there, and the rack close-up shows a paper tag with who is working, on what and until when.
 - Connections between racks are made by dragging from one rack to another in the room or with a right-click, the provider's patch panel shows on the rack back with every jack labelled, and provider cables and uplinks are ordered right there.
 - An office section can now become a server closet holding one rack, an office server room or closet can book a business line from the city's provider, and post addressed before a move still reaches the basement for a month.
 - The wall phone by the door rings when something breaks at night and nobody else is on call, and answering it shows on a notepad what happened, where and when.
