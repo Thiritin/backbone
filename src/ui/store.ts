@@ -141,7 +141,7 @@ export const sameLine = (a: CartLine, b: CartLine): boolean =>
   a.model === b.model && a.brand === b.brand && a.vendor === b.vendor && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null, surface: "desktop" as Surface });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null, surface: "world" as Surface });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -271,7 +271,7 @@ export const useStore = create<Store>((set, get) => ({
   clearCart: () => set({ cart: [] }),
   openLoc: null,
   setOpenLoc: (openLoc) => set({ openLoc }),
-  surface: "desktop",
+  surface: "world",
   setSurface: (surface) => set({ surface }),
 
   // Steps game minutes, so hours may be fractional; the hourly tick runs on every sixtieth.
@@ -421,7 +421,7 @@ export const useStore = create<Store>((set, get) => ({
   clearUnseen: () => set({ unseen: 0 }),
   toMenu: () => {
     get().save();
-    set({ started: false, canContinue: true, surface: "desktop" });
+    set({ started: false, canContinue: true, surface: "world" });
   },
   continueGame: () => set({ started: true }),
   save: () => {
@@ -436,12 +436,16 @@ export const useStore = create<Store>((set, get) => ({
     set({ ...fresh(), ...wipeLocal(get().sound), game: newCompany(Date.now() >>> 0), started: true });
     uiSound("startup");
     get().openApp("Getting started");
+    // The guide waits on the desktop; the game opens in the room.
+    set({ surface: "world" });
     get().save();
   },
   startChallenge: () => {
     set({ ...fresh(), ...wipeLocal(get().sound), game: newChallenge(weeklyChallenge(new Date()).id), started: true });
     uiSound("startup");
     get().openApp("Getting started");
+    // The guide waits on the desktop; the game opens in the room.
+    set({ surface: "world" });
     get().save();
   },
   importSave: (raw) => {

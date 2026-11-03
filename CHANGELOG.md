@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The game now opens in the basement, where a clock in the corner pauses and speeds up time, and clicking the PC on the desk opens the desktop.
 - The rooms are drawn in a clean isometric style again and you act on them directly, with no figure to walk around.
 - Deliveries to your own place now arrive at the room's door, where you pick up each parcel and carry it to the shelf or straight to a rack to install it.
 - Letters now wait in the basement letterbox until you walk over and fetch them, and the scanner beside the desk files a fetched letter into DocuWhere.

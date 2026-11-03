@@ -16,6 +16,8 @@ import type { GameState, Location } from "../../sim/50-state";
 import { Defs } from "../art/fronts";
 import { rackItems } from "../apps/locations/RackView";
 import { useStore } from "../store";
+import { SpeedControl } from "../desktop/MenuBar";
+import { formatClock } from "../../sim/00-core/time";
 import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
@@ -39,6 +41,7 @@ export const roomOf = (game: GameState): Location =>
 
 export function World() {
   const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface);
+  const speed = useStore((s) => s.speed), setSpeed = useStore((s) => s.setSpeed);
   const loc = roomOf(game), home = loc.space === "basement";
   const { w, h } = roomSize(loc);
   const tiles = useMemo(() => rackTiles(loc, game.racks), [loc, game.racks]);
@@ -99,9 +102,9 @@ export function World() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Escape puts a carried unit down, else returns to the desktop.
+  // Escape puts a carried unit down; open panels close themselves.
   const escape = useRef(() => {});
-  escape.current = () => (game.player.carrying ? act(putDown) : setSurface("desktop"));
+  escape.current = () => { if (game.player.carrying) act(putDown); };
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
@@ -260,6 +263,10 @@ export function World() {
           <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>
         )}
       </svg>
+      <div className="w-clock">
+        <SpeedControl speed={speed} setSpeed={setSpeed} />
+        <span className="num">{formatClock(game.hour, game.minute)}</span>
+      </div>
       {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
       {panel?.kind === "network" && <NetworkPanel loc={loc} onClose={() => setPanel(null)} />}
       {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}

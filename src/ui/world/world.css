@@ -103,3 +103,15 @@
 .w-led { fill: oklch(0.35 0.01 255); }
 .w-led-on { fill: var(--ok); }
 .w-blink .w-led-on { opacity: 0.35; }
+
+.w-clock {
+  position: absolute; top: 12px; left: 12px;
+  display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 4px;
+  background: oklch(0.24 0.022 255); color: oklch(0.95 0.01 250);
+  border: 1px solid oklch(0.4 0.02 252); box-shadow: 0 3px 0 oklch(0.17 0.02 258);
+  font-family: var(--font-num); font-size: 12px;
+  --menubar-text: oklch(0.95 0.01 250);
+}
+.world .w-clock .speed { border-radius: 0; padding: 0; gap: 0; border: 0; background: none; }
+.world .w-clock .speed button { border-radius: 0; height: 24px; color: inherit; }
+.world .w-clock .speed button[aria-pressed="true"] { background: oklch(0.4 0.02 252); color: inherit; }

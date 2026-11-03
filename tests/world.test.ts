@@ -13,6 +13,19 @@ import { devName } from "../src/ui/apps/hw";
 afterEach(cleanup);
 
 describe("world", () => {
+  it("opens a new game in the room, Escape stays there and the room clock pauses", () => {
+    useStore.getState().startGame();
+    expect(useStore.getState().surface).toBe("world");
+    render(createElement(World));
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(useStore.getState().surface).toBe("world");
+    fireEvent.click(screen.getByRole("button", { name: t("desktop.menu.speedN", { n: 1 }) }));
+    expect(useStore.getState().speed).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: t("desktop.menu.pause") }));
+    expect(useStore.getState().speed).toBe(0);
+    useStore.setState({ windows: [] });
+  });
+
   it("draws every rack of the room and the PC returns to the desktop", () => {
     const s = readyGame(7);
     useStore.setState({ game: s, speed: 0, surface: "world" });
