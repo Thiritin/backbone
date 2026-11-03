@@ -23,7 +23,7 @@ import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
   BeerCrate, Boiler, CableDuct, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox, Grate,
-  Hygrometer, Letterbox, Light, LightSwitch, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
+  Hygrometer, Letterbox, LightSwitch, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { JackPanel, RoomCables } from "./rack/Cables";
@@ -279,7 +279,7 @@ export function World() {
         {!home && <path className="w-tile" d={grid} />}
         {back}
         {things.map((x) => x.node)}
-        {home && <Light w={w} h={h} hd={hd} windows={[fx.window, fx.fan].flatMap((f) => (f ? [f.x] : []))} lamp={fx.lamp} />}
+        {home && night && <Night w={w} h={h} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
         {over}
         {carried && hand && (

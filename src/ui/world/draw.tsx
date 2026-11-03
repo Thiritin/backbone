@@ -151,7 +151,6 @@ export function Shelf({ at, count }: { at: Pt; count: number }) {
 
 // A cellar window high in the far wall; the fan window carries a fan in its pane. Glass dims at night.
 const WIN_Z = 84, WIN_H = 20;
-export const WINDOW = { x0: 6 / 32, x1: 26 / 32, z0: WIN_Z - WIN_H + 3, z1: WIN_Z - 3 };
 export function CellarWindow({ f, fan, night }: { f: Fixture; fan?: boolean; night: boolean }) {
   const glass = night ? "w-glass w-glass-night" : "w-glass";
   return (
@@ -397,10 +396,8 @@ export function BeerCrate({ x }: { x: number }) {
 // Desk lamp between the scanner and the screen, its shade turned toward the keyboard; it is on at night.
 export function DeskLamp({ x, on }: { x: number; on: boolean }) {
   const b = { x: x + 0.02, y: 0.16 }, foot = at3(b.x + 0.05, b.y + 0.05, DESK_Z + 2), elbow = at3(b.x + 0.04, b.y + 0.02, DESK_Z + 24), head = at3(b.x + 0.22, b.y + 0.16, DESK_Z + 26);
-  const spot = at3(x + 0.3, 0.5, DESK_Z);
   return (
     <>
-      {on && <ellipse fill="url(#w-pool)" cx={spot.x} cy={spot.y} rx="26" ry="11" />}
       <Prism x0={b.x} y0={b.y} x1={b.x + 0.1} y1={b.y + 0.1} z0={DESK_Z} z1={DESK_Z + 2} tone="w-tone-dark" />
       <path className="w-lamp-arm" d={`M${pts(foot)} L${pts(elbow)} L${pts(head)}`} />
       <path className="w-lamp-shade" d={`M${head.x - 1.5},${head.y - 2} L${head.x + 1.5},${head.y - 2} L${head.x + 4.5},${head.y + 3.5} A4.5,1.6 0 0 1 ${head.x - 4.5},${head.y + 3.5} Z`} />
@@ -475,39 +472,9 @@ const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 // Share of daylight at hour of day hd: none at night, full from mid-morning to early evening.
 export const daylight = (hd: number) => clamp01((hd - 6) / 1.5) * clamp01((20.5 - hd) / 1.5);
 
-// Light over the basement: a shaft from each window across the floor, warm and long when the sun is low and white and short at noon; at night the room darkens and the lamps throw warm pools.
-export function Light({ w, h, hd, windows, lamp }: { w: number; h: number; hd: number; windows: number[]; lamp?: Fixture }) {
-  const d = daylight(hd), p = clamp01((hd - 6) / 14.5), e = Math.max(0, Math.sin(Math.PI * p)), warm = 1 - e;
-  const color = `oklch(${0.97 - 0.06 * warm} ${0.02 + 0.13 * warm} 75)`;
-  const slope = 0.45 + 1.8 * e, skew = (0.5 - p) * 1.4;
-  const room = pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h));
-  const pool = lamp && iso(lamp.x + 0.5, lamp.y + 0.5);
-  return (
-    <g pointerEvents="none" className="w-light">
-      <defs>
-        <radialGradient id="w-pool">
-          <stop offset="0" stopColor="oklch(0.86 0.12 75)" stopOpacity="0.4" />
-          <stop offset="1" stopColor="oklch(0.86 0.12 75)" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {d < 1 && <polygon className="w-dark" points={room} opacity={0.32 * (1 - d)} />}
-      {d > 0 && windows.map((wx) => {
-        const a0 = wx + WINDOW.x0, a1 = wx + WINDOW.x1, yb = Math.min(h, WINDOW.z0 / 32 / slope), yt = Math.min(h, WINDOW.z1 / 32 / slope);
-        const top = at3((a0 + a1) / 2, 0, WINDOW.z1), far = iso((a0 + a1) / 2 + skew * yt, yt), id = `w-shaft-${wx}`;
-        return (
-          <g key={wx}>
-            <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={top.x} y1={top.y} x2={far.x} y2={far.y}>
-              <stop offset="0" stopColor={color} stopOpacity={0.42 * d} />
-              <stop offset="1" stopColor={color} stopOpacity={0.1 * d} />
-            </linearGradient>
-            <polygon fill={`url(#${id})`} points={pts(at3(a0, 0, WINDOW.z1), at3(a1, 0, WINDOW.z1), iso(a1 + skew * yt, yt), iso(a0 + skew * yt, yt))} />
-            <polygon fill={color} opacity={0.42 * d} points={pts(iso(a0 + skew * yb, yb), iso(a1 + skew * yb, yb), iso(a1 + skew * yt, yt), iso(a0 + skew * yt, yt))} />
-          </g>
-        );
-      })}
-      {d < 1 && pool && <ellipse fill="url(#w-pool)" opacity={1 - d} cx={pool.x} cy={pool.y} rx="150" ry="75" />}
-    </g>
-  );
+// At night the whole room, walls and floor, is one flat step darker.
+export function Night({ w, h }: { w: number; h: number }) {
+  return <polygon className="w-dark" pointerEvents="none" points={pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h))} />;
 }
 
 // Waiting letters stick out of the slot, up to three, with their count beside the box.
