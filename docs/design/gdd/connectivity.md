@@ -10,6 +10,8 @@ Every rack the player rents at a datacenter comes with a patch panel from the pr
 
 The basement has no provider; the wall socket by the fuse box is its line.
 
+An office server room or closet has no line of its own until the player books a business line from the city's provider in the Network tab. The line ends at a wall socket in the server section, and the office router's WAN port is cabled to it like the basement router is. It is billed monthly at the price of the day it was booked, and a faster line of a later year replaces it on booking.
+
 ## Uplinks
 
 An uplink is a line from the provider or a carrier into a jack. It has a speed and a monthly price, and the price covers the line, not the traffic; traffic is billed as [Network and DDoS](network-and-ddos.md) describes. A location can book as many uplinks as it has free jacks and router ports, and every line is paid for. The player chooses between upgrading one line and adding a second one; two lines give redundancy and, bundled on the router, their speeds add.
