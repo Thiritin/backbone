@@ -507,12 +507,18 @@ export function Concrete({ w, h }: { w: number; h: number }) {
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-// Share of daylight at hour of day hd: none at night, full from mid-morning to early evening.
-export const daylight = (hd: number) => clamp01((hd - 6) / 1.5) * clamp01((20.5 - hd) / 1.5);
+// Hours the evening runs later and the morning earlier than in March, by month from January.
+const SEASON = [-1, -0.5, 0, 0.5, 0.5, 1, 1, 0.5, 0, 0, -0.5, -1];
+const ease = (v: number) => { const x = clamp01(v); return x * x * (3 - 2 * x); };
+// Share of daylight at hour of day hd in month m (0 is January): full from 08:00 to 17:00 in March, fading out to 19:30 and in from 05:30.
+export const daylight = (hd: number, m: number) => { const s = SEASON[m] ?? 0; return ease((hd - 5.5 + s) / 2.5) * ease((19.5 + s - hd) / 2.5); };
+export const NIGHT = 0.32;
+// How dark the room is drawn; lit lamps leave a quarter of the night.
+export const darkness = (hd: number, m: number, lit = false) => (1 - daylight(hd, m)) * NIGHT * (lit ? 0.25 : 1);
 
-// At night the whole room, walls and floor, is one flat step darker.
-export function Night({ w, h }: { w: number; h: number }) {
-  return <polygon className="w-dark" pointerEvents="none" points={pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h))} />;
+// The whole room, walls and floor, darkens as one flat step.
+export function Night({ w, h, opacity }: { w: number; h: number; opacity: number }) {
+  return <polygon className="w-dark" pointerEvents="none" style={{ opacity }} points={pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h))} />;
 }
 
 // Waiting letters stick out of the slot, up to three, with their count beside the box.

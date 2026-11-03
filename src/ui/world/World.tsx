@@ -21,7 +21,7 @@ import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
-  BeerCrate, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
+  BeerCrate, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, darkness, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
   Hygrometer, Letterbox, LightSwitch, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, RackBox, RaisedFloor, Scanner, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
@@ -228,7 +228,7 @@ export function World() {
     stairs: () => { const fs = officeFloors(plan?.sections ?? []); setFloor(fs[(fs.indexOf(plan?.floor ?? 1) + 1) % fs.length]); setRackOpen(null); },
   });
   const watts = `${n(power)}W`;
-  const hd = dateOf(game.hour).getUTCHours() + game.minute / 60, night = daylight(hd) < 0.5, open = officeOpen(game.hour);
+  const date = dateOf(game.hour), hd = date.getUTCHours() + game.minute / 60, month = date.getUTCMonth(), night = daylight(hd, month) < 0.5, open = officeOpen(game.hour);
   // The meter disc turns once every few seconds at a kilowatt, faster as the draw grows.
   const turn = power > 0 ? Math.min(20, 4000 / power) : 0;
   const draw: Record<string, (f: Fixture) => ReactNode> = {
@@ -309,7 +309,7 @@ export function World() {
           : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={w} h={h} />}
         {back}
         {things.map((x) => x.node)}
-        {(home ? night : office && !open) && <Night w={w} h={h} />}
+        {(home || office) && <Night w={w} h={h} opacity={darkness(hd, month)} />}
         {!home && !office && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
         {!home && !office && <TubeLight w={w} h={h} ways={ways} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
