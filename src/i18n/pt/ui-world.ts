@@ -20,4 +20,7 @@ export default {
   "world.inHands": () => "Nas tuas mãos",
   "world.pickUp": () => "Pegar",
   "world.obj.parcels": (p) => `${p.n} encomendas`,
+  "world.cableInHand": () => "Cabo na mão",
+  "world.toRack": () => "Para outro rack",
+  "world.dropCable": () => "Largar cabo",
 } satisfies Dict;

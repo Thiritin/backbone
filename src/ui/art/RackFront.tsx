@@ -37,6 +37,10 @@ interface Props {
   onUsb?: (device: string) => void;
   // A powered-off device dragged on the front to a new bottom unit.
   onMove?: (device: string, slot: number) => void;
+  // Click-to-plug on the back, which replaces dragging: a click on any port, the port held as the cable in hand, and each port's hover text.
+  onPort?: (e: End) => void;
+  hand?: End | null;
+  portTitle?: (e: End) => string;
 }
 
 const MONO = "JetBrains Mono, monospace", DIM = "oklch(0.62 0.01 255)";
@@ -68,7 +72,7 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove }: Props) {
+export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove, onPort, hand = null, portTitle }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
@@ -270,6 +274,13 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     window.addEventListener("pointerup", up, { once: true });
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [slide !== null]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [ptr, setPtr] = useState<{ x: number; y: number } | null>(null);
+  const held = hand && (remotePort.get(endKey(hand)) ?? (spots.get(endKey(hand)) && { x: spots.get(endKey(hand))!.x, y: spots.get(endKey(hand))!.y + top }));
+  const tap = (end: End) => ({
+    className: `rack-port${hand && endKey(hand) === endKey(end) ? " rack-hand" : ""}`,
+    onClick: onPort && ((e: ReactMouseEvent) => { e.stopPropagation(); onPort(end); }),
+    children: portTitle && <title>{portTitle(end)}</title>,
+  });
   const grab = (end: End, x: number, cy: number) => (e: ReactPointerEvent) => {
     if (!onConnect || e.button !== 0) return;
     e.preventDefault();
@@ -281,12 +292,14 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   if (back) for (const { it, y: py, h } of placed.values()) {
     for (const [i, s] of portSpots(it.model, it.name, side, w, h)) {
       const end = { device: it.id, port: i }, vga = onConsole && it.model.kind === "server" && oobPorts(it.model)[i - OOB_PORT] === "console";
-      hits.push(<rect key={endKey(end)} className={`rack-port${vga ? " rack-vga" : ""}`} data-end={endKey(end)} x={pad + s.x - 1} y={top + py + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} onClick={vga ? () => onConsole(it.id) : undefined}>{vga && <title>Plug in monitor</title>}</rect>);
+      hits.push(vga
+        ? <rect key={endKey(end)} className="rack-port rack-vga" data-end={endKey(end)} x={pad + s.x - 1} y={top + py + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} onClick={() => onConsole(it.id)}><title>Plug in monitor</title></rect>
+        : <rect key={endKey(end)} {...tap(end)} data-end={endKey(end)} x={pad + s.x - 1} y={top + py + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} />);
     }
   }
 
   if (back) for (const [end, s] of railSpots) {
-    hits.push(<rect key={endKey(end)} className="rack-port" data-end={endKey(end)} x={s.x - 1} y={top + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, s.x + s.w / 2, top + s.y + s.h / 2)} />);
+    hits.push(<rect key={endKey(end)} {...tap(end)} data-end={endKey(end)} x={s.x - 1} y={top + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, s.x + s.w / 2, top + s.y + s.h / 2)} />);
   }
 
   if (onPlug) for (const { it, y: py, h } of placed.values()) {
@@ -300,7 +313,8 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   }
 
   return (
-    <svg ref={svg} className={`device-svg rack-svg${drag ? " dragging" : ""}`} width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="group" aria-label={back ? t("art.rackBack") : t("art.rackFront")}>
+    <svg ref={svg} className={`device-svg rack-svg${drag ? " dragging" : ""}`} width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="group" aria-label={back ? t("art.rackBack") : t("art.rackFront")}
+      onPointerMove={held ? (e) => setPtr(toSvg(e.clientX, e.clientY)) : undefined}>
       <Defs />
       {boxes.map(({ r, x, y: by, bw, bh }) => (
         <g key={r.id} className="rack-remote" aria-label={r.title}>
@@ -314,7 +328,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
                 <PortJack media={r.model.ports[i]?.media ?? "rj45"} x={p.x - 4} y={p.y - 4} w={8} h={8} st={st} />
                 {r.lights?.[i] && <rect x={p.x - 3.2} y={p.y - 3.2} width="2.4" height="1.4" {...ledProps(r.lights[i], r.id, i)} />}
                 <text x={p.x} y={p.y + 8.4} textAnchor="middle" fontFamily={MONO} fontSize="4.6" fill={DIM} aria-hidden="true">{portNo(r.model, i)}</text>
-                <rect className="rack-port" data-end={endKey(end)} x={p.x - 5} y={p.y - 5} width="10" height="10" rx="1" onPointerDown={grab(end, p.x, p.y)} />
+                <rect {...tap(end)} data-end={endKey(end)} x={p.x - 5} y={p.y - 5} width="10" height="10" rx="1" onPointerDown={grab(end, p.x, p.y)} />
               </g>
             );
           })}
@@ -339,6 +353,7 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
       </g>
       {hits}
       {drag && drag.moved && <path className="rack-drag" d={`M${drag.x0} ${drag.y0}L${drag.x} ${drag.y}`} />}
+      {held && ptr && <path className="rack-drag" data-hand="" d={`M${held.x} ${held.y}L${ptr.x} ${ptr.y}`} />}
     </svg>
   );
 }

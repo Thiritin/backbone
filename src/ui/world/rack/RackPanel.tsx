@@ -2,39 +2,47 @@ import { useEffect, useState, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
-import type { GameState, Rack } from "../../../sim/50-state";
-import { freeSlots, mountFrom } from "../../../sim/60-infra/status";
+import type { Device, End, GameState, Rack } from "../../../sim/50-state";
+import { freeSlots, mountFrom, portPeers } from "../../../sim/60-infra/status";
 import { installCarried } from "../../../sim/90-actions/carry";
+import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
 import { RackFront } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { deviceLamps } from "../../apps/hw";
 import { useHandWork } from "../../apps/locations/HandSheet";
-import { LabelEdit, useDeviceMenu } from "../../apps/locations/Inspector";
+import { LabelEdit, PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { LidSheet } from "../../apps/locations/LidSheet";
-import { mountable, MountRow, rackItems } from "../../apps/locations/RackView";
+import { mountable, MountRow, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
 import { useStore } from "../../store";
 import "../../apps/locations/locations.css";
 import { Slab } from "../panel/Slab";
+import { endName } from "./Cables";
 import "./rack.css";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
 const CAP = 36, SIDE = 18, FOOT = 18;
-const CABLED = ["switch", "gateway", "firewall"];
+// The back keeps the desktop rack view's scale so every port stays clickable; the panel scrolls.
+const BACK_U = 22;
+const CABLED = ["switch", "gateway", "firewall", "patch", "server"];
+const same = (a: End, b: End) => a.device === b.device && a.port === b.port;
 
 // The rack close-up that slides up over the room: the rack on the left, the picked unit's card on the right.
-export function RackPanel({ rackId, onClose }: { rackId: string; onClose: () => void }) {
-  const game = useStore((s) => s.game), openApp = useStore((s) => s.openApp);
+// On the back, a click on a free port takes it as the cable in hand and a click on a second port plugs it in; the hand outlives the panel.
+export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null }: { rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null }) {
+  const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rack = game.racks.find((r) => r.id === rackId);
   const [sel, setSel] = useState<string | null>(null);
+  const [back, setBack] = useState(!!(hand || startPort));
+  const [port, setPort] = useState<End | null>(startPort);
   // A carried unit opens the panel on the lowest free unit it fits.
   const [free, setFree] = useState<number | null>(() => carriedFit(game, rackId)[0] ?? null);
   const [lid, setLid] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
-  const pick = (id: string | null) => { setSel(id); setFree(null); setLid(null); setRenaming(false); };
+  const pick = (id: string | null) => { setSel(id); setFree(null); setLid(null); setRenaming(false); setPort(null); };
   const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }]);
-  const hand = useHandWork();
+  const work = useHandWork();
 
   const gone = !rack;
   useEffect(() => { if (gone) onClose(); }, [gone, onClose]);
@@ -43,26 +51,50 @@ export function RackPanel({ rackId, onClose }: { rackId: string; onClose: () => 
   const units = rackUnits(rack.model), items = rackItems(game, rack.id);
   const used = items.filter((it) => !it.chassisId).reduce((n, it) => n + it.model.height, 0);
   const dev = game.devices.find((d) => d.id === sel && d.rackId === rack.id);
-  const ports = (id: string) => { onClose(); openApp("Locations", { kind: "device", id }); };
+  const portDev = port && game.devices.find((d) => d.id === port.device);
+  const peerOf = (e: End) => portPeers(game, e.device)[e.port] ?? null;
+  const cableAt = port && game.cables.find((c) => same(c.a, port) || same(c.b, port));
+  const plug = (e: End) => {
+    if (peerOf(e)) { pick(null); setPort(e); return; }
+    if (!hand) { onHand(e); setPort(null); return; }
+    if (same(hand, e)) { onHand(null); return; }
+    if (act(connect, hand, e).ok) { onHand(null); pick(null); setPort(e); }
+  };
+  const title = (e: End) => { const p = peerOf(e); return `${endName(game, e)} ↔ ${p ? endName(game, p) : t("locations-1.free")}`; };
 
   let side: ReactNode = null;
-  if (lid && dev) side = <LidSheet key={lid} deviceId={lid} inline onClose={() => setLid(null)} />;
-  else if (dev) side = <DeviceCard deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => menus.entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => ports(dev.id) : undefined} />;
-  else if (free !== null) side = <InstallCard rack={rack} unit={free} onMount={(task) => hand.start(game, { ...task, onDone: () => pick(task.deviceId) })} onPick={pick} />;
+  if (back && port && portDev && peerOf(port)) side = <div className="wr-card" data-port={`${port.device}:${port.port}`}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
+  else if (lid && dev) side = <LidSheet key={lid} deviceId={lid} inline onClose={() => setLid(null)} />;
+  else if (dev) side = <DeviceCard deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => menus.entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) && !back ? () => setBack(true) : undefined} />;
+  else if (free !== null) side = <InstallCard rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} onPick={pick} />;
 
   return (
-    <Slab title={rack.name} head={<span className="wr-num">{used} / {units} U</span>} onClose={onClose} onBack={() => (lid ? (setLid(null), true) : false)} data={{ "rack-panel": rack.id }}>
+    <Slab title={rack.name} onClose={onClose} onBack={() => (hand ? (onHand(null), true) : lid ? (setLid(null), true) : false)} data={{ "rack-panel": rack.id }}
+      head={<>
+        <div className="wr-side-seg" role="group" aria-label={t("locations-2.side")}>
+          <button className="wr-btn" aria-pressed={!back} onClick={() => { setBack(false); setPort(null); }}>{t("locations-2.front")}</button>
+          <button className="wr-btn" aria-pressed={back} onClick={() => setBack(true)}>{t("locations-2.back")}</button>
+        </div>
+        <span className="wr-num">{used} / {units} U</span>
+      </>}>
       <div className="wr-body">
-        <RackFrame units={units}>
-          {(w, u) => (
-            <RackFront units={units} items={items} w={w} u={u} selected={dev?.id ?? null}
-              onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => menus.entries(d))(e); }} />
-          )}
-        </RackFrame>
-        <div className="wr-side">{side}</div>
+        {back ? (
+          <div className="wr-back">
+            <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U}
+              selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title} />
+          </div>
+        ) : (
+          <RackFrame units={units}>
+            {(w, u) => (
+              <RackFront units={units} items={items} w={w} u={u} selected={dev?.id ?? null}
+                onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => menus.entries(d))(e); }} />
+            )}
+          </RackFrame>
+        )}
+        <div className="wr-side">{hand && <HandCard name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />}{side}</div>
       </div>
       {menus.dialog}
-      {hand.dialog}
+      {work.dialog}
     </Slab>
   );
 }
@@ -150,4 +182,27 @@ function CarriedRow({ game, rack, unit, onDone }: { game: GameState; rack: Rack;
       <button className="btn primary" onClick={() => { if (act(installCarried, rack.id, from).ok) onDone(d.id); }}>{t("locations-2.mount")}</button>
     </div>
   );
+}
+
+function HandCard({ name, onAway, onDrop }: { name: string; onAway: () => void; onDrop: () => void }) {
+  return (
+    <div className="wr-card" data-hand="">
+      <div className="wr-card-h"><h2>{t("world.cableInHand")}</h2><span className="wr-model">{name}</span></div>
+      <div className="wr-acts">
+        <button className="wr-btn" onClick={onAway}>{t("world.toRack")}</button>
+        <button className="wr-btn" onClick={onDrop}>{t("world.dropCable")}</button>
+      </div>
+    </div>
+  );
+}
+
+// A managed switch port bundles with the other ports cabled to the same device, or leaves its group.
+function GroupRow({ game, d, port }: { game: GameState; d: Device; port: number }) {
+  const act = useStore((s) => s.act), m = modelById(d.model);
+  if (m.kind !== "switch" || !m.managed) return null;
+  if (d.groups.some((g) => g.includes(port))) return <div className="wr-acts"><button className="wr-btn" onClick={() => act(setPortGroup, d.id, [port])}>{t("switch.remove")}</button></div>;
+  const peers = portPeers(game, d.id), to = peers[port]?.device;
+  const mates = peers.flatMap((p, i) => (p && p.device === to && !d.groups.some((g) => g.includes(i)) ? [i] : [])).slice(0, 8);
+  if (mates.length < 2) return null;
+  return <div className="wr-acts"><button className="wr-btn" onClick={() => act(setPortGroup, d.id, mates)}>{t("switch.createGroup")}</button></div>;
 }
