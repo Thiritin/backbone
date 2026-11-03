@@ -5,7 +5,6 @@ import { formatClock, MS_PER_HOUR, nowHours } from "../../sim/00-core/time";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
 import { cityNamed, LAND, WorldMap, X, Y, type Marker } from "../map/WorldMap";
-import { ROADS } from "../map/roads";
 import { useStore } from "../store";
 import { along, driveMs, km, loadRoutes, routeOf, useTrip, type LL, type Trip } from "./route";
 import { Scene, useSkip } from "./Scene";
@@ -51,6 +50,7 @@ function TravelMap() {
     const trip: Trip = { from, to: playerAt(g), start, until: g.player.until, resume: s.speed };
     s.setSpeed(0);
     void loadRoutes();
+    void loadRoads();
     send("pick", trip);
   };
 
@@ -64,18 +64,20 @@ function TravelMap() {
 }
 
 
-const ROAD_D = ROADS.map((r) => "M" + r.map(([lon, lat]) => `${X(lon)} ${Y(lat)}`).join("L")).join("");
+// The road layer as one path, loaded with the routes on the first trip.
+let roadPath: Promise<string> | null = null;
+const loadRoads = () => (roadPath ??= import("../map/roads").then((m) => m.ROADS.map((r) => "M" + r.map(([lon, lat]) => `${X(lon)} ${Y(lat)}`).join("L")).join(""), () => ""));
 const OPEN_MS = 1500;
 const line = (p: { x: number; y: number }[]) => p.map((q) => `${q.x},${q.y}`).join(" ");
 
-// Holds the dark map until the routes file has loaded.
+// Holds the dark map until the routes and roads have loaded.
 function Road({ trip }: { trip: Trip }) {
-  const [routes, setRoutes] = useState<Record<string, LL[]> | null>(null);
-  useEffect(() => { void loadRoutes().then(setRoutes); }, []);
-  return routes ? <Drive trip={trip} routes={routes} /> : <div className="travel travel-road" />;
+  const [data, setData] = useState<{ routes: Record<string, LL[]>; roads: string } | null>(null);
+  useEffect(() => { void Promise.all([loadRoutes(), loadRoads()]).then(([routes, roads]) => setData({ routes, roads })); }, []);
+  return data ? <Drive trip={trip} {...data} /> : <div className="travel travel-road" />;
 }
 
-function Drive({ trip, routes }: { trip: Trip; routes: Record<string, LL[]> }) {
+function Drive({ trip, routes, roads }: { trip: Trip; routes: Record<string, LL[]>; roads: string }) {
   const game = useStore((s) => s.game), advance = useStore((s) => s.advance), send = useTrip((s) => s.send);
   const route = useMemo(() => routeOf(trip.from.city, trip.to.city, routes), [trip, routes]);
   const pts = useMemo(() => route.map(([lon, lat]) => ({ x: X(lon), y: Y(lat) })), [route]);
@@ -118,7 +120,7 @@ function Drive({ trip, routes }: { trip: Trip; routes: Record<string, LL[]> }) {
     <div className="travel travel-road" role="dialog" aria-label={t("travel.road")}>
       <svg viewBox={`${cx - w / 2} ${cy - h / 2} ${w} ${h}`} preserveAspectRatio="xMidYMid slice">
         <path className="tr-land" d={LAND} />
-        <path className="tr-roads" d={ROAD_D} style={{ opacity: z }} />
+        <path className="tr-roads" d={roads} style={{ opacity: z }} />
         <polyline className="tr-trail" points={line([...pts.slice(0, car.i + 1), car])} strokeWidth={2 * px} strokeDasharray={`${4 * px} ${3 * px}`} />
         <polyline className="tr-route" points={line([car, ...pts.slice(car.i + 1)])} strokeWidth={2 * px} />
         {ends.map(({ l, p }) => p && (
