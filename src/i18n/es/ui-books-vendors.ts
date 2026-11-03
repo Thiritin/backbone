@@ -1,3 +1,4 @@
+import { t } from "../en";
 import type { Dict } from "../lang";
 
 export default {
@@ -32,4 +33,9 @@ export default {
   "books-vendors.download": () => "Descargar",
   "books-vendors.downloading": (p) => `Descargando ${p.pct} %`,
   "books-vendors.inDownloads": () => "En Descargas",
+  "books-vendors.supportEnded": (p) => `Fin del soporte: ${p.year}`,
+  "ticket.mail.booksFeature.subject": (p) => `${p.program}: ${t(`books-editions.feature.${p.feature}`)}`,
+  "ticket.mail.booksFeature.text": (p) => `${p.program} ahora incluye ${t(`books-editions.feature.${p.feature}`)}.${Number(p.desktop) ? " La recibirá con su próxima actualización anual." : ""}`,
+  "ticket.mail.booksSupportEnd.subject": (p) => `${p.program}: fin del soporte`,
+  "ticket.mail.booksSupportEnd.text": (p) => `Ya no publicamos actualizaciones para ${p.program}. El programa sigue funcionando con todos sus datos.${p.to ? ` Cámbiese a ${p.to} y llévese todos sus clientes, facturas y transferencias.` : ""}`,
 } satisfies Dict;
