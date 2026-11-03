@@ -54,7 +54,7 @@ export default {
   "error.shopUnpaid": () => "La tienda tiene una factura sin pagar.",
   "error.noInvoice": () => "La tienda todavía no ofrece pago con factura.",
   "ticket.mail.invoice.subject": (p) => `Factura ${p.number}`,
-  "ticket.mail.invoice.text": (p) => `Adjuntamos nuestra factura ${p.number} por ${money(p)}, con vencimiento el ${day(p.due)}. Le rogamos que transfiera el importe a ${p.iban ? `IBAN ${p.iban}` : `la cuenta ${p.account}, código bancario ${p.code}`} indicando el número de factura como concepto. Puede configurar una domiciliación en ${p.url}.`,
+  "ticket.mail.invoice.text": (p) => `Adjuntamos nuestra factura ${p.number} por ${money(p)}, con vencimiento el ${day(p.due)}. Le rogamos que transfiera el importe a ${p.iban ? `IBAN ${p.iban}` : `la cuenta ${p.account}, código bancario ${p.code}`} indicando el número de factura como concepto. Puede elegir la forma de pago en ${p.url}.`,
   "ticket.mail.debit.subject": (p) => `Factura ${p.number}`,
   "ticket.mail.debit.text": (p) => `Adjuntamos nuestra factura ${p.number} por ${money(p)}. Hemos cargado el importe en su cuenta.`,
   "ticket.mail.consequence.throttle.subject": (p) => `Recordatorio: factura ${p.number}`,

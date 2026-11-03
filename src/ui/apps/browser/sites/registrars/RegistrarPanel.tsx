@@ -1,38 +1,41 @@
 import { useState, type CSSProperties } from "react";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
-import type { Registrar } from "../../../../../sim/10-catalog/registrars";
+import { registrarHost, type Registrar } from "../../../../../sim/10-catalog/registrars";
 import { wholesale } from "../../../../../sim/30-customers/registrar";
 import { domainOf, domainStatus, nameServers, nsPropagating, registryOf, type Domain, type NameServerMode } from "../../../../../sim/30-customers/registry";
 import type { GameState } from "../../../../../sim/50-state";
 import { generateAuthCode, setDomainRenewal, setNameServers } from "../../../../../sim/90-actions/registrar";
 import { euroCents } from "../../../../../sim/00-core/money";
 import { formatDay } from "../../../billing/format";
-import { registrarUrl } from "../../../../../sim/80-business/browser";
+import { displayHost } from "../../../../../sim/80-business/browser";
 import { usePageAct } from "../../pageAct";
 import { RegistrarDns } from "./RegistrarDns";
-import { DomainSearch, REGISTRAR_HUE } from "./RegistrarPage";
+import { Account, customer, DomainSearch, own, REGISTRAR_HUE } from "./RegistrarPage";
+import { InvoiceTable, PayMethodPanel } from "../shared/SupplierAccount";
 import "../bank/bank-site.css";
 
-// The login opens once the partner has registered a domain, the company's own or a customer's.
-export const panelOpen = (game: GameState, r: Registrar): boolean => game.registrar?.id === r.id && game.domains.length > 0;
+// The login opens for the partner and for a former partner with invoices.
+export const panelOpen = customer;
 
-export type PanelPage = "domains" | "dns" | "register" | { domain: string };
+export type PanelPage = "domains" | "dns" | "register" | "account" | { domain: string };
 
-// The page a /login path opens; the DNS page needs the company domain, a domain page a domain under management.
-export function panelPage(game: GameState, sub?: string, name?: string): PanelPage {
+// The page a /login path opens; a former partner only has the account, the DNS page needs the company domain, a domain
+// page a domain under management.
+export function panelPage(game: GameState, r: Registrar, sub?: string, name?: string): PanelPage {
+  if (sub === "account" || !own(game, r)) return "account";
   if (name) return domainOf(game, name) ? { domain: name } : "domains";
   if (sub === "dns") return game.company.domain ? "dns" : "domains";
   return sub === "register" ? "register" : "domains";
 }
-const panelPath = (to: PanelPage) => (typeof to === "object" ? `/domain/${to.domain}` : to === "domains" ? "" : `/${to}`);
+const panelPath = (to: PanelPage) => (typeof to === "object" ? `/domain/${to.domain}` : to === "domains" || to === "account" ? "" : `/${to}`);
 // The configured pair, ignoring a change still propagating.
 const configured = (game: GameState, d: Domain) => nameServers(game, { ...d, nsReadyAt: undefined });
 
 // The reseller panel: every domain with owner, expiry, renewal, status and name servers; per domain the auth code, the renewal switch and its own page. The DNS page edits the company domain's zone, Register orders further domains.
 export function RegistrarPanel({ game, r, page, go }: { game: GameState; r: Registrar; page: PanelPage; go: (url: string) => void }) {
   const act = usePageAct();
-  const open = (to: PanelPage) => (e: { preventDefault(): void }) => { e.preventDefault(); go(`${registrarUrl(game)}login${panelPath(to)}`); };
+  const open = (to: PanelPage) => (e: { preventDefault(): void }) => { e.preventDefault(); go(`${displayHost(registrarHost(r))}/${to === "account" ? "account" : `login${panelPath(to)}`}`); };
   const current = typeof page === "object" ? "domains" : page;
   const link = (to: PanelPage, label: string) => (
     <a href={`#${panelPath(to)}`} aria-current={current === to ? "page" : undefined} onClick={open(to)}>{label}</a>
@@ -46,9 +49,17 @@ export function RegistrarPanel({ game, r, page, go }: { game: GameState; r: Regi
         <span className="bks-name">{r.name}</span>
       </header>
       <div className="bks-cols">
-        <nav className="bks-nav">{link("domains", t("registrarPanel.domains"))}{game.company.domain && link("dns", t("registrarDns.nav"))}{link("register", t("registrarPanel.register"))}</nav>
+        <nav className="bks-nav">
+          {own(game, r) && <>{link("domains", t("registrarPanel.domains"))}{game.company.domain && link("dns", t("registrarDns.nav"))}{link("register", t("registrarPanel.register"))}</>}
+          {link("account", t("accounts.myAccount"))}
+        </nav>
         <main className="bks-main">
-          {page === "dns" ? <RegistrarDns game={game} r={r} />
+          {page === "account" ? <>
+            {own(game, r) && <section className="bks-box"><Account game={game} r={r} title={t("accounts.contract")} /></section>}
+            {game.bank && <section className="bks-box"><h2>{t("accounts.payMethod")}</h2><PayMethodPanel game={game} name={r.name} title={game.company.name} /></section>}
+            <section className="bks-box"><h2>{t("accounts.invoices")}</h2><InvoiceTable game={game} name={r.name} className="bks-table bks-rows" /></section>
+          </>
+            : page === "dns" ? <RegistrarDns game={game} r={r} />
             : page === "register" ? <section className="bks-box"><h2>{t("registrarPanel.register")}</h2><DomainSearch game={game} r={r} /></section>
             : typeof page === "object" ? <DomainPage key={page.domain} game={game} r={r} d={domainOf(game, page.domain)!} owner={owner} />
             : <section className="bks-box">

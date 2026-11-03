@@ -1,6 +1,6 @@
 import { t } from "../../../../../i18n/en";
 import { registrarHost } from "../../../../../sim/10-catalog/registrars";
-import { Account, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
+import { Account, AccountLink, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
 import "./goduddy.css";
 
 const Mark = ({ size }: { size: number }) => (
@@ -12,12 +12,12 @@ const Mark = ({ size }: { size: number }) => (
 );
 
 // GoDuddy Reseller: the loud green and black 2005 page with three columns of offers; from 2016 white with a calmer grid.
-export function GoDuddy({ game, r, look, year }: RegistrarProps) {
+export function GoDuddy({ game, r, look, year, go }: RegistrarProps) {
   const wm = <span className="rg-wm"><Mark size={look === "late" ? 26 : 36} />GoDuddy<small>{t("browser-sites-1.gd.reseller")}</small></span>;
   if (look === "late") {
     return (
       <div className="rg rg-goduddy late">
-        <header>{wm}</header>
+        <header>{wm}<AccountLink game={game} r={r} go={go} /></header>
         <section className="hero"><DomainSearch game={game} r={r} title={t("browser-sites-1.gd.start")} /></section>
         <main>
           <section><Program game={game} r={r} title={t("browser-sites-1.gd.plan")} /></section>
@@ -30,7 +30,7 @@ export function GoDuddy({ game, r, look, year }: RegistrarProps) {
   }
   return (
     <div className="rg rg-goduddy early">
-      <header>{wm}<span className="call">{t("browser-sites-1.gd.call")}</span></header>
+      <header>{wm}<span className="call">{t("browser-sites-1.gd.call")}</span><AccountLink game={game} r={r} go={go} /></header>
       <section className="hero">
         <h1>{t("browser-sites-1.gd.h1")}</h1>
         <p>{t("browser-sites-1.gd.pitch")}</p>

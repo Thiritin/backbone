@@ -18,7 +18,7 @@ import { formatDay } from "../../../../billing/format";
 import { monthYear } from "../../../../support/labels";
 import { useFieldAct, usePageAct } from "../../../pageAct";
 import { ownAddress } from "../../../../../../sim/30-customers/addresses";
-import { MandateButton } from "../../bank/SupplierSite";
+import { PayMethodPanel } from "../../shared/SupplierAccount";
 import { A, SignIn, spaceText, type ProviderProps, type Route } from "../ProviderSite";
 import "../../../../books/books.css";
 import "./portal.css";
@@ -26,7 +26,7 @@ import "./portal.css";
 // docs/design/plans/colo-portals.md, section 5: the customer portal under /account, shared by every provider's design.
 type Props = Pick<ProviderProps, "game" | "p" | "go"> & { route: Extract<Route, { page: "account" }>; className?: string };
 const SECTIONS = ["contracts", "invoices", "services", "tickets", "profile"] as const;
-const RENT = new Set(["ledger.space", "ledger.feed", "ledger.flatPower", "ledger.crossConnect", "ledger.crossConnectSetup"]);
+const RENT = new Set(["ledger.space", "ledger.feed", "ledger.flatPower", "ledger.dcPower", "ledger.crossConnect", "ledger.crossConnectSetup"]);
 
 const byProvider = (id: string, e: LedgerEntry) => DATACENTERS.find((d) => d.id === e.params.dc)?.provider === id;
 export const contractNo = (c: Contract) => `C-${c.id.replace(/\D/g, "")}`;
@@ -329,11 +329,8 @@ function Profile({ game, p }: Props) {
     ]} />
     {sites.length > 0 && <>
       <h3 className="ps-portal-h">{t("checkout.paymentMethod")}</h3>
-      <table className="ps-table"><tbody>
-        {sites.map((name) => (
-          <tr key={name}><td>{name}</td><td>{game.bank?.mandates.includes(name) ? t("bank.supplier.mandate") : t("providers.byInvoice")}</td><td><MandateButton game={game} name={name} className="ps-btn" /></td></tr>
-        ))}
-      </tbody></table>
+      {game.bank ? sites.map((name) => <PayMethodPanel key={name} game={game} name={name} title={name} className="ps-pay" />)
+        : <p>{t("providers.byInvoice")}</p>}
     </>}
   </>;
 }

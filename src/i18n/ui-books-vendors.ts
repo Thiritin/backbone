@@ -1,3 +1,4 @@
+import { t } from "./en";
 import type { Dict } from "./lang";
 
 // The bookkeeping programs in the Pear Store, their fees, their vendors' sites and the Getting started step.
@@ -33,4 +34,9 @@ export default {
   "books-vendors.download": () => "Download",
   "books-vendors.downloading": (p) => `Downloading ${p.pct}%`,
   "books-vendors.inDownloads": () => "In Downloads",
+  "books-vendors.supportEnded": (p) => `End of support: ${p.year}`,
+  "ticket.mail.booksFeature.subject": (p) => `${p.program}: ${t(`books-editions.feature.${p.feature}`)}`,
+  "ticket.mail.booksFeature.text": (p) => `${p.program} now includes ${t(`books-editions.feature.${p.feature}`)}.${Number(p.desktop) ? " It comes with your next yearly update." : ""}`,
+  "ticket.mail.booksSupportEnd.subject": (p) => `${p.program}: end of support`,
+  "ticket.mail.booksSupportEnd.text": (p) => `We no longer publish updates for ${p.program}. The program keeps running with all your data.${p.to ? ` Move to ${p.to} and take every customer, invoice and transfer with you.` : ""}`,
 } satisfies Dict;

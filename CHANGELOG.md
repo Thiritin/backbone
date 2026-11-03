@@ -6,6 +6,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 - Every bookkeeping program now has a screen of its own: GnuCache's account tree with registers, Kontomix's form for booking a payment by document number, EightDesk's list that lines payments up with the invoices they match, Rexoffice's bank feed by day and Thyme 50's chart of accounts with account sheets.
 - Thyme 50's editions are now called Comfort and Quantum, and the WARUM logo stands out on its blue website header.
+- Every supplier, registrar and datacenter site now has a My account link, where you choose to pay by bank transfer, credit card or SEPA direct debit, which only German suppliers offer.
+- Electricity bills now list the kWh used and the price per kWh, E.OFF has its own customer portal with your monthly usage, and metered power in a datacenter is billed on that datacenter's invoice.
+- Bookkeeping vendors now ship new features over the years: browser programs get them at once, desktop programs with their next yearly update, and the vendor announces each one by mail.
+- Two bookkeeping programs lose support: one stops updates in 2012 and its online banking stops working in 2014, the other ends in 2020 with an offer to move and its tax filing stops working in 2021.
 - The bookkeeping programs are now called Taxware Office, WARUM Mein Büro, Thyme 50, Kontomix, EightDesk and Rexoffice, and every vendor shows its own logo on its website, in the browser tab and in the program.
 - Each bookkeeping program now has its own strengths and gaps, so the free program offers reports without HBCI or tax filing, some programs include HBCI and payment matching in their smallest edition, and one sells HBCI as an add-on in its shop.
 - Two browser bookkeeping programs changed their monthly prices to match their place in the market.

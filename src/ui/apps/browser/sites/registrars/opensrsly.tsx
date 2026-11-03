@@ -1,7 +1,7 @@
 import { t } from "../../../../../i18n/en";
 import { registrarHost } from "../../../../../sim/10-catalog/registrars";
 import { derivedDomain } from "../../../../../sim/30-customers/domains";
-import { Account, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
+import { Account, AccountLink, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
 import "./opensrsly.css";
 
 const Mark = ({ size }: { size: number }) => (
@@ -14,14 +14,14 @@ const Mark = ({ size }: { size: number }) => (
 const DOCS = [["lookup", t("browser-sites-1.os.lookup")], ["prices", t("browser-sites-1.os.prices")], ["contract", t("browser-sites-1.os.contract")], ["account", t("browser-sites-1.os.account")]] as const;
 
 // OpenSRSly: the plain 2005 developer page with API notes and a login box; from 2016 a dark docs site with a teal accent.
-export function OpenSRSly({ game, r, look, year }: RegistrarProps) {
+export function OpenSRSly({ game, r, look, year, go }: RegistrarProps) {
   const name = game.company.domain ?? derivedDomain(game), mine = own(game, r);
   const wm = <span className="rg-wm"><Mark size={22} />OpenSRSly</span>;
   if (look === "late") {
     const code = (path: string) => <code>{path}</code>;
     return (
       <div className="rg rg-opensrsly late">
-        <header>{wm}<span className="ver">API v2</span></header>
+        <header>{wm}<span className="ver">API v2</span><AccountLink game={game} r={r} go={go} /></header>
         <div className="docs">
           <nav>{DOCS.filter(([id]) => id !== "account" || mine).map(([id, label]) => (
             <button key={id} type="button" onClick={() => document.getElementById(`osr-${id}`)?.scrollIntoView({ behavior: "smooth" })}>{label}</button>
@@ -39,7 +39,7 @@ export function OpenSRSly({ game, r, look, year }: RegistrarProps) {
   }
   return (
     <div className="rg rg-opensrsly early">
-      <header>{wm}<span>{t("browser-sites-1.os.api")}</span></header>
+      <header>{wm}<span>{t("browser-sites-1.os.api")}</span><AccountLink game={game} r={r} go={go} /></header>
       <div className="cols">
         <main>
           <h1>{t("browser-sites-1.os.h1")}</h1>
