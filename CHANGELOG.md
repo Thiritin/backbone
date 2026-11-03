@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The bookkeeping program opens its setup wizard from the app menu, and the web version shows it only on the overview page.
 - Mail server names in Pear Mail's account setup and record values in the PowerDNZ and cPanic zone editors are now picked from a list, with Other for typing a value by hand.
 - Every bookkeeping program now has a screen of its own: GnuCache's account tree with registers, Kontomix's form for booking a payment by document number, EightDesk's list that lines payments up with the invoices they match, Rexoffice's bank feed by day and Thyme 50's chart of accounts with account sheets.
 - Thyme 50's editions are now called Comfort and Quantum, and the WARUM logo stands out on its blue website header.

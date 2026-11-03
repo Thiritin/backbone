@@ -4,7 +4,7 @@ import {
 import type { ComponentType } from "react";
 import { era, PearMailIcon } from "../art/era-icon";
 import { t } from "../../i18n/en";
-import { BooksApp, drafts, late, unmatched } from "./books/BooksApp";
+import { BooksApp, booksMenus, drafts, late, unmatched } from "./books/BooksApp";
 import { CalendarApp } from "./calendar/CalendarApp";
 import { DohleFormularApp } from "./dohle/DohleFormularApp";
 import { BrowserApp } from "./browser/BrowserApp";
@@ -68,7 +68,7 @@ export const APPS: AppDef[] = [
   { name: "Browser", icon: era(Compass, "browser"), tile: "oklch(0.56 0.15 250)", about: t("apps.about.Browser"), body: BrowserApp },
   { name: "Support", icon: era(LifeBuoy, "support"), tile: "oklch(0.62 0.19 35)", about: t("apps.about.Support"), body: SupportApp,
     badge: (s) => s.tickets.filter((t) => !isFinal(t)).length },
-  { name: "Books", icon: era(Receipt, "books"), tile: "oklch(0.6 0.14 160)", about: t("apps.about.Books"), body: BooksApp, title: t("books.title"),
+  { name: "Books", icon: era(Receipt, "books"), tile: "oklch(0.6 0.14 160)", about: t("apps.about.Books"), body: BooksApp, title: t("books.title"), menus: booksMenus,
     badge: (s) => drafts(s) + unmatched(s) + late(s) },
   { name: "Post", icon: era(Mailbox, "post"), tile: "oklch(0.72 0.15 85)", about: t("apps.about.Post"), body: PostApp,
     badge: (s) => inbox(s).filter((l) => !l.read).length },
