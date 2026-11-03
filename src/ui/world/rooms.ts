@@ -5,7 +5,7 @@ import { T } from "./grid";
 export type Use = "desktop" | "storage" | "network" | "power" | "door" | "post" | "scan" | "none";
 
 // How a fixture kind is drawn and what using it does. dx and dy shift the sprite from the tile's bottom-left corner;
-// back ones hang on a wall and are drawn behind the floor, the rest are depth-sorted with racks and the player.
+// back ones hang on a wall and are drawn above the floor tiles but behind everything standing, the rest are depth-sorted with racks and the player.
 export interface FixtureArt { sprite: string; label: string; use?: Use; solid?: boolean; back?: boolean; dx?: number; dy?: number; depth?: number; frames?: string[] }
 
 export const ART: Record<string, FixtureArt> = {
@@ -18,7 +18,6 @@ export const ART: Record<string, FixtureArt> = {
   fan: { sprite: "fan", label: "world.obj.fan", back: true, dx: -12, dy: -2 * T + 2 },
   letterbox: { sprite: "letterbox", label: "world.obj.letterbox", use: "post", back: true, dx: 2, dy: -8 },
   door: { sprite: "door-closed", label: "world.obj.door", use: "door", back: true, frames: ["door-closed", "door-half", "door-open"] },
-  "cage-door": { sprite: "cage-door", label: "world.obj.door", use: "door", back: true },
   extinguisher: { sprite: "extinguisher", label: "world.obj.extinguisher", solid: true, back: true },
   xconnect: { sprite: "xconnect", label: "world.obj.xconnect", use: "network", back: true, dy: -T - 28 },
   cooling: { sprite: "cooling", label: "world.obj.cooling", solid: true },

@@ -225,9 +225,15 @@ export function World() {
       {Array.from({ length: Math.min(unread, 3) }, (_, i) => <rect key={i} className="w-letter" x={5 + i * 4} y={2 + i} width="10" height="9" rx="0.5" />)}
       <rect className="w-slot" x="5" y="8" width="18" height="3" rx="1.5" />
     </>,
-    xconnect: carriers.map((c, i) => <text key={c} className="w-carrier" x={4 + (i % 3) * 30} y={i < 3 ? 6 : 47}>{c}</text>),
   };
   const beside: Record<string, (f: Fixture) => ReactNode> = {
+    // Carrier labels on a plate beside the panel, one per line.
+    xconnect: (f) => carriers.length > 0 && (
+      <g transform={`translate(${(f.x + (f.w ?? 1)) * T + 2} ${-T - 28})`}>
+        <rect className="w-plate" width="42" height={carriers.length * 7 + 3} rx="1.5" />
+        {carriers.map((c, i) => <text key={c} className="w-carrier" x="3" y={7 + i * 7}>{c}</text>)}
+      </g>
+    ),
     fan: (f) => (
       <Sprite name="weather" x={f.x * T + 4} y={-8}>
         <g transform="translate(4 6)">{SKY[sky(loc.city, game.hour)]}</g>
@@ -283,12 +289,12 @@ export function World() {
           {coldAisles(loc).map((a) => <rect key={a.y} fill="url(#w-grate)" x={a.x0 * T} y={a.y * T} width={(a.x1 - a.x0 + 1) * T} height={T} />)}
           {walls.trays && Array.from({ length: Math.ceil(w / 2) }, (_, i) => <Sprite key={i} name="tray" x={i * 2 * T} y={-2 * T + 40} />)}
         </g>
-        {back}
         {Array.from({ length: w * h }, (_, i) => {
           const x = i % w, y = Math.floor(i / w);
           return <rect key={i} className="w-tile" x={x * T} y={y * T} width={T} height={T} onPointerEnter={() => setHover({ x, y })} onClick={click(() => walk([{ x, y }]))} />;
         })}
         {hover && <rect className="w-cursor" x={hover.x * T + 2} y={hover.y * T + 2} width={T - 4} height={T - 4} rx="4" />}
+        {back}
         {things.map((x) => x.node)}
       </svg>
     </div>

@@ -32,6 +32,7 @@
 .w-num { font-family: var(--font-ui); font-size: 8px; font-weight: 500; font-variant-numeric: tabular-nums; text-anchor: end; fill: oklch(0.95 0.02 220); }
 .w-num-dim { fill: oklch(0.75 0.03 220); }
 .w-num-tag { text-anchor: middle; paint-order: stroke; stroke: oklch(0.2 0.02 258); stroke-width: 2.5px; }
+.w-plate { fill: oklch(0.28 0.02 258); stroke: oklch(0.45 0.02 258); stroke-width: 0.75px; }
 .w-carrier { font-family: var(--font-ui); font-size: 4.5px; font-weight: 600; fill: oklch(0.95 0.02 220); paint-order: stroke; stroke: oklch(0.2 0.02 258); stroke-width: 1.5px; }
 .w-sun { fill: oklch(0.86 0.14 90); }
 .w-cloud { fill: oklch(0.9 0.01 250); }

@@ -21,13 +21,13 @@ const ROOMS: Record<SpaceKind, Room> = {
   },
   share: {
     size: { w: 8, h: 6 },
-    fixtures: { shelf: { x: 0, y: 1 }, extinguisher: { x: 0, y: 3 }, door: { x: 0, y: 4, kind: "cage-door" }, xconnect: { x: 2, y: 0, w: 2 }, cooling: { x: 5, y: 0, w: 2 } },
+    fixtures: { shelf: { x: 0, y: 1 }, extinguisher: { x: 0, y: 3 }, door: { x: 0, y: 4 }, xconnect: { x: 2, y: 0, w: 2 }, cooling: { x: 5, y: 0, w: 2 } },
     rows: [{ y: 2, x0: 2, x1: 5, facing: "s" }],
   },
   cage: {
     size: { w: 12, h: 8 },
     fixtures: {
-      shelf: { x: 0, y: 1 }, pdu: { x: 0, y: 2 }, extinguisher: { x: 0, y: 4 }, door: { x: 0, y: 5, kind: "cage-door" },
+      shelf: { x: 0, y: 1 }, pdu: { x: 11, y: 3 }, extinguisher: { x: 0, y: 4 }, door: { x: 0, y: 5 },
       xconnect: { x: 2, y: 0, w: 2 }, cooling: { x: 7, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" },
     },
     rows: [{ y: 2, x0: 2, x1: 9, facing: "s" }, { y: 4, x0: 2, x1: 9, facing: "n" }],
@@ -35,8 +35,8 @@ const ROOMS: Record<SpaceKind, Room> = {
   suite: {
     size: { w: 16, h: 11 },
     fixtures: {
-      shelf: { x: 0, y: 1 }, pdu: { x: 0, y: 2 }, extinguisher: { x: 0, y: 7 }, door: { x: 0, y: 8, kind: "cage-door" },
-      xconnect: { x: 2, y: 0, w: 2 }, noc: { x: 4, y: 0, w: 2 }, cooling: { x: 7, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" },
+      shelf: { x: 0, y: 1 }, pdu: { x: 15, y: 3 }, extinguisher: { x: 0, y: 7 }, door: { x: 0, y: 8 },
+      xconnect: { x: 2, y: 0, w: 2 }, noc: { x: 5, y: 0, w: 2 }, cooling: { x: 7, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" },
       dock: { x: 12, y: 0, w: 2 },
     },
     rows: [

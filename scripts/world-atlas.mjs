@@ -28,7 +28,6 @@ const SPEC = {
   "door-open": { sheet: B1, x: 432, y: 288, w: 48, h: 96 },
   fence: { sheet: B5, x: 384, y: 192, w: 48, h: 48 },
   "fence-base": { sheet: B5, x: 384, y: 240, w: 48, h: 48 },
-  "cage-door": { sheet: B5, x: 384, y: 192, w: 48, h: 96 },
   grate: { sheet: B5, x: 192, y: 288, w: 48, h: 48 },
   tray: { sheet: B5, x: 576, y: 192, w: 96, h: 48 },
   xconnect: { sheet: B2, x: 192, y: 576, w: 96, h: 48 },
