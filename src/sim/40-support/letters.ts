@@ -4,6 +4,7 @@ import { dateOf } from "../00-core/time";
 import { invoice, supplierAccount, supplierCode, supplierIban, type SupplierId } from "../46-finance/payables";
 import { groupIban, ibanEra } from "../46-finance/bank";
 import type { GameState, LedgerEntry } from "../50-state";
+import { officeOf } from "../60-infra/properties";
 import { t } from "../../i18n/en";
 
 export interface Letter {
@@ -63,8 +64,14 @@ export function post(s: GameState, from: string, topic: string, params: Record<s
 export const inbox = (s: GameState): Letter[] => s.letters.filter((l) => l.arrived);
 export const inLetterbox = (s: GameState): Letter[] => inbox(s).filter((l) => l.box);
 export const atDesk = (s: GameState): Letter[] => inbox(s).filter((l) => !l.box);
-// The letterbox the post lands in: the basement's; without a basement, the first location.
-export const postLocation = (s: GameState): string => (s.locations.find((l) => l.space === "basement") ?? s.locations[0]).id;
+// The letterbox the post lands in: the office's from the move on, else the basement's; without either, the first location.
+// Letters already in the basement's box stay there until fetched.
+export const postLocation = (s: GameState): string => {
+  const o = officeOf(s);
+  return (o?.kind !== "basement" && o?.locationId) || (s.locations.find((l) => l.space === "basement") ?? s.locations[0]).id;
+};
+// The letters waiting in one location's letterbox.
+export const boxAt = (s: GameState, locationId: string): Letter[] => inLetterbox(s).filter((l) => l.box === locationId);
 
 // Delivers the letters due this hour; the first one puts the Post app on the dock.
 export function lettersTick(s: GameState): void {

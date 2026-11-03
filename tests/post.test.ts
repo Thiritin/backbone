@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { archive, atDesk, inbox, inLetterbox, post } from "../src/sim/40-support/letters";
+import { archive, atDesk, boxAt, inbox, inLetterbox, post, postLocation } from "../src/sim/40-support/letters";
+import { listingById } from "../src/sim/20-world/properties";
+import { freeSections, rentSection } from "../src/sim/90-actions/properties";
 import { OFFICE_NAME, REGISTER_NAME } from "../src/sim/80-business/paperwork";
 import { tick } from "../src/sim/88-tick/tick";
 import { readLetter } from "../src/sim/90-actions/paperwork";
@@ -40,6 +42,25 @@ describe("post in the letterbox", () => {
     expect(atDesk(s)).toHaveLength(2);
     expect(readLetter(s, inbox(s)[0].id)).toEqual({ ok: true });
     expect(fetchPost(s)).toEqual({ ok: false, error: "error.letterboxEmpty" });
+  });
+
+  it("moves the post to the office letterbox from the move day, the basement keeping what it holds", () => {
+    const s = withPost();
+    s.cash = 1_000_000;
+    expect(rentSection(s, "gallushof", freeSections(s, listingById("gallushof")!)[0]).ok).toBe(true);
+    const office = s.properties.at(-1)!.locationId!;
+    expect(postLocation(s)).toBe(office);
+    post(s, OFFICE_NAME, "officeRegistered", { name: "Kellerhost", reg: "4712" }, 1);
+    run(s, 4);
+    expect(boxAt(s, office)).toHaveLength(1);
+    expect(boxAt(s, "loc1")).toHaveLength(2);
+    s.player = { at: office, until: 0, doing: "work", carrying: null };
+    expect(fetchPost(s)).toEqual({ ok: true });
+    expect(boxAt(s, "loc1")).toHaveLength(2);
+    s.player = { at: "loc1", until: 0, doing: "work", carrying: null };
+    expect(fetchPost(s)).toEqual({ ok: true });
+    expect(inLetterbox(s)).toEqual([]);
+    expect(fetchPost(s)).toEqual({ ok: false, error: "error.notThere" });
   });
 
   it("scans a desk letter into DocuWhere once", () => {

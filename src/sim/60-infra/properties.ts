@@ -30,9 +30,13 @@ export function freeDesk(s: GameState): Desk | null {
 }
 
 // Staff at their desks: weekdays 9 to 18, technicians away while a job keeps them at another location.
-export function whoIsIn(s: GameState, propertyId: string, hour: number): Employee[] {
+export const officeOpen = (hour: number): boolean => {
   const d = dateOf(hour), day = d.getUTCDay(), h = d.getUTCHours();
-  if (day === 0 || day === 6 || h < 9 || h >= 18) return [];
+  return day > 0 && day < 6 && h >= 9 && h < 18;
+};
+
+export function whoIsIn(s: GameState, propertyId: string, hour: number): Employee[] {
+  if (!officeOpen(hour)) return [];
   const home = s.properties.find((p) => p.id === propertyId)?.locationId ?? null;
   return s.staff.filter((e) => e.desk?.propertyId === propertyId && !(e.role === "technician" && e.busyUntil > hour && e.location !== home));
 }

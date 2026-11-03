@@ -29,7 +29,7 @@ The Locations app gains a Properties tab: listings in the company's city, each w
 
 ## The address follows the property
 
-Moving into an office moves the company's address to it. The post arrives at the office letterbox, the letterhead and website update on the day of the move, and the basement stays a location for its racks with its own letterbox for anything addressed to the old address during the transition month.
+Moving into an office moves the company's address to it. The post arrives at the office letterbox, the letterhead and website update on the day of the move, and the basement stays a location for its racks. All new post lands in the office letterbox from the day of the move; letters already in the basement letterbox stay there until fetched.
 
 ## Staff need desks
 
@@ -37,7 +37,7 @@ Hiring is limited by free desks: staff count never exceeds desks across all prop
 
 ## The office room
 
-An office section is a room in the world like any other: desks with PCs and chairs, a printer, a whiteboard, a plant, windows with daylight, a reception with the letterbox on the first section, the door into the hallway, cable covers along the walls, a light switch by the door, a server closet door when the section has one. The player's own desk is in the first section and its PC opens the desktop. Every object follows the art direction in `docs/design/world-art.md`.
+The office is a room in the world, one per floor, built from its sections as described in [The world](the-world.md), "Office": a reception strip on the first section's floor with the kitchenette, printer, letterbox, reception counter and the player's own desk whose PC opens the desktop; desk sections with four desks in two islands; server sections behind a glass partition with a code-lock door; sections under refit bare with tools and paint. The staff sit at their desks during office hours, walking in during the first half hour and out during the last. Every object follows the art direction in `docs/design/world-art.md`.
 
 ## Pieces
 

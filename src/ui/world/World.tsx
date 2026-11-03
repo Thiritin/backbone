@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
-import { cage, fixtures, neighbourRacks, rackTiles, roomSize, walkways, type Fixture } from "../../sim/20-world/layout";
+import { cage, fixtures, neighbourRacks, officeFloors, officePlan, rackTiles, roomSize, walkways, type Fixture } from "../../sim/20-world/layout";
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { temperature } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
-import { inLetterbox, postLocation } from "../../sim/40-support/letters";
+import { atDesk, boxAt } from "../../sim/40-support/letters";
 import { fetchPost } from "../../sim/90-actions/post";
 import { pickUp, putDown } from "../../sim/90-actions/carry";
 import { powerByLocation } from "../../sim/88-tick/tick";
@@ -20,12 +20,16 @@ import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
-  BeerCrate, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
+  BeerCrate, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, darkness, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
   Hygrometer, Letterbox, LightSwitch, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, RackBox, RaisedFloor, Scanner, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { RoomCables } from "./rack/Cables";
-import { PostPanel, PowerPanel, StoragePanel } from "./panel/Panels";
+import { PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
+import {
+  Bin, BossDesk, Buckets, chairAt, CodeDoor, Kitchen, Ladder, OfficeChair, OfficeDesk, OfficeFloor, OfficeWindow, Partition, Plant, Printer, Reception, StairsSign, Toolbox, Tube,
+  useOfficeStaff, WallTray, Whiteboard,
+} from "./office";
 import "./world.css";
 
 const BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
@@ -33,8 +37,8 @@ const BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 
 const KEYS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0],
 };
-// How each room was zoomed and panned, per location, so the room resumes there.
-const looked: Record<string, { zoom: number | null; org: Pt | null }> = {};
+// How each room was zoomed and panned and whether its lights were on, per location, so the room resumes there.
+const looked: Record<string, { zoom: number | null; org: Pt | null; lights: boolean }> = {};
 
 export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
@@ -42,11 +46,14 @@ export const roomOf = (game: GameState): Location =>
 export function World() {
   const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface);
   const speed = useStore((s) => s.speed), setSpeed = useStore((s) => s.setSpeed);
-  const loc = roomOf(game), home = loc.space === "basement";
-  const { w, h } = roomSize(loc);
-  const tiles = useMemo(() => rackTiles(loc, game.racks), [loc, game.racks]);
-  const racks = game.racks.filter((r) => tiles[r.id]);
-  const fx = fixtures(loc);
+  const loc = roomOf(game), home = loc.space === "basement", office = loc.space === "office";
+  // An office shows one floor at a time, the reception's floor first.
+  const [floorSet, setFloor] = useState<number | null>(null);
+  const base = officePlan(game, loc), plan = base && { ...base, floor: floorSet ?? base.sections[0]?.floor ?? 1 };
+  const { w, h } = roomSize(loc, plan);
+  const tiles = useMemo(() => rackTiles(loc, game.racks, plan), [loc, game.racks, game.properties, plan?.floor]);
+  const racks = game.racks.filter((r) => tiles[r.id] && (tiles[r.id].floor ?? 1) === (plan?.floor ?? 1));
+  const fx = fixtures(loc, plan);
 
   const [door, setDoor] = useState(0);
   const [lit, setLit] = useState<string | null>(null);
@@ -54,7 +61,7 @@ export function World() {
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
   // The panel open over the room: storage, the post or the power of a fixture.
-  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "power"; title: string } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power"; title: string; id?: string } | null>(null);
   const [hand, setHand] = useState<Pt | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
@@ -63,14 +70,15 @@ export function World() {
   const [size, setSize] = useState({ w: 1024, h: 768 });
   const [zoomSet, setZoom] = useState<number | null>(looked[loc.id]?.zoom ?? null);
   const [org, setOrg] = useState<Pt | null>(looked[loc.id]?.org ?? null);
+  const [lights, setLights] = useState(looked[loc.id]?.lights ?? false);
   // Arriving by a trip shows the destination as it was last seen.
   const shown = useRef(loc.id);
   useEffect(() => {
     if (shown.current === loc.id) return;
     shown.current = loc.id;
-    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setRackOpen(null); setPanel(null); setCable(null);
+    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setLights(looked[loc.id]?.lights ?? false); setFloor(null); setRackOpen(null); setPanel(null); setCable(null);
   }, [loc]);
-  useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org }; }, [loc.id, zoomSet, org]);
+  useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org, lights }; }, [loc.id, zoomSet, org, lights]);
   const box = { x: iso(0, h).x - 8, y: -WALL - 12, w: (w + h) * 32 + 16, h: (w + h) * 16 + WALL + 12 };
   const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, size.h * 0.94 / box.h);
   const zoom = zoomSet ?? fit;
@@ -170,8 +178,9 @@ export function World() {
     run();
   });
 
+  const staff = useOfficeStaff(game, loc, plan);
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
-  const waiting = loc.id === postLocation(game) ? inLetterbox(game).length : 0;
+  const waiting = boxAt(game, loc.id).length;
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   const parcels = game.devices.filter((d) => d.door?.at === loc.id && !d.chassisId);
   const carried = game.devices.find((d) => d.id === game.player.carrying);
@@ -209,23 +218,25 @@ export function World() {
       </g>
     ) });
   }
-  const run = (label: string): Record<Use, () => void> => ({
+  const run = (label: string, id = ""): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
     storage: () => (carried ? act(putDown) : setPanel({ kind: "storage", title: "" })),
-    power: () => setPanel({ kind: "power", title: t(label) }),
+    power: () => setPanel({ kind: "power", title: t(label), id }),
     door: () => openDoor(),
-    post: () => { if (waiting) act(fetchPost); setPanel({ kind: "post", title: t(label) }); },
-    scan: () => setPanel({ kind: "post", title: t(label) }),
+    post: () => { if (waiting) act(fetchPost); if (atDesk(useStore.getState().game).length) setPanel({ kind: "post", title: t(label) }); },
+    scan: () => setPanel({ kind: "scan", title: t(label) }),
+    stairs: () => { const fs = officeFloors(plan?.sections ?? []); setFloor(fs[(fs.indexOf(plan?.floor ?? 1) + 1) % fs.length]); setRackOpen(null); },
+    light: () => setLights((v) => !v),
   });
   const watts = `${n(power)}W`;
-  const hd = dateOf(game.hour).getUTCHours() + game.minute / 60, night = daylight(hd) < 0.5;
+  const date = dateOf(game.hour), hd = date.getUTCHours() + game.minute / 60, month = date.getUTCMonth(), night = daylight(hd, month) < 0.5;
   // The meter disc turns once every few seconds at a kilowatt, faster as the draw grows.
   const turn = power > 0 ? Math.min(20, 4000 / power) : 0;
   const draw: Record<string, (f: Fixture) => ReactNode> = {
     // The desk runs under the scanner and the PC beside it, so the three read as one piece.
     desk: (f) => <Desk from={fx.scanner?.x ?? f.x} to={(fx.pc?.x ?? f.x) + 1} under={home && <><BeerCrate x={fx.scanner?.x ?? f.x} /><Tower x={fx.pc?.x ?? f.x} /></>} />,
     scanner: (f) => <Scanner x={f.x} />,
-    pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x} on={night} />}</>,
+    pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x} on={lights} />}</>,
     noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} y={f.y} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} y={f.y} />)}</>,
     shelf: (f) => <Shelf at={f} count={stored} />,
     fan: (f) => <CellarWindow f={f} fan night={night} />,
@@ -234,32 +245,53 @@ export function World() {
     fusebox: (f) => <FuseBox f={f} reading={watts} turn={turn} w={w} />,
     jack: (f) => <WallJack f={f} />,
     duct: () => <CableDuct w={w} h={h} door={fx.door} socket={fx.jack} />,
-    switch: (f) => <LightSwitch f={f} />,
+    switch: (f) => <LightSwitch f={f} on={lights} />,
     boiler: (f) => <Boiler f={f} />,
     washer: (f) => <Washer f={f} />,
     dryer: (f) => <DryingRack f={f} />,
     chair: (f) => <Chair f={f} />,
     mat: (f) => <Mat f={f} />,
     drain: (f) => <Drain f={f} />,
-    lamp: (f) => <CeilingLamp f={f} on={night} />,
+    lamp: (f) => <CeilingLamp f={f} on={lights} />,
     letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} />,
-    door: (f) => <Door f={f} open={door} steel={!home} />,
+    door: (f) => <Door f={f} open={door} steel={!home && !office} />,
     extinguisher: (f) => <Extinguisher f={f} />,
     cart: (f) => <Cart f={f} />,
     cooling: (f) => <Cooling f={f} />,
     pdu: (f) => <Pdu f={f} reading={watts} />,
     dock: (f) => <Dock f={f} />,
+    stairs: (f) => <><Door f={f} open={0} steel={false} /><StairsSign f={f} floor={n(plan?.floor ?? 1)} /></>,
+    bossdesk: (f) => <BossDesk f={f} night={night} />,
+    owindow: (f) => <OfficeWindow f={f} night={night} />,
+    whiteboard: (f) => <Whiteboard f={f} />,
+    tray: (f) => <WallTray f={f} />,
+    tube: (f) => <Tube f={f} on={lights} />,
+    kitchen: (f) => <Kitchen f={f} />,
+    printer: (f) => <Printer f={f} />,
+    reception: (f) => <Reception f={f} name={game.company.name} />,
+    plant: (f) => <Plant f={f} />,
+    bin: (f) => <Bin f={f} />,
+    partition: (f) => <Partition f={f} />,
+    codedoor: (f) => <CodeDoor f={f} />,
+    "odesk-s": (f) => <OfficeDesk f={f} facing="s" />,
+    "odesk-n": (f) => <OfficeDesk f={f} facing="n" />,
+    "ochair-s": (f) => <OfficeChair {...chairAt(f, "s")} facing="s" />,
+    "ochair-n": (f) => <OfficeChair {...chairAt(f, "n")} facing="n" />,
+    buckets: (f) => <Buckets f={f} />,
+    ladder: (f) => <Ladder f={f} />,
+    toolbox: (f) => <Toolbox f={f} />,
   };
   const back: ReactNode[] = [], over: ReactNode[] = [];
   for (const [id, f] of Object.entries(fx)) {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
     const node = a.use && a.label
-      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label)[a.use])}>{art}</g>
+      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use])}>{art}</g>
       : <g key={id} aria-label={a.label && t(a.label)} aria-hidden={!a.label || undefined} pointerEvents="none">{art}</g>;
     if (a.wall) back.push(node);
     else if (a.top) over.push(node);
     else things.push({ depth: f.x + f.y + (a.depth ?? 0), node });
   }
+  things.push(...staff);
   things.sort((a, b) => a.depth - b.depth);
 
   const openDoor = () => {
@@ -273,13 +305,14 @@ export function World() {
       <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`} viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
         <Defs />
-        <Walls w={w} h={h} dc={!home} />
-        {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></> : <RaisedFloor w={w} h={h} />}
+        <Walls w={w} h={h} dc={!home && !office} />
+        {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></>
+          : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={w} h={h} />}
         {back}
         {things.map((x) => x.node)}
-        {home && night && <Night w={w} h={h} />}
-        {!home && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
-        {!home && <TubeLight w={w} h={h} ways={ways} />}
+        {(home || office) && <Night w={w} h={h} opacity={darkness(hd, month, lights)} />}
+        {!home && !office && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
+        {!home && !office && <TubeLight w={w} h={h} ways={ways} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
         {over}
         {carried && hand && (
@@ -291,8 +324,9 @@ export function World() {
         <span className="num">{formatClock(game.hour, game.minute)}</span>
       </div>
       {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
-      {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
+      {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} kind={panel.id ?? ""} onClose={() => setPanel(null)} />}
       {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
+      {panel?.kind === "scan" && <ScanPanel title={panel.title} onClose={() => setPanel(null)} />}
       {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)} />}
     </div>
   );

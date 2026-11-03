@@ -5,7 +5,7 @@ import {
   DEPOSIT_MONTHS, listingById, NOTICE_MONTHS, priceFor, RACKS_PER_SERVER_SECTION, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
 } from "../20-world/properties";
 import { cents } from "../45-billing/billing";
-import type { GameState, LedgerEntry, SectionFit } from "../50-state";
+import type { GameState, LedgerEntry, Property, SectionFit } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { closeLocation, noticeEnd, type ActionResult } from "./hardware";
 
@@ -14,6 +14,14 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 const book = (s: GameState, category: string, key: string, params: LedgerEntry["params"], amount: number) => {
   s.cash = cents(s.cash + amount);
   s.ledger = [...s.ledger, { hour: s.hour, category, key, params, amount }];
+};
+
+// An office is a location from its first section on: the room the staff work in and the zone its server rooms form.
+const placeOffice = (s: GameState, p: Property, readyAt: number) => {
+  if (p.locationId) return;
+  const city = s.locations[0]?.city ?? "Frankfurt", id = `loc${s.nextId++}`;
+  s.locations = [...s.locations, { id, dc: null, city, az: nextAz(s.locations, city), name: p.building.name, space: "office", positions: 0, readyAt, extraCircuit: false }];
+  p.locationId = id;
 };
 
 const ownedIn = (s: GameState, buildingId: string) => s.properties.find((p) => p.buildingId === buildingId);
@@ -40,6 +48,7 @@ export function rentSection(s: GameState, buildingId: string, sectionId: string)
     s.properties = [...s.properties, p];
   }
   p.sections = [...p.sections, { id: sectionId, floor: section.floor, fit: "desks", since: s.hour, refitUntil: s.hour, rent }];
+  placeOffice(s, p, s.hour);
   if (deposit) { p.deposit += deposit; book(s, "rent", "ledger.officeDeposit", { building: l.name }, -deposit); }
   return { ok: true, id: p.id };
 }
@@ -70,6 +79,7 @@ export function buyBuilding(s: GameState, buildingId: string): ActionResult {
   }
   const fresh = freeSections(s, l).map((id) => ({ id, floor: sectionIds(l).find((x) => x.id === id)!.floor, fit: null, since: s.hour, refitUntil: s.hour, rent: 0 }));
   Object.assign(p, { kind: "own", noticeAt: null, boughtFor: price, deposit: 0, sections: [...p.sections.map((x) => ({ ...x, rent: 0 })), ...fresh] });
+  placeOffice(s, p, s.hour);
   if (back) book(s, "rent", "ledger.officeDepositBack", { building: l.name }, back);
   book(s, "other", "ledger.buildingBought", { building: l.name }, -price);
   return { ok: true, id: p.id };
@@ -93,12 +103,8 @@ export function refitSection(s: GameState, propertyId: string, sectionId: string
   x.fit = fit;
   x.refitUntil = s.hour + 24 * days;
   if (fit === "servers") {
-    if (loc) loc.positions += RACKS_PER_SERVER_SECTION;
-    else {
-      const city = s.locations[0]?.city ?? "Frankfurt", id = `loc${s.nextId++}`;
-      s.locations = [...s.locations, { id, dc: null, city, az: nextAz(s.locations, city), name: p.building.name, space: "office", positions: RACKS_PER_SERVER_SECTION, readyAt: x.refitUntil, extraCircuit: false }];
-      p.locationId = id;
-    }
+    placeOffice(s, p, x.refitUntil);
+    s.locations.find((l) => l.id === p.locationId)!.positions += RACKS_PER_SERVER_SECTION;
   }
   return { ok: true };
 }

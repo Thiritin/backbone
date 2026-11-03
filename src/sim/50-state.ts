@@ -224,7 +224,7 @@ export interface Licence {
   mailTo?: string;  // the address chosen at checkout, where renewal, lapse and edition mail goes; absent for the owner
 }
 
-export interface HandsJob { id: string; action: string; args: unknown[]; locationId: string; deviceId: string; dueAt: number; fee: number }
+export interface HandsJob { id: string; action: string; args: unknown[]; locationId: string; deviceId: string; dueAt: number; fee: number; self?: true }
 
 export interface GameState {
   version: number;

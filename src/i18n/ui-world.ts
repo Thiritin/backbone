@@ -3,11 +3,11 @@ import type { Dict } from "./lang";
 // The room the player looks at and acts on.
 export default {
   "world.standUp": () => "Stand up",
-  "world.room": () => "Room",
   "world.obj.pc": () => "Computer",
   "world.obj.desk": () => "Desk",
   "world.obj.scanner": () => "Scanner",
   "world.obj.door": () => "Door",
+  "world.obj.switch": () => "Light switch",
   "world.obj.letterbox": () => "Letterbox",
   "world.obj.shelf": () => "Storage shelf",
   "world.obj.fusebox": () => "Fuse box",
@@ -17,10 +17,15 @@ export default {
   "world.obj.extinguisher": () => "Fire extinguisher",
   "world.obj.noc": () => "NOC desk",
   "world.obj.dock": () => "Loading dock",
+  "world.obj.stairs": () => "Stairwell",
   "world.inHands": () => "In your hands",
   "world.pickUp": () => "Pick up",
   "world.obj.parcels": (p) => `${p.n} parcels`,
   "world.cableInHand": () => "Cable in hand",
   "world.toRack": () => "To another rack",
   "world.dropCable": () => "Drop cable",
+  "world.scanAll": () => "Scan all",
+  "world.mainSwitch": () => "Main switch",
+  "world.prevLetter": () => "Previous letter",
+  "world.nextLetter": () => "Next letter",
 } satisfies Dict;

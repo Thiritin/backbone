@@ -2,11 +2,11 @@ import type { Dict } from "../lang";
 
 export default {
   "world.standUp": () => "Se lever",
-  "world.room": () => "Pièce",
   "world.obj.pc": () => "Ordinateur",
   "world.obj.desk": () => "Bureau",
   "world.obj.scanner": () => "Scanner",
   "world.obj.door": () => "Porte",
+  "world.obj.switch": () => "Interrupteur",
   "world.obj.letterbox": () => "Boîte aux lettres",
   "world.obj.shelf": () => "Étagère de stockage",
   "world.obj.fusebox": () => "Boîte à fusibles",
@@ -16,10 +16,15 @@ export default {
   "world.obj.extinguisher": () => "Extincteur",
   "world.obj.noc": () => "Poste NOC",
   "world.obj.dock": () => "Quai de chargement",
+  "world.obj.stairs": () => "Cage d’escalier",
   "world.inHands": () => "Dans tes mains",
   "world.pickUp": () => "Prendre",
   "world.obj.parcels": (p) => `${p.n} colis`,
   "world.cableInHand": () => "Câble en main",
   "world.toRack": () => "Vers une autre baie",
   "world.dropCable": () => "Lâcher le câble",
+  "world.scanAll": () => "Tout numériser",
+  "world.mainSwitch": () => "Interrupteur principal",
+  "world.prevLetter": () => "Lettre précédente",
+  "world.nextLetter": () => "Lettre suivante",
 } satisfies Dict;

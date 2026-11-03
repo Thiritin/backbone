@@ -1,15 +1,17 @@
 // Paper post in the room: letters wait in the letterbox until fetched, and the scanner files one into DocuWhere.
 import type { GameState } from "../50-state";
-import { present } from "../60-infra/handwork";
-import { inLetterbox, postLocation } from "../40-support/letters";
+import { playerAt, present } from "../60-infra/handwork";
+import { boxAt, postLocation } from "../40-support/letters";
 import type { ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
+// Empties the letterbox where the player stands: the one the post goes to, or an old one still holding letters.
 export function fetchPost(s: GameState): ActionResult {
-  if (!present(s, postLocation(s))) return fail("error.notThere");
-  if (!inLetterbox(s).length) return fail("error.letterboxEmpty");
-  s.letters = s.letters.map((l) => (l.arrived && l.box ? { ...l, box: null } : l));
+  const here = playerAt(s).id, waiting = boxAt(s, here);
+  if (!present(s, here) || (here !== postLocation(s) && !waiting.length)) return fail("error.notThere");
+  if (!waiting.length) return fail("error.letterboxEmpty");
+  s.letters = s.letters.map((l) => (l.arrived && l.box === here ? { ...l, box: null } : l));
   return { ok: true };
 }
 

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cage, entryTile, FIXTURES, fixtureTiles, freeRackTiles, rackTiles, neighbourRacks, roomSize, walkways, wallTiles } from "../src/sim/20-world/layout";
+import { hourOf } from "../src/sim/00-core/time";
+import {
+  cage, entryTile, FIXTURES, fixtures, fixtureTiles, freeRackTiles, LOBBY_W, neighbourRacks, officeFloors, officePlan, officeSeats, officeWalk, rackTiles, roomSize, SECTION_H, SECTION_W,
+  walkways, wallTiles, type Fixture,
+} from "../src/sim/20-world/layout";
+import { listingById } from "../src/sim/20-world/properties";
+import { desks } from "../src/sim/60-infra/properties";
+import { freeSections, refitSection, rentSection } from "../src/sim/90-actions/properties";
 import type { GameState } from "../src/sim/50-state";
 import { addLocation, buyRack, moveRack } from "../src/sim/90-actions/hardware";
 import { placeRack } from "../src/sim/90-actions/layout";
@@ -184,5 +191,67 @@ describe("rack tiles", () => {
     const spots = new Set(wallTiles(loc).map(key));
     for (const x of here) expect(spots.has(key(tiles[x.id]))).toBe(true);
     expect(new Set(here.map((x) => key(tiles[x.id]))).size).toBe(2);
+  });
+});
+
+describe("office room", () => {
+  const office = (n: number) => {
+    const s = newGame(31);
+    s.cash = 5_000_000;
+    s.hour = hourOf(new Date(Date.UTC(2012, 2, 12, 10)));
+    expect(rentSection(s, "zeilwerk", freeSections(s, listingById("zeilwerk")!)[0]).ok).toBe(true);
+    const p = s.properties.at(-1)!;
+    // More sections than any listing has free, three to a floor.
+    p.sections = Array.from({ length: n }, (_, i) => ({ ...p.sections[0], id: `${Math.floor(i / 3) + 1}.${(i % 3) + 1}`, floor: Math.floor(i / 3) + 1 }));
+    return { s, p, loc: s.locations.find((l) => l.id === p.locationId)! };
+  };
+  const tiles = (fx: Record<string, Fixture>, kind: RegExp) =>
+    Object.entries(fx).filter(([id, f]) => kind.test(f.kind ?? id)).flatMap(([, f]) => Array.from({ length: f.w ?? 1 }, (_, i) => key({ x: f.x + i, y: f.y })));
+
+  for (const n of [1, 2, 5]) {
+    it(`builds consistent rooms from ${n} section(s) with a seat per desk`, () => {
+      const { s, p, loc } = office(n), floors = officeFloors(p.sections), plan = officePlan(s, loc)!;
+      expect(officeSeats(plan)).toHaveLength(desks(s));
+      expect(desks(s)).toBe(4 * n);
+      for (const floor of floors) {
+        const fp = { ...plan, floor }, { w, h } = roomSize(loc, fp), fx = fixtures(loc, fp);
+        const count = p.sections.filter((x) => x.floor === floor).length;
+        expect(w).toBe(count * SECTION_W + (floor === p.sections[0].floor ? LOBBY_W : 0));
+        expect(h).toBe(SECTION_H);
+        for (const t of fixtureTiles(loc, fp)) expect(t.x >= 0 && t.y >= 0 && t.x < w && t.y < h).toBe(true);
+        const solid = tiles(fx, /^(odesk|ochair|chair|reception|kitchen|bossdesk|printer|plant)/);
+        expect(new Set(solid).size).toBe(solid.length);
+        expect(solid).not.toContain(key(entryTile(loc, fp)));
+        expect(!!fx.stairs).toBe(floors.length > 1);
+        expect(!!fx.letterbox).toBe(floor === p.sections[0].floor);
+        for (const seat of officeSeats(plan).filter((x) => x.floor === floor)) {
+          const path = officeWalk(plan, seat), end = path.at(-1)!;
+          expect(end).toEqual({ x: seat.x + 0.5, y: seat.y + 0.5 });
+          for (let i = 1; i < path.length; i++) {
+            const a = path[i - 1], b = path[i];
+            expect(a.x === b.x || a.y === b.y).toBe(true);
+            for (let k = 0; k <= 8; k++) {
+              const q = { x: Math.floor(a.x + ((b.x - a.x) * k) / 8), y: Math.floor(a.y + ((b.y - a.y) * k) / 8) };
+              if (i < path.length - 1 || k < 8) expect(tiles(fx, /^(odesk|reception|kitchen|bossdesk|printer|plant|bin)/)).not.toContain(key(q));
+            }
+          }
+        }
+      }
+    });
+  }
+
+  it("turns a server section into four rack tiles a bought rack stands on", () => {
+    const { s, p, loc } = office(2), sec = p.sections[1];
+    expect(refitSection(s, p.id, sec.id, "servers").ok).toBe(true);
+    const plan = officePlan(s, loc)!, fx = fixtures(loc, { ...plan, floor: sec.floor });
+    expect(fx[`buckets${sec.id}`]).toBeDefined();
+    expect(desks(s)).toBe(4);
+    s.hour += 24 * 14;
+    loc.readyAt = s.hour;
+    expect(wallTiles(loc, officePlan(s, loc))).toHaveLength(4);
+    const r = buyRack(s, loc.id, "rack-47", 1);
+    if (!r.ok) throw new Error(r.error);
+    expect(s.racks.find((x) => x.id === r.id)!.tile).toEqual(wallTiles(loc, officePlan(s, loc))[0]);
+    expect(fixtures(loc, officePlan(s, loc, sec.floor))[`buckets${sec.id}`]).toBeUndefined();
   });
 });
