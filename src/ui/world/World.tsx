@@ -23,7 +23,7 @@ import {
   Cooling, CrossConnect, Desk, Dock, Door, Extinguisher, FuseBox, Grate, Letterbox, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Walls, WALL, Window,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
-import { ScanPanel } from "./scan/ScanPanel";
+import { NetworkPanel, PostPanel, PowerPanel, StoragePanel } from "./panel/Panels";
 import "./world.css";
 
 const BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
@@ -38,7 +38,7 @@ export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
 
 export function World() {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface), openApp = useStore((s) => s.openApp);
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface);
   const loc = roomOf(game), home = loc.space === "basement";
   const { w, h } = roomSize(loc);
   const tiles = useMemo(() => rackTiles(loc, game.racks), [loc, game.racks]);
@@ -48,7 +48,8 @@ export function World() {
   const [door, setDoor] = useState(0);
   const [lit, setLit] = useState<string | null>(null);
   const [rackOpen, setRackOpen] = useState<string | null>(null);
-  const [scanOpen, setScanOpen] = useState(false);
+  // The panel open over the room: storage, network, the post or the power of a fixture.
+  const [panel, setPanel] = useState<{ kind: "storage" | "network" | "post" | "power"; title: string } | null>(null);
   const [hand, setHand] = useState<Pt | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
@@ -62,7 +63,7 @@ export function World() {
   useEffect(() => {
     if (shown.current === loc.id) return;
     shown.current = loc.id;
-    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setRackOpen(null); setScanOpen(false);
+    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setRackOpen(null); setPanel(null);
   }, [loc]);
   useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org }; }, [loc.id, zoomSet, org]);
   const box = { x: iso(0, h).x - 8, y: -WALL - 12, w: (w + h) * 32 + 16, h: (w + h) * 16 + WALL + 12 };
@@ -196,16 +197,16 @@ export function World() {
       </g>
     ) });
   }
-  const run: Record<Use, () => void> = {
+  const run = (label: string): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
-    storage: () => (carried ? act(putDown) : openApp("Locations", { kind: "storage", id: loc.id })),
-    network: () => openApp("Locations", { kind: "network", id: loc.id }),
-    power: () => openApp("Locations", { kind: "location", id: loc.id }),
+    storage: () => (carried ? act(putDown) : setPanel({ kind: "storage", title: "" })),
+    network: () => setPanel({ kind: "network", title: "" }),
+    power: () => setPanel({ kind: "power", title: t(label) }),
     door: () => openDoor(),
-    post: () => { if (waiting) act(fetchPost); openApp("Post"); },
-    scan: () => setScanOpen(true),
+    post: () => { if (waiting) act(fetchPost); setPanel({ kind: "post", title: t(label) }); },
+    scan: () => setPanel({ kind: "post", title: t(label) }),
     none: () => {},
-  };
+  });
   const carriers = loc.dc ? carriersAt(datacenterById(loc.dc)).map((c) => c.name) : [];
   const watts = `${n(power)}W`;
   const draw: Record<string, (f: Fixture) => ReactNode> = {
@@ -213,7 +214,7 @@ export function World() {
     desk: (f) => <Desk from={fx.scanner?.x ?? f.x} to={(fx.pc?.x ?? f.x) + 1} />,
     scanner: (f) => <Scanner x={f.x} />,
     pc: (f) => <Monitor x={f.x} />,
-    noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} />)}</>,
+    noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} y={f.y} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} y={f.y} />)}</>,
     shelf: (f) => <Shelf at={f} count={stored} />,
     fan: (f) => <Window f={f} sky={sky(loc.city, game.hour)} outside={`${n(temperature(loc.city, game.hour))}°C`} inside={`${n(roomTemperature(game, loc), 1)}°C`} />,
     fusebox: (f) => <FuseBox f={f} reading={watts} />,
@@ -229,7 +230,7 @@ export function World() {
   for (const [id, f] of Object.entries(fx)) {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
     const node = a.use
-      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run[a.use])}>{art}</g>
+      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label)[a.use])}>{art}</g>
       : <g key={id} aria-label={t(a.label)} pointerEvents="none">{art}</g>;
     if (a.wall) back.push(node);
     else things.push({ depth: f.x + f.y + (a.depth ?? 0), node });
@@ -259,7 +260,10 @@ export function World() {
           <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>
         )}
       </svg>
-      {scanOpen && <ScanPanel onClose={() => setScanOpen(false)} />}
+      {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
+      {panel?.kind === "network" && <NetworkPanel loc={loc} onClose={() => setPanel(null)} />}
+      {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
+      {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
       {rackOpen && <RackPanel key={rackOpen} rackId={rackOpen} onClose={() => setRackOpen(null)} />}
     </div>
   );

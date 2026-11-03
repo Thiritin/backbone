@@ -1,15 +1,12 @@
 import type { Dict } from "./lang";
 
-// The room the player walks around in.
+// The room the player looks at and acts on.
 export default {
   "world.standUp": () => "Stand up",
   "world.room": () => "Room",
-  "world.you": () => "You",
   "world.obj.pc": () => "Computer",
   "world.obj.desk": () => "Desk",
   "world.obj.scanner": () => "Scanner",
-  "world.scan.done": () => "Scanned",
-  "world.scan.none": () => "No letters to scan.",
   "world.obj.door": () => "Door",
   "world.obj.letterbox": () => "Letterbox",
   "world.obj.shelf": () => "Storage shelf",
@@ -22,5 +19,6 @@ export default {
   "world.obj.noc": () => "NOC desk",
   "world.obj.dock": () => "Loading dock",
   "world.inHands": () => "In your hands",
+  "world.pickUp": () => "Pick up",
   "world.obj.parcels": (p) => `${p.n} parcels`,
 } satisfies Dict;

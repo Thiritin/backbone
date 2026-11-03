@@ -82,9 +82,9 @@ export function Grate({ y, x0, x1 }: { y: number; x0: number; x1: number }) {
   );
 }
 
-// One desk along the far wall from column `from` to `to`, its top at DESK_Z.
-export function Desk({ from, to }: { from: number; to: number }) {
-  const y0 = 0.08, y1 = 0.78;
+// One desk along row y from column `from` to `to`, its top at DESK_Z.
+export function Desk({ from, to, y = 0 }: { from: number; to: number; y?: number }) {
+  const y0 = y + 0.08, y1 = y + 0.78;
   return (
     <>
       <Prism x0={from + 0.1} y0={y0 + 0.04} x1={from + 0.2} y1={y1 - 0.04} z1={DESK_Z - 3} tone="w-tone-wood-dark" />
@@ -95,14 +95,14 @@ export function Desk({ from, to }: { from: number; to: number }) {
 }
 
 // Monitor and keyboard on desk column x, the screen facing the room.
-export function Monitor({ x }: { x: number }) {
-  const z = DESK_Z, sy = 0.4;
+export function Monitor({ x, y = 0 }: { x: number; y?: number }) {
+  const z = DESK_Z, sy = y + 0.4;
   return (
     <>
-      <Prism x0={x + 0.42} y0={0.28} x1={x + 0.58} y1={0.36} z0={z} z1={z + 6} tone="w-tone-pc" />
-      <Prism x0={x + 0.12} y0={0.32} x1={x + 0.88} y1={sy} z0={z + 5} z1={z + 27} tone="w-tone-pc" />
+      <Prism x0={x + 0.42} y0={y + 0.28} x1={x + 0.58} y1={y + 0.36} z0={z} z1={z + 6} tone="w-tone-pc" />
+      <Prism x0={x + 0.12} y0={y + 0.32} x1={x + 0.88} y1={sy} z0={z + 5} z1={z + 27} tone="w-tone-pc" />
       <polygon className="w-screen" points={pts(at3(x + 0.17, sy, z + 8), at3(x + 0.83, sy, z + 8), at3(x + 0.83, sy, z + 24), at3(x + 0.17, sy, z + 24))} />
-      <Prism x0={x + 0.2} y0={0.5} x1={x + 0.8} y1={0.68} z0={z} z1={z + 1.5} tone="w-tone-paper" />
+      <Prism x0={x + 0.2} y0={y + 0.5} x1={x + 0.8} y1={y + 0.68} z0={z} z1={z + 1.5} tone="w-tone-paper" />
     </>
   );
 }

@@ -9,7 +9,7 @@ export const ART: Record<string, FixtureArt> = {
   scanner: { label: "world.obj.scanner", use: "scan", depth: 0.001 },
   desk: { label: "world.obj.desk", use: "none" },
   pc: { label: "world.obj.pc", use: "desktop", depth: 0.002 },
-  fusebox: { label: "world.obj.fusebox", wall: true },
+  fusebox: { label: "world.obj.fusebox", use: "power", wall: true },
   shelf: { label: "world.obj.shelf", use: "storage" },
   fan: { label: "world.obj.fan", wall: true },
   letterbox: { label: "world.obj.letterbox", use: "post", wall: true },

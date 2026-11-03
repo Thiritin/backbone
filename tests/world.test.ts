@@ -68,5 +68,11 @@ describe("world", () => {
     expect(g.player.carrying).toBeNull();
     expect(g.devices.find((d) => d.id === id)!.store).toBe(here.id);
     expect(container.querySelector(".w-hand")).toBeNull();
+    // With empty hands the shelf opens the storage panel in the room, where a stored unit can be taken again.
+    fireEvent.click(screen.getByRole("button", { name: t("world.obj.shelf") }));
+    const panel = screen.getByRole("dialog", { name: t("world.obj.shelf") });
+    fireEvent.click(panel.querySelector(`[data-unit="${id}"] button`)!);
+    expect(useStore.getState().game.player.carrying).toBe(id);
+    expect(useStore.getState().windows.length).toBe(0);
   });
 });

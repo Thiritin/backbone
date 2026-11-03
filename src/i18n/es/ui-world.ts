@@ -3,12 +3,9 @@ import type { Dict } from "../lang";
 export default {
   "world.standUp": () => "Levantarse",
   "world.room": () => "Sala",
-  "world.you": () => "Tú",
   "world.obj.pc": () => "Ordenador",
   "world.obj.desk": () => "Escritorio",
   "world.obj.scanner": () => "Escáner",
-  "world.scan.done": () => "Escaneada",
-  "world.scan.none": () => "No hay cartas para escanear.",
   "world.obj.door": () => "Puerta",
   "world.obj.letterbox": () => "Buzón",
   "world.obj.shelf": () => "Estantería del almacén",
@@ -21,5 +18,6 @@ export default {
   "world.obj.noc": () => "Puesto NOC",
   "world.obj.dock": () => "Muelle de carga",
   "world.inHands": () => "En tus manos",
+  "world.pickUp": () => "Coger",
   "world.obj.parcels": (p) => `${p.n} paquetes`,
 } satisfies Dict;
