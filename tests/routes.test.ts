@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CITIES } from "../src/ui/map/world-data";
 import { ROADS } from "../src/ui/map/roads";
+import { DATACENTERS, REGIONS } from "../src/sim/20-world/datacenters";
 import { ROUTES } from "../src/ui/map/routes";
 
 const city = (code: string) => CITIES.find((c) => c.code === code)!;
@@ -17,6 +18,16 @@ describe("travel data", () => {
       expect(line.length, key).toBeLessThanOrEqual(120);
       expect(near(line[0], city(from)), key).toBe(true);
       expect(near(line[line.length - 1], city(to)), key).toBe(true);
+    }
+  });
+
+  it("covers every pair of datacenter cities on the same continent", () => {
+    const names = new Set([...DATACENTERS.map((d) => d.city), ...REGIONS.map((r) => r.city)]);
+    const used = CITIES.filter((c) => names.has(c.name));
+    expect(used.length).toBe(names.size);
+    for (const a of used) for (const b of used) {
+      if (a.code >= b.code || (a.lon < -30) !== (b.lon < -30)) continue;
+      expect(ROUTES[`${a.code}-${b.code}`], `${a.code}-${b.code}`).toBeDefined();
     }
   });
 });
