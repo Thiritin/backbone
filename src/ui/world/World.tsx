@@ -277,9 +277,9 @@ export function World() {
         {!home && <path className="w-tile" d={grid} />}
         {back}
         {things.map((x) => x.node)}
-        {over}
-        {home && <Light w={w} h={h} hd={hd} windows={[fx.window, fx.fan].flatMap((f) => (f ? [f.x] : []))} lamp={fx.lamp} desk={fx.pc?.x} />}
+        {home && <Light w={w} h={h} hd={hd} windows={[fx.window, fx.fan].flatMap((f) => (f ? [f.x] : []))} lamp={fx.lamp} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
+        {over}
         {carried && hand && (
           <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>
         )}

@@ -360,12 +360,14 @@ export function BeerCrate({ x }: { x: number }) {
 // Desk lamp between the scanner and the screen, its shade turned toward the keyboard; it is on at night.
 export function DeskLamp({ x, on }: { x: number; on: boolean }) {
   const b = { x: x + 0.02, y: 0.16 }, foot = at3(b.x + 0.05, b.y + 0.05, DESK_Z + 2), elbow = at3(b.x + 0.04, b.y + 0.02, DESK_Z + 24), head = at3(b.x + 0.22, b.y + 0.16, DESK_Z + 26);
+  const spot = at3(x + 0.3, 0.5, DESK_Z);
   return (
     <>
+      {on && <ellipse fill="url(#w-pool)" cx={spot.x} cy={spot.y} rx="26" ry="11" />}
       <Prism x0={b.x} y0={b.y} x1={b.x + 0.1} y1={b.y + 0.1} z0={DESK_Z} z1={DESK_Z + 2} tone="w-tone-dark" />
       <path className="w-lamp-arm" d={`M${pts(foot)} L${pts(elbow)} L${pts(head)}`} />
       <path className="w-lamp-shade" d={`M${head.x - 1.5},${head.y - 2} L${head.x + 1.5},${head.y - 2} L${head.x + 4.5},${head.y + 3.5} A4.5,1.6 0 0 1 ${head.x - 4.5},${head.y + 3.5} Z`} />
-      {on && <ellipse className="w-bulb" cx={head.x} cy={head.y + 3.6} rx="3" ry="1" />}
+      {on && <ellipse className="w-bulb" cx={head.x} cy={head.y + 4.3} rx="2.2" ry="0.6" />}
     </>
   );
 }
@@ -417,7 +419,7 @@ export function CeilingLamp({ f, on }: { f: Fixture; on: boolean }) {
       <path className="w-cord" d={`M${pts(top)} L${pts(T)}`} />
       <path className="w-shade" d={`M${T.x - 2.5},${T.y} L${T.x + 2.5},${T.y} L${B.x + 11},${B.y} A11,4 0 0 1 ${B.x - 11},${B.y} Z`} />
       <ellipse className="w-shade-in" cx={B.x} cy={B.y} rx="11" ry="3" />
-      <circle className={on ? "w-bulb" : "w-bulb-off"} cx={B.x} cy={B.y + 1.5} r="2.6" />
+      <circle className={on ? "w-bulb" : "w-bulb-off"} cx={B.x} cy={B.y + 0.8} r="1.6" />
     </>
   );
 }
@@ -437,12 +439,12 @@ const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 export const daylight = (hd: number) => clamp01((hd - 6) / 1.5) * clamp01((20.5 - hd) / 1.5);
 
 // Light over the basement: a shaft from each window across the floor, warm and long when the sun is low and white and short at noon; at night the room darkens and the lamps throw warm pools.
-export function Light({ w, h, hd, windows, lamp, desk }: { w: number; h: number; hd: number; windows: number[]; lamp?: Fixture; desk?: number }) {
+export function Light({ w, h, hd, windows, lamp }: { w: number; h: number; hd: number; windows: number[]; lamp?: Fixture }) {
   const d = daylight(hd), p = clamp01((hd - 6) / 14.5), e = Math.max(0, Math.sin(Math.PI * p)), warm = 1 - e;
   const color = `oklch(${0.97 - 0.06 * warm} ${0.02 + 0.13 * warm} 75)`;
   const slope = 0.45 + 1.8 * e, skew = (0.5 - p) * 1.4;
   const room = pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h));
-  const pool = lamp && iso(lamp.x + 0.5, lamp.y + 0.5), spot = desk !== undefined && at3(desk + 0.3, 0.5, DESK_Z);
+  const pool = lamp && iso(lamp.x + 0.5, lamp.y + 0.5);
   return (
     <g pointerEvents="none" className="w-light">
       <defs>
@@ -467,7 +469,6 @@ export function Light({ w, h, hd, windows, lamp, desk }: { w: number; h: number;
         );
       })}
       {d < 1 && pool && <ellipse fill="url(#w-pool)" opacity={1 - d} cx={pool.x} cy={pool.y} rx="150" ry="75" />}
-      {d < 1 && spot && <ellipse fill="url(#w-pool)" opacity={1 - d} cx={spot.x} cy={spot.y} rx="26" ry="11" />}
     </g>
   );
 }
