@@ -40,7 +40,7 @@ import { Closet } from "./office";
 import "./world.css";
 
 // How dark a tripped room is drawn, darker than a night with the lights off.
-const TRIPPED_DARK = 0.45;
+const TRIPPED_DARK = 0.6;
 const BLINK_MS = 500, FLASH_MS = 120, RING_MS = 4000, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
 // Arrow keys and WASD pan the view, in screen directions.
 const KEYS: Record<string, [number, number]> = {
@@ -225,7 +225,7 @@ export function World() {
   // Things standing on the floor, sorted by x + y so nearer ones overlap farther ones; a fixture sorts by its farthest tile.
   const things: { depth: number; node: ReactNode }[] = racks.map((r) => {
     const tile = tiles[r.id], glow = (cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id) || (from && from.rack !== r.id), leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on && !loc.tripped, top: d.slot + modelById(d.model).height - 1 }));
-    const p = rackPower(game, r.id), hot = !loc.tripped && r.model !== "shelf" && p.limitWatts > 0 && p.watts >= 0.9 * p.limitWatts;
+    const p = rackPower(game, r.id), hot = !loc.tripped && p.limitWatts > 0 && p.watts >= 0.9 * p.limitWatts;
     return {
       depth: tile.x + tile.y,
       node: (
