@@ -12,4 +12,10 @@ export default {
   "world.obj.shelf": () => "Lagerregal",
   "world.obj.fusebox": () => "Sicherungskasten",
   "world.obj.fan": () => "Fensterlüfter",
+  "world.obj.xconnect": () => "Cross-Connect-Panel",
+  "world.obj.cooling": () => "Klimagerät",
+  "world.obj.pdu": () => "PDU",
+  "world.obj.extinguisher": () => "Feuerlöscher",
+  "world.obj.noc": () => "NOC-Arbeitsplatz",
+  "world.obj.dock": () => "Laderampe",
 } satisfies Dict;
