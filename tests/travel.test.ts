@@ -1,29 +1,21 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { ROUTES } from "../src/ui/map/routes";
 import { CITIES } from "../src/ui/map/world-data";
-import { along, arc, driveMs, km, next, routeOf, type Stage, type TripEvent } from "../src/ui/travel/route";
+import { along, arc, driveMs, km, next, routeOf, type LL, type Stage, type TripEvent } from "../src/ui/travel/route";
 
 const city = (code: string) => CITIES.find((c) => c.code === code)!;
 
 describe("travel", () => {
   it("finds a stored route both ways", () => {
     const [a, b] = [CITIES[0], CITIES[1]].sort((p, q) => (p.code < q.code ? -1 : 1));
-    const key = `${a.code}-${b.code}`, had = ROUTES[key];
-    ROUTES[key] = [[a.lon, a.lat], [7, 50], [b.lon, b.lat]];
-    try {
-      expect(routeOf(a.name, b.name)).toEqual(ROUTES[key]);
-      expect(routeOf(b.name, a.name)).toEqual([...ROUTES[key]].reverse());
-    } finally {
-      if (had) ROUTES[key] = had; else delete ROUTES[key];
-    }
+    const line: LL[] = [[a.lon, a.lat], [7, 50], [b.lon, b.lat]], routes = { [`${a.code}-${b.code}`]: line };
+    expect(routeOf(a.name, b.name, routes)).toEqual(line);
+    expect(routeOf(b.name, a.name, routes)).toEqual([...line].reverse());
   });
 
   it("draws a great-circle arc when no route is stored", () => {
-    const fra = city("fra"), ker = city("ker"), had = ROUTES["fra-ker"];
-    delete ROUTES["fra-ker"];
-    const r = routeOf(fra.name, ker.name);
-    if (had) ROUTES["fra-ker"] = had;
+    const fra = city("fra"), ker = city("ker");
+    const r = routeOf(fra.name, ker.name, {});
     expect(r.length).toBe(33);
     expect(r[0][0]).toBeCloseTo(fra.lon, 5);
     expect(r[32][1]).toBeCloseTo(ker.lat, 5);

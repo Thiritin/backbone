@@ -7,7 +7,7 @@ import { drive, travelTo } from "../../sim/90-actions/travel";
 import { cityNamed, LAND, WorldMap, X, Y, type Marker } from "../map/WorldMap";
 import { ROADS } from "../map/roads";
 import { useStore } from "../store";
-import { along, driveMs, km, routeOf, useTrip, type Trip } from "./route";
+import { along, driveMs, km, loadRoutes, routeOf, useTrip, type LL, type Trip } from "./route";
 import { Scene, useSkip } from "./Scene";
 import { engineRun } from "./sounds";
 import "./travel.css";
@@ -50,6 +50,7 @@ function TravelMap() {
     const g = useStore.getState().game;
     const trip: Trip = { from, to: playerAt(g), start, until: g.player.until, resume: s.speed };
     s.setSpeed(0);
+    void loadRoutes();
     send("pick", trip);
   };
 
@@ -67,9 +68,16 @@ const ROAD_D = ROADS.map((r) => "M" + r.map(([lon, lat]) => `${X(lon)} ${Y(lat)}
 const OPEN_MS = 1500;
 const line = (p: { x: number; y: number }[]) => p.map((q) => `${q.x},${q.y}`).join(" ");
 
+// Holds the dark map until the routes file has loaded.
 function Road({ trip }: { trip: Trip }) {
+  const [routes, setRoutes] = useState<Record<string, LL[]> | null>(null);
+  useEffect(() => { void loadRoutes().then(setRoutes); }, []);
+  return routes ? <Drive trip={trip} routes={routes} /> : <div className="travel travel-road" />;
+}
+
+function Drive({ trip, routes }: { trip: Trip; routes: Record<string, LL[]> }) {
   const game = useStore((s) => s.game), advance = useStore((s) => s.advance), send = useTrip((s) => s.send);
-  const route = useMemo(() => routeOf(trip.from.city, trip.to.city), [trip]);
+  const route = useMemo(() => routeOf(trip.from.city, trip.to.city, routes), [trip, routes]);
   const pts = useMemo(() => route.map(([lon, lat]) => ({ x: X(lon), y: Y(lat) })), [route]);
   const ms = driveMs(km(route)), hours = trip.until - trip.start;
   const [e, setE] = useState(0);

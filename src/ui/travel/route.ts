@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import type { Speed } from "../../sim/00-core/time";
 import type { Location } from "../../sim/50-state";
-import { ROUTES } from "../map/routes";
 import { CITIES } from "../map/world-data";
 
 export type LL = [number, number];
@@ -38,11 +37,14 @@ export function arc(a: LL, b: LL, n = 32): LL[] {
 
 const codeOf = (name: string) => CITIES.find((c) => c.name === name);
 
+// The routes file, loaded on the first trip so the main bundle stays small.
+export const loadRoutes = (): Promise<Record<string, LL[]>> => import("../map/routes").then((m) => m.ROUTES, () => ({}));
+
 // The driven polyline between two game cities by name, a great-circle arc when no road route is stored.
-export function routeOf(from: string, to: string): LL[] {
+export function routeOf(from: string, to: string, routes: Record<string, LL[]>): LL[] {
   const a = codeOf(from), b = codeOf(to);
   if (!a || !b) return [];
-  const r = a.code < b.code ? ROUTES[`${a.code}-${b.code}`] : ROUTES[`${b.code}-${a.code}`]?.slice().reverse();
+  const r = a.code < b.code ? routes[`${a.code}-${b.code}`] : routes[`${b.code}-${a.code}`]?.slice().reverse();
   return r ?? arc([a.lon, a.lat], [b.lon, b.lat]);
 }
 
