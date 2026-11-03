@@ -13,6 +13,8 @@ import { readyGame } from "./fixtures";
 import { devName } from "../src/ui/apps/hw";
 import { connectError, portPeers } from "../src/sim/60-infra/status";
 import type { End } from "../src/sim/50-state";
+import { dateOf } from "../src/sim/00-core/time";
+import { NIGHT } from "../src/ui/world/draw";
 
 afterEach(cleanup);
 
@@ -199,5 +201,28 @@ describe("world", () => {
     expect(mine().every((d) => !d.on)).toBe(true);
     fireEvent.click(main);
     expect(mine().every((d) => d.on || d.chassisId)).toBe(true);
+  });
+  // Renders the room at clock time hh:mm on the game's day and returns the darkening's opacity.
+  const darkAt = (hh: number, mm: number) => {
+    cleanup();
+    const s = readyGame(7), hour = s.hour - dateOf(s.hour).getUTCHours() + hh;
+    useStore.setState({ game: { ...s, hour, minute: mm }, speed: 0, surface: "world" });
+    const { container } = render(createElement(World));
+    return Number((container.querySelector(".w-dark") as SVGElement).style.opacity);
+  };
+
+  it("fades the room from day to night with the clock", () => {
+    expect(darkAt(12, 0)).toBe(0);
+    expect(darkAt(23, 0)).toBeCloseTo(NIGHT);
+    const dusk = darkAt(18, 15);
+    expect(dusk).toBeGreaterThan(0);
+    expect(dusk).toBeLessThan(NIGHT);
+  });
+  it("lights the bulb and lowers the darkening with the light switch", () => {
+    const dark = darkAt(23, 0), bulb = () => document.querySelector(".w-bulb");
+    expect(bulb()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: t("world.obj.switch") }));
+    expect(bulb()).not.toBeNull();
+    expect(Number((document.querySelector(".w-dark") as SVGElement).style.opacity)).toBeCloseTo(dark / 4);
   });
 });

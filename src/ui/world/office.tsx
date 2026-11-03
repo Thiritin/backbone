@@ -131,7 +131,7 @@ export function Bin({ f }: { f: Fixture }) {
   );
 }
 
-// A pair of fluorescent tubes in their housing under the ceiling, lit while the office is open.
+// A pair of fluorescent tubes in their housing under the ceiling, lit while the light switch is on.
 export function Tube({ f, on }: { f: Fixture; on: boolean }) {
   const x0 = f.x + 0.2, x1 = f.x + (f.w ?? 1) - 0.2, y = f.y + 0.4, z = WALL + 8;
   return (

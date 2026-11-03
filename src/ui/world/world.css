@@ -130,7 +130,7 @@
 .w-shade { fill: oklch(0.95 0.006 90); stroke: oklch(0.78 0.008 90); stroke-width: 0.5; }
 .w-shade-in { fill: oklch(0.82 0.01 90); }
 .w-blotch { fill: oklch(0.82 0.01 250 / 0.16); }
-.w-dark { fill: oklch(0.2 0.04 262); opacity: 0.32; }
+.w-dark { fill: oklch(0.2 0.04 262); transition: opacity 400ms; }
 .w-night .w-led-on { filter: drop-shadow(0 0 1.2px var(--ok)); }
 .w-num { font-family: var(--font-ui); font-size: 6.5px; font-weight: 500; font-variant-numeric: tabular-nums; text-anchor: end; fill: oklch(0.95 0.02 220); }
 .w-num-sm { font-size: 4.6px; }

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Evening and morning now fade in and out with the season instead of switching, and the light switch by the door turns the room's lights on.
 - Every site now has its own spot in its city, and the drive starts and ends on real streets with a zoom out over the motorways in between.
 - The rented office is a room of its own with desks, a reception and a server room, the staff come in during office hours and sit at them, and the post now arrives in the office letterbox.
 - The fuse box, letterbox, scanner and shelf now open as themselves, drawn large with their breakers, sheets of paper, buttons and boards to use, and the rack carries its name on a label plate with a turn arrow at its corner.
