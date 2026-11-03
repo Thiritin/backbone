@@ -14,6 +14,7 @@
 .gc-forge { font: 12px/1.5 Verdana, "DejaVu Sans", sans-serif; }
 .gc-forge .gc-head { display: flex; align-items: baseline; gap: 14px; padding: 14px 16px; background: #4e9a06; color: #fff; border-bottom: 3px solid #2e6e00; }
 .gc-forge .gc-logo { font: 26px/1 Georgia, "DejaVu Serif", serif; }
+.gc-forge .gc-logo .logo-mark { filter: brightness(0) invert(1); }
 .gc-forge .gc-tag { font-size: 11px; }
 .gc-forge .gc-body { display: flex; }
 .gc-forge .gc-nav { flex: 0 0 150px; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; background: #eeeeec; border-right: 1px solid #babdb6; }

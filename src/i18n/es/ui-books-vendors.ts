@@ -16,7 +16,7 @@ export default {
   "books-vendors.about.orgamin": () => "El programa de oficina para pequeñas empresas.",
   "books-vendors.about.collmix": () => "Contabilidad que funciona en tu navegador.",
   "books-vendors.about.sevdeck": () => "Contabilidad en la nube con sincronización bancaria.",
-  "books-vendors.about.lexoffize": () => "La oficina de Lexwear en la nube.",
+  "books-vendors.about.lexoffize": () => "La oficina de Taxware en la nube.",
   "books-vendors.footer": (p) => `© ${p.year} ${p.name}`,
   "ledger.booksLicence": (p) => `Licencia ${p.program}`,
   "ledger.booksMonthly": (p) => `Cuota mensual ${p.program}`,

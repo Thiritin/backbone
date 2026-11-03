@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { BrandLogo } from "../../../../art/logos";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { booksVendor } from "../../../../../sim/10-catalog/bookkeeping";
@@ -16,7 +17,7 @@ export function LexoffizeSite({ game, path, go }: SiteProps) {
   return (
     <div className={`lo ${eraOf(ERAS, year)}`}>
       <header className="lo-head">
-        <a className="lo-logo" href="#home" onClick={home}>lex<b>offize</b><i>.</i></a>
+        <a className="lo-logo" href="#home" onClick={home}><BrandLogo brand="Rexoffice" size={28} />rex<b>office</b><i>.</i></a>
         <nav className="lo-nav">
           <a href="#home" aria-current={one ? undefined : "page"} onClick={home}>{t("books-editions.nav")}</a>
         </nav>

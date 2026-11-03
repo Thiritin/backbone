@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { BrandLogo } from "../../../../art/logos";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { booksVendor } from "../../../../../sim/10-catalog/bookkeeping";
@@ -7,7 +8,7 @@ import { eraOf } from "../era";
 import { editionIn, Editions, type SiteProps } from "./VendorShop";
 import "./collmix.css";
 
-// Collmix kept its sparse web-app page for years before a price table arrived.
+// Kontomix kept its sparse web-app page for years before a price table arrived.
 const ERAS = [{ from: 2005, look: "plain" }, { from: 2012, look: "table" }] as const;
 
 export function CollmixSite({ game, path, go }: SiteProps) {
@@ -17,8 +18,8 @@ export function CollmixSite({ game, path, go }: SiteProps) {
   return (
     <div className={`cx cx-${look}`}>
       <div className="cx-page">
-        <header className="cx-head">
-          <span className="cx-logo"><b>coll</b>mix</span>
+        <header className="cx-masthead">
+          <span className="cx-logo"><BrandLogo brand="Kontomix" size={26} /><b>konto</b>mix</span>
           <span className="cx-tag">{t("books-vendors.about.collmix")}</span>
         </header>
         <nav className="cx-nav"><a href="#home" aria-current={one ? undefined : "page"} onClick={home}>{t("books-editions.nav")}</a></nav>

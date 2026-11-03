@@ -51,11 +51,11 @@ describe("bookkeeping vendors", () => {
     own(s, "collmix");
     s.hour = at(2005, 4, 1, 0);
     booksTick(s);
-    expect(s.payables.filter((p) => p.name === "Collmix").length).toBe(2);
+    expect(s.payables.filter((p) => p.name === "Kontomix").length).toBe(2);
     own(s, "wizo");
     s.hour = at(2005, 5, 1, 0);
     booksTick(s);
-    expect(s.payables.filter((p) => p.name === "Collmix").length).toBe(2);
+    expect(s.payables.filter((p) => p.name === "Kontomix").length).toBe(2);
   });
 
   it("debits the fee straight off the cash without a bank account", () => {
@@ -82,7 +82,7 @@ describe("bookkeeping vendors", () => {
     expect(s.cash).toBe(cash);
   });
 
-  it("bills the Lexwear update each year and blocks upgrades while it is unpaid", () => {
+  it("bills the Taxware update each year and blocks upgrades while it is unpaid", () => {
     const s = game(2005);
     own(s, "lexwear");
     const start = s.hour;
@@ -91,7 +91,7 @@ describe("bookkeeping vendors", () => {
       booksTick(s);
       s.hour++;
       booksTick(s);
-      expect(s.payables.filter((p) => p.name === "Lexwear").length).toBe(year);
+      expect(s.payables.filter((p) => p.name === "Taxware").length).toBe(year);
       expect(s.payables.at(-1)).toMatchObject({ amount: 99, supplier: "books" });
       expect(upgradeBooks(s, "financial-office")).toEqual({ ok: false, error: "error.updateOpen" });
       s.payables.at(-1)!.paidAt = s.hour;
@@ -99,7 +99,7 @@ describe("bookkeeping vendors", () => {
     expect(upgradeBooks(s, "financial-office")).toEqual({ ok: true });
   });
 
-  it("gives old saves with Books Lexwear and old saves without it no program", () => {
+  it("gives old saves with Books Taxware and old saves without it no program", () => {
     const raw = JSON.parse(serialize(newGame(4)));
     delete raw.books;
     raw.installed = ["Browser", "Books"];
@@ -121,9 +121,12 @@ describe("bookkeeping vendors", () => {
 
   it("puts each vendor's site in the Browser and in the index from its year", () => {
     const s = game(2005);
+    expect(resolve(s, "www.warum.de/").page).toEqual({ kind: "books", id: "wizo" });
+    expect(resolve(s, "www.taxware.de/").page).toEqual({ kind: "lexwear" });
+    expect(resolve(s, "www.eightdesk.de/").page.kind).not.toBe("books");
+    // Tabs saved before the renames keep their sites.
     expect(resolve(s, "www.wizo.de/").page).toEqual({ kind: "books", id: "wizo" });
     expect(resolve(s, "www.lexwear.de/").page).toEqual({ kind: "lexwear" });
-    expect(resolve(s, "www.sevdeck.de/").page.kind).not.toBe("books");
     const rows = (x: GameState) => siteIndex(x).find((c) => c.title === "Bookkeeping")!.rows.map((r) => r.title);
     expect(rows(s)).toEqual(BOOKS_VENDORS.filter((v) => v.from === 2005).map((v) => v.program));
     s.hour = at(2014, 6, 1);

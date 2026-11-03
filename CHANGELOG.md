@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The bookkeeping programs are now called Taxware Office, WARUM Mein Büro, Thyme 50, Kontomix, EightDesk and Rexoffice, and every vendor shows its own logo on its website, in the browser tab and in the program.
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
 

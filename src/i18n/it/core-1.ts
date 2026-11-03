@@ -196,7 +196,7 @@ export default {
   "event.collected.title": () => "Passata al recupero crediti",
   "event.collected.text": (p) => `La fattura ${p.invoice} di ${p.customer} è passata al recupero crediti.`,
   "event.invoices.title": () => "Bozze di fatture",
-  "event.invoices.text": (p) => `Lexwear ha creato ${plural(p.count, "bozza di fattura", "bozze di fatture")} per ${euroCents(Number(p.total))}.`,
+  "event.invoices.text": (p) => `Taxware ha creato ${plural(p.count, "bozza di fattura", "bozze di fatture")} per ${euroCents(Number(p.total))}.`,
   "event.loanMissed.title": () => "Rata non pagata",
   "event.loanMissed.text": (p) => `La rata del prestito da ${euro(Number(p.amount))} non è stata pagata, e la banca ha addebitato ${euro(Number(p.fee))} di commissione.`,
   "event.loanCalled.title": () => "Prestito revocato",

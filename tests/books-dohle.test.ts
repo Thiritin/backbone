@@ -14,7 +14,7 @@ import { BooksTax } from "../src/ui/apps/books/TaxTab";
 const at = (y: number, m: number, d = 1, h = 0) => hourOf(new Date(Date.UTC(y, m - 1, d, h)));
 const jump = (s: GameState, hour: number, hours = 1) => { s.hour = hour - 1; for (let i = 0; i < hours; i++) tick(s); };
 const entry = (hour: number, category: string, amount: number): LedgerEntry => ({ hour, category, key: "ledger.test", params: {}, amount });
-// A registered company with its certificate on the desktop and the Lexwear edition with the tax view.
+// A registered company with its certificate on the desktop and the Taxware edition with the tax view.
 function company(small = false): GameState {
   const s = newGame(7);
   s.hour = at(2005, 1, 3, 8);

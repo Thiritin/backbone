@@ -7,7 +7,7 @@ export type Layout = "tree" | "icons" | "menus" | "tabs" | "web" | "flat" | "gtk
 
 export interface Edition {
   id: string; name: string; price: number;
-  // Lexwear's yearly update fee for the edition.
+  // Taxware's yearly update fee for the edition.
   update: number;
   features: Feature[];
   // Users the licence includes, the player among them (Infinity for a network version), and the price of one more seat (0: none sold).
@@ -39,27 +39,27 @@ const ed = (id: string, name: string, price: number, features: Feature[], more: 
   ({ id, name, price, update: 0, features, users: 1, seat: 0, ...more });
 
 export const BOOKS_VENDORS: BooksVendor[] = [
-  { id: "lexwear", name: "Lexwear", program: "Lexwear Office", from: 2005, deployment: "desktop", setupMb: 180, layout: "tree",
+  { id: "lexwear", name: "Taxware", program: "Taxware Office", from: 2005, deployment: "desktop", setupMb: 180, layout: "tree",
     editions: [ed("buchhalter", "buchhalter", 249, SMALL, { update: 99 }), ed("financial-office", "financial office", 499, MEDIUM, { update: 149 }),
       ed("financial-office-pro", "financial office pro", 899, LARGE, { update: 199, users: NETWORK })],
     skin: { bar: "#d4d0c8", ink: "#1b1b1b", accent: "#0a246a" } },
-  { id: "wizo", name: "WIZO", program: "WIZO Mein Büro", from: 2005, deployment: "desktop", setupMb: 120, layout: "icons",
+  { id: "wizo", name: "WARUM", program: "WARUM Mein Büro", from: 2005, deployment: "desktop", setupMb: 120, layout: "icons",
     editions: [ed("s", "S", 149, SMALL), ed("m", "M", 249, MEDIUM), ed("l", "L", 399, LARGE, { seat: 79 })],
     skin: { bar: "#1f5fa8", ink: "#ffffff", accent: "#1f5fa8" } },
-  { id: "saga", name: "Saga", program: "Saga Office Line", from: 2005, deployment: "desktop", setupMb: 350, layout: "menus",
+  { id: "saga", name: "Thyme", program: "Thyme 50", from: 2005, deployment: "desktop", setupMb: 350, layout: "menus",
     editions: [ed("office-line", "Office Line", 599, MEDIUM), ed("office-line-plus", "Office Line Plus", 999, LARGE, { users: NETWORK })],
     skin: { bar: "#00704a", ink: "#ffffff", accent: "#00704a" } },
   { id: "orgamin", name: "orgaMIN", program: "orgaMIN", from: 2005, deployment: "desktop", setupMb: 90, layout: "tabs",
     editions: [ed("standard", "Standard", 199, SMALL), ed("professional", "Professional", 349, MEDIUM), ed("enterprise", "Enterprise", 549, LARGE, { seat: 99 })],
     skin: { bar: "#e8731c", ink: "#ffffff", accent: "#c25a0c" } },
-  { id: "collmix", name: "Collmix", program: "Collmix", from: 2005, deployment: "browser", layout: "web",
+  { id: "collmix", name: "Kontomix", program: "Kontomix", from: 2005, deployment: "browser", layout: "web",
     editions: [ed("basic", "basic", 15, [...SMALL, "hbci"]), ed("plus", "plus", 29, LARGE.filter((f) => f !== "helpdesk-link"), { users: 3 })],
     skin: { bar: "#3b4a5a", ink: "#ffffff", accent: "#2d6cdf" } },
-  { id: "sevdeck", name: "sevDeck", program: "sevDeck", from: 2013, deployment: "browser", layout: "flat",
+  { id: "sevdeck", name: "EightDesk", program: "EightDesk", from: 2013, deployment: "browser", layout: "flat",
     editions: [ed("rechnung", "Rechnung", 9, [...SMALL, "hbci"], { seat: 8 }), ed("buchhaltung", "Buchhaltung", 19, MEDIUM, { seat: 8 }),
       ed("warenwirtschaft", "Warenwirtschaft", 39, LARGE, { seat: 8 })],
     skin: { bar: "#0f8b8d", ink: "#ffffff", accent: "#0f8b8d" } },
-  { id: "lexoffize", name: "lexoffize", program: "lexoffize", from: 2014, deployment: "browser", layout: "flat",
+  { id: "lexoffize", name: "Rexoffice", program: "Rexoffice", from: 2014, deployment: "browser", layout: "flat",
     editions: [ed("s", "S", 7, SMALL, { seat: 6 }), ed("m", "M", 12, MEDIUM, { seat: 6 }), ed("l", "L", 19, LARGE, { seat: 6 })],
     skin: { bar: "#43a047", ink: "#ffffff", accent: "#2e7d32" } },
   { id: "gnucache", name: "GnuCache", program: "GnuCache", from: 2005, deployment: "desktop", setupMb: 25, layout: "gtk",

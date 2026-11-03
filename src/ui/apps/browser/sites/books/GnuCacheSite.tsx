@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { BrandLogo } from "../../../../art/logos";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { booksVendor } from "../../../../../sim/10-catalog/bookkeeping";
@@ -22,7 +23,7 @@ export function GnuCacheSite({ game, path, go }: SiteProps) {
   return (
     <div className={`gc gc-${eraOf([...ERAS], year)}`}>
       <header className="gc-head">
-        <span className="gc-logo"><b>Gnu</b>Cache</span>
+        <span className="gc-logo"><BrandLogo brand="GnuCache" size={30} /><b>Gnu</b>Cache</span>
         <span className="gc-tag">{t("books-vendors.about.gnucache")}</span>
       </header>
       <div className="gc-body">

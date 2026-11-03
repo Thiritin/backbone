@@ -1,4 +1,4 @@
-// docs/design/plans/billing-by-hand.md, 9d: saves from before editions. Lexwear with modules runs the smallest edition that
+// docs/design/plans/billing-by-hand.md, 9d: saves from before editions. Taxware with modules runs the smallest edition that
 // covers them, any other program its smallest; the module licence mails and newsletters go with the modules.
 import { booksVendor, smallestWith } from "../10-catalog/bookkeeping";
 import type { GameState } from "../50-state";

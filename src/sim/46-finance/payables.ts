@@ -22,7 +22,7 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   hardware: [{ days: 0, effect: "noShip" }],
   card: [{ days: 14, effect: "card" }],
   office: [], notary: [], register: [], chamber: [], tax: [],
-  // The bookkeeping program keeps working unpaid; an open Lexwear update only stops new modules.
+  // The bookkeeping program keeps working unpaid; an open Taxware update only stops new modules.
   books: [],
   // An unpaid licence order just never sends its keys.
   software: [],

@@ -7,7 +7,7 @@ export default {
   "books.ref.server": () => "Server",
   "books.ref.domain": () => "Domain",
   "books.ref.name": (p) => `${p.name}`,
-  "books.title": () => "Lexwear Office",
+  "books.title": () => "Taxware Office",
   "books.tab.customers": () => "Contracts",
   "books.tab.invoices": () => "Invoices",
   "books.tab.bank": () => "Bank",

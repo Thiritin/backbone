@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "vendor-sites.module.shop-link": () => "Ligação à loja",
-  "vendor-sites.pitch.shop-link": () => "A ligação à loja copia cada cliente e cada fatura da sua loja para o Lexwear Office assim que são criados e marca a fatura como paga na loja quando o Books regista o pagamento.",
+  "vendor-sites.pitch.shop-link": () => "A ligação à loja copia cada cliente e cada fatura da sua loja para o Taxware Office assim que são criados e marca a fatura como paga na loja quando o Books regista o pagamento.",
   "ledger.module.shop-link": () => "Licença Ligação à loja",
   "ticket.mail.shop-link.licence.subject": (p) => `A sua chave de licença para ${p.module}`,
   "ticket.mail.shop-link.licence.text": (p) => `Obrigado por comprar ${p.module} para ${p.shop}. A sua chave de licença é ${p.key}. Introduza-a em Registar, no Books, para ligar a sua loja.`,

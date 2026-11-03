@@ -1,4 +1,5 @@
 import type { CSSProperties, MouseEvent } from "react";
+import { BrandLogo } from "../../../../art/logos";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { booksVendor } from "../../../../../sim/10-catalog/bookkeeping";
@@ -24,7 +25,7 @@ export function LexwearSite({ game, path, go }: { game: GameState; path: string;
     <div className={`lx lx-${look}`}>
       <div className="lx-page">
         <header className="lx-head">
-          <span className="lx-logo">lex<b>wear</b></span>
+          <span className="lx-logo"><BrandLogo brand="Taxware" size={30} />tax<b>ware</b></span>
           <span className="lx-tag">{t("vendor-sites.tagline")}</span>
         </header>
         <nav className="lx-nav">

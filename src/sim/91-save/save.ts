@@ -191,7 +191,7 @@ export function deserialize(raw: string): GameState {
   const media = data.media ?? base.media;
   s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], files: media.files ?? [], dumps: media.dumps ?? {}, stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   s.arrived = data.arrived ?? [];
-  // Saves from before the Bookkeeping category run Lexwear Office when they have Books.
+  // Saves from before the Bookkeeping category run Taxware Office when they have Books.
   if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0, download: null };
   s.books = { ...s.books, download: s.books.download ?? null };
   migrateBooks(s);

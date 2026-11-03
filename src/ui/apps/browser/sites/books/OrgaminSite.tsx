@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { BrandLogo } from "../../../../art/logos";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { booksVendor } from "../../../../../sim/10-catalog/bookkeeping";
@@ -17,7 +18,7 @@ export function OrgaminSite({ game, path, go }: SiteProps) {
   return (
     <div className={`om om-${look}`}>
       <header className="om-head">
-        <span className="om-logo">orga<b>MIN</b></span>
+        <span className="om-logo"><BrandLogo brand="orgaMIN" size={30} />orga<b>MIN</b></span>
         <span className="om-tag">{t("books-vendors.about.orgamin")}</span>
       </header>
       <div className="om-body">

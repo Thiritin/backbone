@@ -163,7 +163,7 @@ describe("vendor shop", () => {
     expect(licenceStatus(s, "srv1", "pleskit")).toBe("lapsed");
   });
 
-  it("registers only Lexwear keys in Books", () => {
+  it("registers only Taxware keys in Books", () => {
     const s = game();
     addToCart(s, "pleskit", "webAdmin");
     checkout(s, PLESKIT, orderDetails(s, "card"));
