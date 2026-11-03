@@ -5,7 +5,7 @@ import { coldAisles, fixtures, rackTiles, roomSize, type Fixture } from "../../s
 import { carriersAt } from "../../sim/10-catalog/network";
 import { datacenterById } from "../../sim/20-world/datacenters";
 import { rackUnits } from "../../sim/20-world/datacenters";
-import { sky, temperature } from "../../sim/20-world/weather";
+import { temperature } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
 import { inLetterbox, postLocation } from "../../sim/40-support/letters";
 import { fetchPost } from "../../sim/90-actions/post";
@@ -17,12 +17,13 @@ import { Defs } from "../art/fronts";
 import { rackItems } from "../apps/locations/RackView";
 import { useStore } from "../store";
 import { SpeedControl } from "../desktop/MenuBar";
-import { formatClock } from "../../sim/00-core/time";
+import { dateOf, formatClock } from "../../sim/00-core/time";
 import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
-  Cooling, CrossConnect, Desk, Dock, Door, Extinguisher, FuseBox, Grate, Letterbox, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Walls, WALL, Window,
+  BeerCrate, Boiler, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox, Grate,
+  Hygrometer, Letterbox, Light, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { JackPanel, RoomCables } from "./rack/Cables";
@@ -211,19 +212,31 @@ export function World() {
     door: () => openDoor(),
     post: () => { if (waiting) act(fetchPost); setPanel({ kind: "post", title: t(label) }); },
     scan: () => setPanel({ kind: "post", title: t(label) }),
-    none: () => {},
   });
   const carriers = loc.dc ? carriersAt(datacenterById(loc.dc)).map((c) => c.name) : [];
   const watts = `${n(power)}W`;
+  const hd = dateOf(game.hour).getUTCHours() + game.minute / 60, night = daylight(hd) < 0.5;
+  // The meter disc turns once every few seconds at a kilowatt, faster as the draw grows.
+  const turn = power > 0 ? Math.min(20, 4000 / power) : 0;
   const draw: Record<string, (f: Fixture) => ReactNode> = {
     // The desk runs under the scanner and the PC beside it, so the three read as one piece.
-    desk: (f) => <Desk from={fx.scanner?.x ?? f.x} to={(fx.pc?.x ?? f.x) + 1} />,
+    desk: (f) => <Desk from={fx.scanner?.x ?? f.x} to={(fx.pc?.x ?? f.x) + 1} under={home && <><BeerCrate x={fx.scanner?.x ?? f.x} /><Tower x={fx.pc?.x ?? f.x} /></>} />,
     scanner: (f) => <Scanner x={f.x} />,
-    pc: (f) => <Monitor x={f.x} />,
+    pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x} on={night} />}</>,
     noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} y={f.y} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} y={f.y} />)}</>,
     shelf: (f) => <Shelf at={f} count={stored} />,
-    fan: (f) => <Window f={f} sky={sky(loc.city, game.hour)} outside={`${n(temperature(loc.city, game.hour))}°C`} inside={`${n(roomTemperature(game, loc), 1)}°C`} />,
-    fusebox: (f) => <FuseBox f={f} reading={watts} />,
+    fan: (f) => <CellarWindow f={f} fan night={night} />,
+    window: (f) => <CellarWindow f={f} night={night} />,
+    hygrometer: (f) => <Hygrometer f={f} inside={`${n(roomTemperature(game, loc), 1)}°`} outside={`${n(temperature(loc.city, game.hour))}°`} />,
+    fusebox: (f) => <FuseBox f={f} reading={watts} turn={turn} w={w} />,
+    jack: (f) => <WallJack f={f} />,
+    boiler: (f) => <Boiler f={f} />,
+    washer: (f) => <Washer f={f} />,
+    dryer: (f) => <DryingRack f={f} />,
+    chair: (f) => <Chair f={f} />,
+    mat: (f) => <Mat f={f} />,
+    drain: (f) => <Drain f={f} />,
+    lamp: (f) => <CeilingLamp f={f} on={night} />,
     letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} />,
     door: (f) => <Door f={f} open={door} cage={!home} />,
     extinguisher: (f) => <Extinguisher f={f} />,
@@ -232,13 +245,14 @@ export function World() {
     pdu: (f) => <Pdu f={f} reading={watts} />,
     dock: (f) => <Dock f={f} />,
   };
-  const back: ReactNode[] = [];
+  const back: ReactNode[] = [], over: ReactNode[] = [];
   for (const [id, f] of Object.entries(fx)) {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
-    const node = a.use
+    const node = a.use && a.label
       ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label)[a.use])}>{art}</g>
-      : <g key={id} aria-label={t(a.label)} pointerEvents="none">{art}</g>;
+      : <g key={id} aria-label={a.label && t(a.label)} aria-hidden={!a.label || undefined} pointerEvents="none">{art}</g>;
     if (a.wall) back.push(node);
+    else if (a.top) over.push(node);
     else things.push({ depth: f.x + f.y + (a.depth ?? 0), node });
   }
   things.sort((a, b) => a.depth - b.depth);
@@ -253,15 +267,18 @@ export function World() {
 
   return (
     <div className={`world${carried ? " w-carrying" : ""}`} aria-label={loc.name}>
-      <svg ref={svg} className="world-svg" viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
+      <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`} viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
         <Defs />
         <Walls w={w} h={h} fenced={!home} />
         <polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} />
         {coldAisles(loc).map((a) => <Grate key={a.y} {...a} />)}
+        {home && <Concrete w={w} h={h} />}
         <path className="w-tile" d={grid} />
         {back}
         {things.map((x) => x.node)}
+        {over}
+        {home && <Light w={w} h={h} hd={hd} windows={[fx.window, fx.fan].flatMap((f) => (f ? [f.x] : []))} lamp={fx.lamp} desk={fx.pc?.x} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
         {carried && hand && (
           <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>

@@ -36,14 +36,17 @@ The rule: if a real sysadmin in 2005 would have had to stand up for it, it is in
 
 ## The basement
 
-The first room is the basement of the player's parents' house in Frankfurt, availability zone fra1. A floor of 12 by 9 diamond tiles in isometric view. Two walls rise along the far sides, the left wall along the first column and the right wall along the first row; the near sides are open, so nothing ever hides the player. Every fixed object stands against or hangs on a wall:
+The first room is the basement of the player's parents' house in Frankfurt, availability zone fra1. A floor of 9 by 7 diamond tiles in isometric view, tight enough that the house's own things fill it. Two walls rise along the far sides, the left wall along the first column and the right wall along the first row; the near sides are open, so nothing ever hides the player. Every fixed object stands against or hangs on a wall:
 
-- **Desk with the PC.** One wooden desk along the right wall carries the scanner at its left end and the monitor with its keyboard at its right end. Using the PC opens the desktop fullscreen. The world keeps running underneath and resumes at the same view. Using the scanner opens the scanner panel with the fetched letters.
+- **Desk with the PC.** One wooden desk along the right wall carries the scanner at its left end and the flat screen with its keyboard and a desk lamp at its right end; the beige tower and a crate of beer stand under it, and an office chair stands pushed back in front of it. Using the PC opens the desktop fullscreen. The world keeps running underneath and resumes at the same view. Using the scanner opens the scanner panel with the fetched letters.
 - **Door.** A wooden door in the left wall that swings into the room when used. The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels stack on the floor beside it.
 - **Letterbox.** A brass box on the left wall next to the door. Waiting letters stick out of its slot, with their count beside it. Using it moves every letter to the desk and opens the post panel, where each fetched letter can be read and scanned.
 - **Storage shelf.** Against the left wall, four boards high, one crate per stored device up to four. Using it opens the storage panel, or puts down a carried unit.
 - **Rack slots.** Any free floor tile against a wall takes a rack. A rack loaded from a save on a tile that is no longer against a wall moves to the next free one. The basement allows a handful, limited by the power the house gives.
-- **Power and weather.** The breaker cabinet on the left wall shows the power draw on its meter. A window with a fan sits in the right wall, and a weather display under it shows the outside sky and temperature over the room temperature from the sim.
+- **Power.** The fuse box on the left wall stands open, with rows of breakers and a meter whose counter shows the power draw and whose disc turns faster as the draw grows. A conduit runs from it up the wall and along the right wall to the racks. A wall socket below it holds the phone line jack, where the line cable from the racks ends.
+- **Windows and climate.** Two cellar windows sit high in the right wall, one with a window fan in its pane. A thermometer on the wall shows the room temperature over the outside one.
+- **The house.** The gas boiler with its pipes stands in the corner, the washing machine and a drying rack beside it. A mat lies inside the door, a drain sits in the floor and a lamp hangs from the ceiling. None of these do anything when clicked.
+- **Light.** Daylight falls from the windows across the floor, warm and long in the morning and evening and short and white at noon. At night the room darkens and the ceiling lamp and the desk lamp throw warm pools.
 
 ## Colocation rooms
 
@@ -70,11 +73,12 @@ Staff may later appear in rooms as figures at their desks, the way tycoon games 
 ## Rendering
 
 - The look is flat 2:1 isometric drawn in code: SVG in React, inside the existing store and i18n. A tile is a 64 by 32 diamond at zoom 1.
+- [World art direction](../world-art.md) sets how every object, material and light in a room is drawn.
 - Style. Each object is built from boxes drawn by one shared helper: a top, a left and a right face in two or three tones of one hue, with a thin edge in a darker tone of the same hue where faces meet. No outlines, gradients or pixel art. Flat things on a wall, such as the letterbox, the breaker cabinet and the cross-connect panel, are drawn on the wall's plane.
 - Walls. Only the two far walls are drawn, in a light neutral with a lit top edge and a skirting line along the floor. The backdrop is a flat dark blue-grey.
 - Camera. The room opens fitted to fill the window at any screen density. The wheel zooms smoothly around the pointer between 0.75 and 3; drag pans. Standing up again or returning from a trip shows each room at the zoom and position it was left at.
 - An object under the mouse or just clicked glows in the accent colour.
-- No text floats in the room; every number sits on an object, in the desktop font. The weather display shows the outside sky and temperature over the room temperature, the breaker cabinet and the PDU show the power draw, the letterbox shows its waiting letters, a parcel stack shows its count and the cross-connect panel has a plate with the carriers on site.
+- No text floats in the room; every number sits on an object, in the desktop font. The thermometer shows the room temperature over the outside one, the breaker cabinet and the PDU show the power draw, the letterbox shows its waiting letters, a parcel stack shows its count and the cross-connect panel has a plate with the carriers on site.
 - Objects sort by x + y for depth, so a nearer object overlaps a farther one. A fixture several tiles wide sorts by its farthest tile.
 - A rack is a dark box with a lit top. Zoomed out a front facing the camera shows one LED per device; from zoom 2 it shows the game's `RackFront` art scaled to fit the front face, so the real contents show. Clicking a rack opens the rack panel with the full art.
 - The door swings shut, halfway, then into the room in turn.

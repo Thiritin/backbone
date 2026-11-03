@@ -9,13 +9,16 @@ export interface Fixture { x: number; y: number; w?: number; kind?: string }
 interface Row { y: number; x0: number; x1: number; facing: Facing }
 interface Room { size: RoomSize; fixtures: Record<string, Fixture>; rows: Row[] }
 
-// Fixed objects stand against or hang on a wall: row y = 0 along the far wall, column x = 0 along the left one. The door is always on the left wall; the suite's NOC desk stands in front of the rack rows so none hides it.
+// Fixed objects stand against or hang on a wall, row y = 0 along the far wall and column x = 0 along the left one, except the basement's floor clutter. The door is always on the left wall; the suite's NOC desk stands in front of the rack rows so none hides it.
 const ROOMS: Record<SpaceKind, Room> = {
   basement: {
-    size: { w: 12, h: 9 },
+    size: { w: 9, h: 7 },
+    // The laundry corner and the desk take the far wall, under its two cellar windows; chair, mat, drain and lamp stand on the open floor.
     fixtures: {
-      scanner: { x: 4, y: 0 }, desk: { x: 5, y: 0 }, pc: { x: 6, y: 0 }, fan: { x: 8, y: 0 },
-      fusebox: { x: 0, y: 2 }, shelf: { x: 0, y: 4 }, door: { x: 0, y: 6 }, letterbox: { x: 0, y: 7 },
+      boiler: { x: 0, y: 0 }, washer: { x: 1, y: 0 }, window: { x: 1, y: 0 }, dryer: { x: 2, y: 0 },
+      scanner: { x: 3, y: 0 }, hygrometer: { x: 3, y: 0 }, desk: { x: 4, y: 0 }, pc: { x: 4, y: 0 }, fan: { x: 4, y: 0 },
+      fusebox: { x: 0, y: 1 }, jack: { x: 0, y: 1 }, shelf: { x: 0, y: 2 }, door: { x: 0, y: 4 }, letterbox: { x: 0, y: 5 },
+      chair: { x: 4, y: 1 }, mat: { x: 1, y: 4 }, drain: { x: 3, y: 5 }, lamp: { x: 4, y: 4 },
     },
     rows: [],
   },

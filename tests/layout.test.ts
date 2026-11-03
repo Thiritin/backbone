@@ -16,7 +16,8 @@ describe("rack tiles", () => {
     const s = newGame(7);
     twoRacks(s);
     const loc = basement(s);
-    expect(roomSize(loc)).toEqual({ w: 12, h: 9 });
+    expect(roomSize(loc)).toEqual({ w: 9, h: 7 });
+    expect(wallTiles(loc).length).toBeGreaterThanOrEqual(4);
     const walls = new Set(wallTiles(loc).map(key));
     for (const f of Object.values(FIXTURES.basement)) expect(walls.has(key(f))).toBe(false);
     const tiles = Object.values(rackTiles(loc, s.racks));
@@ -50,10 +51,24 @@ describe("rack tiles", () => {
     expect(new Set(Object.values(tiles).map(key)).size).toBe(Object.keys(tiles).length);
   });
 
+  it("moves racks of a 12 by 9 basement save onto the 9 by 7 room", () => {
+    const s = newGame(13);
+    twoRacks(s);
+    const loc = basement(s);
+    // Far wall and right column tiles of the old 12 by 9 basement.
+    s.racks[0].tile = { x: 10, y: 0, facing: "s" };
+    s.racks[1].tile = { x: 11, y: 6, facing: "w" };
+    const loaded = deserialize(serialize(s));
+    const tiles = rackTiles(basement(loaded), loaded.racks);
+    const walls = new Set(wallTiles(loc).map(key));
+    for (const r of loaded.racks.filter((x) => x.locationId === loc.id)) expect(walls.has(key(tiles[r.id]))).toBe(true);
+    expect(new Set(Object.values(tiles).map(key)).size).toBe(Object.keys(tiles).length);
+  });
+
   it("puts every wall tile along the far wall and the two side walls", () => {
     const loc = basement(newGame(12)), { w } = roomSize(loc);
     for (const t of wallTiles(loc)) expect(t.y === 0 ? t.facing === "s" : t.x === 0 ? t.facing === "e" : t.x === w - 1 && t.facing === "w").toBe(true);
-    for (const f of Object.values(FIXTURES.basement)) expect(f.x === 0 || f.y === 0).toBe(true);
+    for (const f of Object.values(FIXTURES.basement)) expect(f.x >= 0 && f.x < w && f.y >= 0 && f.y < roomSize(loc).h).toBe(true);
   });
 
   it("places a rack on a free wall tile and refuses a taken or inner one", () => {
