@@ -296,9 +296,9 @@ export function CableDuct({ w, h, door, socket }: { w: number; h: number; door?:
 export function LightSwitch({ f }: { f: Fixture }) {
   return (
     <g transform={wallT(f, 37)}>
-      <rect className="w-socket" x="35" y="0" width="8" height="8" />
-      <rect className="w-socket-in" x="36.6" y="1.6" width="4.8" height="4.8" />
-      <rect className="w-rocker" x="37.4" y="2.4" width="3.2" height="1.6" />
+      <rect className="w-socket" x="35" y="0" width="5" height="5" />
+      <rect className="w-socket-in" x="36" y="1" width="3" height="3" />
+      <rect className="w-rocker" x="36.5" y="1.5" width="2" height="1" />
     </g>
   );
 }
