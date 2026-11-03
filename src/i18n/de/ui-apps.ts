@@ -231,7 +231,7 @@ export default {
   "apps.kb.reads": () => "Aufrufe",
 
   "apps.guide.title": () => "Erste Schritte",
-  "apps.guide.intro": () => "Es ist Januar 2005. Du betreibst eine kleine Hosting-Firma aus einem Keller, mit einem leeren Rack und 3.500 € Erspartem. Dein Ziel ist ein eigenes Rechenzentrum, und der Weg dorthin führt über die Automatisierung deiner eigenen Arbeit.",
+  "apps.guide.intro": () => "Es ist Januar 2005. Du betreibst eine kleine Hosting-Firma aus einem Keller, mit einem Metallregal für Server und 3.500 € Erspartem. Dein Ziel ist ein eigenes Rechenzentrum, und der Weg dorthin führt über die Automatisierung deiner eigenen Arbeit.",
   "apps.guide.firstServer": () => "Dein erster Server",
   "apps.guide.setup": () => "Richte deinen ersten Webhost ein, damit Kunden Webhosting bestellen können. Jeder Schritt wird abgehakt, sobald er erledigt ist.",
   "apps.guide.wiki": () => "Wiki",

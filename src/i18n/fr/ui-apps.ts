@@ -231,7 +231,7 @@ export default {
   "apps.kb.reads": () => "Lectures",
 
   "apps.guide.title": () => "Premiers pas",
-  "apps.guide.intro": () => "Nous sommes en janvier 2005. Tu diriges une petite entreprise d'hébergement depuis un sous-sol, avec une baie vide et 3 500 € d'économies. Ton objectif est d'en faire ton propre centre de données en automatisant ton propre travail.",
+  "apps.guide.intro": () => "Nous sommes en janvier 2005. Tu diriges une petite entreprise d'hébergement depuis un sous-sol, avec une étagère métallique pour les serveurs et 3 500 € d'économies. Ton objectif est d'en faire ton propre centre de données en automatisant ton propre travail.",
   "apps.guide.firstServer": () => "Ton premier serveur",
   "apps.guide.setup": () => "Installe ton premier hébergeur web pour que les clients puissent commander un hébergement web. Chaque étape est cochée dès qu'elle est terminée.",
   "apps.guide.wiki": () => "Wiki",

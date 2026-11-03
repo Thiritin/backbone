@@ -8,7 +8,7 @@ The app and file icons in this folder come from two free icon themes. Both are l
 - License: GNU LGPL 2.1 or later, see `LGPL-2.1.txt`
 - Source: https://commons.wikimedia.org/wiki/Category:Crystal_Clear_icons
 
-The Post icon in `crystal/` comes from Crystal Project, the later set by the same author under the same license (https://commons.wikimedia.org/wiki/File:Crystal_Project_fax.png). The Security icon in `crystal/` and the Locations icon in `oxygen/` are shared across both folders: the shield is from Oxygen and the house is from Crystal Clear.
+The Post icon in `crystal/` comes from Crystal Project, the later set by the same author under the same license (https://commons.wikimedia.org/wiki/File:Crystal_Project_fax.png). The Trash and Room icons in `crystal/` are the Crystal Clear empty trash can and home folder, and the same two in `oxygen/` are the Oxygen empty trash and home folder. The Security icon in `crystal/` and the Locations icon in `oxygen/` are shared across both folders: the shield is from Oxygen and the house is from Crystal Clear.
 
 ## Oxygen (`oxygen/`)
 
