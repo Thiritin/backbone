@@ -10,7 +10,7 @@ const site = (ym: string, path = "/") => {
   return renderToString(<LexwearSite game={s} path={path} go={() => {}} />);
 };
 
-describe("Lexwear site", () => {
+describe("Taxware site", () => {
   it("lists the edition features as a plain list before 2010", () => {
     const html = site("2007-03");
     expect(html).toContain("lx-classic");

@@ -4,7 +4,7 @@ import { Label, navProps } from "./Label";
 import { GROUPS, type LayoutProps } from "./types";
 import "./menus.css";
 
-// Saga: a dense grey enterprise screen run from its menu bar.
+// Thyme: a dense grey enterprise screen run from its menu bar.
 export function MenusLayout({ entries, active, pick, children }: LayoutProps) {
   const [open, setOpen] = useState<string | null>(null);
   const current = entries.find((e) => e.id === active);

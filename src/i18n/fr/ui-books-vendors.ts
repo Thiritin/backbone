@@ -1,3 +1,4 @@
+import { t } from "../en";
 import type { Dict } from "../lang";
 
 export default {
@@ -16,7 +17,7 @@ export default {
   "books-vendors.about.orgamin": () => "Le logiciel de bureau des petites entreprises.",
   "books-vendors.about.collmix": () => "La comptabilité qui tourne dans votre navigateur.",
   "books-vendors.about.sevdeck": () => "La comptabilité dans le cloud avec synchronisation bancaire.",
-  "books-vendors.about.lexoffize": () => "Le bureau de Lexwear dans le cloud.",
+  "books-vendors.about.lexoffize": () => "Le bureau de Taxware dans le cloud.",
   "books-vendors.footer": (p) => `© ${p.year} ${p.name}`,
   "ledger.booksLicence": (p) => `Licence ${p.program}`,
   "ledger.booksMonthly": (p) => `Abonnement mensuel ${p.program}`,
@@ -32,4 +33,9 @@ export default {
   "books-vendors.download": () => "Télécharger",
   "books-vendors.downloading": (p) => `Téléchargement ${p.pct} %`,
   "books-vendors.inDownloads": () => "Dans Téléchargements",
+  "books-vendors.supportEnded": (p) => `Fin du support : ${p.year}`,
+  "ticket.mail.booksFeature.subject": (p) => `${p.program} : ${t(`books-editions.feature.${p.feature}`)}`,
+  "ticket.mail.booksFeature.text": (p) => `${p.program} inclut désormais ${t(`books-editions.feature.${p.feature}`)}.${Number(p.desktop) ? " Vous la recevrez avec votre prochaine mise à jour annuelle." : ""}`,
+  "ticket.mail.booksSupportEnd.subject": (p) => `${p.program} : fin du support`,
+  "ticket.mail.booksSupportEnd.text": (p) => `Nous ne publions plus de mises à jour pour ${p.program}. Le programme continue de fonctionner avec toutes vos données.${p.to ? ` Passez à ${p.to} et emportez tous vos clients, factures et virements.` : ""}`,
 } satisfies Dict;

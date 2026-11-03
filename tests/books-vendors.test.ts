@@ -51,17 +51,17 @@ describe("bookkeeping vendors", () => {
     own(s, "collmix");
     s.hour = at(2005, 4, 1, 0);
     booksTick(s);
-    expect(s.payables.filter((p) => p.name === "Collmix").length).toBe(2);
+    expect(s.payables.filter((p) => p.name === "Kontomix").length).toBe(2);
     own(s, "wizo");
     s.hour = at(2005, 5, 1, 0);
     booksTick(s);
-    expect(s.payables.filter((p) => p.name === "Collmix").length).toBe(2);
+    expect(s.payables.filter((p) => p.name === "Kontomix").length).toBe(2);
   });
 
   it("debits the fee straight off the cash without a bank account", () => {
     const s = game(2005, false);
     own(s, "collmix");
-    expect(s.cash).toBe(5_000 - 15);
+    expect(s.cash).toBe(5_000 - 6);
     expect(s.payables).toEqual([]);
   });
 
@@ -82,7 +82,7 @@ describe("bookkeeping vendors", () => {
     expect(s.cash).toBe(cash);
   });
 
-  it("bills the Lexwear update each year and blocks upgrades while it is unpaid", () => {
+  it("bills the Taxware update each year and blocks upgrades while it is unpaid", () => {
     const s = game(2005);
     own(s, "lexwear");
     const start = s.hour;
@@ -91,7 +91,7 @@ describe("bookkeeping vendors", () => {
       booksTick(s);
       s.hour++;
       booksTick(s);
-      expect(s.payables.filter((p) => p.name === "Lexwear").length).toBe(year);
+      expect(s.payables.filter((p) => p.name === "Taxware").length).toBe(year);
       expect(s.payables.at(-1)).toMatchObject({ amount: 99, supplier: "books" });
       expect(upgradeBooks(s, "financial-office")).toEqual({ ok: false, error: "error.updateOpen" });
       s.payables.at(-1)!.paidAt = s.hour;
@@ -99,11 +99,11 @@ describe("bookkeeping vendors", () => {
     expect(upgradeBooks(s, "financial-office")).toEqual({ ok: true });
   });
 
-  it("gives old saves with Books Lexwear and old saves without it no program", () => {
+  it("gives old saves with Books Taxware and old saves without it no program", () => {
     const raw = JSON.parse(serialize(newGame(4)));
     delete raw.books;
     raw.installed = ["Browser", "Books"];
-    expect(deserialize(JSON.stringify(raw)).books).toEqual({ vendor: "lexwear", installedAt: 0, edition: "buchhalter", seats: 0, download: null });
+    expect(deserialize(JSON.stringify(raw)).books).toEqual({ vendor: "lexwear", installedAt: 0, edition: "buchhalter", seats: 0, download: null, addons: [] });
     raw.installed = ["Browser"];
     expect(deserialize(JSON.stringify(raw)).books.vendor).toBeNull();
   });
@@ -111,7 +111,7 @@ describe("bookkeeping vendors", () => {
   it("starts a new game without Books and ticks the Getting started step on install", () => {
     const s = game(2005);
     expect(STARTER_APPS).not.toContain("Books");
-    expect(s.books).toEqual({ vendor: null, installedAt: 0, edition: null, seats: 0, download: null });
+    expect(s.books).toEqual({ vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] });
     expect(TUTORIAL.indexOf("books")).toBeGreaterThan(TUTORIAL.indexOf("register"));
     expect(TUTORIAL.indexOf("books")).toBeLessThan(TUTORIAL.indexOf("firstCustomer"));
     expect(checkDone(s, "books")).toBe(false);
@@ -121,9 +121,12 @@ describe("bookkeeping vendors", () => {
 
   it("puts each vendor's site in the Browser and in the index from its year", () => {
     const s = game(2005);
+    expect(resolve(s, "www.warum.de/").page).toEqual({ kind: "books", id: "wizo" });
+    expect(resolve(s, "www.taxware.de/").page).toEqual({ kind: "lexwear" });
+    expect(resolve(s, "www.eightdesk.de/").page.kind).not.toBe("books");
+    // Tabs saved before the renames keep their sites.
     expect(resolve(s, "www.wizo.de/").page).toEqual({ kind: "books", id: "wizo" });
     expect(resolve(s, "www.lexwear.de/").page).toEqual({ kind: "lexwear" });
-    expect(resolve(s, "www.sevdeck.de/").page.kind).not.toBe("books");
     const rows = (x: GameState) => siteIndex(x).find((c) => c.title === "Bookkeeping")!.rows.map((r) => r.title);
     expect(rows(s)).toEqual(BOOKS_VENDORS.filter((v) => v.from === 2005).map((v) => v.program));
     s.hour = at(2014, 6, 1);

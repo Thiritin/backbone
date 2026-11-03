@@ -3,7 +3,7 @@ import { Label, navProps } from "./Label";
 import { GROUPS, ICONS, type LayoutProps } from "./types";
 import "./tree.css";
 
-// Lexwear: a grey Windows 2000 program, a row of small icons on top and the folder tree on the left.
+// Taxware: a grey Windows 2000 program, a row of small icons on top and the folder tree on the left.
 export function TreeLayout({ entries, active, pick, children }: LayoutProps) {
   return (
     <div className="bk-tree">

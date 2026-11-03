@@ -3,7 +3,7 @@ import type { OwnWebspace, WebspaceOverlay } from "./60-infra/webspace";
 import type { SqlDump } from "./60-infra/webdb";
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
-import type { BooksDownload, BooksVendorId } from "./10-catalog/bookkeeping";
+import type { BooksDownload, BooksVendorId, Feature } from "./10-catalog/bookkeeping";
 import type { Vendor } from "./10-catalog/cpus";
 import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
@@ -412,8 +412,8 @@ export interface GameState {
   // Bought software modules by id; "hbci" lets Books talk to the bank.
   modules: string[];
   // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
-  // The bookkeeping program, its edition and the seats bought beyond the edition's users.
-  books: { vendor: BooksVendorId | null; installedAt: number; edition: string | null; seats: number; download: BooksDownload | null; setupDone?: boolean };
+  // The bookkeeping program, its edition, the seats bought beyond the edition's users and the add-ons bought for it.
+  books: { vendor: BooksVendorId | null; installedAt: number; edition: string | null; seats: number; download: BooksDownload | null; setupDone?: boolean; addons: Feature[] };
   // The tax office's file on the company (80-business/tax.ts).
   tax: TaxState;
   // Logins KeePassive saved, by site ("fritz:<router id>", "bank:<bank id>"): the form's values in field order.
@@ -519,7 +519,7 @@ export const newGame = (seed: number): GameState => ({
   letters: [],
   chamberYear: 0,
   modules: [],
-  books: { vendor: null, installedAt: 0, edition: null, seats: 0, download: null },
+  books: { vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] },
   tax: newTax(),
   logins: {},
   mail: newMail(seed, START_NAME),

@@ -10,7 +10,7 @@ const site = (ym: string, path = "/") => {
   return renderToString(<LexoffizeSite game={s} path={path} go={() => {}} />);
 };
 
-describe("lexoffize site", () => {
+describe("Rexoffice site", () => {
   it("shows the pricing table on the 2014 launch site", () => {
     const html = site("2014-05");
     expect(html).toContain("lo-launch");

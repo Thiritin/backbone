@@ -3,7 +3,7 @@ import type { Dict } from "./lang";
 // The Shop link module on the shop vendors' sites, Import from shop in Books, the shop's own records and gateway payouts.
 export default {
   "vendor-sites.module.shop-link": () => "Shop link",
-  "vendor-sites.pitch.shop-link": () => "Shop link copies every customer and invoice from your shop into Lexwear Office as it is created and marks an invoice paid in the shop once Books books its payment.",
+  "vendor-sites.pitch.shop-link": () => "Shop link copies every customer and invoice from your shop into Taxware Office as it is created and marks an invoice paid in the shop once Books books its payment.",
   "ledger.module.shop-link": () => "Shop link licence",
   "ticket.mail.shop-link.licence.subject": (p) => `Your licence key for ${p.module}`,
   "ticket.mail.shop-link.licence.text": (p) => `Thank you for buying ${p.module} for ${p.shop}. Your licence key is ${p.key}. Enter it under Register in Books to connect your shop.`,

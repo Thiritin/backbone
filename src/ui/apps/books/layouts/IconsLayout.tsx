@@ -2,7 +2,7 @@ import { Label, navProps } from "./Label";
 import { ICONS, type LayoutProps } from "./types";
 import "./icons.css";
 
-// WIZO: a friendly blue program with a row of large icons on top.
+// WARUM: a friendly blue program with a row of large icons on top.
 export function IconsLayout({ entries, active, pick, children }: LayoutProps) {
   return (
     <div className="bk-icons">

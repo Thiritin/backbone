@@ -1,4 +1,4 @@
-/* sevDeck: a flat SaaS landing page, its pricing table drawn as one white card per edition. */
+/* EightDesk: a flat SaaS landing page, its pricing table drawn as one white card per edition. */
 .sd { --sd-brand: #0f8b8d; --sd-accent: #0f8b8d; --sd-head: #fff; --sd-head-ink: #2c3e40; --sd-page: #f3f7f7; --sd-ink: #2c3e40;
   --sd-radius: 3px; min-height: 100%; background: var(--sd-page); color: var(--sd-ink);
   font: 13px/1.5 "Helvetica Neue", Arial, sans-serif; }

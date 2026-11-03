@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LARGE, MEDIUM } from "../src/sim/10-catalog/bookkeeping";
+import { booksVendor } from "../src/sim/10-catalog/bookkeeping";
 import { billingTick, isUnpaid } from "../src/sim/45-billing/billing";
 import { tick } from "../src/sim/88-tick/tick";
 import { cancelDraft, markPaid, reopenInvoice, sendInvoice } from "../src/sim/90-actions/billing";
@@ -54,7 +54,8 @@ describe("invoice status by hand", () => {
   });
 
   it("sells the dunning levels overview with the top editions only", () => {
-    expect(LARGE).toContain("dunning");
-    expect(MEDIUM).not.toContain("dunning");
+    const [line, plus] = booksVendor("saga")!.editions;
+    expect(plus.features).toContain("dunning");
+    expect(line.features).not.toContain("dunning");
   });
 });

@@ -2,10 +2,10 @@ import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { euro } from "../../../../../sim/00-core/money";
 import { nowHours, yearOf } from "../../../../../sim/00-core/time";
-import { booksVendor, type BooksVendor, type BooksVendorId, type Edition } from "../../../../../sim/10-catalog/bookkeeping";
+import { booksVendor, featuresIn, type BooksVendor, type BooksVendorId, type Edition, type Feature } from "../../../../../sim/10-catalog/bookkeeping";
 import type { GameState } from "../../../../../sim/50-state";
 import { booksUrl, currentEdition, licencePrice } from "../../../../../sim/80-business/bookkeeping";
-import { buyBooks, setSeats, upgradeBooks } from "../../../../../sim/90-actions/bookkeeping";
+import { buyAddon, buyBooks, setSeats, upgradeBooks } from "../../../../../sim/90-actions/bookkeeping";
 import { usePageAct } from "../../pageAct";
 import "./books-vendors.css";
 
@@ -13,11 +13,11 @@ export interface SiteProps { game: GameState; path: string; go: (url: string) =>
 // brand, ink, page and font give the vendor's look; flat drops the 2005 bevels for the cloud vendors.
 export interface Look { brand: string; ink: string; page: string; font: string; flat?: boolean }
 
-// The edition a site's path names, as in www.wizo.de/edition/l.
+// The edition a site's path names, as in www.warum.de/edition/l.
 export const editionIn = (path: string): string | undefined => /^\/edition\/([\w-]+)/.exec(path)?.[1];
 
 const amount = (v: BooksVendor, n: number) => (v.deployment === "browser" ? t("books-editions.perMonth", { price: euro(n) }) : euro(n));
-// The program and edition name without the words they share, as in Saga Office Line + Office Line Plus.
+// The program and edition name without the words they share.
 const titleOf = (v: BooksVendor, e: Edition) => {
   const p = v.program, i = [...p].findIndex((_, i) => (i === 0 || p[i - 1] === " ") && e.name.startsWith(p.slice(i)));
   return i < 0 ? `${p} ${e.name}` : p.slice(0, i) + e.name;
@@ -52,6 +52,19 @@ function Seats({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition }) 
   );
 }
 
+// Features the vendor sells for every edition; the company's program buys them here.
+function Addons({ game, v }: { game: GameState; v: BooksVendor }) {
+  const act = usePageAct(), mine = game.books.vendor === v.id;
+  return (Object.entries(v.addons ?? {}) as [Feature, number][]).map(([f, price]) => (
+    <div key={f} className="bv-row">
+      <span>{t(`books-editions.feature.${f}`)}</span>
+      <span className="num">{amount(v, price)}</span>
+      {mine && (game.books.addons.includes(f) ? <span className="bv-state">{t("books-editions.yours")}</span>
+        : <button type="button" className="bv-buy" onClick={() => act(buyAddon, f)}>{t("vendor-sites.buy")}</button>)}
+    </div>
+  ));
+}
+
 // The vendor's editions with their price, users and features, and the seats of the edition the company runs:
 // a plain list on an early site, a pricing table with the editions side by side once table is set.
 export function Editions({ game, v, one, table }: { game: GameState; v: BooksVendor; one?: string; table?: boolean }) {
@@ -59,32 +72,37 @@ export function Editions({ game, v, one, table }: { game: GameState; v: BooksVen
   const now = game.books.vendor === v.id ? currentEdition(game) : undefined;
   const price = (e: Edition) => (e.price ? amount(v, e.price) : t("books-editions.free"));
   const seated = shown.find((e) => now?.id === e.id && e.seat > 0);
+  const year = yearOf(game.hour), has = (e: Edition) => featuresIn(v, e, year);
+  const ended = v.supportEnd && year >= v.supportEnd ? <p>{t("books-vendors.supportEnded", { year: v.supportEnd })}</p> : null;
   if (table) {
-    const features = [...new Set(shown.flatMap((e) => e.features))];
+    const features = [...new Set(shown.flatMap(has))];
     return (
       <>
+        {ended}
         <table className="bv-table">
           <thead><tr><th />{shown.map((e) => <th key={e.id} scope="col">{e.name}</th>)}</tr></thead>
           <tbody>
             <tr className="bv-price"><th scope="row" />{shown.map((e) => <td key={e.id}><span className="num">{price(e)}</span>{e.update > 0 && <small>{t("books-vendors.priceUpdates", { price: euro(e.update) })}</small>}</td>)}</tr>
             {features.map((f) => (
-              <tr key={f}><th scope="row">{t(`books-editions.feature.${f}`)}</th>{shown.map((e) => <td key={e.id}>{e.features.includes(f) ? "✓" : "–"}</td>)}</tr>
+              <tr key={f}><th scope="row">{t(`books-editions.feature.${f}`)}</th>{shown.map((e) => <td key={e.id}>{has(e).includes(f) ? "✓" : "–"}</td>)}</tr>
             ))}
             <tr><th scope="row" />{shown.map((e) => <td key={e.id}>{users(e)}</td>)}</tr>
             <tr><th scope="row" />{shown.map((e) => <td key={e.id}><Action game={game} v={v} e={e} /></td>)}</tr>
           </tbody>
         </table>
         {seated && <Seats game={game} v={v} e={seated} />}
+        <Addons game={game} v={v} />
       </>
     );
   }
   return (
     <div className="bv-editions">
+      {ended}
       {shown.map((e) => (
         <div key={e.id} className="bv-edition">
           <h2>{titleOf(v, e)}</h2>
           <ul>
-            {e.features.map((f) => <li key={f}>{t(`books-editions.feature.${f}`)}</li>)}
+            {has(e).map((f) => <li key={f}>{t(`books-editions.feature.${f}`)}</li>)}
             <li>{users(e)}</li>
           </ul>
           <p>
@@ -95,6 +113,7 @@ export function Editions({ game, v, one, table }: { game: GameState; v: BooksVen
           {now?.id === e.id && e.seat > 0 && <Seats game={game} v={v} e={e} />}
         </div>
       ))}
+      <Addons game={game} v={v} />
     </div>
   );
 }

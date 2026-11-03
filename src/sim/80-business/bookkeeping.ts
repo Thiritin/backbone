@@ -1,23 +1,29 @@
 // docs/design/plans/billing-by-hand.md, 9c and 9d: the installed bookkeeping program, its edition, fees, seats and chores.
-import { dateOf, isMonthStart } from "../00-core/time";
-import { booksVendor, editionById, type BooksVendor, type Edition, type Feature } from "../10-catalog/bookkeeping";
+import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
+import { booksVendor, editionById, featuresIn, type BooksVendor, type BooksVendorId, type Edition, type Feature } from "../10-catalog/bookkeeping";
 import { bookTransfer, cents, isUnpaid, issue, owed, payerOf, synced, type Invoice, type Transfer } from "../45-billing/billing";
 import { invoice, invoicing, lineCut } from "../46-finance/payables";
+import { deliverMail } from "../42-mail/sources";
 import { logActivity } from "../47-staff/activity";
 import type { Employee } from "../47-staff/staff";
 import type { GameState, LedgerEntry } from "../50-state";
 
 export const YEAR_HOURS = 365 * 24;
 export const MONTHLY_RUN_HOUR = 9;
-export const LICENCE_KEY = "ledger.booksLicence", MONTHLY_KEY = "ledger.booksMonthly", UPDATE_KEY = "ledger.booksUpdate", SEAT_KEY = "ledger.booksSeat";
+export const LICENCE_KEY = "ledger.booksLicence", MONTHLY_KEY = "ledger.booksMonthly", UPDATE_KEY = "ledger.booksUpdate", SEAT_KEY = "ledger.booksSeat", HBCI_KEY = "ledger.booksHbci";
 
 export const currentVendor = (s: GameState): BooksVendor | undefined => booksVendor(s.books.vendor);
 export const currentEdition = (s: GameState): Edition | undefined => {
   const v = currentVendor(s);
   return v && editionById(v, s.books.edition);
 };
-export const LEXWEAR_HOST = "lexwear.de";
-export const booksHost = (v: BooksVendor): string => (v.id === "gnucache" ? "gnucache.org" : `${v.id}.de`);
+const HOSTS: Record<BooksVendorId, string> = {
+  lexwear: "taxware.de", wizo: "warum.de", saga: "thyme.de", orgamin: "orgamin.de", collmix: "kontomix.de", sevdeck: "eightdesk.de", lexoffize: "rexoffice.de", gnucache: "gnucache.org",
+};
+export const LEXWEAR_HOST = HOSTS.lexwear;
+export const booksHost = (v: BooksVendor): string => HOSTS[v.id];
+// The host before the vendors were renamed, still answered for tabs and links in older saves.
+export const oldBooksHost = (v: BooksVendor): string => `${v.id}.de`;
 // The vendor's shop, or its page for one edition.
 export const booksUrl = (v: BooksVendor, edition?: string): string => `www.${booksHost(v)}/${edition ? `edition/${edition}` : ""}`;
 // Where a browser program runs.
@@ -25,9 +31,18 @@ export const booksAppUrl = (v: BooksVendor): string => `www.${booksHost(v)}/app`
 
 // A browser program is unusable while the internet line is missing, throttled or cut.
 export const booksOffline = (s: GameState): boolean => currentVendor(s)?.deployment === "browser" && (!s.homeLine.id || lineCut(s));
-// The edition has the feature; works says whether it runs right now.
-export const hasFeature = (s: GameState, f: Feature): boolean => !!currentEdition(s)?.features.includes(f);
-export const works = (s: GameState, f: Feature): boolean => hasFeature(s, f) && !booksOffline(s);
+// The year whose features the program has: today's for a browser program, its last yearly update's for a desktop one.
+export const versionYear = (s: GameState, v: BooksVendor): number => {
+  const age = Math.max(0, s.hour - s.books.installedAt);
+  return yearOf(v.deployment === "browser" ? s.hour : s.books.installedAt + age - (age % YEAR_HOURS));
+};
+// The edition, a shipped update or a bought add-on has the feature; works says whether it runs right now.
+export const hasFeature = (s: GameState, f: Feature): boolean => {
+  const v = currentVendor(s), e = currentEdition(s);
+  return !!v && !!e && (featuresIn(v, e, versionYear(s, v)).includes(f) || s.books.addons.includes(f));
+};
+export const works = (s: GameState, f: Feature): boolean =>
+  hasFeature(s, f) && !booksOffline(s) && yearOf(s.hour) < (currentVendor(s)?.breaks?.[f] ?? Infinity);
 
 // Staff who may work in the program besides the player: the licence's further users and the bought seats.
 export const seatsFor = (s: GameState): number => Math.max(0, (currentEdition(s)?.users ?? 1) - 1 + s.books.seats);
@@ -38,7 +53,7 @@ export const seated = (s: GameState, e: Employee): boolean => {
   return !clerk(e) || i < seatsFor(s);
 };
 
-// An unpaid Lexwear update stops upgrades until it is paid.
+// An unpaid Taxware update stops upgrades until it is paid.
 export const updateOpen = (s: GameState): boolean => s.payables.some((p) => p.paidAt === null && p.lines.some((e) => e.key === UPDATE_KEY));
 
 // What the program has cost so far, so a reinstall or an upgrade pays only the difference.
@@ -99,6 +114,15 @@ export const matchByReference = (s: GameState): void => [...s.transfers].forEach
   if (inv) bookFor(s, tr, inv, false, by(s));
 });
 
+// The vendor's mail to its users when a feature ships and when updates stop, on the morning of the year's first day.
+function vendorNews(s: GameState, v: BooksVendor): void {
+  const on = (y: number) => s.hour === hourOf(new Date(Date.UTC(y, 0, 1, MONTHLY_RUN_HOUR)));
+  for (const [f, y] of Object.entries(v.ships ?? {})) {
+    if (on(y)) deliverMail(s, v.name, "booksFeature", { program: v.program, feature: f, desktop: v.deployment === "desktop" ? 1 : 0 }, { source: "vendor" });
+  }
+  if (v.supportEnd && on(v.supportEnd)) deliverMail(s, v.name, "booksSupportEnd", { program: v.program, to: booksVendor(v.successor)?.program ?? "" }, { source: "vendor" });
+}
+
 // Hourly: the monthly fee at each month start, the update fee on each anniversary of the install, and the edition's chores.
 export function booksTick(s: GameState): void {
   const v = currentVendor(s), e = currentEdition(s);
@@ -106,7 +130,8 @@ export function booksTick(s: GameState): void {
   const fee = monthlyFee(v, e, s.books.seats);
   if (fee && isMonthStart(s.hour)) bill(s, v, MONTHLY_KEY, fee, { edition: e.name });
   const age = s.hour - s.books.installedAt;
-  if (e.update && age > 0 && age % YEAR_HOURS === 0) bill(s, v, UPDATE_KEY, e.update, { edition: e.name });
+  if (e.update && age > 0 && age % YEAR_HOURS === 0 && yearOf(s.hour) < (v.supportEnd ?? Infinity)) bill(s, v, UPDATE_KEY, e.update, { edition: e.name });
+  vendorNews(s, v);
   const d = dateOf(s.hour);
   if (works(s, "monthly-run") && d.getUTCDate() === 1 && d.getUTCHours() === MONTHLY_RUN_HOUR) monthlyRun(s);
   if (works(s, "match-by-reference")) matchByReference(s);
