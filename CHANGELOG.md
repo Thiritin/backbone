@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- The rooms are drawn in a clean isometric style again, with every object in the colocation rooms drawn to match.
 - Deliveries to your own place now arrive at the room's door, where you pick up each parcel and carry it to the shelf or straight to a rack to install it.
 - Letters now wait in the basement letterbox until you walk over and fetch them, and the scanner beside the desk files a fetched letter into DocuWhere.
 - Colocation sites are rooms of their own now, with a cage door, a cross-connect panel showing the carriers on site and a cold aisle in front of the racks, and the trip back starts from their door.
