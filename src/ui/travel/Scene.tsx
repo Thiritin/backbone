@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { dateOf } from "../../sim/00-core/time";
 import { datacenterById, dcProvider } from "../../sim/20-world/datacenters";
 import type { Location } from "../../sim/50-state";
+import { hasMark, Logo } from "../art/logos";
 import { useStore } from "../store";
 import { useTrip } from "./route";
 import { carDoor, engineStart, engineStop } from "./sounds";
@@ -93,7 +94,7 @@ export function Scene({ place, leaving }: { place: Location; leaving: boolean })
         <rect width="320" height="70" fill={top} />
         <rect y="70" width="320" height="76" fill={low} />
         {night && [[20, 12], [70, 30], [130, 8], [190, 24], [250, 14], [300, 40], [160, 50], [40, 56]].map(([x, y]) => <rect key={x} x={x} y={y} width="1" height="1" fill="oklch(0.95 0.02 90)" />)}
-        {house ? <House door={door} night={night} /> : <Datacenter door={door} name={place.dc ? dcProvider(datacenterById(place.dc).provider).name : place.name} />}
+        {house ? <House door={door} night={night} /> : <Datacenter door={door} name={place.dc ? dcProvider(datacenterById(place.dc).provider).name : place.name} provider={place.dc ? datacenterById(place.dc).provider : null} />}
         <rect y={GROUND - 6} width="320" height="6" fill="oklch(0.7 0.006 255)" />
         {Array.from({ length: 20 }, (_, i) => <rect key={i} x={i * 16} y={GROUND - 6} width="1" height="6" fill="oklch(0.62 0.006 255)" />)}
         <rect y={GROUND} width="320" height="2" fill="oklch(0.55 0.006 255)" />
@@ -143,15 +144,15 @@ function House({ door, night }: { door: number; night: boolean }) {
   );
 }
 
-function Datacenter({ door, name }: { door: number; name: string }) {
+function Datacenter({ door, name, provider }: { door: number; name: string; provider: string | null }) {
   return (
     <g>
       <rect x="6" y="66" width="150" height={GROUND - 6 - 66} fill="url(#tr-plaster)" stroke={INK} />
       <rect x="6" y="66" width="150" height="4" fill="oklch(0.58 0.006 255)" stroke={INK} />
       {[80, 92].map((y) => [100, 112, 124, 136].map((x) => <g key={`${x}-${y}`}><rect x={x} y={y} width="10" height="8" fill="oklch(0.5 0.006 255)" />{[1, 3, 5, 7].map((d) => <rect key={d} x={x} y={y + d} width="10" height="1" fill="oklch(0.4 0.006 255)" />)}</g>))}
       <rect x="20" y="78" width="66" height="14" fill="oklch(0.96 0.005 255)" stroke={INK} />
-      <rect x="22" y="80" width="4" height="10" fill="oklch(0.53 0.19 262)" />
-      <text x="56" y="88.5" textAnchor="middle" className="tr-plate">{name}</text>
+      {provider && hasMark(provider) ? <g transform="translate(22 80)"><Logo provider={provider} size={10} /></g> : <rect x="22" y="80" width="4" height="10" fill="oklch(0.53 0.19 262)" />}
+      <text x="57" y="88.5" textAnchor="middle" className="tr-plate">{name}</text>
       <rect x={door - 11} y="110" width="22" height="30" fill="oklch(0.42 0.01 255)" stroke={INK} />
       <rect x={door - 9} y="112" width="8" height="28" fill="oklch(0.55 0.05 225)" />
       <rect x={door + 1} y="112" width="8" height="28" fill="oklch(0.55 0.05 225)" />
