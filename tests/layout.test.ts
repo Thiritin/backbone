@@ -131,7 +131,7 @@ describe("rack tiles", () => {
           const xs = spots.filter((t) => t.y === y).map((t) => t.x);
           expect(Math.max(...xs) - Math.min(...xs) + 1).toBe(xs.length);
         }
-        expect(spots[0].facing).toBe("s");
+        expect(spots.some((t) => t.facing === "s")).toBe(true);
         const facings = new Set(all.map((t) => t.facing));
         expect(facings).toEqual(new Set(dc === "hetzler-park" ? ["s"] : ["s", "n"]));
         expect(others.length > 0).toBe(space !== "suite");

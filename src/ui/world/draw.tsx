@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import type { Fixture, Tile } from "../../sim/20-world/layout";
+import type { Cage, Fixture, Tile } from "../../sim/20-world/layout";
 import { RackFront, type RackItem } from "../art/RackFront";
 import { center, iso, type Pt } from "./grid";
 
 export const WALL = 96;
-const DOOR_H = 64, FENCE = 72, DESK_Z = 25;
+const DOOR_H = 64, FENCE = 84, DESK_Z = 25;
 // Rack art is drawn 110 wide with 10 per unit, about a 19-inch front.
 const RACK_W = 110, ART_U = 10;
 export const PARCEL_H = 12;
@@ -33,13 +33,14 @@ export function Prism({ x0, y0, x1, y1, z0 = 0, z1, tone }: { x0: number; y0: nu
   );
 }
 
-// The two far walls with a lit top edge and skirting; rented rooms add the cage fence and a cable tray along it.
-export function Walls({ w, h, fenced }: { w: number; h: number; fenced: boolean }) {
+// The two far walls with a lit top edge and skirting; a datacenter hangs a cable tray with cables along both.
+export function Walls({ w, h, dc }: { w: number; h: number; dc: boolean }) {
   const O = iso(0, 0), X = iso(w, 0), Y = iso(0, h), top = up(O, WALL), OUT_L = iso(-0.25, 0), OUT_R = iso(0, -0.25);
   return (
     <g className="w-walls" pointerEvents="none">
       <defs>
         <pattern id="w-mesh" width="5" height="5" patternUnits="userSpaceOnUse"><path className="w-mesh-line" d="M0,0 L5,5 M5,0 L0,5" /></pattern>
+        <pattern id="w-rack-mesh" width="7" height="7" patternUnits="userSpaceOnUse"><path className="w-rack-mesh-line" d="M0,0 L7,7 M7,0 L0,7" /></pattern>
       </defs>
       <polygon className="w-wall-l" points={pts(O, Y, up(Y, WALL), top)} />
       <polygon className="w-wall-r" points={pts(O, X, up(X, WALL), top)} />
@@ -48,35 +49,63 @@ export function Walls({ w, h, fenced }: { w: number; h: number; fenced: boolean 
       <polygon className="w-wall-end" points={pts(Y, add(Y, OUT_L), up(add(Y, OUT_L), WALL), up(Y, WALL))} />
       <polygon className="w-wall-end" points={pts(X, add(X, OUT_R), up(add(X, OUT_R), WALL), up(X, WALL))} />
       <polygon className="w-wall-top" points={pts(top, up(Y, WALL), add(up(Y, WALL), OUT_L), add(top, OUT_L), up(top, -2 * OUT_L.y), add(top, OUT_R), add(up(X, WALL), OUT_R), up(X, WALL))} />
-      {fenced && <>
-        <g transform={onX(0, h, 0)}><Fence len={h * 32} /></g>
-        <g transform={onY(0, 0, 0)}><Fence len={w * 32} /></g>
+      {dc && <>
+        <g transform={onX(0, h, 0)}><Tray len={h * 32} /></g>
+        <g transform={onY(0, 0, 0)}><Tray len={w * 32} /></g>
       </>}
     </g>
   );
 }
 
-function Fence({ len }: { len: number }) {
+// A cable tray under the ceiling on its hangers, with a bundle of cables lying in it.
+function Tray({ len }: { len: number }) {
   return (
     <>
+      {["w-strand-a", "w-strand-b", "w-strand-c"].map((c, i) => <rect key={c} className={c} x="0" y={-WALL + 6.2 + i * 0.6} width={len} height="0.9" />)}
       <rect className="w-tray" x="0" y={-WALL + 8} width={len} height="4" />
-      {Array.from({ length: Math.floor(len / 64) }, (_, i) => <rect key={i} className="w-tray" x={i * 64 + 30} y={-WALL + 12} width="2" height="6" />)}
-      <rect fill="url(#w-mesh)" x="0" y={-FENCE} width={len} height={FENCE} />
-      <rect className="w-post" x="0" y={-FENCE} width={len} height="2" />
-      {Array.from({ length: len / 32 + 1 }, (_, i) => <rect key={i} className="w-post" x={Math.min(i * 32, len - 2)} y={-FENCE} width="2" height={FENCE} />)}
+      {Array.from({ length: Math.floor(len / 64) }, (_, i) => <rect key={i} className="w-tray" x={i * 64 + 30} y={-WALL + 2} width="1.5" height="6" />)}
     </>
   );
 }
 
-// The raised floor's grated panels along a cold aisle, a lighter tone with a fine grid.
-export function Grate({ y, x0, x1 }: { y: number; x0: number; x1: number }) {
+// The mesh fence around a cage between square posts, split into one panel per tile edge so each sorts with the racks beside it; the door in the near side carries a lock and a badge reader on its post.
+export function cageFence(c: Cage): { depth: number; node: ReactNode }[] {
+  const panel = (k: string, t: string, depth: number, door = false) => ({ depth, node: (
+    <g key={k} transform={t} pointerEvents="none">
+      <rect fill="url(#w-mesh)" x="0" y={-FENCE} width="32" height={FENCE} />
+      <rect className="w-post" x="0" y={-FENCE} width="32" height="2" />
+      <rect className="w-post" x="0" y="-3" width="32" height="1.5" />
+      <rect className="w-post" x="0" y={-FENCE} width="2" height={FENCE} />
+      <rect className="w-post" x="30" y={-FENCE} width="2" height={FENCE} />
+      {door && <>
+        <rect className="w-cage-frame" x="4" y={2 - DOOR_H - 6} width="24" height={DOOR_H + 2} />
+        <rect className="w-cage-lock" x="23" y={-DOOR_H / 2 - 3} width="3" height="6" rx="0.5" />
+        <rect className="w-reader" x="-6" y={-DOOR_H / 2 - 5} width="5" height="8" />
+        <rect className="w-led w-led-on" x="-4.6" y={-DOOR_H / 2 - 3.5} width="2" height="1.2" />
+      </>}
+    </g>
+  ) });
+  const out = [];
+  for (let x = c.x0; x <= c.x1; x++) {
+    out.push(panel(`f${x}`, onY(x, c.y0, 0), x + c.y0 - 0.5));
+    out.push(panel(`n${x}`, onY(x, c.y1 + 1, 0), x + c.y1 + 0.95, x === c.door));
+  }
+  for (let y = c.y0; y <= c.y1; y++) {
+    out.push(panel(`l${y}`, onX(c.x0, y + 1, 0), c.x0 + y - 0.5));
+    out.push(panel(`r${y}`, onX(c.x1 + 1, y + 1, 0), c.x1 + y + 0.95));
+  }
+  return out;
+}
+
+// The raised floor of a datacenter: one tone with the fine grid of its panels.
+export function RaisedFloor({ w, h }: { w: number; h: number }) {
   const lines: string[] = [];
-  for (let k = 1; k < 4; k++) lines.push(`M${pts(iso(x0, y + k / 4))} L${pts(iso(x1 + 1, y + k / 4))}`);
-  for (let x = x0; x <= x1 + 1; x += 0.25) lines.push(`M${pts(iso(x, y))} L${pts(iso(x, y + 1))}`);
+  for (let x = 0; x <= w; x += 0.5) lines.push(`M${pts(iso(x, 0))} L${pts(iso(x, h))}`);
+  for (let y = 0; y <= h; y += 0.5) lines.push(`M${pts(iso(0, y))} L${pts(iso(w, y))}`);
   return (
     <g pointerEvents="none">
-      <polygon className="w-grate" points={pts(iso(x0, y), iso(x1 + 1, y), iso(x1 + 1, y + 1), iso(x0, y + 1))} />
-      <path className="w-grate-line" d={lines.join(" ")} />
+      <polygon className="w-raised" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} />
+      <path className="w-raised-line" d={lines.join(" ")} />
     </g>
   );
 }
@@ -485,55 +514,29 @@ export function Letterbox({ f, count, shown }: { f: Fixture; count: number; show
 }
 
 // A doorway in the left wall; the panel hinges at the near jamb and is skewed shut, halfway, then into the room.
-// The basement has a wooden door, rented rooms a cage door of mesh in a metal frame.
-export function Door({ f, open, cage }: { f: Fixture; open: number; cage: boolean }) {
+// The basement has a wooden door, a datacenter a steel door with a push bar and a badge reader beside it.
+export function Door({ f, open, steel }: { f: Fixture; open: number; steel: boolean }) {
   const hinge = at3(0, f.y + 0.875, 0), pw = 24, k = [-0.5, 0, 0.5][open];
   return (
     <>
       <g transform={wallT(f, DOOR_H + 6)}>
-        <rect className={cage ? "w-cage-jamb" : "w-jamb"} x="0" y="0" width="32" height={DOOR_H + 6} />
+        <rect className={steel ? "w-steel-jamb" : "w-jamb"} x="0" y="0" width="32" height={DOOR_H + 6} />
         <rect className="w-doorway" x="4" y="6" width="24" height={DOOR_H} />
+        {steel && <><rect className="w-reader" x="29" y={DOOR_H / 2} width="2.5" height="6" /><rect className="w-led w-led-on" x="29.5" y={DOOR_H / 2 + 1} width="1.5" height="1" /></>}
       </g>
       <g transform={plane(hinge, k)}>
-        {cage ? (
-          <>
-            <rect fill="url(#w-mesh)" x="0" y={-DOOR_H} width={pw} height={DOOR_H} />
-            <rect className="w-cage-frame" x="1" y={1 - DOOR_H} width={pw - 2} height={DOOR_H - 2} />
-            <rect className="w-cage-lock" x={pw - 5} y={-DOOR_H / 2 - 3} width="3" height="6" rx="0.5" />
-          </>
-        ) : (
-          <>
-            <rect className="w-panel" x="0" y={-DOOR_H} width={pw} height={DOOR_H} />
+        <g className={steel ? "w-steel" : undefined}>
+          <rect className="w-panel" x="0" y={-DOOR_H} width={pw} height={DOOR_H} />
+          {steel ? <rect className="w-panel-in" x="3" y={-DOOR_H / 2 - 2} width={pw - 6} height="2.5" /> : <>
             <rect className="w-panel-in" x="4" y={6 - DOOR_H} width={pw - 8} height={DOOR_H / 2 - 9} />
             <rect className="w-panel-in" x="4" y={-DOOR_H / 2 + 3} width={pw - 8} height={DOOR_H / 2 - 9} />
-            <rect className="w-hinge" x="0" y={8 - DOOR_H} width="1.2" height="5" />
-            <rect className="w-hinge" x="0" y="-13" width="1.2" height="5" />
-            <circle className="w-knob" cx={pw - 4} cy={-DOOR_H / 2} r="1.8" />
-          </>
-        )}
+          </>}
+          <rect className="w-hinge" x="0" y={8 - DOOR_H} width="1.2" height="5" />
+          <rect className="w-hinge" x="0" y="-13" width="1.2" height="5" />
+          <circle className="w-knob" cx={pw - 4} cy={-DOOR_H / 2} r="1.8" />
+        </g>
       </g>
     </>
-  );
-}
-
-// Patch panel on the far wall with a few cables, and the carriers on site on a plate beside it.
-export function CrossConnect({ f, carriers }: { f: Fixture; carriers: string[] }) {
-  const len = (f.w ?? 1) * 32;
-  return (
-    <g transform={wallT(f, 84)}>
-      <rect className="w-xc" x="4" y="0" width={len - 8} height="30" rx="1.5" />
-      {[0, 1, 2].map((r) => Array.from({ length: Math.floor((len - 16) / 5) }, (_, i) => (
-        <rect key={`${r}-${i}`} className="w-port" x={8 + i * 5} y={4 + r * 8} width="3" height="3" />
-      )))}
-      <path className="w-cable w-cable-a" d={`M10,8 C12,20 22,22 24,16`} />
-      <path className="w-cable w-cable-b" d={`M30,8 C30,26 44,26 44,24`} />
-      {carriers.length > 0 && (
-        <g transform={`translate(${len + 2} 0)`}>
-          <rect className="w-plate" width="42" height={carriers.length * 7 + 3} rx="1.5" />
-          {carriers.map((c, i) => <text key={c} className="w-carrier" x="3" y={7 + i * 7}>{c}</text>)}
-        </g>
-      )}
-    </g>
   );
 }
 
@@ -611,31 +614,103 @@ export function Parcel({ cx, cy, z, brand }: { cx: number; cy: number; z: number
 
 export const rackHeight = (units: number) => Math.round(24 + units * 1.6);
 
-// A rack is a dark box; a front facing the camera shows one LED per device, or from zoom 2 the rack front art scaled onto it.
-export function RackBox({ tile, units, items, leds, zoomed }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; top: number }[]; zoomed: boolean }) {
-  const H = rackHeight(units), c = center(tile.x, tile.y), dx = 28, m = 1 / 16;
+// A rack is a dark box; a front facing the camera shows one LED per device, or from zoom 2 the rack front art scaled onto it. In a datacenter the face in view, front or rear, is a closed mesh door over that; a neighbour's rack is muted, its door shut on a few LEDs and a blank label plate. A share is the bottom section of a provider's cabinet of `cabinet` units.
+export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {
+  const H = rackHeight(units), CH = rackHeight(cabinet), c = center(tile.x, tile.y), dx = 28, m = 1 / 16;
   const L = { x: c.x - dx, y: c.y }, B = { x: c.x, y: c.y + dx / 2 }, R = { x: c.x + dx, y: c.y };
-  // Only a front facing the camera shows: the south face is the lower left, the east face the lower right.
-  const face = tile.facing === "s" ? { o: up(L, H), u: B.x - L.x, v: B.y - L.y } : tile.facing === "e" ? { o: up(B, H), u: R.x - B.x, v: R.y - B.y } : null;
+  // The south face is the lower left, the east face the lower right; a north-facing rack shows its rear door on the south face.
+  const south = { o: L, u: B.x - L.x, v: B.y - L.y }, east = { o: B, u: R.x - B.x, v: R.y - B.y };
+  const front = tile.facing === "s" ? south : tile.facing === "e" ? east : null;
+  const face = front ?? (mesh ? south : null);
+  // Local art units onto the face, from height h down to the floor.
+  const onFace = (f: typeof south, h: number, ah: number) => `matrix(${f.u / artW} ${f.v / artW} 0 ${h / ah} ${f.o.x} ${f.o.y - h})`;
+  const doorH = cabinet * ART_U + 8;
   // RackFront's front view: unit numbers, rails and devices span RACK_W, the cable channel beyond it is cut off.
   const artW = RACK_W + 36, artH = units * ART_U + 8;
+  const art = front && !neighbour && (zoomed ? (
+    <svg width={artW} height={artH} viewBox={`0 0 ${artW} ${artH}`} preserveAspectRatio="none" overflow="hidden" pointerEvents="none">
+      <RackFront units={units} items={items} w={RACK_W} u={ART_U} onDevice={() => {}} onFree={() => {}} />
+    </svg>
+  ) : (
+    <>
+      <rect x="6" y="4" width={artW - 12} height={artH - 8} rx="3" fill="var(--rack)" />
+      {leds.map((d) => <rect key={d.id} className={d.on ? "w-led w-led-on" : "w-led"} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
+    </>
+  ));
+  const blink = (tile.x * 7 + tile.y * 3) % 5;
+  return (
+    <g className={neighbour ? "w-neighbour" : undefined}>
+      <Prism x0={tile.x + m} y0={tile.y + m} x1={tile.x + 1 - m} y1={tile.y + 1 - m} z1={CH} tone="w-tone-rack" />
+      {face && <>
+        <g transform={onFace(face, CH, doorH)}>
+          <rect x="6" y="4" width={artW - 12} height={doorH - 8} fill="var(--rack)" />
+          {!art && mesh && front && [0, 1, 2].map((i) => <rect key={i} className={i === blink % 3 ? "w-led" : "w-led w-led-on"} x="16" y={24 + i * 34 + blink * 6} width="8" height="4" rx="2" />)}
+          {/* A rear door shows the two power strips and the cable bundle behind it. */}
+          {!front && [14, artW - 26].map((x) => <g key={x}>
+            <rect className="w-strip" x={x} y="10" width="12" height={doorH - 20} />
+            {Array.from({ length: Math.floor((doorH - 30) / 24) }, (_, i) => <rect key={i} className="w-strip-led" x={x + 4} y={18 + i * 24} width="4" height="3" />)}
+          </g>)}
+          {!front && <rect className="w-bundle" x={artW / 2 - 10} y="10" width="20" height={doorH - 20} />}
+        </g>
+        {art && <g transform={onFace(face, H, artH)}>{art}</g>}
+        {mesh && (
+          <g transform={onFace(face, CH, doorH)}>
+            <rect className="w-rack-mesh" x="5" y="3" width={artW - 10} height={doorH - 6} fill="url(#w-rack-mesh)" />
+            <rect className="w-rack-door" x="5" y="3" width={artW - 10} height={doorH - 6} />
+            <rect className="w-rack-handle" x={artW - 18} y={doorH / 2 - 16} width="6" height="32" rx="1" />
+            {neighbour && <rect className="w-plate-label" x={artW / 2 - 18} y="8" width="36" height="10" />}
+          </g>
+        )}
+      </>}
+    </g>
+  );
+}
+
+// A two-shelf parts cart with a handle, four castors and a box on its top shelf.
+export function Cart({ f }: { f: Fixture }) {
+  const x0 = f.x + 0.2, x1 = f.x + 0.8, y0 = f.y + 0.3, y1 = f.y + 0.7;
   return (
     <>
-      <Prism x0={tile.x + m} y0={tile.y + m} x1={tile.x + 1 - m} y1={tile.y + 1 - m} z1={H} tone="w-tone-rack" />
-      {face && (
-        <g transform={`matrix(${face.u / artW} ${face.v / artW} 0 ${H / artH} ${face.o.x} ${face.o.y})`}>
-          {zoomed ? (
-            <svg width={artW} height={artH} viewBox={`0 0 ${artW} ${artH}`} preserveAspectRatio="none" overflow="hidden" pointerEvents="none">
-              <RackFront units={units} items={items} w={RACK_W} u={ART_U} onDevice={() => {}} onFree={() => {}} />
-            </svg>
-          ) : (
-            <>
-              <rect x="6" y="4" width={artW - 12} height={artH - 8} rx="3" fill="var(--rack)" />
-              {leds.map((d) => <rect key={d.id} className={d.on ? "w-led w-led-on" : "w-led"} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
-            </>
-          )}
-        </g>
-      )}
+      {[[x0, y0], [x1, y0], [x0, y1], [x1, y1]].map(([x, y]) => <Prism key={`${x}-${y}`} x0={x - 0.02} y0={y - 0.02} x1={x + 0.02} y1={y + 0.02} z0={3} z1={30} tone="w-tone-shelf" />)}
+      {[[x0, y1], [x1, y1]].map(([x, y]) => <ellipse key={x} className="w-castor" cx={at3(x, y, 1.5).x} cy={at3(x, y, 1.5).y} rx="1.6" ry="1" />)}
+      <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={8} z1={10} tone="w-tone-shelf" />
+      <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={28} z1={30} tone="w-tone-shelf" />
+      <Prism x0={x0 + 0.08} y0={y0 + 0.06} x1={x0 + 0.38} y1={y1 - 0.06} z0={30} z1={38} tone="w-tone-card" />
+      <Prism x0={x1 - 0.02} y0={y0} x1={x1 + 0.02} y1={y1} z0={40} z1={42} tone="w-tone-shelf" />
     </>
+  );
+}
+
+// Fluorescent tubes under the ceiling, one fitting over every second rack; above everything standing, so drawn last.
+export function Tubes({ tiles }: { tiles: { x: number; y: number }[] }) {
+  return (
+    <g pointerEvents="none">
+      {tiles.filter((t) => t.x % 2 === 0).map((t) => (
+        <Prism key={`${t.x},${t.y}`} x0={t.x + 0.3} y0={t.y + 0.45} x1={t.x + 1.7} y1={t.y + 0.55} z0={WALL + 2} z1={WALL + 4} tone="w-tone-tube" />
+      ))}
+    </g>
+  );
+}
+
+// The tubes' faint cool wash: a band of light along each walkway fading to the rack rows, and a cool tint over the whole room.
+export function TubeLight({ w, h, ways }: { w: number; h: number; ways: { y: number; x0: number; x1: number }[] }) {
+  const room = pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h));
+  return (
+    <g pointerEvents="none" className="w-light">
+      <polygon className="w-cool" points={room} />
+      {ways.map((a) => {
+        const id = `w-wash-${a.y}`, p0 = iso(a.x0, a.y - 0.5), p1 = iso(a.x0, a.y + 1.5), y0 = Math.max(0, a.y - 0.5), y1 = Math.min(h, a.y + 1.5);
+        return (
+          <g key={a.y}>
+            <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y}>
+              <stop offset="0" stopColor="oklch(0.97 0.03 220)" stopOpacity="0" />
+              <stop offset="0.5" stopColor="oklch(0.97 0.03 220)" stopOpacity="0.09" />
+              <stop offset="1" stopColor="oklch(0.97 0.03 220)" stopOpacity="0" />
+            </linearGradient>
+            <polygon fill={`url(#${id})`} points={pts(iso(0, y0), iso(w, y0), iso(w, y1), iso(0, y1))} />
+          </g>
+        );
+      })}
+    </g>
   );
 }

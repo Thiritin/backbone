@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
-import { fixtures, rackTiles, roomSize, type Fixture } from "../../sim/20-world/layout";
-import { carriersAt } from "../../sim/10-catalog/network";
-import { datacenterById } from "../../sim/20-world/datacenters";
+import { cage, fixtures, neighbourRacks, rackTiles, roomSize, walkways, type Fixture } from "../../sim/20-world/layout";
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { temperature } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
@@ -22,8 +20,8 @@ import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
-  BeerCrate, Boiler, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, CrossConnect, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
-  Hygrometer, Letterbox, Light, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Tower, WallJack, Walls, WALL, Washer,
+  BeerCrate, Boiler, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
+  Hygrometer, Letterbox, Light, Mat, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, RaisedFloor, Scanner, Shelf, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { JackPanel, RoomCables } from "./rack/Cables";
@@ -187,11 +185,16 @@ export function World() {
       depth: tile.x + tile.y,
       node: (
         <g key={r.id} className={`w-obj w-rack${lit === r.id ? " w-lit" : ""}${glow ? " w-glow" : ""}`} data-rack={r.id} role="button" aria-label={r.name} onClick={use(r.id, () => setRackOpen({ id: r.id }))}>
-          <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} />
+          <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} mesh={!home} cabinet={r.provided ? 42 : undefined} />
         </g>
       ),
     };
   });
+  // Other tenants' racks and the cage fence are scenery from the layout.
+  const ways = walkways(loc), fence = cage(loc), others = neighbourRacks(loc);
+  for (const tile of others)
+    things.push({ depth: tile.x + tile.y, node: <g key={`n${tile.x},${tile.y}`} pointerEvents="none" aria-hidden><RackBox tile={tile} units={42} items={[]} leds={[]} zoomed={false} mesh neighbour /></g> });
+  if (fence) things.push(...cageFence(fence));
   // Parcels stack on the floor tile beside the door, clear of its swing, the newest on top.
   if (parcels.length && fx.door) {
     const p = { x: fx.door.x + 1, y: fx.door.y - 1 }, top = parcels[parcels.length - 1], shown = parcels.slice(-PARCEL_STACK);
@@ -213,7 +216,6 @@ export function World() {
     post: () => { if (waiting) act(fetchPost); setPanel({ kind: "post", title: t(label) }); },
     scan: () => setPanel({ kind: "post", title: t(label) }),
   });
-  const carriers = loc.dc ? carriersAt(datacenterById(loc.dc)).map((c) => c.name) : [];
   const watts = `${n(power)}W`;
   const hd = dateOf(game.hour).getUTCHours() + game.minute / 60, night = daylight(hd) < 0.5;
   // The meter disc turns once every few seconds at a kilowatt, faster as the draw grows.
@@ -238,10 +240,9 @@ export function World() {
     drain: (f) => <Drain f={f} />,
     lamp: (f) => <CeilingLamp f={f} on={night} />,
     letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} />,
-    door: (f) => <Door f={f} open={door} cage={!home} />,
+    door: (f) => <Door f={f} open={door} steel={!home} />,
     extinguisher: (f) => <Extinguisher f={f} />,
-    xconnect: (f) => <CrossConnect f={f} carriers={carriers} />,
-    cart: () => null,
+    cart: (f) => <Cart f={f} />,
     cooling: (f) => <Cooling f={f} />,
     pdu: (f) => <Pdu f={f} reading={watts} />,
     dock: (f) => <Dock f={f} />,
@@ -263,22 +264,19 @@ export function World() {
     setTimeout(() => setDoor(2), 150);
     setTimeout(() => { setDoor(0); useTrip.getState().send("door"); }, 700);
   };
-  const grid = Array.from({ length: w + 1 }, (_, x) => `M${pts(iso(x, 0))} L${pts(iso(x, h))}`)
-    .concat(Array.from({ length: h + 1 }, (_, y) => `M${pts(iso(0, y))} L${pts(iso(w, y))}`)).join(" ");
 
   return (
     <div className={`world${carried ? " w-carrying" : ""}`} aria-label={loc.name}>
       <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`} viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
         <Defs />
-        <Walls w={w} h={h} fenced={!home} />
-        <polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} />
-        {home && <Concrete w={w} h={h} />}
-        {!home && <path className="w-tile" d={grid} />}
+        <Walls w={w} h={h} dc={!home} />
+        {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></> : <RaisedFloor w={w} h={h} />}
         {back}
         {things.map((x) => x.node)}
         {over}
-        {home && <Light w={w} h={h} hd={hd} windows={[fx.window, fx.fan].flatMap((f) => (f ? [f.x] : []))} lamp={fx.lamp} desk={fx.pc?.x} />}
+        {!home && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
+        {home ? <Light w={w} h={h} hd={hd} windows={[fx.window, fx.fan].flatMap((f) => (f ? [f.x] : []))} lamp={fx.lamp} desk={fx.pc?.x} /> : <TubeLight w={w} h={h} ways={ways} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
         {carried && hand && (
           <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>

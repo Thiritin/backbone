@@ -28,7 +28,6 @@ export const ART: Record<string, FixtureArt> = {
   chair: {},
   cart: {},
   extinguisher: { label: "world.obj.extinguisher" },
-  xconnect: { label: "world.obj.xconnect", use: "network", wall: true },
   cooling: { label: "world.obj.cooling" },
   pdu: { label: "world.obj.pdu", use: "power" },
   noc: { label: "world.obj.noc", use: "desktop" },
