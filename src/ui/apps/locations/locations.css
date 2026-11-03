@@ -477,3 +477,14 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 :root[data-os="tahoe"] .loc-cab-bar { border-radius: 22px; }
 :root[data-os="tahoe"] .loc-rack { margin: 8px 0 8px 8px; border: var(--ar-bw) solid var(--line); border-radius: var(--ar-card); box-shadow: var(--ar-lift); }
 :root[data-os="tahoe"] .loc-card, :root[data-os="tahoe"] .loc-tile:not(.free) { background: color-mix(in oklch, var(--field), transparent 30%); }
+
+/* Properties: a building's floor plan, top floor first, one cell per section. */
+.prop-plan { display: grid; gap: 4px; padding: 0 14px 12px; }
+.prop-floor { display: flex; align-items: stretch; gap: 4px; }
+.prop-floor .loc-k { align-self: center; }
+.prop-sec { flex: 1; min-width: 0; display: grid; gap: 1px; padding: 5px 6px; text-align: left; border-radius: 5px; border: var(--ar-bw) solid var(--line-strong); background: var(--field); color: var(--text); font-size: 11.5px; cursor: pointer; }
+.prop-sec small { font-size: 10.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prop-sec.taken { cursor: default; background: color-mix(in oklch, var(--text) 8%, transparent); color: var(--text-3); }
+.prop-sec.mine { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 14%, var(--field)); }
+.prop-sec[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+.prop-actions { flex-wrap: wrap; border-top: var(--ar-bw) solid var(--line); }
