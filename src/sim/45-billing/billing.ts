@@ -433,7 +433,7 @@ export function billingTick(s: GameState): SimEvent[] {
         const tr = transferFor(s, inv);
         arrived.push(tr);
         book("payments", "ledger.transfer", { from: tr.from }, tr.amount);
-        if (inv.method === "instantly") book("fees", "ledger.paymentFees", { from: payeeOf(s, inv.method) }, -methodFee(methodById(inv.method), tr.amount));
+        if (inv.method === "instantly") book("bankfees", "ledger.paymentFees", { from: payeeOf(s, inv.method) }, -methodFee(methodById(inv.method), tr.amount));
         return { ...inv, payAt: null };
       }
       const collected = inv.status === "writtenOff";

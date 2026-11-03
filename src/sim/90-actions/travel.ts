@@ -22,7 +22,7 @@ export function travelTo(s: GameState, locationId: string): ActionResult {
   if (!d) return fail("error.tooFar");
   if (s.cash < d.fee) return fail("error.noCash");
   s.cash = Math.round((s.cash - d.fee) * 100) / 100;
-  s.ledger.push({ hour: s.hour, category: "maintenance", key: "ledger.drive", params: { place: loc.name }, amount: -d.fee });
+  s.ledger.push({ hour: s.hour, category: "travel", key: "ledger.drive", params: { place: loc.name }, amount: -d.fee });
   s.player = { at: loc.id, until: s.hour + d.hours, doing: "travel" };
   return { ok: true };
 }

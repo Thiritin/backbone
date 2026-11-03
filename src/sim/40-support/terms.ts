@@ -39,5 +39,5 @@ export function refundUnused(s: GameState, c: Customer): void {
   amount = cents(amount);
   if (amount <= 0) return;
   s.cash = cents(s.cash - amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "billing", key: "ledger.refundUnused", params: { customer: c.name, months }, amount: -amount }];
+  s.ledger = [...s.ledger, { hour: s.hour, category: "credit", key: "ledger.refundUnused", params: { customer: c.name, months }, amount: -amount }];
 }

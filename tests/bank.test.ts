@@ -62,7 +62,7 @@ describe("bank account", () => {
     const s = opened(1, "deutscheBunk");
     const cash = s.cash;
     skip(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
-    expect(s.ledger.filter((e) => e.key === "ledger.bankFee")).toEqual([expect.objectContaining({ amount: -18, category: "fees" })]);
+    expect(s.ledger.filter((e) => e.key === "ledger.bankFee")).toEqual([expect.objectContaining({ amount: -18, category: "bankfees" })]);
     expect(s.cash).toBeLessThanOrEqual(cash - 18 + earned(s));
   });
 
@@ -70,9 +70,9 @@ describe("bank account", () => {
     const s = opened(1, "sparklasse", "limited"), feb = hourOf(new Date(Date.UTC(2005, 1, 1)));
     for (let i = 0; i < 25; i++) s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
     skip(s, feb - s.hour);
-    const bookings = s.ledger.filter((e) => e.hour < feb && e.amount !== 0 && e.category !== "fees").length;
+    const bookings = s.ledger.filter((e) => e.hour < feb && e.amount !== 0 && !["bankfees", "interest"].includes(e.category)).length;
     expect(bookings).toBeGreaterThanOrEqual(25);
-    expect(s.ledger.filter((e) => e.hour === feb && e.category === "fees")).toEqual([
+    expect(s.ledger.filter((e) => e.hour === feb && e.category === "bankfees")).toEqual([
       expect.objectContaining({ key: "ledger.bookingFee", amount: -Math.round((bookings - 20) * 30) / 100, params: { bank: "Sparklasse", count: bookings - 20 } }),
       expect.objectContaining({ key: "ledger.bankFee", amount: -16 }),
     ]);
@@ -82,14 +82,14 @@ describe("bank account", () => {
     const s = opened(1, "sparklasse");
     s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
     skip(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
-    expect(s.ledger.filter((e) => e.category === "fees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -8]]);
+    expect(s.ledger.filter((e) => e.category === "bankfees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -8]]);
   });
 
   it("charges a partnership at netbunk its flat fee", () => {
     const p = opened(1, "netbunk", "partnership");
     p.ledger = [...p.ledger, { hour: p.hour, category: "sales", key: "ledger.usedSale", params: {}, amount: 10 }];
     run(p, hourOf(new Date(Date.UTC(2005, 1, 1))) - p.hour);
-    expect(p.ledger.filter((e) => e.category === "fees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -5]]);
+    expect(p.ledger.filter((e) => e.category === "bankfees").map((e) => [e.key, e.amount])).toEqual([["ledger.bankFee", -5]]);
   });
 
   it("gives an old save an account at Sparklasse that keeps paying its fee", () => {

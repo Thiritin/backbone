@@ -132,7 +132,7 @@ describe("the decision", () => {
       if (lastBreach(s).sold) continue;
       seen++;
       expect(s.cash).toBe(cash - b.ransom);
-      expect(s.ledger.at(-1)).toMatchObject({ category: "fees", key: "ledger.ransom", amount: -b.ransom });
+      expect(s.ledger.at(-1)).toMatchObject({ category: "other", key: "ledger.ransom", amount: -b.ransom });
       expect(sink.length).toBe(before);
       expect(t).toMatchObject({ status: "resolved", outcome: "ransomPaid" });
       expect(lastBreach(s)).toMatchObject({ fine: 0, fineAt: null });
@@ -206,7 +206,7 @@ describe("the fine", () => {
       if (found.fine) {
         expect(found.fine).toBe(8000);
         expect(s.cash).toBe(cash - 8000);
-        expect(s.ledger.at(-1)).toMatchObject({ category: "fees", key: "ledger.fine", amount: -8000 });
+        expect(s.ledger.at(-1)).toMatchObject({ category: "other", key: "ledger.fine", amount: -8000 });
         expect(events[0]).toMatchObject({ key: "event.breachFine", params: { amount: 8000 } });
       } else expect(events).toEqual([]);
     }

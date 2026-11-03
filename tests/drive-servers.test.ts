@@ -31,6 +31,7 @@ describe("driving servers to a datacenter", () => {
     ok(moveServer(s, servers, dc, "self"));
     expect(s.cash).toBe(cash - TRAVEL.city.fee);
     expect(keys(s, lines)).toEqual(["ledger.drive"]);
+    expect(s.ledger.at(-1)).toMatchObject({ category: "travel", key: "ledger.drive" });
     expect(servers.map((id) => locationOf(s, s.devices.find((d) => d.id === id)!)!.id)).toEqual([dc, dc]);
     expect(s.clusters.find((c) => c.id === cluster)!.az).toBe(s.locations.find((l) => l.id === dc)!.az);
     expect(s.clusters.find((c) => c.id === cluster)!.name).toBe("Home");
