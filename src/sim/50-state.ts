@@ -210,6 +210,8 @@ export interface Licence {
   mailTo?: string;  // the address chosen at checkout, where renewal, lapse and edition mail goes; absent for the owner
 }
 
+export interface HandsJob { id: string; action: string; args: unknown[]; locationId: string; deviceId: string; dueAt: number; fee: number }
+
 export interface GameState {
   version: number;
   seed: number;
@@ -332,6 +334,8 @@ export interface GameState {
   activity: ActivityEntry[];
   // Operations queued for technicians, oldest first, and the repairs they queue by themselves.
   techOps: TechOp[];
+  // Remote hands jobs ordered from the desktop, run with their arguments once due.
+  handsJobs: HandsJob[];
   techRules: TechRules;
   onCall: OnCall;
   marketing: Marketing;
@@ -498,7 +502,7 @@ export const newGame = (seed: number): GameState => ({
   company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING, address: null },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
-  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
+  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], handsJobs: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),
   ops: newOps(),

@@ -38,7 +38,7 @@ function datacenter(s: GameState) {
   s.racks = s.racks.map((r) => (r.id === rack ? { ...r, arriveAt: null } : r));
   const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, loc));
   ok(mountDevice(s, srv, rack, 1));
-  ok(connect(s, { device: srv, port: 0 }, { device: s.devices.find((d) => d.panel === loc)!.id, port: 0 }));
+  ok(connect(s, { device: srv, port: 0 }, { device: s.devices.find((d) => d.panel === loc)!.id, port: 0 }, true));
   return { loc, srv };
 }
 

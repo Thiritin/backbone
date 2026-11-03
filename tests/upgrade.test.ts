@@ -4,6 +4,8 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { BOOT_HOURS, deviceHealth, installedRamGb } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { datacenterById } from "../src/sim/20-world/datacenters";
+import { JOB_HOURS } from "../src/sim/90-actions/presence";
 import { addLocation, addSecondPsu, buyRack, installPart, removePart, setPower, type CartLine } from "../src/sim/90-actions/hardware";
 import { buyBare, buyDevice, newGame } from "./fixtures";
 import { queueOperation } from "../src/sim/90-actions/staff";
@@ -132,7 +134,7 @@ describe("installing parts", () => {
     expect(err(installPart(s, id, spare(s, "cpu", 1)))).toBe("error.noSlot");
   });
 
-  it("bills remote hands at a datacenter and waits for them", () => {
+  it("queues a remote hands job at a datacenter and installs when it runs", () => {
     const s = rich();
     const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
@@ -140,11 +142,17 @@ describe("installing parts", () => {
     const id = ok(buyBare(s, "g1-compute", "Dwell", 1, loc));
     ok(mountDevice(s, id, r, 1));
     ok(setPower(s, id, false));
-    const ram = spare(s, "ram", 2, undefined, loc), cash = s.cash;
+    const ram = spare(s, "ram", 2, undefined, loc), cash = s.cash, before = dev(s, id).components.length;
+    const hands = datacenterById("interaction-fra").remoteHands, wait = hands.responseHours + JOB_HOURS.parts;
     ok(installPart(s, id, ram));
-    expect(s.cash).toBe(cash - 120);
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", amount: -120 });
-    expect(dev(s, id).maintenance!.doneAt).toBe(s.hour + 2.5);
+    expect(s.handsJobs).toHaveLength(1);
+    expect(s.cash).toBe(cash);
+    expect(dev(s, id).components).toHaveLength(before);
+    for (let h = 0; h < Math.ceil(wait); h++) tick(s);
+    expect(s.handsJobs).toHaveLength(0);
+    expect(dev(s, id).components).toHaveLength(before + 1);
+    expect(s.cash).toBe(cash - JOB_HOURS.parts * hands.perHour);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", amount: -JOB_HOURS.parts * hands.perHour });
   });
 });
 

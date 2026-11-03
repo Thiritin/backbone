@@ -18,6 +18,7 @@ import { bankTick, tanTick } from "../46-finance/bank";
 import { deliverPaidOrders } from "../80-business/vendor-shop";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
+import { handsJobsTick } from "../90-actions/presence";
 import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
 import { closeLocation, noticeEnd } from "../90-actions/hardware";
@@ -293,6 +294,7 @@ export function tick(state: GameState): SimEvent[] {
   }
   const minutes = 60 - state.minute;
   state.hour++;
+  handsJobsTick(state);
   state.minute = 0;
   tanTick(state);
   haltTick(state);

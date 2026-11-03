@@ -124,14 +124,14 @@ describe("firewall links", () => {
   }
   it("forwards like a switch and caps the speed at its throughput", () => {
     const { s, srv, sw, fw, handoff } = setup();
-    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 48 }));
-    ok(connect(s, { device: sw, port: 0 }, { device: fw, port: 0 }));
+    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 48 }, true));
+    ok(connect(s, { device: sw, port: 0 }, { device: fw, port: 0 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
-    const up = ok(connect(s, { device: fw, port: 1 }, { device: handoff, port: 0 }));
+    const up = ok(connect(s, { device: fw, port: 1 }, { device: handoff, port: 0 }, true));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: null });
     expect(linkStatus(s, fw)).toEqual({ online: true, gbit: 1, warning: null });
-    ok(disconnect(s, up));
-    ok(connect(s, { device: sw, port: 1 }, { device: handoff, port: 0 }));
+    ok(disconnect(s, up, true));
+    ok(connect(s, { device: sw, port: 1 }, { device: handoff, port: 0 }, true));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 10, warning: null });
   });
 });

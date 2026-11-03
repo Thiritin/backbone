@@ -74,8 +74,8 @@ describe("storage per zone", () => {
     const sw = ok(buyDevice(s, "sw-8", "Sysko", 1, fr5));
     ok(mountDevice(s, sw, rack, 1));
     expect(dev(s, sw)).toMatchObject({ store: null, name: "fra2-sw-01" });
-    ok(unmountDevice(s, sw));
-    ok(unmountDevice(s, "dev3"));
+    ok(unmountDevice(s, sw, true));
+    ok(unmountDevice(s, "dev3", true));
     expect([dev(s, sw).store, dev(s, "dev3").store]).toEqual([fr5, "loc1"]);
   });
 });

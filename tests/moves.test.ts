@@ -36,7 +36,7 @@ function world() {
   const s = { ...withServer(newGame(1)), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
-  ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
+  ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }, true));
   const a = basement(s), b = hypervisor(s, [second], "Remote");
   const place = (zones: { a?: string; b?: string } = {}, line = "vdsl-50") => {
     const home = s.locations[0];
@@ -346,7 +346,7 @@ describe("moving a loaded server", () => {
     prep(s, a, b);
     const rackOf = (loc: string) => s.racks.find((r) => r.locationId === loc)!.id;
     const [swA, swB] = [a, b].map((loc) => { const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc)); ok(mountDevice(s, id, rackOf(loc), 20)); return id; });
-    ok(connect(s, { device: da, port: 0 }, { device: swA, port: 0 }));
+    ok(connect(s, { device: da, port: 0 }, { device: swA, port: 0 }, true));
     const cus = customer(s), id = w.vmAt(ca, cus);
     who(s)(cus).happiness = 50;
     return { ...w, swB, cus, id };

@@ -200,9 +200,9 @@ describe("connect", () => {
     const swA = mounted(s, "sw-48", a, 41);
     const swB = mounted(s, "sw-48", b, 41);
     const kind = (r: ReturnType<typeof connect>) => s.cables.find((c) => c.id === ok(r))!.kind;
-    expect(kind(connect(s, { device: swA, port: 0 }, { device: handoff, port: 0 }))).toBe("copper");
-    expect(kind(connect(s, { device: srv, port: 0 }, { device: swA, port: 48 }))).toBe("dac");
-    expect(kind(connect(s, { device: swA, port: 49 }, { device: swB, port: 48 }))).toBe("fiber");
+    expect(kind(connect(s, { device: swA, port: 0 }, { device: handoff, port: 0 }, true))).toBe("copper");
+    expect(kind(connect(s, { device: srv, port: 0 }, { device: swA, port: 48 }, true))).toBe("dac");
+    expect(kind(connect(s, { device: swA, port: 49 }, { device: swB, port: 48 }, true))).toBe("fiber");
   });
   it("rejects every invalid cable", () => {
     const s = atYear(2011);
@@ -211,16 +211,16 @@ describe("connect", () => {
     const srv = mounted(s, "g3-compute", a, 1);
     const sw = mounted(s, "sw-48", a, 41);
     const stored = ok(buyDevice(s, "sw-48", "Sysko", 1, "loc1"));
-    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 48 }));
-    expect(err(connect(s, { device: "x", port: 0 }, { device: sw, port: 1 }))).toBe("error.unknownDevice");
-    expect(err(connect(s, { device: srv, port: 9 }, { device: sw, port: 1 }))).toBe("error.unknownPort");
-    expect(err(connect(s, { device: sw, port: 2 }, { device: sw, port: 1 }))).toBe("error.sameDevice");
-    expect(err(connect(s, { device: srv, port: 0 }, { device: sw, port: 49 }))).toBe("error.portInUse");
-    expect(err(connect(s, { device: sw, port: 0 }, { device: "dev4", port: 1 }))).toBe("error.otherLocation");
-    expect(err(connect(s, { device: sw, port: 0 }, { device: stored, port: 1 }))).toBe("error.notMounted");
-    expect(err(connect(s, { device: srv, port: 1 }, { device: sw, port: 0 }))).toBe("error.mediaMismatch");
+    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 48 }, true));
+    expect(err(connect(s, { device: "x", port: 0 }, { device: sw, port: 1 }, true))).toBe("error.unknownDevice");
+    expect(err(connect(s, { device: srv, port: 9 }, { device: sw, port: 1 }, true))).toBe("error.unknownPort");
+    expect(err(connect(s, { device: sw, port: 2 }, { device: sw, port: 1 }, true))).toBe("error.sameDevice");
+    expect(err(connect(s, { device: srv, port: 0 }, { device: sw, port: 49 }, true))).toBe("error.portInUse");
+    expect(err(connect(s, { device: sw, port: 0 }, { device: "dev4", port: 1 }, true))).toBe("error.otherLocation");
+    expect(err(connect(s, { device: sw, port: 0 }, { device: stored, port: 1 }, true))).toBe("error.notMounted");
+    expect(err(connect(s, { device: srv, port: 1 }, { device: sw, port: 0 }, true))).toBe("error.mediaMismatch");
     const sw24 = mounted(s, "sw-24", a, 40);
-    expect(err(connect(s, { device: srv, port: 1 }, { device: sw24, port: 24 }))).toBe("error.speedMismatch");
+    expect(err(connect(s, { device: srv, port: 1 }, { device: sw24, port: 24 }, true))).toBe("error.speedMismatch");
   });
   it("disconnects", () => {
     const s = withServer(newGame(1));
@@ -236,9 +236,9 @@ describe("linkStatus", () => {
     const { racks: [rack], handoff } = colo(s);
     const srv = mounted(s, "g1-compute", rack, 1);
     const sw = mounted(s, "sw-24", rack, 41);
-    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 0 }));
+    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 0 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
-    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 1 }));
+    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 1 }, true));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: null });
     expect(linkStatus(s, sw).online).toBe(true);
   });
@@ -246,13 +246,13 @@ describe("linkStatus", () => {
     const s = atYear(2005);
     const { racks: [a, b], handoff } = colo(s, 2);
     const sw = mounted(s, "sw-24", a, 41);
-    ok(connect(s, { device: sw, port: 0 }, { device: handoff, port: 0 }));
+    ok(connect(s, { device: sw, port: 0 }, { device: handoff, port: 0 }, true));
     const srv = mounted(s, "g1-compute", b, 1);
     const pp = mounted(s, "patch-24", b, 41);
-    ok(connect(s, { device: srv, port: 0 }, { device: pp, port: 3 }));
-    ok(connect(s, { device: pp, port: 4 }, { device: sw, port: 5 }));
+    ok(connect(s, { device: srv, port: 0 }, { device: pp, port: 3 }, true));
+    ok(connect(s, { device: pp, port: 4 }, { device: sw, port: 5 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
-    ok(connect(s, { device: pp, port: 27 }, { device: sw, port: 6 }));
+    ok(connect(s, { device: pp, port: 27 }, { device: sw, port: 6 }, true));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: null });
   });
   it("adds up a grouped balance bond and warns when the switch ports are not grouped", () => {
@@ -260,9 +260,9 @@ describe("linkStatus", () => {
     const { racks: [rack], handoff } = colo(s);
     const srv = mounted(s, "g1-compute", rack, 1);
     const sw = mounted(s, "sw-24", rack, 41);
-    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }));
-    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 0 }));
-    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }));
+    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }, true));
+    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 0 }, true));
+    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }, true));
     expect(linkStatus(s, srv).gbit).toBe(1);
     ok(setBond(s, srv, "balance"));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: "bondNotGrouped" });
@@ -274,10 +274,10 @@ describe("linkStatus", () => {
     const { racks: [rack], handoff } = colo(s);
     const srv = mounted(s, "g1-compute", rack, 1);
     const sw = mounted(s, "sw-24", rack, 41);
-    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }));
+    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }, true));
     const dead = mounted(s, "sw-24", rack, 40);
-    ok(connect(s, { device: srv, port: 0 }, { device: dead, port: 0 }));
-    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }));
+    ok(connect(s, { device: srv, port: 0 }, { device: dead, port: 0 }, true));
+    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
     ok(setBond(s, srv, "failover"));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: null });

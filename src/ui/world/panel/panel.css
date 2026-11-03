@@ -1,5 +1,4 @@
-/* Lists inside the room's slide-up panels, in the rack panel's dark tones. */
-.wr-panel.wp-panel { height: auto; max-height: 66%; }
+/* Lists inside the room's popups, in the rack popup's dark tones. */
 .wp-list { overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 4px; min-height: 0; }
 .wp-h { margin: 10px 0 2px; font-size: 13px; font-weight: 600; color: oklch(0.75 0.03 220); }
 .wp-none { padding: 8px 0; color: oklch(0.75 0.03 220); font-size: 13px; }
@@ -23,5 +22,4 @@
 .wp-card-h { display: flex; gap: 12px; align-items: baseline; font-size: 14px; }
 .wp-link { display: grid; grid-template-columns: 3rem 1fr auto; gap: 8px; font-size: 13px; }
 .wp-facts .loc-facts { color: var(--text); }
-.wr-panel.wp-post { height: 66%; }
 .wp-read .letter-fit { width: 100%; flex-shrink: 0; }

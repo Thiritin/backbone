@@ -40,7 +40,7 @@ function datacenter(s: GameState) {
   const srv = must(buyDevice(s, "g1-compute", "Dwell", 1, loc));
   must(mountDevice(s, srv, rack, 1));
   s.devices = s.devices.map((d) => (d.id === srv ? { ...d, hostname: "node002" } : d));
-  must(connect(s, { device: srv, port: 0 }, { device: s.devices.find((d) => d.panel === loc)!.id, port: 0 }));
+  must(connect(s, { device: srv, port: 0 }, { device: s.devices.find((d) => d.panel === loc)!.id, port: 0 }, true));
   return { loc, srv };
 }
 
