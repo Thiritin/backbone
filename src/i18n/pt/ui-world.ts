@@ -38,4 +38,7 @@ export default {
   "world.mainSwitch": () => "Disjuntor geral",
   "world.prevLetter": () => "Carta anterior",
   "world.nextLetter": () => "Próxima carta",
+  "world.obj.board": () => "Quadro de cortiça",
+  "world.board.walk": (p) => `Ir a: ${p.place}`,
+  "world.board.sit": (p) => `No computador: ${p.app}`,
 } satisfies Dict;
