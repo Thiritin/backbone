@@ -28,6 +28,8 @@ export interface Employee {
   id: string; name: string; role: Role; skill: number; talent: number; salary: number; hiredAt: number; assignment: Assignment; location: string | null;
   trained: Task[]; plan: Task[]; training: { task: Task; startedAt: number; doneAt: number } | null; busyUntil: number;
   raise: { ask: number; at: number } | null; nextRaiseAt: number; refusedAt: number | null; team: string; worked: number;
+  // The desk the employee sits at; null for staff hired before properties had desks.
+  desk: { propertyId: string; sectionId: string; index: number } | null;
   // Set on the stand-ins activeBots builds for store bots; never saved.
   bot?: true;
 }
@@ -168,7 +170,7 @@ export const BOT_INCIDENTS = 5;
 
 const botEmployee = (id: string, name: string, b: { role: Role; tasks: Task[] }): Employee => ({
   id, name, role: b.role, skill: 0, talent: 0, salary: 0, hiredAt: 0, assignment: "queue", location: null,
-  trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, team: "", worked: 0, bot: true,
+  trained: b.tasks, plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 0, refusedAt: null, team: "", worked: 0, desk: null, bot: true,
 });
 export const activeBots = (s: GameState): Employee[] => {
   const agent = agentName(s);

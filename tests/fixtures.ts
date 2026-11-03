@@ -13,6 +13,7 @@ import { chmodFile, extractFile, uploadFile } from "../src/sim/90-actions/webspa
 import { bookMail } from "../src/sim/90-actions/mail";
 import { mxSetAt } from "../src/sim/10-catalog/mail-providers";
 import { hire as hireReal } from "../src/sim/90-actions/staff";
+import { freeDesk } from "../src/sim/60-infra/properties";
 import { mxTarget } from "../src/sim/42-mail/caps";
 import { companyDomain } from "../src/sim/30-customers/domains";
 import { PAYMENT_METHODS } from "../src/sim/10-catalog/payments";
@@ -374,7 +375,13 @@ export function withDomainMail(s: GameState): GameState {
   s.company = { ...s.company, zone: [...s.company.zone, ...mxSetAt("ionose", d, s.hour).map(([p, h]) => ({ id: `z${s.nextId++}`, type: "MX" as const, name: "@", ttl: 3600, data: `${p} ${h}` }))] };
   return s;
 }
-export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDomainMail(s), candidateId, team);
+// A desk section in the basement, so tests hire the way they did before staff needed desks.
+export function withDesk(s: GameState): GameState {
+  const b = s.properties.find((p) => p.kind === "basement");
+  if (b && !freeDesk(s)) b.sections.push({ id: `t${b.sections.length + 1}`, floor: 0, fit: "desks", since: 0, refitUntil: 0, rent: 0 });
+  return s;
+}
+export const hire = (s: GameState, candidateId: string, team?: string) => hireReal(withDesk(withDomainMail(s)), candidateId, team);
 
 // Company emails about this topic in every mailbox, oldest first.
 export const mailsAbout = (s: GameState, topic: string): Message[] =>

@@ -621,7 +621,7 @@ export function locationRent(s: GameState, loc: Location): number {
   const dc = datacenterById(loc.dc);
   const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
   const contract = s.contracts.find((c) => c.locationId === loc.id);
-  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc))) + extra;
+  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement" | "office">, rentedSize(s, loc))) + extra;
 }
 
 // How a rack in this location can bill power: flat-rate contracts are offered on own racks in cages and suites.
@@ -631,17 +631,17 @@ export function flatOffer(s: GameState, locationId: string): Datacenter["power"]
 }
 
 // Floor space in eighths of a position, so a 1/8 share is 1 and a position is 8.
-export const eighthsOf = (space: Exclude<SpaceKind, "basement">, size: number): number => (space === "share" ? 8 / size : 8 * size);
+export const eighthsOf = (space: Exclude<SpaceKind, "basement" | "office">, size: number): number => (space === "share" ? 8 / size : 8 * size);
 
 // Positions in a datacenter: competitors', the player's, those held for the waitlist, and what is free.
 export function dcAvailability(s: GameState, dcId: string): { capacity: number; others: number; mine: number; held: number; free: number; freeEighths: number } {
   const capacity = capacityAt(datacenterById(dcId), yearOf(s.hour));
   const others = s.dcs[dcId]?.others ?? 0;
-  const mineEighths = s.locations.filter((l) => l.dc === dcId).reduce((sum, l) => sum + eighthsOf(l.space as Exclude<SpaceKind, "basement">, rentedSize(s, l)), 0);
+  const mineEighths = s.locations.filter((l) => l.dc === dcId).reduce((sum, l) => sum + eighthsOf(l.space as Exclude<SpaceKind, "basement" | "office">, rentedSize(s, l)), 0);
   const heldEighths = s.waitlist.filter((w) => w.dc === dcId && w.heldUntil !== null).reduce((sum, w) => sum + eighthsOf(w.space, w.size), 0);
   const freeEighths = Math.max(0, capacity * 8 - others * 8 - mineEighths - heldEighths);
   return { capacity, others, mine: mineEighths / 8, held: heldEighths / 8, free: Math.floor(freeEighths / 8), freeEighths };
 }
 
-export const fits = (s: GameState, dcId: string, space: Exclude<SpaceKind, "basement">, size: number): boolean =>
+export const fits = (s: GameState, dcId: string, space: Exclude<SpaceKind, "basement" | "office">, size: number): boolean =>
   dcAvailability(s, dcId).freeEighths >= eighthsOf(space, size);

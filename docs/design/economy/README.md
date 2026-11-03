@@ -17,6 +17,7 @@ Read only the section you need.
 - [Payment methods](payment-methods.md)
 - [Fraud and chargebacks](fraud-and-chargebacks.md)
 - [Datacenters and space](datacenters-and-space.md)
+- [Properties](properties.md)
 - [Addresses and internet](addresses-and-internet.md)
 - [Noticing outages](noticing-outages.md)
 - [Pear One subscriptions](pear-one-subscriptions.md)

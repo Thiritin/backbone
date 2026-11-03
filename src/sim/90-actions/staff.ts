@@ -8,6 +8,7 @@ import {
 import { OP_TASK, queueOp, taskFor, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
 import { anchorOf, clusterOf } from "../60-infra/cluster";
+import { freeDesk } from "../60-infra/properties";
 import { locationOf } from "../60-infra/status";
 import { phpDue } from "./clusters";
 import { updateDue } from "./software";
@@ -45,10 +46,12 @@ export function hire(s: GameState, candidateId: string, team = s.teams[0]?.id): 
   if (!s.teams.some((t) => t.id === team)) return fail("error.unknownTeam");
   const mail = hireTenant(s);
   if (!mail) return fail("error.hireNoMailbox");
+  const desk = freeDesk(s);
+  if (!desk) return fail("error.noFreeDesk");
   const e: Employee = {
     id: `emp${s.nextId++}`, name: c.name, role: c.role, skill: c.skill, talent: c.talent, salary: c.salary, hiredAt: s.hour, assignment: "queue",
     location: c.role === "technician" ? s.locations[0]?.id ?? null : null,
-    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, team, worked: 0,
+    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, team, worked: 0, desk,
   };
   s.candidates = s.candidates.filter((x) => x.id !== c.id);
   s.staff = [...s.staff, e];

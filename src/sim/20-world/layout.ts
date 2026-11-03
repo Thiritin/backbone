@@ -20,6 +20,7 @@ const ROOMS: Record<SpaceKind, Room> = {
       scanner: { x: 3, y: 0 }, hygrometer: { x: 3, y: 0 }, desk: { x: 4, y: 0 }, pc: { x: 4, y: 0 }, fan: { x: 4, y: 0 },
       fusebox: { x: 0, y: 1 }, jack: { x: 0, y: 1 }, shelf: { x: 0, y: 2 }, door: { x: 0, y: 4 }, letterbox: { x: 0, y: 5 },
       chair: { x: 4, y: 1 }, mat: { x: 1, y: 4 }, drain: { x: 3, y: 5 }, lamp: { x: 4, y: 4 },
+      duct: { x: 0, y: 0 }, switch: { x: 0, y: 4 },
     },
     rows: [],
     shelf: { x: 5, y: 0, facing: "s" },
@@ -36,6 +37,12 @@ const ROOMS: Record<SpaceKind, Room> = {
       shelf: { x: 0, y: 1 }, pdu: { x: 11, y: 3 }, extinguisher: { x: 0, y: 4 }, door: { x: 0, y: 5 },
       xconnect: { x: 2, y: 0, w: 2 }, cooling: { x: 7, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" },
     },
+    rows: [{ y: 2, x0: 2, x1: 9, facing: "s" }, { y: 4, x0: 2, x1: 9, facing: "n" }],
+  },
+  // Placeholder until the office room is drawn: a door and rows for four server-room sections.
+  office: {
+    size: { w: 12, h: 8 },
+    fixtures: { door: { x: 0, y: 5 } },
     rows: [{ y: 2, x0: 2, x1: 9, facing: "s" }, { y: 4, x0: 2, x1: 9, facing: "n" }],
   },
   suite: {

@@ -19,6 +19,8 @@ export const ART: Record<string, FixtureArt> = {
   window: { wall: true },
   hygrometer: { wall: true },
   jack: { wall: true },
+  duct: { wall: true },
+  switch: { wall: true },
   mat: { wall: true },
   drain: { wall: true },
   lamp: { top: true },

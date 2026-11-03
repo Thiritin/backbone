@@ -11,7 +11,7 @@ import { createMailAccount, deleteMailAccount, setExternalAccess, setRoleMailbox
 import { fire, hire } from "../src/sim/90-actions/staff";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { idOf, mailLedger } from "./company-mail.helpers";
-import { readyGame } from "./fixtures";
+import { readyGame, withDesk } from "./fixtures";
 import { tick } from "../src/sim/88-tick/tick";
 
 // Skips to the hour before the next month start and ticks into it.
@@ -40,10 +40,10 @@ describe("mail accounts", () => {
   it("refuse a hire without a free mailbox under the company domain and make one with every hire", () => {
     const s = readyGame(2);
     cancelMail(s);
-    expect(hire(s, candidate(s))).toEqual({ ok: false, error: "error.hireNoMailbox" });
+    expect(hire(withDesk(s), candidate(s))).toEqual({ ok: false, error: "error.hireNoMailbox" });
     expect(s.staff).toHaveLength(0);
     bookMail(s, "hostedExchange");
-    const r = hire(s, candidate(s));
+    const r = hire(withDesk(s), candidate(s));
     expect(r.ok).toBe(true);
     const e = s.staff.find((x) => x.id === idOf(r))!, box = s.mail.accounts.find((a) => a.employee === e.id)!;
     expect(box).toMatchObject({ domain: s.company.domain, title: e.name, roles: [], closedAt: null });
@@ -59,7 +59,7 @@ describe("mail accounts", () => {
     const s = readyGame(3);
     toMonthStart(s);
     expect(mailLedger(s)).toMatchObject([{ amount: -10, params: { seats: 1, name: "Hosted Exchange by Ionose" } }]);
-    hire(s, candidate(s));
+    hire(withDesk(s), candidate(s));
     createMailAccount(s, { tenant: live(s, "ionose").id, local: "info", title: "Info", password: "info-pw" });
     toMonthStart(s);
     expect(mailLedger(s)).toMatchObject([{ amount: -30, params: { seats: 3 } }]);
@@ -68,7 +68,7 @@ describe("mail accounts", () => {
 
   it("give a Goggle sign-up a mailbox for every employee and cap the free edition", () => {
     const s = readyGame(4);
-    hire(s, candidate(s));
+    hire(withDesk(s), candidate(s));
     s.hour = at("2011-06");
     const r = createTenant(s, { host: "goggle", plan: "free" });
     expect(r.ok).toBe(true);
@@ -90,9 +90,9 @@ describe("mail accounts", () => {
     s.mail = { ...s.mail, tenants: s.mail.tenants.map((x) => (x.id === t.id ? { ...x, plan: "free" } : x)) };
     for (let i = 1; i < 10; i++) createMailAccount(s, { tenant: t.id, local: `box${i}`, title: "Box", password: "box-pw" });
     expect(boxesOf(s, "goggle")).toHaveLength(10);
-    expect(hire(s, candidate(s))).toEqual({ ok: false, error: "error.hireNoMailbox" });
+    expect(hire(withDesk(s), candidate(s))).toEqual({ ok: false, error: "error.hireNoMailbox" });
     s.mail = { ...s.mail, tenants: s.mail.tenants.map((x) => (x.id === t.id ? { ...x, plan: "paid" } : x)) };
-    expect(hire(s, candidate(s)).ok).toBe(true);
+    expect(hire(withDesk(s), candidate(s)).ok).toBe(true);
   });
 
   it("route a role by the local part and bill no shared mailbox on Lookout 365", () => {
@@ -124,7 +124,7 @@ describe("mail accounts", () => {
 
   it("give employees of an old save a mailbox on the domain tenant", () => {
     const s = readyGame(8);
-    hire(s, candidate(s));
+    hire(withDesk(s), candidate(s));
     const raw = JSON.parse(serialize(s));
     raw.mail.accounts = raw.mail.accounts.filter((a: { employee: string | null }) => !a.employee);
     const old = deserialize(JSON.stringify(raw));

@@ -65,7 +65,18 @@ export const SAVE_VERSION = 5;
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover";
 
-export type SpaceKind = "basement" | "share" | "cage" | "suite";
+export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office";
+// Where the company lives (GDD, Properties). building is the postal address; buildingId the listing it was rented or bought from.
+// A section's rent is the monthly price agreed when it was rented (0 once bought); fit is null for a bought section never fitted.
+// refitUntil is the hour a refit is done. locationId is the zone the property's server rooms (or the basement's racks) form.
+export type PropertyKind = "basement" | "office" | "own";
+export type SectionFit = "desks" | "servers";
+export interface Building { name: string; street: string; zip: string; city: string }
+export interface Section { id: string; floor: number; fit: SectionFit | null; since: number; refitUntil: number; rent: number }
+export interface Property {
+  id: string; kind: PropertyKind; buildingId: string | null; building: Building; sections: Section[];
+  deposit: number; noticeAt: number | null; boughtFor: number | null; locationId: string | null;
+}
 // One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.
 export type LogSev = "info" | "warn" | "crit";
 export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number }
@@ -221,6 +232,7 @@ export interface GameState {
   cash: number;
   nextId: number;
   locations: Location[];
+  properties: Property[];
   racks: Rack[];
   devices: Device[];
   cables: Cable[];
@@ -479,9 +491,15 @@ export const device = (id: string, model: string, brand: string, rackId: string 
 // panel. The player cables the router, buys, places and cables the first server.
 const START_NAME = "Basement Hosting";
 
+export const BASEMENT_ADDRESS: Building = { name: "", street: "Kellerweg 3", zip: "60311", city: "Frankfurt am Main" };
+export const basementProperty = (locationId: string | null): Property => ({
+  id: "prop1", kind: "basement", buildingId: null, building: BASEMENT_ADDRESS, sections: [], deposit: 0, noticeAt: null, boughtFor: null, locationId,
+});
+
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: 0, nextId: 8,
   locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: BASEMENT.positions, readyAt: 0, extraCircuit: false }],
+  properties: [basementProperty("loc1")],
   racks: [{ id: "rack2", model: "shelf", locationId: "loc1", position: 1, name: t("rack.shelf"), arriveAt: null, price: 0, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [device("dev5", "home-router", "AVN", "rack2", 5, null, "fra1-gw-01", 0), device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],

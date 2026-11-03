@@ -4,7 +4,7 @@ import { modelById } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
 import { freeSlots, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
-import { installCarried } from "../../../sim/90-actions/carry";
+import { installCarried, installFromDoor } from "../../../sim/90-actions/carry";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
 import { RackFront, shelfPitch } from "../../art/RackFront";
@@ -145,40 +145,57 @@ function Act({ e }: { e: MenuItem }) {
 
 function InstallCard({ rack, unit, onMount, onPick }: { rack: Rack; unit: number; onMount: Parameters<typeof MountRow>[0]["onMount"]; onPick: (id: string) => void }) {
   const game = useStore((s) => s.game);
-  const rows = mountable(game, rack, unit);
+  const rows = mountable(game, rack, unit), parcels = doorFit(game, rack, unit), held = carriedFit(game, rack.id).includes(unit);
   return (
     <div className="wr-card" data-free={unit}>
       <div className="wr-card-h"><h2>{`U${unit}`}</h2><span className="wr-model">{t("locations-1.empty")}</span></div>
       <div className="loc-shop-list">
-        {carriedFit(game, rack.id).includes(unit) && <CarriedRow game={game} rack={rack} unit={unit} onDone={onPick} />}
+        {held && <HandRow game={game} rack={rack} unit={unit} d={game.devices.find((x) => x.id === game.player.carrying)!} onDone={onPick} />}
+        {parcels.map((d) => <HandRow key={d.id} game={game} rack={rack} unit={unit} d={d} onDone={onPick} />)}
         {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMount={onMount} />)}
-        {!rows.length && !carriedFit(game, rack.id).includes(unit) && <div className="loc-shop-none">{t("locations-2.noStoredFits")}</div>}
+        {!rows.length && !parcels.length && !held && <div className="loc-shop-none">{t("locations-2.noStoredFits")}</div>}
       </div>
     </div>
   );
 }
 
-// Free units the carried unit can go into, one per start slot and every unit of its run.
-function carriedFit(game: GameState, rackId: string): number[] {
-  const d = game.devices.find((x) => x.id === game.player.carrying), rack = game.racks.find((r) => r.id === rackId);
-  if (!d || !rack || rack.locationId !== game.player.at) return [];
-  const h = heightIn(game, rackId, d.model);
+// Free units a unit in the player's hands could go into, one per start slot and every unit of its run.
+function fitOf(game: GameState, rack: Rack, d: Device | undefined): number[] {
+  if (!d || rack.locationId !== game.player.at) return [];
+  const h = heightIn(game, rack.id, d.model);
   if (modelById(d.model).kind === "part" || !h) return [];
-  return freeSlots(game, rackId, 1).filter((u) => mountFrom(game, rackId, h, 1, u) !== undefined);
+  return freeSlots(game, rack.id, 1).filter((u) => mountFrom(game, rack.id, h, 1, u) !== undefined);
 }
 
-function CarriedRow({ game, rack, unit, onDone }: { game: GameState; rack: Rack; unit: number; onDone: (id: string) => void }) {
-  const act = useStore((s) => s.act);
-  const d = game.devices.find((x) => x.id === game.player.carrying)!, m = modelById(d.model);
+function carriedFit(game: GameState, rackId: string): number[] {
+  const rack = game.racks.find((r) => r.id === rackId);
+  return rack ? fitOf(game, rack, game.devices.find((x) => x.id === game.player.carrying)) : [];
+}
+
+// Parcels at this room's door that fit at unit, one per model and brand.
+function doorFit(game: GameState, rack: Rack, unit: number): Device[] {
+  const seen = new Set<string>();
+  return game.devices.filter((d) => {
+    const k = `${d.model}|${d.brand}`;
+    if (d.door?.at !== rack.locationId || d.chassisId || seen.has(k) || !fitOf(game, rack, d).includes(unit)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+// A unit carried or waiting at the door, mounted by the player's own hands.
+function HandRow({ game, rack, unit, d, onDone }: { game: GameState; rack: Rack; unit: number; d: Device; onDone: (id: string) => void }) {
+  const act = useStore((s) => s.act), m = modelById(d.model), carried = d.id === game.player.carrying;
   const from = mountFrom(game, rack.id, heightIn(game, rack.id, d.model), 1, unit)!;
+  const mount = () => (carried ? act(installCarried, rack.id, from) : act(installFromDoor, d.id, rack.id, from));
   return (
-    <div className="loc-shop-row" data-carried={d.id}>
+    <div className="loc-shop-row" data-carried={carried ? d.id : undefined} data-door={carried ? undefined : d.id}>
       <Isometric model={m} brand={d.brand} w={64} />
       <div className="loc-shop-main">
         <div className="loc-shop-name">{m.kind === "server" ? `${d.brand} ` : ""}{m.name}</div>
-        <div className="loc-shop-specs">{t("world.inHands")}</div>
+        <div className="loc-shop-specs">{t(carried ? "world.inHands" : "locations-2.atDoor")}</div>
       </div>
-      <button className="btn primary" onClick={() => { if (act(installCarried, rack.id, from).ok) onDone(d.id); }}>{t("locations-2.mount")}</button>
+      <button className="btn primary" onClick={() => { if (mount().ok) onDone(d.id); }}>{t("locations-2.mount")}</button>
     </div>
   );
 }
