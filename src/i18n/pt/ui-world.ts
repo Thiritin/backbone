@@ -22,4 +22,8 @@ export default {
   "world.cableInHand": () => "Cabo na mão",
   "world.toRack": () => "Para outro rack",
   "world.dropCable": () => "Largar cabo",
+  "world.scanAll": () => "Digitalizar tudo",
+  "world.mainSwitch": () => "Disjuntor geral",
+  "world.prevLetter": () => "Carta anterior",
+  "world.nextLetter": () => "Próxima carta",
 } satisfies Dict;
