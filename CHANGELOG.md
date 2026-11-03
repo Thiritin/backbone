@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Letters now wait in the basement letterbox until you walk over and fetch them, and the scanner beside the desk files a fetched letter into DocuWhere.
 - Colocation sites are rooms of their own now, with a cage door, a cross-connect panel showing the carriers on site and a cold aisle in front of the racks, and the trip back starts from their door.
 - Clicking a rack in the room now opens a close-up of it right there, where you install devices from storage, remove them and open their lids without leaving the room.
 - The basement is now seen from above at a three-quarter angle, drawn with datacenter pixel art and placeholder art for the few things it does not have yet.

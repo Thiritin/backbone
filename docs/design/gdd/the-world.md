@@ -21,8 +21,8 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Server internals | Lid slides off at the rack, parts go in by hand | The lid view stays, opened from the rack |
 | Cabling | Cables run visibly between racks and into the wall | Port inspector, port groups, speeds |
 | Deliveries | Parcels arrive at the door; carry them to storage, unbox | Shop buys, tracking in Storage |
-| Post | Letters land in the letterbox; walk over, take them, open them at the desk | Reading, filing, DMS |
-| Scanner | A desk device turns a paper letter into a document | The document appears in the document app |
+| Post | Letters land in the letterbox of the basement and stay there, with their deadlines running, until the player walks over and fetches them; the letterbox shows how many wait | The Post app lists waiting letters greyed under "In the letterbox"; fetched letters are read, paid and scanned there |
+| Scanner | Beside the desk; using it lists the fetched letters not yet scanned, and a click files one | The scanned letter appears in DocuWhere, which holds only scanned letters |
 | Travel | Walk out the door, pick a destination on the map, watch the drive ([Travel](travel.md)) | Locations app shows where you are and when you arrive |
 | Faults | Blinking LED on the rack, the technician PC plugs into a port | Monitoring, alarms, the port inspector diagram |
 | Phone | Rings on the wall at night when on call | Support tickets, pager text |
@@ -36,7 +36,7 @@ The first room is the basement of the player's parents' house in Frankfurt, avai
 
 - **Desk with the PC.** Against the far wall, with its monitors, chair and a tower PC beside it. Walking to the desk and using the PC opens the desktop fullscreen. The world keeps running underneath and resumes where the player stood. The scanner stands next to the desk.
 - **Door.** A glass door against the left wall. The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels and letters appear beside it.
-- **Letterbox.** On the left wall next to the door. Holds unread post; letters stick out of the slot while there are unread ones. Using it moves the letters into the player's hands; the desk opens them.
+- **Letterbox.** On the left wall next to the door. Holds the delivered post; letters stick out of the slot with their count while any wait. Using it moves every letter to the desk and opens the Post app.
 - **Storage shelf.** Against the left wall. Crates stacked per delivery; the shelf shows how full the storage is. Using it opens the Storage view.
 - **Rack slots.** Any free floor tile against a wall takes a rack. A rack loaded from a save on a tile that is no longer against a wall moves to the next free one. The basement allows a handful, limited by the power the house gives.
 - **Power and cooling.** The breaker cabinet against the left wall and a cooling unit on the far wall. The cabinet shows the power draw, and a weather display under the cooling unit shows the outside weather and the room temperature from the sim.
@@ -86,7 +86,7 @@ Each is its own feature with a seeded test and lands before the world depends on
 - **Rack tiles.** Every rack in a location has a tile and a facing. New racks take the next free wall tile. An action moves a rack. Old saves get tiles assigned on load.
 - **Presence rules.** Which hardware actions need the player in the room. The sim already knows where the player is; the world is where that rule becomes visible.
 - **Parcels at the door.** Arrived deliveries wait at the door until carried to storage, which is what makes a late unbox cost time.
-- **Post in the box.** Letters arrive in the letterbox and stay unread until fetched. The scanner turns a paper letter into a document.
+- **Post in the box.** Each letter knows whether it waits in a letterbox or lies at the desk, and whether it is scanned. Delivery puts it in the basement letterbox; fetching needs the player there and takes all of them. A letter in the letterbox cannot be read, and its bill is due all the same. Scanning a desk letter once files it in DocuWhere. Old saves keep their letters at the desk and filed.
 - **Carrying.** A hand slot in the sim so a carried server is not also in storage.
 
 ## Multiplayer, later

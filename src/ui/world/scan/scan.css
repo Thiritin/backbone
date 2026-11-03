@@ -1,0 +1,12 @@
+/* The scanner's letter list: a shorter slab of the rack close-up. */
+.wr-panel.ws-panel { height: auto; max-height: 45%; }
+.ws-list { overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 4px; }
+.ws-row {
+  display: grid; grid-template-columns: minmax(0, 14rem) minmax(0, 1fr) auto; gap: 12px; align-items: baseline;
+  padding: 8px 10px; border: 2px solid oklch(0.32 0.022 255); border-radius: 3px;
+  background: oklch(0.28 0.022 255); color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+.ws-row:hover, .ws-row:focus-visible { border-color: var(--accent); }
+.ws-row span, .ws-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-row small { font-variant-numeric: tabular-nums; color: oklch(0.75 0.03 220); }
+.ws-none { padding: 8px 0; color: oklch(0.75 0.03 220); font-size: 13px; }
