@@ -43,6 +43,7 @@ export default {
   "core.notify.software": () => "Software",
   "core.notify.internet": () => "Internet",
   "core.notify.market": () => "Mercato",
+  "core.choice.other": () => "Altro…",
   "core.notify.other": () => "Altro",
   "core.twistLine": (p) => `Linea di casa ${p.name}`,
   "core.twistDc": (p) => `Spazio libero solo a ${p.name}`,

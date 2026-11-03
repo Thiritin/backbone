@@ -4,6 +4,8 @@ import { deleteRecord, saveRecord, setSecondary } from "../../../../../sim/90-ac
 import type { GameState } from "../../../../../sim/50-state";
 import { ownerOf, secondaryChoices, TTLS, zoneOf, type DnsRecord, type DnsType } from "../../../../../sim/60-infra/netsvc-dns";
 import { usePageAct } from "../../pageAct";
+import { zoneChoices } from "../../../../../sim/60-infra/zone-choices";
+import { ChoiceField } from "../../../../ChoiceField";
 
 const TYPES: DnsType[] = ["A", "AAAA", "CNAME", "MX", "TXT", "NS"];
 type Draft = Omit<DnsRecord, "id"> & { id?: string };
@@ -40,7 +42,7 @@ export function ZoneEditor({ game, zone, era, onBack }: { game: GameState; zone:
           <input aria-label={t("browser-consoles-2.name")} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           <select aria-label={t("browser-consoles-2.type")} value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as DnsType })}>{TYPES.map((x) => <option key={x}>{x}</option>)}</select>
           <select aria-label={t("netsvc.ttl")} value={draft.ttl} onChange={(e) => setDraft({ ...draft, ttl: Number(e.target.value) })}>{TTLS.map((x) => <option key={x} value={x}>{x}</option>)}</select>
-          <input aria-label={t("netsvc.data")} value={draft.data} onChange={(e) => setDraft({ ...draft, data: e.target.value })} />
+          <ChoiceField key={draft.type} label={t("netsvc.data")} value={draft.data} choices={zoneChoices(game, zone, draft.type, z.records)} onChange={(data) => setDraft({ ...draft, data })} />
           <button type="submit">{t("netsvc.save")}</button><button type="button" onClick={() => setDraft(null)}>{t("netsvc.cancel")}</button>
           {error && <span className="cx-note" role="alert">{error}</span>}
         </form>

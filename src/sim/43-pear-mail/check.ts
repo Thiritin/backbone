@@ -34,6 +34,12 @@ export function hostOwner(s: GameState, host: string, protocol: MailProtocol): s
   return MAIL_HOSTS.find((x) => mailServersOf(x.id, d, year)[protocol]?.host === h)?.id ?? null;
 }
 
+// The server names the account assistant lists for a protocol: every provider's host this year.
+export function hostChoices(s: GameState, protocol: MailProtocol): string[] {
+  const d = companyDomain(s), year = yearOf(s.hour);
+  return [...new Set(MAIL_HOSTS.map((x) => mailServersOf(x.id, d, year)[protocol]?.host).filter((h): h is string => !!h))];
+}
+
 // The error key a check of the account answers now, null when it connects; gapMin counts the provider's poll gap.
 export function clientError(s: GameState, c: ClientAccount, gapMin?: number): string | null {
   const owner = c.server && hostOwner(s, c.server.host, c.protocol);
