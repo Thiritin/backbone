@@ -14,6 +14,8 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 
 ## What lives where
 
+How every game system meets the rooms, close-ups and desktop is decided in `docs/design/world-systems.md`.
+
 | Thing | World | Desktop |
 | --- | --- | --- |
 | Rack placement, moving racks | Place a rack on a floor tile, turn it, push it | Locations app lists racks and their tiles |
