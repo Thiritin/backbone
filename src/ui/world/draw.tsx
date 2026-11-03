@@ -433,7 +433,7 @@ export function BeerCrate({ x }: { x: number }) {
 
 // Desk lamp between the scanner and the screen, its shade turned toward the keyboard; it is on at night.
 export function DeskLamp({ x, on }: { x: number; on: boolean }) {
-  const b = { x: x + 0.02, y: 0.16 }, foot = at3(b.x + 0.05, b.y + 0.05, DESK_Z + 2), elbow = at3(b.x + 0.04, b.y + 0.02, DESK_Z + 24), head = at3(b.x + 0.22, b.y + 0.16, DESK_Z + 26);
+  const b = { x: x + 0.02, y: 0.16 }, foot = at3(b.x + 0.05, b.y + 0.05, DESK_Z + 2), elbow = at3(b.x + 0.04, b.y + 0.02, DESK_Z + 13), head = at3(b.x + 0.22, b.y + 0.16, DESK_Z + 15);
   return (
     <>
       <Prism x0={b.x} y0={b.y} x1={b.x + 0.1} y1={b.y + 0.1} z0={DESK_Z} z1={DESK_Z + 2} tone="w-tone-dark" />
