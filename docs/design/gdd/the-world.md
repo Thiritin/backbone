@@ -20,13 +20,17 @@ Backbone has two surfaces. The desktop is the company: every piece of software, 
 | Installing and removing devices | A rack opens a close-up panel over the room: pick a free unit to mount a device from the location's storage or the one in your hands, pick a device to power it, open its lid or unmount it back to storage | Cabling and ports stay in the Locations app, opened from the panel |
 | Server internals | Lid slides off at the rack, parts go in by hand | The lid view stays, opened from the rack |
 | Cabling | Cables run visibly between racks and into the wall | Port inspector, port groups, speeds |
-| Deliveries | Parcels arrive at the door of the player's own place; pick one up and carry it to the shelf or straight into a rack. At a datacenter the receiving desk shelves them | Shop buys, tracking in Storage, an "At the door" group |
-| Post | Letters land in the letterbox of the basement and stay there, with their deadlines running, until the player clicks the letterbox and fetches them; the letterbox shows how many wait | The Post app lists waiting letters greyed under "In the letterbox"; fetched letters are read, paid and scanned there |
-| Scanner | Beside the desk; using it lists the fetched letters not yet scanned, and a click files one | The scanned letter appears in DocuWhere, which holds only scanned letters |
+| Deliveries | Parcels arrive at the door of the player's own place; pick one up and carry it to the shelf or straight into a rack. The shelf opens a storage panel in the room listing stored units and parcels at the door, either of which can be picked up. At a datacenter the receiving desk shelves them | Shop buys, tracking in Storage, an "At the door" group |
+| Post | Letters land in the letterbox of the basement and stay there, with their deadlines running, until the player clicks the letterbox and fetches them; the letterbox shows how many wait, and fetching opens a post panel in the room where each fetched letter can be read and scanned | The Post app lists waiting letters greyed under "In the letterbox"; fetched letters are read, paid and scanned there |
+| Scanner | On the desk; using it opens the same post panel | The scanned letter appears in DocuWhere, which holds only scanned letters |
 | Travel | Walk out the door, pick a destination on the map, watch the drive ([Travel](travel.md)) | Locations app shows where you are and when you arrive |
+| Network and power | The cross-connect panel opens a panel with the carriers on site and the uplinks with their cross-connects; the PDU and the fuse box open a panel with the power draw and the room temperature | The Locations app orders and changes them |
+| Desk PC | Opens the desktop | Everything on the desktop |
 | Faults | Blinking LED on the rack, the technician PC plugs into a port | Monitoring, alarms, the port inspector diagram |
 | Phone | Rings on the wall at night when on call | Support tickets, pager text |
 | Everything software | | Billing, mail, consoles, network, products, customers, staff |
+
+Only the desk PC and the NOC desk open the desktop; every other object opens a panel inside the room.
 
 The rule: if a real sysadmin in 2005 would have had to stand up for it, it is in the world. If they would do it in a browser or terminal, it is on the desktop.
 
@@ -36,8 +40,8 @@ The first room is the basement of the player's parents' house in Frankfurt, avai
 
 - **Desk with the PC.** One wooden desk along the right wall carries the scanner at its left end and the monitor with its keyboard at its right end. Using the PC opens the desktop fullscreen. The world keeps running underneath and resumes at the same view. Using the scanner opens the scanner panel with the fetched letters.
 - **Door.** A wooden door in the left wall that swings into the room when used. The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels stack on the floor beside it.
-- **Letterbox.** A brass box on the left wall next to the door. Waiting letters stick out of its slot, with their count beside it. Using it moves every letter to the desk and opens the Post app.
-- **Storage shelf.** Against the left wall, four boards high, one crate per stored device up to four. Using it opens the Storage view, or puts down a carried unit.
+- **Letterbox.** A brass box on the left wall next to the door. Waiting letters stick out of its slot, with their count beside it. Using it moves every letter to the desk and opens the post panel, where each fetched letter can be read and scanned.
+- **Storage shelf.** Against the left wall, four boards high, one crate per stored device up to four. Using it opens the storage panel, or puts down a carried unit.
 - **Rack slots.** Any free floor tile against a wall takes a rack. A rack loaded from a save on a tile that is no longer against a wall moves to the next free one. The basement allows a handful, limited by the power the house gives.
 - **Power and weather.** The breaker cabinet on the left wall shows the power draw on its meter. A window with a fan sits in the right wall, and a weather display under it shows the outside sky and temperature over the room temperature from the sim.
 
@@ -47,9 +51,9 @@ Rented space uses the same renderer with its own layout per space kind. A cage f
 
 - **Share.** An 8 by 6 room: one row of four rack tiles facing the cold aisle, a cross-connect panel on the far wall, a cooling unit and a parts shelf.
 - **Cage.** A 12 by 8 room: two rows of eight rack tiles facing one cold aisle, a cross-connect panel, two cooling units, a shelf and a floor-standing PDU on the right wall.
-- **Suite.** A 16 by 11 room: four rows of ten rack tiles around two cold aisles, a cross-connect panel, a NOC desk, two cooling units, a shelf, a PDU and a loading-dock door in the far wall.
+- **Suite.** A 16 by 11 room: four rows of ten rack tiles around two cold aisles, a cross-connect panel, a NOC desk in front of the rack rows, two cooling units, a shelf, a PDU and a loading-dock door in the far wall.
 
-Every fixture with a desktop counterpart opens it: the cross-connect panel opens the location's Network tab and shows the carriers on site as labels beside it, the PDU opens the location with its power meter, the shelf opens Storage, and the NOC desk opens the desktop. A rack loaded from a save on a tile that is no longer a rack tile moves to the next free one.
+The NOC desk opens the desktop. Every other fixture opens a panel in the room: the cross-connect panel shows the carriers on site, which are also on a plate beside it, and the uplinks with their cross-connects; the PDU shows the power draw and the room temperature; the shelf shows the storage. A rack loaded from a save on a tile that is no longer a rack tile moves to the next free one.
 
 ## Movement and interaction
 
@@ -59,7 +63,7 @@ Presence stays a sim rule: the room on screen is the one the player is at, the d
 
 Parcels are carried with the hand cursor. Clicking a parcel at the door picks it up, and it follows the pointer as a small box. Clicking the shelf puts it in storage, and clicking a rack opens the rack panel with the carried unit offered for the free units it fits. Escape with a parcel in hand puts it on the shelf.
 
-Every click calls an existing action, and a fixture with a desktop counterpart opens it.
+Every click calls an existing action. Only the desk PC and the NOC desk open the desktop; every other object opens a slide-up panel in the room.
 
 Staff may later appear in rooms as figures at their desks, the way tycoon games show employees.
 
@@ -100,4 +104,4 @@ Friends running their own companies in the same market is a later layer, and it 
 
 ## Demo scope
 
-The first demo is the basement played by direct clicks, the PC that opens the desktop, racks on their tiles that open a close-up of the rack inside the room, where devices are mounted, removed and opened, parcels at the door that open Storage, a letterbox that opens the post, a scanner that opens the document app, a door that swings open and opens the map. Everything else opened is the existing app. The sim change is rack tiles. The rest of the table above comes feature by feature.
+The first demo is the basement played by direct clicks, the PC that opens the desktop, racks on their tiles that open a close-up of the rack inside the room, where devices are mounted, removed and opened, parcels at the door that go into the hand, a shelf, letterbox and scanner that open their panels in the room, a door that swings open and opens the map. The sim change is rack tiles. The rest of the table above comes feature by feature.
