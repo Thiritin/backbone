@@ -4,13 +4,14 @@ import { storeItem } from "../src/sim/10-catalog/store";
 import { NOTARY_NAME, OFFICE_NAME, REGISTER_NAME } from "../src/sim/80-business/paperwork";
 import { tick } from "../src/sim/88-tick/tick";
 import { retypeLetter } from "../src/sim/90-actions/paperwork";
+import { fetchPost, scanLetter } from "../src/sim/90-actions/post";
 import { install } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame } from "./fixtures";
 
 const run = (s: ReturnType<typeof newGame>, days: number) => { for (let i = 0; i < days * 24; i++) tick(s); };
 
-// Three letters of different kinds, delivered.
+// Three letters of different kinds, delivered, fetched and scanned.
 function withPost() {
   const s = newGame(7);
   s.letters = [];
@@ -18,6 +19,8 @@ function withPost() {
   post(s, OFFICE_NAME, "officeRegistered", { name: "Kellerhost", reg: "4711" }, 1);
   post(s, NOTARY_NAME, "mailReset", { address: "info@kellerhost.de", code: "123" }, 1);
   run(s, 4);
+  fetchPost(s);
+  for (const l of inbox(s)) scanLetter(s, l.id);
   return s;
 }
 
