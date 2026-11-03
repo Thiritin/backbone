@@ -349,6 +349,7 @@ export default {
   "locations-2.handsOwn": () => "In person",
   "locations-2.handsRemote": (p) => `Remote hands ${p.cost} · ${p.time}`,
   "locations-2.selfOnArrival": () => "In person · on arrival",
+  "locations-2.handJobs": () => "Hands-on jobs",
   "locations-2.handsJobs": () => "Remote hands",
   "locations-2.job.mountDevice": () => "Mount",
   "locations-2.job.mountStack": () => "Mount",

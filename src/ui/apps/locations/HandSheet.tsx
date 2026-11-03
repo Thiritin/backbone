@@ -139,13 +139,13 @@ export const jobBadge = (game: GameState, deviceId: string): string | undefined 
   return j && (j.self ? tr("locations-2.selfOnArrival") : slotTime(game.hour, j.dueAt));
 };
 
-// The remote hands jobs queued at a location, each with its due time and a Cancel.
+// The hands-on jobs queued at a location, own and remote, each with a Cancel.
 export function HandsJobs({ game, locationId }: { game: GameState; locationId: string }) {
   const act = useStore((s) => s.act), jobs = game.handsJobs.filter((j) => j.locationId === locationId);
   if (!jobs.length) return null;
   return (
     <div className="loc-card">
-      <div className="loc-card-h"><h3>{tr("locations-2.handsJobs")}</h3></div>
+      <div className="loc-card-h"><h3>{tr("locations-2.handJobs")}</h3></div>
       {jobs.map((j) => {
         const d = game.devices.find((x) => x.id === j.deviceId);
         return (
@@ -153,8 +153,7 @@ export function HandsJobs({ game, locationId }: { game: GameState; locationId: s
             <span className="loc-k">{tr(`locations-2.job.${j.action}`)}</span>
             <span>{d?.label ?? d?.name}</span>
             <span className="grow" />
-            <span className="num">{j.self ? tr("locations-2.selfOnArrival") : slotTime(game.hour, j.dueAt)}</span>
-            {!j.self && <span className="num">{euroPrice(j.fee)}</span>}
+            {j.self ? <span>{tr("locations-2.selfOnArrival")}</span> : <><span>{tr("locations-2.handsJobs")}</span><span className="num">{slotTime(game.hour, j.dueAt)}</span><span className="num">{euroPrice(j.fee)}</span></>}
             <button className="btn" onClick={() => act(cancelHandsJob, j.id)}>{tr("locations-2.cancel")}</button>
           </div>
         );
