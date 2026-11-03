@@ -41,9 +41,15 @@ interface Props {
   onPort?: (e: End) => void;
   hand?: End | null;
   portTitle?: (e: End) => string;
+  // A dragged cable dropped on an element marked data-away, which carries it out of the rack.
+  onAway?: (from: End) => void;
+  // A cover over the cable channel, so cables vanish into it after a short run from the port.
+  duct?: boolean;
 }
 
 const MONO = "JetBrains Mono, monospace", DIM = "oklch(0.62 0.01 255)";
+// Port hit areas reach past the jack to the neighbour's edge, so a dragged plug finds its port.
+const HIT_X = 2.5, HIT_Y = 3;
 const LANE = 5, ROW = 5, STEP = 11, VSTEP = 16, PER_ROW = 24, BOX_H = 32, BOX_GAP = 8;
 
 const press = (fn: (el: Element) => void) => ({
@@ -72,7 +78,7 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove, onPort, hand = null, portTitle }: Props) {
+export function RackFront({ units, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove, onPort, hand = null, portTitle, onAway, duct }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
@@ -245,16 +251,18 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
   const toSvg = (cx: number, cy: number) => { const p = new DOMPoint(cx, cy).matrixTransform(svg.current!.getScreenCTM()!.inverse()); return { x: p.x, y: p.y }; };
   const dragRef = useRef(drag);
   dragRef.current = drag;
-  const live = useRef({ onConnect, onDevice });
-  live.current = { onConnect, onDevice };
+  const live = useRef({ onConnect, onDevice, onAway, onPort });
+  live.current = { onConnect, onDevice, onAway, onPort };
   useEffect(() => {
     if (!drag) return;
     const move = (e: PointerEvent) => setDrag((d) => d && { ...d, ...toSvg(e.clientX, e.clientY), moved: true });
     const up = (e: PointerEvent) => {
-      const d = dragRef.current, to = document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-end]")?.getAttribute("data-end");
+      const d = dragRef.current, el = document.elementFromPoint(e.clientX, e.clientY), to = el?.closest("[data-end]")?.getAttribute("data-end");
       setDrag(null);
       if (d && to && to !== endKey(d.from)) live.current.onConnect?.(d.from, parseEnd(to));
-      else if (d && !d.moved && !remoteIds.has(d.from.device)) live.current.onDevice(d.from.device);
+      else if (d && el?.closest("[data-away]")) live.current.onAway?.(d.from);
+      // With click-to-plug the click that follows handles the port.
+      else if (d && !d.moved && !live.current.onPort && !remoteIds.has(d.from.device)) live.current.onDevice(d.from.device);
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up, { once: true });
@@ -297,8 +305,8 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
     for (const [i, s] of portSpots(it.model, it.name, side, w, h)) {
       const end = { device: it.id, port: i }, vga = onConsole && it.model.kind === "server" && oobPorts(it.model)[i - OOB_PORT] === "console";
       hits.push(vga
-        ? <rect key={endKey(end)} className="rack-port rack-vga" data-end={endKey(end)} x={pad + s.x - 1} y={top + py + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} onClick={() => onConsole(it.id)}><title>Plug in monitor</title></rect>
-        : <rect key={endKey(end)} {...tap(end)} data-end={endKey(end)} x={pad + s.x - 1} y={top + py + s.y - 1} width={s.w + 2} height={s.h + 2} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} />);
+        ? <rect key={endKey(end)} className="rack-port rack-vga" data-end={endKey(end)} x={pad + s.x - HIT_X} y={top + py + s.y - HIT_Y} width={s.w + 2 * HIT_X} height={s.h + 2 * HIT_Y} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} onClick={() => onConsole(it.id)}><title>Plug in monitor</title></rect>
+        : <rect key={endKey(end)} {...tap(end)} data-end={endKey(end)} x={pad + s.x - HIT_X} y={top + py + s.y - HIT_Y} width={s.w + 2 * HIT_X} height={s.h + 2 * HIT_Y} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} />);
     }
   }
 
@@ -354,9 +362,16 @@ export function RackFront({ units, items, links = [], remotes = [], side = "fron
         {cords}
         <rect x={pad - 6} y={top - 2} width="5" height={y + 4} rx="1" fill="var(--metal-2)" />
         {wires}
+        {back && duct && (
+          <g className="rack-duct" aria-hidden="true">
+            <rect x={rail + 7} y={top - 3} width={channel - 8} height={y + 6} fill="var(--metal-2)" stroke="var(--metal-line)" strokeWidth="0.8" />
+            {Array.from({ length: Math.floor(y / 18) }, (_, k) => <rect key={k} x={rail + 12} y={top + 6 + k * 18} width={channel - 18} height="3" fill="var(--metal)" />)}
+          </g>
+        )}
       </g>
       {hits}
       {drag && drag.moved && <path className="rack-drag" d={`M${drag.x0} ${drag.y0}L${drag.x} ${drag.y}`} />}
+      {drag && drag.moved && <rect className="rack-plug" x={drag.x - 4} y={drag.y - 3.5} width="8" height="7" rx="1" pointerEvents="none" />}
       {held && ptr && <path className="rack-drag" data-hand="" d={`M${held.x} ${held.y}L${ptr.x} ${ptr.y}`} />}
     </svg>
   );
