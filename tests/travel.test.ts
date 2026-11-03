@@ -36,7 +36,7 @@ describe("travel", () => {
     expect(driveMs(900)).toBe(9000);
     expect(driveMs(5000)).toBe(12000);
     const p = along([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 3 }], 0.5);
-    expect(p).toEqual({ x: 1, y: 1, deg: 90 });
+    expect(p).toEqual({ x: 1, y: 1, deg: 90, i: 1 });
   });
 
   it("goes door, map, leave, road, arrive, room", () => {

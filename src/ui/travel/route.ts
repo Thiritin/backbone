@@ -58,13 +58,13 @@ export function km(line: LL[]): number {
 export const driveMs = (distance: number) => Math.min(12_000, 6_000 + (distance / 300) * 1000);
 
 // The point at fraction k of the polyline's length, with the heading in degrees.
-export function along(pts: { x: number; y: number }[], k: number): { x: number; y: number; deg: number } {
+export function along(pts: { x: number; y: number }[], k: number): { x: number; y: number; deg: number; i: number } {
   const seg = pts.slice(1).map((p, i) => Math.hypot(p.x - pts[i].x, p.y - pts[i].y));
   let left = seg.reduce((a, b) => a + b, 0) * Math.max(0, Math.min(1, k));
   for (let i = 0; i < seg.length; i++) {
     const a = pts[i], b = pts[i + 1], deg = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
-    if (left <= seg[i] || i === seg.length - 1) { const f = seg[i] ? Math.min(1, left / seg[i]) : 0; return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, deg }; }
+    if (left <= seg[i] || i === seg.length - 1) { const f = seg[i] ? Math.min(1, left / seg[i]) : 0; return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, deg, i }; }
     left -= seg[i];
   }
-  return { ...(pts[0] ?? { x: 0, y: 0 }), deg: 0 };
+  return { ...(pts[0] ?? { x: 0, y: 0 }), deg: 0, i: 0 };
 }
