@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- A new company starts with a metal shelf for its servers, with the router on its top board, and racks are bought later, with room for two of them in the basement.
 - The basement is smaller and full of life, with cellar windows that let daylight in, a real fuse box, a chair at the desk, and the family's boiler and washing machine.
 - The rack and the other room views now open as a large popup in the middle of the screen.
 - Hands-on work on the desktop goes through remote hands when you are not on site, priced on its button and done after the datacenter's response time, and the basement's hardware waits until you are home.

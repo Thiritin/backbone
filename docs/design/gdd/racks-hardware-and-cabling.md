@@ -2,6 +2,17 @@
 
 Racks hold servers, switches and routers, and you cable them port by port. Bandwidth, redundancy and failures all follow from how you wire them.
 
+**Racks and the shelf**
+
+| Model | Size | Price | Where |
+| --- | --- | --- | --- |
+| Shelf | 5 boards | 60 € used, the starting one free | Basement only, one |
+| Rack 24U | 24U | 350 € | Basement or datacenter |
+| Rack 42U | 42U | 800 € | Datacenter |
+| Rack 47U | 47U | 1,000 € | Datacenter |
+
+A new company starts with a used metal shelf in the basement, with the Fritz!Bocks standing on its top board. Each of the five boards holds one device up to 2U, a 1U or a 2U server taking one board alike, and the cables hang loose behind the boards. A shelf has no rails, so patch panels, PDUs, 0U devices and anything taller than 2U refuse it. Racks are bought later: the basement holds the shelf and at most two racks.
+
 **Hardware**
 
 | Device | Size | Role |
@@ -61,7 +72,7 @@ Failover is the safe default. Load balance doubles a server's bandwidth, but if 
 
 **Burn-in.** A server in a rack that is on, has power and sits in no cluster can be burned in from the inspector (Quick burn-in and Full burn-in) or the right-click menu (Burn-in). The server is busy for the test, so no customer can be put on it, and it draws full power; in a datacenter it uses its rack position and power as usual, and the test needs no remote hands. A Quick burn-in takes 6 hours and marks every part that is near its end of life as Worn in the parts list. A Full burn-in takes 48 hours, shows the real age of every part and makes about half of the parts past their life fail while no customer is on the server. A used part shows "Unknown" for its age and "Untested" as its state until a burn-in has looked at it. A server that passes a Full burn-in without a failure breaks down less often for a year. Switching the server off or losing power aborts the test. Buying on the board or eBuy comes with buyer protection: when a part of the unit fails within 14 days of its arrival, half of the unit's price comes back once, so a failure found by a burn-in pays too; Craigslost deals never refund.
 
-**Routers.** Routers are a class of the Shop with four sources. AVN builds the Fritz!Bocks small-office routers (2006 to 2024) for the basement: every one stands on a 1U shelf in the basement rack and carries traffic only while its DSL port is cabled to the line jack on the carrier panel. The basement starts with the flat's Fritz!Bocks 5050 in storage, which the player mounts before anything reaches the internet. A bought one installed from storage takes the mounted one's shelf, keeps its cables on the same ports, and the replaced router goes into storage. A basement rack moved to a datacenter leaves its router behind in storage. The basement's home line carries the lower of the line's upload and the router's routed speed, so the provided 100 Mbit router holds back a fast line until a better one is installed. Sysko sells business and branch routers from 2005, MicroTick cheap routers from 2010 and Junipurr carrier routers from 2010; the Sysko edge routers stay. All of them mount in a rack, and a datacenter router passes on no more than its throughput, shared among the links on it. A router either holds a full BGP table (and so can run an own AS) or takes provider addresses and a default route. Announcing an address block from a datacenter needs a router with a full table that is up at that location; the basement's routers never have one. Prices, speeds and which models hold a full table are in economy/README.md, Routers, UPS and PDUs.
+**Routers.** Routers are a class of the Shop with four sources. AVN builds the Fritz!Bocks small-office routers (2006 to 2024) for the basement: every one stands on a board of the basement shelf or on a 1U shelf in a basement rack and carries traffic only while its DSL port is cabled to the line jack on the carrier panel. The basement starts with the flat's Fritz!Bocks 5050 in storage, which the player mounts before anything reaches the internet. A bought one installed from storage takes the mounted one's shelf, keeps its cables on the same ports, and the replaced router goes into storage. A basement rack moved to a datacenter leaves its router behind in storage. The basement's home line carries the lower of the line's upload and the router's routed speed, so the provided 100 Mbit router holds back a fast line until a better one is installed. Sysko sells business and branch routers from 2005, MicroTick cheap routers from 2010 and Junipurr carrier routers from 2010; the Sysko edge routers stay. All of them mount in a rack, and a datacenter router passes on no more than its throughput, shared among the links on it. A router either holds a full BGP table (and so can run an own AS) or takes provider addresses and a default route. Announcing an address block from a datacenter needs a router with a full table that is up at that location; the basement's routers never have one. Prices, speeds and which models hold a full table are in economy/README.md, Routers, UPS and PDUs.
 
 **UPS sizes.** Eatin sells four UPS sizes: 1,500 VA (1U), 3,000 VA (2U), 5 kVA (3U) and 10 kVA (6U, with two feeds). Every location counts the battery of the UPS units in its racks against the load of its devices, so a bigger unit carries the location through a longer outage.
 
