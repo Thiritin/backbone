@@ -1,87 +1,72 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
-import { coldAisles, entryTile, fixtures, rackTiles, roomSize, type Facing, type Fixture, type Tile } from "../../sim/20-world/layout";
+import { coldAisles, fixtures, rackTiles, roomSize, type Fixture } from "../../sim/20-world/layout";
 import { carriersAt } from "../../sim/10-catalog/network";
 import { datacenterById } from "../../sim/20-world/datacenters";
 import { rackUnits } from "../../sim/20-world/datacenters";
-import { sky, temperature, type Sky } from "../../sim/20-world/weather";
+import { sky, temperature } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
 import { inLetterbox, postLocation } from "../../sim/40-support/letters";
 import { fetchPost } from "../../sim/90-actions/post";
 import { pickUp, putDown } from "../../sim/90-actions/carry";
 import { powerByLocation } from "../../sim/88-tick/tick";
 import { roomTemperature } from "../../sim/60-infra/sensors";
-import type { GameState, Location, Rack } from "../../sim/50-state";
+import type { GameState, Location } from "../../sim/50-state";
 import { Defs } from "../art/fronts";
-import { RackFront } from "../art/RackFront";
 import { rackItems } from "../apps/locations/RackView";
 import { useStore } from "../store";
-import { facingOf, key, pathTo, T, useTiles, type Pt } from "./grid";
-import { Sprite } from "./Sprite";
+import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
-import { artOf, WALLS, type Use } from "./rooms";
+import { artOf, type Use } from "./rooms";
+import {
+  Cooling, CrossConnect, Desk, Dock, Door, Extinguisher, FuseBox, Grate, Letterbox, Monitor, Parcel, PARCEL_H, Pdu, pts, RackBox, Scanner, Shelf, Walls, WALL, Window,
+} from "./draw";
 import { RackPanel } from "./rack/RackPanel";
-import { ScanPanel } from "./scan/ScanPanel";
+import { NetworkPanel, PostPanel, PowerPanel, StoragePanel } from "./panel/Panels";
 import "./world.css";
 
-const STEP_MS = 400, BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 1, ZOOM_MAX = 3;
-// Rack art is drawn 110 wide with 10 per unit, about a 19-inch front.
-const RACK_W = 110, ART_U = 10;
-// Arrow keys and WASD step along the grid; up is toward the far wall.
+const BLINK_MS = 500, FLASH_MS = 120, ZOOM_MIN = 0.75, ZOOM_MAX = 3, PAN_PX_S = 700;
+// Arrow keys and WASD pan the view, in screen directions.
 const KEYS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0],
 };
-// Where the player stood and how the room was zoomed and panned, per location, so the room resumes there.
-const stood: Record<string, Pt> = {};
+// How each room was zoomed and panned, per location, so the room resumes there.
 const looked: Record<string, { zoom: number | null; org: Pt | null }> = {};
-
-const lerp = (a: Pt, b: Pt, k: number): Pt => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
 
 export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
 
 export function World() {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface), openApp = useStore((s) => s.openApp);
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface);
   const loc = roomOf(game), home = loc.space === "basement";
-  const { w, h } = roomSize(loc), walls = WALLS[loc.space];
+  const { w, h } = roomSize(loc);
   const tiles = useMemo(() => rackTiles(loc, game.racks), [loc, game.racks]);
   const racks = game.racks.filter((r) => tiles[r.id]);
   const fx = fixtures(loc);
-  const blocked = useMemo(() => new Set([
-    ...Object.entries(fx).filter(([id, f]) => artOf(id, f).solid).flatMap(([, f]) => Array.from({ length: f.w ?? 1 }, (_, i) => key(f.x + i, f.y))),
-    ...Object.values(tiles).map((p) => key(p.x, p.y)),
-  ]), [tiles, fx]);
-  const grid = useRef({ w, h, blocked });
-  grid.current = { w, h, blocked };
 
-  const start = stood[loc.id] ?? (home ? { x: fx.pc.x, y: fx.pc.y + 1 } : entryTile(loc));
-  const [pos, setPos] = useState<Pt>(start);
-  const [facing, setFacing] = useState<Facing>("s");
-  const [stride, setStride] = useState(0);
   const [door, setDoor] = useState(0);
-  const [hover, setHover] = useState<Pt | null>(null);
   const [lit, setLit] = useState<string | null>(null);
   const [rackOpen, setRackOpen] = useState<string | null>(null);
-  const [scanOpen, setScanOpen] = useState(false);
-  const at = useRef<Pt>(start), path = useRef<Pt[]>([]), then = useRef<(() => void) | null>(null), held = useRef<string[]>([]), tap = useRef<string | null>(null);
+  // The panel open over the room: storage, network, the post or the power of a fixture.
+  const [panel, setPanel] = useState<{ kind: "storage" | "network" | "post" | "power"; title: string } | null>(null);
+  const [hand, setHand] = useState<Pt | null>(null);
+  const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
-  // Arriving by a trip puts the player inside the destination's door.
+
+  // The default view fits the room with its walls and fills the window.
+  const [size, setSize] = useState({ w: 1024, h: 768 });
+  const [zoomSet, setZoom] = useState<number | null>(looked[loc.id]?.zoom ?? null);
+  const [org, setOrg] = useState<Pt | null>(looked[loc.id]?.org ?? null);
+  // Arriving by a trip shows the destination as it was last seen.
   const shown = useRef(loc.id);
   useEffect(() => {
     if (shown.current === loc.id) return;
     shown.current = loc.id;
-    const p = entryTile(loc);
-    at.current = p; path.current = []; then.current = null;
-    setPos(p); setFacing("e"); setZoom(null); setOrg(null); setRackOpen(null); setScanOpen(false);
+    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setRackOpen(null); setPanel(null);
   }, [loc]);
-
-  // The default view fits the room with its walls.
-  const [size, setSize] = useState({ w: 1024, h: 768 });
-  const [zoomSet, setZoom] = useState<number | null>(looked[loc.id]?.zoom ?? null);
-  const [org, setOrg] = useState<Pt | null>(looked[loc.id]?.org ?? null);
-  useEffect(() => { looked[loc.id] = { zoom: zoomSet, org }; }, [loc.id, zoomSet, org]);
-  const box = { x: -EDGE, y: -2 * T - EDGE, w: w * T + 2 * EDGE, h: (h + 2) * T + EDGE };
+  useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org }; }, [loc.id, zoomSet, org]);
+  const box = { x: iso(0, h).x - 8, y: -WALL - 12, w: (w + h) * 32 + 16, h: (w + h) * 16 + WALL + 12 };
   const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, size.h * 0.94 / box.h);
   const zoom = zoomSet ?? fit;
   const o = org ?? { x: box.x + box.w / 2 - size.w / 2 / zoom, y: box.y + box.h / 2 - size.h / 2 / zoom };
@@ -97,51 +82,36 @@ export function World() {
     return () => ro.disconnect();
   }, []);
 
-  // Walking, held keys, the leg frames and LED blink share one frame loop.
+  // Held pan keys and the LED blink share one frame loop.
   useEffect(() => {
-    let raf = 0, blinkAt = 0, t0 = 0, from = at.current;
+    let raf = 0, blinkAt = 0, last = 0;
     const frame = (now: number) => {
       if (now - blinkAt > BLINK_MS) { blinkAt = now; svg.current?.classList.toggle("w-blink"); }
-      // A tap shorter than a frame still makes one step.
-      const pressed = held.current[held.current.length - 1] ?? tap.current, dir = pressed ? KEYS[pressed] : null;
-      if (!path.current.length && dir) {
-        tap.current = null;
-        const { w, h, blocked } = grid.current, n = { x: at.current.x + dir[0], y: at.current.y + dir[1] };
-        if (n.x >= 0 && n.y >= 0 && n.x < w && n.y < h && !blocked.has(key(n.x, n.y))) path.current = [n];
-        else setFacing(facingOf(dir[0], dir[1]));
+      const dir = held.current.reduce<[number, number]>((a, k) => [a[0] + KEYS[k][0], a[1] + KEYS[k][1]], [0, 0]);
+      if ((dir[0] || dir[1]) && last) {
+        const { zoom, o } = view.current, step = PAN_PX_S * Math.min(0.05, (now - last) / 1000) / zoom;
+        setOrg({ x: o.x + dir[0] * step, y: o.y + dir[1] * step });
       }
-      const next = path.current[0];
-      if (next) {
-        if (!t0) { t0 = now; from = at.current; setFacing(facingOf(next.x - from.x, next.y - from.y)); }
-        const k = Math.min(1, (now - t0) / STEP_MS);
-        setPos(lerp(from, next, k));
-        setStride(k < 0.5 ? 1 : 2);
-        if (k === 1) {
-          at.current = next; path.current.shift(); t0 = 0;
-          if (!path.current.length) {
-            if (!held.current.length) setStride(0);
-            const run = then.current; then.current = null; run?.();
-          }
-        }
-      }
+      last = now;
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
-    return () => { cancelAnimationFrame(raf); stood[loc.id] = at.current; };
-  }, [loc.id]);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
+  // Escape puts a carried unit down, else returns to the desktop.
+  const escape = useRef(() => {});
+  escape.current = () => (game.player.carrying ? act(putDown) : setSurface("desktop"));
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
     const down = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !busy(e)) { setSurface("desktop"); return; }
+      if (busy(e)) return;
+      if (e.key === "Escape") { escape.current(); return; }
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-      if ((k === "Enter" || k === "e") && !busy(e)) { actOn.current(); return; }
-      if (!KEYS[k] || busy(e)) return;
+      if (!KEYS[k]) return;
       e.preventDefault();
-      then.current = null;
       if (!held.current.includes(k)) held.current.push(k);
-      tap.current = k;
     };
     const release = (e: KeyboardEvent) => {
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
@@ -152,7 +122,7 @@ export function World() {
     window.addEventListener("keyup", release);
     window.addEventListener("blur", clear);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", release); window.removeEventListener("blur", clear); };
-  }, [setSurface]);
+  }, []);
 
   // Wheel zooms around the pointer.
   useEffect(() => {
@@ -171,10 +141,14 @@ export function World() {
     return () => el.removeEventListener("wheel", wheel);
   }, []);
 
-  // Drag pans; a press that moved is no click.
+  // Drag pans; a press that moved is no click. A carried unit follows the pointer.
   const drag = useRef<{ x: number; y: number; o: Pt } | null>(null), dragged = useRef(false);
   const down = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY, o }; dragged.current = false; };
   const move = (e: React.PointerEvent) => {
+    if (game.player.carrying) {
+      const r = svg.current!.getBoundingClientRect();
+      setHand({ x: o.x + (e.clientX - r.left) / zoom, y: o.y + (e.clientY - r.top) / zoom });
+    }
     const d = drag.current;
     if (!d) return;
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
@@ -183,33 +157,13 @@ export function World() {
     setOrg({ x: d.o.x - dx / zoom, y: d.o.y - dy / zoom });
   };
 
-  const walk = (targets: Pt[], run?: () => void) => {
-    const cur = path.current[0], from = cur ?? at.current;
-    const p = pathTo(from, targets, w, h, blocked);
-    if (!p) return;
-    path.current = cur ? [cur, ...p] : p;
-    then.current = run ?? null;
-    if (!path.current.length) { then.current = null; run?.(); }
-  };
   const click = (fn: () => void) => (e: MouseEvent) => { e.stopPropagation(); if (!dragged.current) fn(); };
-  const use = (id: string, tile: Pt, run: () => void) => click(() => {
+  // Clicking an object uses it at once.
+  const use = (id: string, run: () => void) => click(() => {
     setLit(id);
     setTimeout(() => setLit((v) => (v === id ? null : v)), FLASH_MS);
-    walk(useTiles(tile, blocked), () => {
-      const dx = tile.x - at.current.x, dy = tile.y - at.current.y;
-      if (dx || dy) setFacing(facingOf(dx, dy));
-      run();
-    });
+    run();
   });
-
-  // The action key uses the rack the player faces.
-  const actOn = useRef(() => {});
-  actOn.current = () => {
-    const [dx, dy] = AHEAD[facing];
-    const p = { x: at.current.x + dx, y: at.current.y + dy };
-    const r = racks.find((x) => tiles[x.id].x === p.x && tiles[x.id].y === p.y);
-    if (r && !path.current.length) setRackOpen(r.id);
-  };
 
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const waiting = loc.id === postLocation(game) ? inLetterbox(game).length : 0;
@@ -218,77 +172,69 @@ export function World() {
   const carried = game.devices.find((d) => d.id === game.player.carrying);
   const n = (v: number, digits = 0) => v.toLocaleString(LOCALE, { maximumFractionDigits: digits, minimumFractionDigits: digits });
 
-  // Things standing on the floor, sorted by their row so nearer ones overlap farther ones.
-  const things: { depth: number; node: ReactNode }[] = racks.map((r) => ({
-    depth: tiles[r.id].y,
-    node: <RackSprite key={r.id} rack={r} tile={tiles[r.id]} game={game} zoomed={zoomed} lit={lit === r.id} onClick={use(r.id, tiles[r.id], () => setRackOpen(r.id))} />,
-  }));
-  // Parcels stack on the floor tile beside the door, clear of its frame, the newest on top.
+
+  // Things standing on the floor, sorted by x + y so nearer ones overlap farther ones; a fixture sorts by its farthest tile.
+  const things: { depth: number; node: ReactNode }[] = racks.map((r) => {
+    const tile = tiles[r.id], leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on, top: d.slot + modelById(d.model).height - 1 }));
+    return {
+      depth: tile.x + tile.y,
+      node: (
+        <g key={r.id} className={`w-obj w-rack${lit === r.id ? " w-lit" : ""}`} data-rack={r.id} role="button" aria-label={r.name} onClick={use(r.id, () => setRackOpen(r.id))}>
+          <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} />
+        </g>
+      ),
+    };
+  });
+  // Parcels stack on the floor tile beside the door, clear of its swing, the newest on top.
   if (parcels.length && fx.door) {
-    const p = { x: fx.door.x + 1, y: fx.door.y - 1 }, top = parcels[parcels.length - 1];
-    things.push({ depth: p.y, node: (
+    const p = { x: fx.door.x + 1, y: fx.door.y - 1 }, top = parcels[parcels.length - 1], shown = parcels.slice(-PARCEL_STACK);
+    const label = iso(p.x + 0.5, p.y + 0.5);
+    things.push({ depth: p.x + p.y, node: (
       <g key="parcels" className={`w-obj${lit === "parcels" ? " w-lit" : ""}`} role="button" data-parcels={parcels.length} aria-label={t("world.obj.parcels", { n: parcels.length })}
-        onClick={use("parcels", p, () => act(pickUp, top.id))}>
-        {parcels.slice(-PARCEL_STACK).map((d, i) => <Parcel key={d.id} brand={d.brand} x={p.x * T + 10} y={(p.y + 1) * T - 4 - i * PARCEL_H} />)}
-        {parcels.length > 1 && <text className="w-num w-num-tag" x={p.x * T + 24} y={(p.y + 1) * T - 8 - Math.min(parcels.length, PARCEL_STACK) * PARCEL_H}>{n(parcels.length)}</text>}
+        onClick={use("parcels", () => { if (act(pickUp, top.id).ok) setHand(null); })}>
+        {shown.map((d, i) => <Parcel key={d.id} cx={p.x + 0.5} cy={p.y + 0.5} z={i * PARCEL_H} brand={d.brand} />)}
+        {parcels.length > 1 && <text className="w-num w-num-tag" x={label.x} y={label.y - shown.length * PARCEL_H - 10}>{n(parcels.length)}</text>}
       </g>
     ) });
   }
-  const run: Record<Use, () => void> = {
+  const run = (label: string): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
-    storage: () => (carried ? act(putDown) : openApp("Locations", { kind: "storage", id: loc.id })),
-    network: () => openApp("Locations", { kind: "network", id: loc.id }),
-    power: () => openApp("Locations", { kind: "location", id: loc.id }),
+    storage: () => (carried ? act(putDown) : setPanel({ kind: "storage", title: "" })),
+    network: () => setPanel({ kind: "network", title: "" }),
+    power: () => setPanel({ kind: "power", title: t(label) }),
     door: () => openDoor(),
-    post: () => { if (waiting) act(fetchPost); openApp("Post"); },
-    scan: () => setScanOpen(true),
+    post: () => { if (waiting) act(fetchPost); setPanel({ kind: "post", title: t(label) }); },
+    scan: () => setPanel({ kind: "post", title: t(label) }),
     none: () => {},
-  };
+  });
   const carriers = loc.dc ? carriersAt(datacenterById(loc.dc)).map((c) => c.name) : [];
-  // Live readouts drawn on a fixture, in its sprite's pixels, and things drawn beside it.
-  const on: Record<string, ReactNode> = {
-    fusebox: <text className="w-num w-num-tag" x="34" y="12">{`${n(power)}W`}</text>,
-    pdu: <text className="w-num w-num-tag" x="24" y="30">{`${n(power)}W`}</text>,
-    shelf: Array.from({ length: Math.min(stored, CRATES.length) }, (_, i) => <Sprite key={i} name="crate" x={CRATES[i].x} y={CRATES[i].y} />),
-    letterbox: <>
-      {Array.from({ length: Math.min(waiting, 3) }, (_, i) => <rect key={i} className="w-letter" x={5 + i * 4} y={2 + i} width="10" height="9" rx="0.5" />)}
-      <rect className="w-slot" x="5" y="8" width="18" height="3" rx="1.5" />
-      {waiting > 0 && <text className="w-num w-num-tag" data-letterbox-count x="26" y="8">{n(waiting)}</text>}
-    </>,
-  };
-  const beside: Record<string, (f: Fixture) => ReactNode> = {
-    // Carrier labels on a plate beside the panel, one per line.
-    xconnect: (f) => carriers.length > 0 && (
-      <g transform={`translate(${(f.x + (f.w ?? 1)) * T + 2} ${-T - 28})`}>
-        <rect className="w-plate" width="42" height={carriers.length * 7 + 3} rx="1.5" />
-        {carriers.map((c, i) => <text key={c} className="w-carrier" x="3" y={7 + i * 7}>{c}</text>)}
-      </g>
-    ),
-    fan: (f) => (
-      <Sprite name="weather" x={f.x * T + 4} y={-8}>
-        <g transform="translate(4 6)">{SKY[sky(loc.city, game.hour)]}</g>
-        <text className="w-num" x="37" y="11">{`${n(temperature(loc.city, game.hour))}°C`}</text>
-        <text className="w-num w-num-dim" x="37" y="21">{`${n(roomTemperature(game, loc), 1)}°C`}</text>
-      </Sprite>
-    ),
+  const watts = `${n(power)}W`;
+  const draw: Record<string, (f: Fixture) => ReactNode> = {
+    // The desk runs under the scanner and the PC beside it, so the three read as one piece.
+    desk: (f) => <Desk from={fx.scanner?.x ?? f.x} to={(fx.pc?.x ?? f.x) + 1} />,
+    scanner: (f) => <Scanner x={f.x} />,
+    pc: (f) => <Monitor x={f.x} />,
+    noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} y={f.y} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} y={f.y} />)}</>,
+    shelf: (f) => <Shelf at={f} count={stored} />,
+    fan: (f) => <Window f={f} sky={sky(loc.city, game.hour)} outside={`${n(temperature(loc.city, game.hour))}°C`} inside={`${n(roomTemperature(game, loc), 1)}°C`} />,
+    fusebox: (f) => <FuseBox f={f} reading={watts} />,
+    letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} />,
+    door: (f) => <Door f={f} open={door} cage={!home} />,
+    extinguisher: (f) => <Extinguisher f={f} />,
+    xconnect: (f) => <CrossConnect f={f} carriers={carriers} />,
+    cooling: (f) => <Cooling f={f} />,
+    pdu: (f) => <Pdu f={f} reading={watts} />,
+    dock: (f) => <Dock f={f} />,
   };
   const back: ReactNode[] = [];
   for (const [id, f] of Object.entries(fx)) {
-    const a = artOf(id, f);
-    const art = (
-      <>
-        <Sprite name={a.frames ? a.frames[door] : a.sprite} x={f.x * T + (a.dx ?? 0)} y={(f.y + 1) * T + (a.dy ?? 0)}>{on[id]}</Sprite>
-        {beside[id]?.(f)}
-      </>
-    );
+    const a = artOf(id, f), art = draw[f.kind ?? id](f);
     const node = a.use
-      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, f, run[a.use])}>{art}</g>
+      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label)[a.use])}>{art}</g>
       : <g key={id} aria-label={t(a.label)} pointerEvents="none">{art}</g>;
-    if (a.back) back.push(node);
-    else things.push({ depth: f.y + (a.depth ?? 0), node });
+    if (a.wall) back.push(node);
+    else things.push({ depth: f.x + f.y + (a.depth ?? 0), node });
   }
-  things.push({ depth: pos.y + 0.01, node: <Sprite key="player" name={`player-${DIR[facing]}-${stride % 2}`} x={pos.x * T} y={(pos.y + 1) * T} /> });
-  if (carried) things.push({ depth: pos.y + 0.02, node: <g key="carried" data-carried={carried.id} pointerEvents="none"><Parcel brand={carried.brand} x={pos.x * T + 10} y={pos.y * T + 8} /></g> });
   things.sort((a, b) => a.depth - b.depth);
 
   const openDoor = () => {
@@ -296,99 +242,32 @@ export function World() {
     setTimeout(() => setDoor(2), 150);
     setTimeout(() => { setDoor(0); useTrip.getState().send("door"); }, 700);
   };
+  const grid = Array.from({ length: w + 1 }, (_, x) => `M${pts(iso(x, 0))} L${pts(iso(x, h))}`)
+    .concat(Array.from({ length: h + 1 }, (_, y) => `M${pts(iso(0, y))} L${pts(iso(w, y))}`)).join(" ");
 
   return (
-    <div className="world" aria-label={loc.name}>
+    <div className={`world${carried ? " w-carrying" : ""}`} aria-label={loc.name}>
       <svg ref={svg} className="world-svg" viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
-        onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; setHover(null); }}>
+        onPointerDown={down} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
         <Defs />
-        {/* Repeating tiles fill one rect each, so no seams show between them at any zoom. */}
-        <defs>
-          {TILED.map((name) => (
-            <pattern key={name} id={`w-${name}`} width={T} height={T} patternUnits="userSpaceOnUse"><Sprite name={name} x={0} y={T} /></pattern>
-          ))}
-        </defs>
-        <g pointerEvents="none">
-          <rect fill="url(#w-floor)" x={0} y={0} width={w * T} height={h * T} />
-          <rect fill={`url(#w-${walls.wall})`} x={0} y={-2 * T} width={w * T} height={T} />
-          <rect fill={`url(#w-${walls.base})`} x={0} y={-T} width={w * T} height={T} />
-          <rect className="w-wall-edge" x={-EDGE} y={-2 * T - EDGE} width={w * T + 2 * EDGE} height={EDGE} />
-          <rect className="w-wall-edge" x={-EDGE} y={-2 * T} width={EDGE} height={(h + 2) * T} />
-          <rect className="w-wall-edge" x={w * T} y={-2 * T} width={EDGE} height={(h + 2) * T} />
-        </g>
-        <g pointerEvents="none">
-          {coldAisles(loc).map((a) => <rect key={a.y} fill="url(#w-grate)" x={a.x0 * T} y={a.y * T} width={(a.x1 - a.x0 + 1) * T} height={T} />)}
-          {walls.trays && Array.from({ length: Math.ceil(w / 2) }, (_, i) => <Sprite key={i} name="tray" x={i * 2 * T} y={-2 * T + 40} />)}
-        </g>
-        {Array.from({ length: w * h }, (_, i) => {
-          const x = i % w, y = Math.floor(i / w);
-          return <rect key={i} className="w-tile" x={x * T} y={y * T} width={T} height={T} onPointerEnter={() => setHover({ x, y })} onClick={click(() => walk([{ x, y }]))} />;
-        })}
-        {hover && <rect className="w-cursor" x={hover.x * T + 2} y={hover.y * T + 2} width={T - 4} height={T - 4} rx="4" />}
+        <Walls w={w} h={h} fenced={!home} />
+        <polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} />
+        {coldAisles(loc).map((a) => <Grate key={a.y} {...a} />)}
+        <path className="w-tile" d={grid} />
         {back}
         {things.map((x) => x.node)}
+        {carried && hand && (
+          <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>
+        )}
       </svg>
-      {scanOpen && <ScanPanel onClose={() => setScanOpen(false)} />}
+      {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
+      {panel?.kind === "network" && <NetworkPanel loc={loc} onClose={() => setPanel(null)} />}
+      {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
+      {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
       {rackOpen && <RackPanel key={rackOpen} rackId={rackOpen} onClose={() => setRackOpen(null)} />}
     </div>
   );
 }
 
-type Click = (e: MouseEvent) => void;
-
-const DIR: Record<Facing, string> = { s: "down", n: "up", w: "left", e: "right" };
-const AHEAD: Record<Facing, [number, number]> = { s: [0, 1], n: [0, -1], w: [-1, 0], e: [1, 0] };
-// The far wall is a face two tiles tall; the walls' top edges are a flat band EDGE pixels thick.
-const TILED = ["floor", "wall", "wall-base", "fence", "fence-base", "grate"];
-const EDGE = 10;
-// Crate spots on the shelf, bottom-left corners in the shelf sprite's pixels.
-const CRATES: Pt[] = [{ x: 4, y: 40 }, { x: 24, y: 40 }, { x: 4, y: 72 }, { x: 24, y: 72 }];
-// Parcels drawn per stack before the count takes over, and each one's height in pixels.
-const PARCEL_STACK = 3, PARCEL_H = 14;
-
-// A parcel with the maker's name on its label.
-const Parcel = ({ brand, x, y }: { brand: string; x: number; y: number }) => (
-  <Sprite name="parcel" x={x} y={y}>
-    <rect className="w-parcel-tape" x="12" y="1" width="4" height="14" />
-    {brand && <><rect className="w-parcel-label" x="4" y="9" width="20" height="6" rx="0.5" /><text className="w-parcel-brand" x="14" y="13.6">{brand}</text></>}
-  </Sprite>
-);
-
-// The front panel of the rack sprites, in their pixels, where device fronts go when zoomed in.
-const RACK_FACE = { x: 8, y: 22, w: 32, h: 66 };
-
-function RackSprite({ rack, tile, game, zoomed, lit, onClick }: { rack: Rack; tile: Tile; game: GameState; zoomed: boolean; lit: boolean; onClick: Click }) {
-  const units = rackUnits(rack.model), { x, y, w, h } = RACK_FACE;
-  // RackFront's front view: unit numbers, rails and devices span RACK_W, the cable channel beyond it is cut off.
-  const artW = RACK_W + 36, artH = units * ART_U + 8;
-  return (
-    <g className={`w-obj w-rack${lit ? " w-lit" : ""}`} data-rack={rack.id} role="button" aria-label={rack.name} onClick={onClick}>
-      <Sprite name={zoomed ? "rack-open" : "rack-closed"} x={tile.x * T} y={(tile.y + 1) * T}>
-        {zoomed ? (
-          <svg x={x} y={y} width={w} height={h} viewBox={`0 0 ${artW} ${artH}`} preserveAspectRatio="none" pointerEvents="none">
-            <RackFront units={units} items={rackItems(game, rack.id)} w={RACK_W} u={ART_U} onDevice={() => {}} onFree={() => {}} />
-          </svg>
-        ) : (
-          game.devices.filter((d) => d.rackId === rack.id && !d.chassisId).map((d) => (
-            <rect key={d.id} className={d.on ? "w-led w-led-on" : "w-led"} x={x + 2} y={y + h - (d.slot + modelById(d.model).height - 1) * (h / units) - 3} width="2" height="2" />
-          ))
-        )}
-      </Sprite>
-    </g>
-  );
-}
-
-// Weather icons in a 9 by 10 box.
-const Cloud = () => (
-  <g className="w-cloud">
-    <circle cx="3" cy="4.5" r="2" /><circle cx="5.2" cy="3.6" r="2.5" /><rect x="1" y="4.5" width="6.8" height="2.5" rx="1.25" />
-  </g>
-);
-const Drops = ({ cls }: { cls: string }) => <>{[1.6, 4, 6.4].map((x) => <circle key={x} className={cls} cx={x} cy="8.6" r="0.7" />)}</>;
-const SKY: Record<Sky, ReactNode> = {
-  sun: <circle className="w-sun" cx="4" cy="4.5" r="3" />,
-  partly: <><circle className="w-sun" cx="3" cy="3" r="2.4" /><g transform="translate(1 1.8)"><Cloud /></g></>,
-  cloud: <g transform="translate(0 0.8)"><Cloud /></g>,
-  rain: <><Cloud /><Drops cls="w-rain" /></>,
-  snow: <><Cloud /><Drops cls="w-snow" /></>,
-};
+// Parcels drawn per stack before the count takes over.
+const PARCEL_STACK = 3;

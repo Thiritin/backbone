@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { t } from "../src/i18n/en";
 import { useStore } from "../src/ui/store";
 import { roomOf, World } from "../src/ui/world/World";
-import { pathTo } from "../src/ui/world/grid";
-import { Sprite } from "../src/ui/world/Sprite";
+import { tick } from "../src/sim/88-tick/tick";
+import { buyDevice } from "../src/sim/90-actions/hardware";
 import { readyGame } from "./fixtures";
 import { devName } from "../src/ui/apps/hw";
 
@@ -48,22 +48,31 @@ describe("world", () => {
     }
   });
 
-  it("walks around blocked tiles", () => {
-    const p = pathTo({ x: 0, y: 0 }, [{ x: 2, y: 0 }], 3, 3, new Set(["1,0"]))!;
-    expect(p.map((q) => `${q.x},${q.y}`)).toEqual(["0,1", "1,1", "2,1", "2,0"]);
-    expect(pathTo({ x: 0, y: 0 }, [{ x: 2, y: 0 }], 3, 1, new Set(["1,0"]))).toBeNull();
-  });
-
-  it("draws a sprite from its rect in the mapping and nothing for an unknown name", () => {
-    const map = { rack: { sheet: "atlas.png", x: 96, y: 48, w: 48, h: 96 } };
-    const { container } = render(createElement("svg", null, createElement(Sprite, { name: "rack", x: 48, y: 96, map })));
-    const el = container.querySelector("[data-sprite=rack]")!;
-    expect(el.getAttribute("viewBox")).toBe("96 48 48 96");
-    expect([el.getAttribute("x"), el.getAttribute("y"), el.getAttribute("height")]).toEqual(["48", "0", "96"]);
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const unknown = render(createElement("svg", null, createElement(Sprite, { name: "nope", x: 0, y: 0, map })));
-    expect(unknown.container.querySelector("svg")!.childElementCount).toBe(0);
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
+  it("takes a parcel from the door into the hand and puts it on the shelf", () => {
+    const s = readyGame(7), here = roomOf(s);
+    s.cash = 1_000_000;
+    buyDevice(s, "g1-compute", "Dwell", 1, here.id);
+    const r = buyDevice(s, "g1-compute", "Dwell", 1, here.id);
+    if (!r.ok) throw new Error(r.error);
+    while (s.devices.find((d) => d.id === r.id)!.arriveAt !== null) tick(s);
+    useStore.setState({ game: s, speed: 0, surface: "world" });
+    const { container } = render(createElement(World));
+    const parcels = container.querySelector("[data-parcels]")!;
+    const id = s.devices.filter((d) => d.door?.at === here.id).pop()!.id;
+    fireEvent.click(parcels);
+    expect(useStore.getState().game.player.carrying).toBe(id);
+    fireEvent.pointerMove(container.querySelector("svg")!, { clientX: 40, clientY: 40 });
+    expect(container.querySelector(`.w-hand[data-carried="${id}"]`)).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: t("world.obj.shelf") }));
+    const g = useStore.getState().game;
+    expect(g.player.carrying).toBeNull();
+    expect(g.devices.find((d) => d.id === id)!.store).toBe(here.id);
+    expect(container.querySelector(".w-hand")).toBeNull();
+    // With empty hands the shelf opens the storage panel in the room, where a stored unit can be taken again.
+    fireEvent.click(screen.getByRole("button", { name: t("world.obj.shelf") }));
+    const panel = screen.getByRole("dialog", { name: t("world.obj.shelf") });
+    fireEvent.click(panel.querySelector(`[data-unit="${id}"] button`)!);
+    expect(useStore.getState().game.player.carrying).toBe(id);
+    expect(useStore.getState().windows.length).toBe(0);
   });
 });

@@ -110,6 +110,12 @@ describe("rack tiles", () => {
     });
   }
 
+  it("puts the suite's NOC desk in front of every rack row, where no rack hides it", () => {
+    const loc = { ...basement(newGame(20)), id: "loc9", dc: "interaction-fra", space: "suite" as const, positions: 40 };
+    const noc = FIXTURES.suite.noc;
+    expect(Math.max(...wallTiles(loc).map((t) => t.y))).toBeLessThan(noc.y - 1);
+  });
+
   it("moves a loaded cage rack off a tile that is no longer a rack tile", () => {
     const s = newGame(21);
     const r = addLocation(s, "interaction-fra", "cage", 4);

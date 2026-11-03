@@ -9,7 +9,7 @@ export interface Fixture { x: number; y: number; w?: number; kind?: string }
 interface Row { y: number; x0: number; x1: number; facing: Facing }
 interface Room { size: RoomSize; fixtures: Record<string, Fixture>; rows: Row[] }
 
-// Fixed objects stand against or hang on a wall: row y = 0 along the far wall, column x = 0 along the left one. The door is always on the left wall.
+// Fixed objects stand against or hang on a wall: row y = 0 along the far wall, column x = 0 along the left one. The door is always on the left wall; the suite's NOC desk stands in front of the rack rows so none hides it.
 const ROOMS: Record<SpaceKind, Room> = {
   basement: {
     size: { w: 12, h: 9 },
@@ -36,7 +36,7 @@ const ROOMS: Record<SpaceKind, Room> = {
     size: { w: 16, h: 11 },
     fixtures: {
       shelf: { x: 0, y: 1 }, pdu: { x: 15, y: 3 }, extinguisher: { x: 0, y: 7 }, door: { x: 0, y: 8 },
-      xconnect: { x: 2, y: 0, w: 2 }, noc: { x: 5, y: 0, w: 2 }, cooling: { x: 7, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" },
+      xconnect: { x: 2, y: 0, w: 2 }, noc: { x: 6, y: 10, w: 2 }, cooling: { x: 7, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" },
       dock: { x: 12, y: 0, w: 2 },
     },
     rows: [
