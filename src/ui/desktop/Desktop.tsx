@@ -10,6 +10,7 @@ import { Dock } from "./Dock";
 import { GameOver } from "./GameOver";
 import { SkillSheet } from "../apps/research/SkillSheet";
 import { MenuBar } from "./MenuBar";
+import { World } from "../world/World";
 import { StartScreen } from "./StartScreen";
 import { EarlyAccess } from "./EarlyAccess";
 import { latestOs } from "../../sim/10-catalog/os";
@@ -66,7 +67,7 @@ export function Desktop() {
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   const { windows, speed, setSpeed, advance, save, notify, clearUnseen, news, explain, setExplain, alert } = useStore();
-  const gameOver = useStore((s) => s.game.gameOver);
+  const gameOver = useStore((s) => s.game.gameOver), surface = useStore((s) => s.surface);
   const [update, setUpdate] = useState<ChangelogDay[] | null>(null);
   const dismissed = useRef<number | null>(null);
 
@@ -119,16 +120,20 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
 
   return (
     <>
-      <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
-      <ConfirmHost />
-      <div className="live-only" inert={speed === 0}>
-        <DesktopIcons />
-        <Widgets />
-        <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
-        {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
-        <Dock />
-      </div>
-      {speed === 0 && <div className="paused-veil">{t("desktop.paused")}</div>}
+      {surface === "world" ? <><World /><Banners /></> : (
+        <>
+          <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
+          <ConfirmHost />
+          <div className="live-only" inert={speed === 0}>
+            <DesktopIcons />
+            <Widgets />
+            <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
+            {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
+            <Dock />
+          </div>
+          {speed === 0 && <div className="paused-veil">{t("desktop.paused")}</div>}
+        </>
+      )}
       {news && <WhatsNew changes={news} />}
       {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}

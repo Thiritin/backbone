@@ -1,0 +1,15 @@
+import type { Dict } from "../lang";
+
+export default {
+  "world.standUp": () => "Se lever",
+  "world.room": () => "Pièce",
+  "world.you": () => "Toi",
+  "world.obj.pc": () => "Ordinateur",
+  "world.obj.desk": () => "Bureau",
+  "world.obj.scanner": () => "Scanner",
+  "world.obj.door": () => "Porte",
+  "world.obj.letterbox": () => "Boîte aux lettres",
+  "world.obj.shelf": () => "Étagère de stockage",
+  "world.obj.fusebox": () => "Boîte à fusibles",
+  "world.obj.fan": () => "Ventilateur de fenêtre",
+} satisfies Dict;
