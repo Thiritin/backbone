@@ -1,46 +1,107 @@
-import type { Location, Rack } from "../50-state";
+import type { Location, Rack, SpaceKind } from "../50-state";
 
 export type Facing = "n" | "e" | "s" | "w";
 export interface Tile { x: number; y: number; facing: Facing }
 export interface RoomSize { w: number; h: number }
+// A fixed object on tile (x, y), w tiles wide; kind defaults to its id, so a room can hold two of a kind.
+export interface Fixture { x: number; y: number; w?: number; kind?: string }
+// A row of rack tiles from x0 to x1, fronts facing the cold aisle.
+interface Row { y: number; x0: number; x1: number; facing: Facing }
+interface Room { size: RoomSize; fixtures: Record<string, Fixture>; rows: Row[] }
 
-// Basement fixed objects, all against a wall: row y = 0 along the far wall, column x = 0 along the left one.
-export const FIXTURES: Record<string, { x: number; y: number }> = {
-  scanner: { x: 4, y: 0 },
-  desk: { x: 5, y: 0 },
-  pc: { x: 6, y: 0 },
-  fan: { x: 8, y: 0 },
-  fusebox: { x: 0, y: 2 },
-  shelf: { x: 0, y: 4 },
-  door: { x: 0, y: 6 },
-  letterbox: { x: 0, y: 7 },
+// Fixed objects stand against or hang on a wall: row y = 0 along the far wall, column x = 0 along the left one. The door is always on the left wall.
+const ROOMS: Record<SpaceKind, Room> = {
+  basement: {
+    size: { w: 12, h: 9 },
+    fixtures: {
+      scanner: { x: 4, y: 0 }, desk: { x: 5, y: 0 }, pc: { x: 6, y: 0 }, fan: { x: 8, y: 0 },
+      fusebox: { x: 0, y: 2 }, shelf: { x: 0, y: 4 }, door: { x: 0, y: 6 }, letterbox: { x: 0, y: 7 },
+    },
+    rows: [],
+  },
+  share: {
+    size: { w: 8, h: 6 },
+    fixtures: { shelf: { x: 0, y: 1 }, extinguisher: { x: 0, y: 3 }, door: { x: 0, y: 4, kind: "cage-door" }, xconnect: { x: 2, y: 0, w: 2 }, cooling: { x: 5, y: 0, w: 2 } },
+    rows: [{ y: 2, x0: 2, x1: 5, facing: "s" }],
+  },
+  cage: {
+    size: { w: 12, h: 8 },
+    fixtures: {
+      shelf: { x: 0, y: 1 }, pdu: { x: 0, y: 2 }, extinguisher: { x: 0, y: 4 }, door: { x: 0, y: 5, kind: "cage-door" },
+      xconnect: { x: 2, y: 0, w: 2 }, cooling: { x: 7, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" },
+    },
+    rows: [{ y: 2, x0: 2, x1: 9, facing: "s" }, { y: 4, x0: 2, x1: 9, facing: "n" }],
+  },
+  suite: {
+    size: { w: 16, h: 11 },
+    fixtures: {
+      shelf: { x: 0, y: 1 }, pdu: { x: 0, y: 2 }, extinguisher: { x: 0, y: 7 }, door: { x: 0, y: 8, kind: "cage-door" },
+      xconnect: { x: 2, y: 0, w: 2 }, noc: { x: 4, y: 0, w: 2 }, cooling: { x: 7, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" },
+      dock: { x: 12, y: 0, w: 2 },
+    },
+    rows: [
+      { y: 2, x0: 3, x1: 12, facing: "s" }, { y: 4, x0: 3, x1: 12, facing: "n" },
+      { y: 6, x0: 3, x1: 12, facing: "s" }, { y: 8, x0: 3, x1: 12, facing: "n" },
+    ],
+  },
 };
 
+export const FIXTURES: Record<SpaceKind, Record<string, Fixture>> = Object.fromEntries(
+  Object.entries(ROOMS).map(([k, r]) => [k, r.fixtures]),
+) as Record<SpaceKind, Record<string, Fixture>>;
+
+export const fixtures = (loc: Location) => FIXTURES[loc.space];
+
 export function roomSize(loc: Location): RoomSize {
-  return loc.space === "basement" ? { w: 12, h: 9 } : { w: 16, h: 12 };
+  return ROOMS[loc.space].size;
+}
+
+// Every tile a fixture covers.
+export function fixtureTiles(loc: Location): { x: number; y: number }[] {
+  return Object.values(fixtures(loc)).flatMap((f) => Array.from({ length: f.w ?? 1 }, (_, i) => ({ x: f.x + i, y: f.y })));
+}
+
+// The tile inside the door, where the player stands on arriving.
+export function entryTile(loc: Location): { x: number; y: number } {
+  const d = fixtures(loc).door;
+  return { x: d.x + 1, y: d.y };
+}
+
+// Rows of floor in front of the rack fronts.
+export function coldAisles(loc: Location): { y: number; x0: number; x1: number }[] {
+  const out = new Map<number, { y: number; x0: number; x1: number }>();
+  for (const r of ROOMS[loc.space].rows) {
+    const y = r.y + (r.facing === "s" ? 1 : -1);
+    out.set(y, { y, x0: r.x0, x1: r.x1 });
+  }
+  return [...out.values()];
 }
 
 const key = (t: { x: number; y: number }) => `${t.x},${t.y}`;
 
-// The far wall's row first, then the left and the right column; corners are left out since their facing is ambiguous. The near side has no wall.
+// Tiles that take a rack. In the basement: the far wall's row first, then the left and the right column, corners left out since their facing is ambiguous, and the near side has no wall. In a rented room: the rack rows.
 export function wallTiles(loc: Location): Tile[] {
-  const { w, h } = roomSize(loc);
+  const room = ROOMS[loc.space];
+  if (room.rows.length) return room.rows.flatMap((r) => Array.from({ length: r.x1 - r.x0 + 1 }, (_, i) => ({ x: r.x0 + i, y: r.y, facing: r.facing })));
+  const { w, h } = room.size;
   const tiles: Tile[] = [];
   for (let x = 1; x < w - 1; x++) tiles.push({ x, y: 0, facing: "s" });
   for (let y = 1; y < h - 1; y++) tiles.push({ x: 0, y, facing: "e" });
   for (let y = 1; y < h - 1; y++) tiles.push({ x: w - 1, y, facing: "w" });
-  if (loc.space !== "basement") return tiles;
-  const fixed = new Set(Object.values(FIXTURES).map(key));
+  const fixed = new Set(fixtureTiles(loc).map(key));
   return tiles.filter((t) => !fixed.has(key(t)));
 }
 
 export function rackTiles(loc: Location, racks: Rack[]): Record<string, Tile> {
   const here = racks.filter((r) => r.locationId === loc.id).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   const out: Record<string, Tile> = {};
-  const taken = new Set<string>(), walls = new Set(wallTiles(loc).map(key));
-  // A stored tile that is no longer against a wall, as in saves from older layouts, gets a new one.
-  for (const r of here) if (r.tile && walls.has(key(r.tile)) && !taken.has(key(r.tile))) { out[r.id] = r.tile; taken.add(key(r.tile)); }
-  const free = wallTiles(loc).filter((t) => !taken.has(key(t)));
+  const spots = wallTiles(loc), taken = new Set<string>(), valid = new Map(spots.map((t) => [key(t), t]));
+  // A stored tile that is no longer a rack tile, as in saves from older layouts, gets a new one; facing follows the current layout.
+  for (const r of here) {
+    const t = r.tile && valid.get(key(r.tile));
+    if (t && !taken.has(key(t))) { out[r.id] = t; taken.add(key(t)); }
+  }
+  const free = spots.filter((t) => !taken.has(key(t)));
   for (const r of here) if (!out[r.id] && free.length) out[r.id] = free.shift()!;
   return out;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIXTURES, freeRackTiles, rackTiles, roomSize, wallTiles } from "../src/sim/20-world/layout";
+import { coldAisles, entryTile, FIXTURES, fixtureTiles, freeRackTiles, rackTiles, roomSize, wallTiles } from "../src/sim/20-world/layout";
 import type { GameState } from "../src/sim/50-state";
 import { addLocation, buyRack, moveRack } from "../src/sim/90-actions/hardware";
 import { placeRack } from "../src/sim/90-actions/layout";
@@ -18,7 +18,7 @@ describe("rack tiles", () => {
     const loc = basement(s);
     expect(roomSize(loc)).toEqual({ w: 12, h: 9 });
     const walls = new Set(wallTiles(loc).map(key));
-    for (const f of Object.values(FIXTURES)) expect(walls.has(key(f))).toBe(false);
+    for (const f of Object.values(FIXTURES.basement)) expect(walls.has(key(f))).toBe(false);
     const tiles = Object.values(rackTiles(loc, s.racks));
     expect(tiles).toHaveLength(2);
     expect(new Set(tiles.map(key)).size).toBe(2);
@@ -53,7 +53,7 @@ describe("rack tiles", () => {
   it("puts every wall tile along the far wall and the two side walls", () => {
     const loc = basement(newGame(12)), { w } = roomSize(loc);
     for (const t of wallTiles(loc)) expect(t.y === 0 ? t.facing === "s" : t.x === 0 ? t.facing === "e" : t.x === w - 1 && t.facing === "w").toBe(true);
-    for (const f of Object.values(FIXTURES)) expect(f.x === 0 || f.y === 0).toBe(true);
+    for (const f of Object.values(FIXTURES.basement)) expect(f.x === 0 || f.y === 0).toBe(true);
   });
 
   it("places a rack on a free wall tile and refuses a taken or inner one", () => {
@@ -68,7 +68,7 @@ describe("rack tiles", () => {
     expect(rackTiles(loc, s.racks)[a.id]).toEqual(free);
     expect(placeRack(s, a.id, tiles[b.id])).toEqual({ ok: false, error: "error.tileTaken" });
     expect(placeRack(s, a.id, { x: 5, y: 4, facing: "n" })).toEqual({ ok: false, error: "error.tileTaken" });
-    expect(placeRack(s, a.id, { ...FIXTURES.door, facing: "n" })).toEqual({ ok: false, error: "error.tileTaken" });
+    expect(placeRack(s, a.id, { ...FIXTURES.basement.door, facing: "n" })).toEqual({ ok: false, error: "error.tileTaken" });
     expect(placeRack(s, "nope", free)).toEqual({ ok: false, error: "error.unknownRack" });
   });
 
@@ -83,12 +83,48 @@ describe("rack tiles", () => {
       if (!res.ok) throw new Error(res.error);
       return s.racks.find((x) => x.id === res.id)!;
     });
-    expect(roomSize(loc)).toEqual({ w: 16, h: 12 });
+    expect(roomSize(loc)).toEqual({ w: 12, h: 8 });
     expect(bought[0].tile).toEqual(wallTiles(loc)[0]);
     expect(bought[1].tile).toEqual(wallTiles(loc)[1]);
     const old = s.racks[0];
     old.tile = { ...wallTiles(basement(s))[5] };
     expect(moveRack(s, old.id, loc.id, 3).ok).toBe(true);
     expect(old.tile).toEqual(wallTiles(loc)[2]);
+  });
+
+  for (const [space, size] of [["share", 1], ["cage", 16], ["suite", 40]] as const) {
+    it(`lays out a ${space} with its fixtures inside and room for every rack`, () => {
+      const loc = { ...basement(newGame(20)), id: "loc9", dc: "interaction-fra", space, positions: size };
+      const { w, h } = roomSize(loc);
+      const fixed = fixtureTiles(loc);
+      for (const f of fixed) expect(f.x >= 0 && f.y >= 0 && f.x < w && f.y < h).toBe(true);
+      expect(new Set(fixed.map(key)).size).toBe(fixed.length);
+      const spots = wallTiles(loc), taken = new Set(fixed.map(key));
+      expect(spots.length).toBeGreaterThanOrEqual(loc.positions);
+      expect(new Set(spots.map(key)).size).toBe(spots.length);
+      for (const t of spots) expect(taken.has(key(t)) || t.x < 0 || t.y < 0 || t.x >= w || t.y >= h).toBe(false);
+      const entry = entryTile(loc);
+      expect(taken.has(key(entry)) || spots.some((t) => key(t) === key(entry))).toBe(false);
+      for (const a of coldAisles(loc)) expect(spots.some((t) => t.y === a.y)).toBe(false);
+      expect(Object.keys(FIXTURES[space])).toEqual(expect.arrayContaining(["door", "xconnect", "cooling", "shelf", "extinguisher"]));
+    });
+  }
+
+  it("moves a loaded cage rack off a tile that is no longer a rack tile", () => {
+    const s = newGame(21);
+    const r = addLocation(s, "interaction-fra", "cage", 4);
+    if (!r.ok) throw new Error(r.error);
+    const loc = s.locations.find((l) => l.id === r.id)!;
+    loc.readyAt = s.hour;
+    for (const p of [1, 2]) { const res = buyRack(s, loc.id, "rack-47", p); if (!res.ok) throw new Error(res.error); }
+    const here = s.racks.filter((x) => x.locationId === loc.id);
+    // A wall tile of the old bare-floor layout, and the door.
+    here[0].tile = { x: 0, y: 3, facing: "e" };
+    here[1].tile = { ...FIXTURES.cage.door, facing: "e" };
+    const loaded = deserialize(serialize(s));
+    const tiles = rackTiles(loaded.locations.find((l) => l.id === loc.id)!, loaded.racks);
+    const spots = new Set(wallTiles(loc).map(key));
+    for (const x of here) expect(spots.has(key(tiles[x.id]))).toBe(true);
+    expect(new Set(here.map((x) => key(tiles[x.id]))).size).toBe(2);
   });
 });
