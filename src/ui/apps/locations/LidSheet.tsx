@@ -21,7 +21,8 @@ const slotName = (s: Slot) => (s.group === "pcie" ? `PCIe ${s.index + 1}` : s.gr
 
 // The lid-off view of a server: the lid slides off, every slot opens its part, and Close puts the lid back. A running server only
 // takes hot-swap work. The lid is UI state of this sheet; the sheet closes itself when the server is gone.
-export function LidSheet({ deviceId, onClose }: { deviceId: string; onClose: () => void }) {
+// inline draws it in the caller's panel in place of a sheet.
+export function LidSheet({ deviceId, onClose, inline = false }: { deviceId: string; onClose: () => void; inline?: boolean }) {
   const game = useStore((s) => s.game);
   const device = game.devices.find((d) => d.id === deviceId);
   const [open, setOpen] = useState(false);
@@ -46,8 +47,8 @@ export function LidSheet({ deviceId, onClose }: { deviceId: string; onClose: () 
   const spares = (kinds: ComponentKind[]) => game.devices.filter((d) => d.store === zone?.id && kinds.some((k) => d.model === `part-${k}`));
   const wear = (c: Component) => (c.failedAt !== null ? "bad" : isWorn(game, c) ? "warn" : "ok") as "ok" | "warn" | "bad";
 
-  return (
-    <Sheet title={devName(device)} onClose={close} wide>
+  const body = (
+    <>
       <div className="lid-body">
         <TopDown model={model} brand={device.brand} name={devName(device)} parts={device.components} wear={wear} open={open} ms={ms} sel={sel} onPick={(id) => open && setSel(id)} />
         <div className="lid-counts">
@@ -58,8 +59,9 @@ export function LidSheet({ deviceId, onClose }: { deviceId: string; onClose: () 
         <div className="lid-detail">{open && slot && <SlotCard device={device} slot={slot} wear={wear} spares={spares} az={zone?.az ?? ""} />}</div>
       </div>
       <div className="loc-sheet-foot"><span className="grow" /><button className="btn primary" onClick={close}>{t("locations-1.close")}</button></div>
-    </Sheet>
+    </>
   );
+  return inline ? <div className="lid-inline" aria-label={devName(device)}>{body}</div> : <Sheet title={devName(device)} onClose={close} wide>{body}</Sheet>;
 }
 
 // A filled slot shows its part with Replace and Remove; an empty slot offers the spare parts in storage that fit.

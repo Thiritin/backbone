@@ -1,0 +1,161 @@
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { X } from "lucide-react";
+import { t } from "../../../i18n/en";
+import { modelById } from "../../../sim/10-catalog/hardware";
+import { rackUnits } from "../../../sim/20-world/datacenters";
+import type { Rack } from "../../../sim/50-state";
+import { RackFront } from "../../art/RackFront";
+import { menuOn } from "../../desktop/ContextMenu";
+import { tidy, type MenuItem } from "../../desktop/menu";
+import { reduced } from "../../desktop/motion";
+import { deviceLamps } from "../../apps/hw";
+import { useHandWork } from "../../apps/locations/HandSheet";
+import { LabelEdit, useDeviceMenu } from "../../apps/locations/Inspector";
+import { LidSheet } from "../../apps/locations/LidSheet";
+import { mountable, MountRow, rackItems } from "../../apps/locations/RackView";
+import { useStore } from "../../store";
+import { sheetUrl, SPRITES } from "../sprites";
+import "../../apps/locations/locations.css";
+import "./rack.css";
+
+export const SLIDE_MS = 220;
+// Pixel scale of the rack frame, and its border in source pixels: a cap above the units, sides and a foot.
+const K = 3, CAP = 22, SIDE = 8, FOOT = 8;
+const CABLED = ["switch", "gateway", "firewall"];
+
+// The rack close-up that slides up over the room: the rack on the left, the picked unit's card on the right.
+export function RackPanel({ rackId, onClose }: { rackId: string; onClose: () => void }) {
+  const game = useStore((s) => s.game), openApp = useStore((s) => s.openApp);
+  const rack = game.racks.find((r) => r.id === rackId);
+  const [shown, setShown] = useState(false);
+  const [sel, setSel] = useState<string | null>(null);
+  const [free, setFree] = useState<number | null>(null);
+  const [lid, setLid] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const ref = useRef<HTMLDivElement>(null), closing = useRef(false);
+  const pick = (id: string | null) => { setSel(id); setFree(null); setLid(null); setRenaming(false); };
+  const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }]);
+  const hand = useHandWork();
+
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    setShown(false);
+    setTimeout(onClose, reduced() ? 0 : SLIDE_MS);
+  };
+  const live = useRef({ close, lid });
+  live.current = { close, lid };
+  useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
+  useEffect(() => {
+    // Escape belongs to whatever sits above the panel first.
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || (e.target as HTMLElement).closest?.("input, textarea, select")) return;
+      if ([...document.querySelectorAll("[role=dialog], [role=alertdialog], [role=menu]")].some((el) => el !== ref.current && !ref.current?.contains(el))) return;
+      if (live.current.lid) setLid(null);
+      else live.current.close();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, []);
+  const gone = !rack;
+  useEffect(() => { if (gone) onClose(); }, [gone, onClose]);
+  if (!rack) return null;
+
+  const units = rackUnits(rack.model), items = rackItems(game, rack.id);
+  const used = items.filter((it) => !it.chassisId).reduce((n, it) => n + it.model.height, 0);
+  const dev = game.devices.find((d) => d.id === sel && d.rackId === rack.id);
+  const ports = (id: string) => { onClose(); openApp("Locations", { kind: "device", id }); };
+
+  let side: ReactNode = null;
+  if (lid && dev) side = <LidSheet key={lid} deviceId={lid} inline onClose={() => setLid(null)} />;
+  else if (dev) side = <DeviceCard deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => menus.entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => ports(dev.id) : undefined} />;
+  else if (free !== null) side = <InstallCard rack={rack} unit={free} onMount={(task) => hand.start(game, { ...task, onDone: () => pick(task.deviceId) })} />;
+
+  return (
+    <>
+      <div className={`wr-veil${shown ? " in" : ""}`} onPointerDown={close} />
+      <div ref={ref} className={`wr-panel${shown ? " in" : ""}`} role="dialog" aria-label={rack.name} data-rack-panel={rack.id}>
+        <div className="wr-head">
+          <h2>{rack.name}</h2>
+          <span className="wr-num">{used} / {units} U</span>
+          <button className="wr-x" aria-label={t("locations-2.close")} onClick={close}><X /></button>
+        </div>
+        <div className="wr-body">
+          <RackFrame units={units}>
+            {(w, u) => (
+              <RackFront units={units} items={items} w={w} u={u} selected={dev?.id ?? null}
+                onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => menus.entries(d))(e); }} />
+            )}
+          </RackFrame>
+          <div className="wr-side">{side}</div>
+        </div>
+        {menus.dialog}
+        {hand.dialog}
+      </div>
+    </>
+  );
+}
+
+// The tileset's closed rack, sliced so its cap, sides and foot frame the drawn units at a readable size.
+function RackFrame({ units, children }: { units: number; children: (w: number, u: number) => ReactNode }) {
+  const r = SPRITES["rack-closed"];
+  const room = (typeof innerHeight === "number" ? innerHeight : 768) * 0.66 - 120 - (CAP + FOOT) * K;
+  const u = Math.max(10, Math.min(24, Math.floor((room - 8) / units))), w = u * 19;
+  // RackFront's front view without the cable channel it draws to the right.
+  const iw = w + 36, ih = units * u + 8, ow = iw + 2 * SIDE * K, oh = ih + (CAP + FOOT) * K;
+  if (!r) return <div className="wr-rack">{children(w, u)}</div>;
+  const cols = [[0, SIDE, 0, SIDE * K], [SIDE, r.w - 2 * SIDE, SIDE * K, iw], [r.w - SIDE, SIDE, SIDE * K + iw, SIDE * K]];
+  const rows = [[0, CAP, 0, CAP * K], [CAP, r.h - CAP - FOOT, CAP * K, ih], [r.h - FOOT, FOOT, CAP * K + ih, FOOT * K]];
+  return (
+    <svg className="wr-rack" width={ow} height={oh} viewBox={`0 0 ${ow} ${oh}`}>
+      {rows.flatMap(([sy, sh, y, h]) => cols.map(([sx, sw, x, w]) => (
+        <svg key={`${sx},${sy}`} x={x} y={y} width={w} height={h} viewBox={`${r.x + sx} ${r.y + sy} ${sw} ${sh}`} preserveAspectRatio="none">
+          <image className="w-sprite" href={sheetUrl(r.sheet)} />
+        </svg>
+      )))}
+      <svg x={SIDE * K} y={CAP * K} width={iw} height={ih} overflow="hidden">{children(w, u)}</svg>
+    </svg>
+  );
+}
+
+function DeviceCard({ deviceId, renaming, onRenaming, entries, onPorts }: { deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; entries: () => ReturnType<ReturnType<typeof useDeviceMenu>["entries"]>; onPorts?: () => void }) {
+  const game = useStore((s) => s.game);
+  const d = game.devices.find((x) => x.id === deviceId)!;
+  const m = modelById(d.model), lamps = deviceLamps(game, d.id, m);
+  const items = tidy(entries());
+  return (
+    <div className="wr-card" data-device={d.id}>
+      <div className="wr-card-h">
+        <LabelEdit device={d} editing={renaming} onEditing={onRenaming} />
+        <span className="wr-model">{m.kind === "server" ? `${d.brand} ${m.name}` : m.name}</span>
+        <span className="wr-leds">
+          <span className={`wr-led ${lamps.state}`} />
+          <span>{t(d.on ? "locations-1.stOn" : "locations-1.stOff")}</span>
+        </span>
+      </div>
+      <div className="wr-acts">
+        {onPorts && <button className="wr-btn" onClick={onPorts}>{t("locations-1.ports")}</button>}
+        {items.map((e, i) => (e === null ? <hr key={i} /> : <Act key={i} e={e} />))}
+      </div>
+    </div>
+  );
+}
+
+// A menu entry as a button; one with a submenu opens it under the button.
+function Act({ e }: { e: MenuItem }) {
+  return <button className="wr-btn" disabled={e.disabled} onClick={e.items ? menuOn(() => e.items!) : e.run}>{e.label}{e.items && " ›"}</button>;
+}
+
+function InstallCard({ rack, unit, onMount }: { rack: Rack; unit: number; onMount: Parameters<typeof MountRow>[0]["onMount"] }) {
+  const game = useStore((s) => s.game);
+  const rows = mountable(game, rack, unit);
+  return (
+    <div className="wr-card" data-free={unit}>
+      <div className="wr-card-h"><h2>{`U${unit}`}</h2><span className="wr-model">{t("locations-1.empty")}</span></div>
+      <div className="loc-shop-list">
+        {rows.map((st) => <MountRow key={`${st.model}|${st.brand}`} game={game} rack={rack} st={st} unit={unit} onMount={onMount} />)}
+        {!rows.length && <div className="loc-shop-none">{t("locations-2.noStoredFits")}</div>}
+      </div>
+    </div>
+  );
+}
