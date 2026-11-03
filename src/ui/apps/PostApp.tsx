@@ -1,18 +1,19 @@
 import { useSessionState } from "../session";
 import { t } from "../../i18n/en";
-import { inbox, type Letter as Post } from "../../sim/40-support/letters";
+import { atDesk, inLetterbox, type Letter as Post } from "../../sim/40-support/letters";
 import { readLetter } from "../../sim/90-actions/paperwork";
+import { scanLetter } from "../../sim/90-actions/post";
 import { useStore } from "../store";
 import { paperDay } from "./FormDoc";
 import { payUrl } from "./books/PayablesTab";
 import { LETTERHEADS } from "../art/letterheads";
 import "./paper.css";
 
-// Letters from the post, newest first; a bill carries a Pay button like the Books payables.
+// Letters at the desk, newest first, under the ones still waiting in the letterbox; a bill carries a Pay button like the Books payables.
 export function PostApp() {
   const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const [sel, setSel] = useSessionState<string | null>("post.sel", null);
-  const letters = [...inbox(game)].reverse(), l = letters.find((x) => x.id === sel);
+  const letters = [...atDesk(game)].reverse(), boxed = [...inLetterbox(game)].reverse(), l = letters.find((x) => x.id === sel);
   const bill = l?.payable ? game.payables.find((p) => p.id === l.payable) : undefined;
   const open = (id: string, read: boolean) => { setSel(id); if (!read) act(readLetter, id); };
   return (
@@ -25,20 +26,30 @@ export function PostApp() {
             <small className="num">{paperDay(x.at)}</small>
           </button>
         ))}
-        {!letters.length && <div className="post-none">{t("paperwork.post.empty")}</div>}
+        {boxed.length > 0 && (
+          <div className="post-box" role="group" aria-label={t("paperwork.post.box")}>
+            <div className="post-group"><span>{t("paperwork.post.box")}</span><span className="num">{boxed.length}</span></div>
+            {boxed.map((x) => (
+              <div key={x.id} role="listitem" className="post-row boxed">
+                <strong>{x.from}</strong>
+                <small className="num">{paperDay(x.at)}</small>
+              </div>
+            ))}
+          </div>
+        )}
+        {!letters.length && !boxed.length && <div className="post-none">{t("paperwork.post.empty")}</div>}
       </div>
       {l && (
         <div className="paper-scroll">
           <div className="letter-fit">
             <Letter letter={l} company={game.company.name} owner={game.registration?.owner} />
           </div>
-          {(bill || l.link) && (
-            <div className="letter-actions">
-              {l.link && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: l.link! })}>{t("paperwork.post.open")}</button>}
-              {bill && (bill.paidAt !== null ? <span>{t("bank.pay.paid")}</span>
-                : game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, bill) })}>{t("bank.pay.pay")}</button>)}
-            </div>
-          )}
+          <div className="letter-actions">
+            {l.scanned ? <span>{t("paperwork.post.scanned")}</span> : <button className="btn" onClick={() => act(scanLetter, l.id)}>{t("paperwork.post.scan")}</button>}
+            {l.link && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: l.link! })}>{t("paperwork.post.open")}</button>}
+            {bill && (bill.paidAt !== null ? <span>{t("bank.pay.paid")}</span>
+              : game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, bill) })}>{t("bank.pay.pay")}</button>)}
+          </div>
         </div>
       )}
     </div>
