@@ -1,6 +1,6 @@
 import type { Fixture } from "../../sim/20-world/layout";
 
-export type Use = "desktop" | "storage" | "power" | "door" | "post" | "scan" | "stairs" | "light";
+export type Use = "desktop" | "storage" | "power" | "door" | "post" | "scan" | "stairs" | "light" | "phone";
 
 // What using a fixture kind does. Wall ones, and flat marks on the floor, are drawn behind everything standing; top ones hang over the room; the rest are depth-sorted with the racks.
 // A fixture without a label is clutter, hidden from assistive tech.
@@ -15,6 +15,7 @@ export const ART: Record<string, FixtureArt> = {
   shelf: { label: "world.obj.shelf", use: "storage" },
   fan: { label: "world.obj.fan", wall: true },
   letterbox: { label: "world.obj.letterbox", use: "post", wall: true },
+  phone: { label: "world.obj.phone", use: "phone", wall: true },
   door: { label: "world.obj.door", use: "door", wall: true },
   window: { wall: true },
   hygrometer: { wall: true },

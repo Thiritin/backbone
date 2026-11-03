@@ -1,11 +1,12 @@
 import { dateOf, hourOf, isMonthStart } from "../00-core/time";
-import { rightTemplate } from "../40-support/tickets";
+import { bump, rightTemplate } from "../40-support/tickets";
 import { cents } from "../45-billing/billing";
 import type { GameState, LedgerEntry } from "../50-state";
 import { attackMbps } from "../60-infra/network";
+import { locationOf } from "../60-infra/status";
 import type { SimEvent } from "../88-tick/tick";
 import { setBlackhole } from "../90-actions/network";
-import { hourlyWage, type Employee } from "./staff";
+import { hourlyWage, onShift, type Employee } from "./staff";
 export { hourlyWage, MONTHLY_HOURS } from "./staff";
 
 // economy/on-call-duty.md, On-call duty. Pay this month per employee id; name kept for the payroll line after someone leaves.
@@ -94,4 +95,48 @@ export function onCallPayroll(s: GameState): void {
     const p = payOf(s, e);
     setPay(s, e, { ...p, days: p.days + 1, allowance: cents(p.allowance + hourlyWage(e) * allowanceRate(s.hour)) });
   }
+}
+
+// A page to the player's own phone: eventId is the failed component or the attack, since and answeredAt are game minutes.
+export interface Call { id: string; locationId: string; eventId: string; deviceId: string | null; what: string; since: number; answeredAt: number | null }
+export const MISSED_CALL_MINUTES = 30;
+// No penalty for a missed page is defined in economy/on-call-duty.md; the game takes the overuse bill's hit.
+export const MISSED_CALL_HAPPINESS = -5;
+
+const night = (hour: number): boolean => { const h = dateOf(hour).getUTCHours(); return h >= 21 || h < 6; };
+// At night the player takes the location's pages while no technician is on call or on shift there.
+export const playerOnCallAt = (s: GameState, locationId: string, hour: number): boolean =>
+  night(hour) && !onCallAt(s, locationId, hour) && !s.staff.some((e) => e.role === "technician" && e.location === locationId && onShift(s, e, hour));
+
+// Every game minute and hour: a part failing or an attack saturating the links this hour rings the phone of a location the player is on call for,
+// one open call per location; a call left ringing for 30 minutes is missed. Calls drop out of the list the hour after they end.
+export function phoneTick(s: GameState): SimEvent[] {
+  const now = s.hour * 60 + s.minute, events: SimEvent[] = [];
+  const open = (c: Call) => c.answeredAt === null && now - c.since < MISSED_CALL_MINUTES;
+  const missed = s.calls.filter((c) => c.answeredAt === null && now - c.since >= MISSED_CALL_MINUTES);
+  if (missed.length) {
+    s.customers = s.customers.map((c) => (c.churnedAt === null ? { ...c } : c));
+    for (const c of s.customers) if (c.churnedAt === null) for (const _ of missed) bump(c, MISSED_CALL_HAPPINESS);
+    for (const c of missed) events.push({ app: "Staff", key: "event.callMissed", params: { location: locName(s, c.locationId) } });
+  }
+  let calls = s.calls.filter((c) => open(c) || (c.answeredAt !== null && c.answeredAt >= (s.hour - 1) * 60));
+  const known = new Set(s.calls.map((c) => c.eventId));
+  for (const l of s.locations) {
+    if (calls.some((c) => c.locationId === l.id && open(c)) || !playerOnCallAt(s, l.id, s.hour)) continue;
+    const page = pageAt(s, l.id, known);
+    if (!page) continue;
+    calls = [...calls, { id: `call${s.nextId++}`, locationId: l.id, since: now, answeredAt: null, ...page }];
+    events.push({ app: "Staff", key: "event.phoneCall", params: { location: l.name } });
+  }
+  s.calls = calls;
+  return events;
+}
+const locName = (s: GameState, id: string) => s.locations.find((l) => l.id === id)?.name ?? id;
+function pageAt(s: GameState, locationId: string, known: Set<string>): Omit<Call, "id" | "locationId" | "since" | "answeredAt"> | null {
+  for (const d of s.devices) {
+    const c = d.components.find((x) => x.failedAt === s.hour && !known.has(x.id));
+    if (c && locationOf(s, d)?.id === locationId) return { eventId: c.id, deviceId: d.id, what: `failed.${c.kind}` };
+  }
+  const a = s.network.saturated.includes(locationId) && s.network.attacks.find((x) => x.locationId === locationId && x.startedAt === s.hour && attackMbps(s, x) > 0 && !known.has(x.id));
+  return a ? { eventId: a.id, deviceId: null, what: "attack" } : null;
 }

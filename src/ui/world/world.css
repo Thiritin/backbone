@@ -204,3 +204,13 @@
 .w-strip { fill: oklch(0.24 0.01 255); }
 .w-strip-led { fill: oklch(0.72 0.15 55); }
 .w-bundle { fill: oklch(0.55 0.1 240); opacity: 0.55; }
+.w-phone { fill: oklch(0.86 0.035 85); stroke: oklch(0.7 0.04 80); stroke-width: 0.6; }
+.w-phone-handset { fill: oklch(0.82 0.04 82); stroke: oklch(0.66 0.04 78); stroke-width: 0.6; }
+.w-phone-key { fill: oklch(0.95 0.01 90); stroke: oklch(0.7 0.02 80); stroke-width: 0.3; }
+.w-phone-cord { stroke: oklch(0.72 0.04 80); stroke-width: 1; }
+.w-phone-base { fill: oklch(0.32 0.01 250); stroke: oklch(0.22 0.01 250); stroke-width: 0.6; }
+.w-phone-cordless { fill: oklch(0.42 0.012 250); stroke: oklch(0.26 0.01 250); stroke-width: 0.6; }
+.w-phone-screen { fill: oklch(0.78 0.08 140); }
+.w-ringing { animation: w-ring 0.12s linear infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes w-ring { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .w-ringing { animation: none; } }

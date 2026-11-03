@@ -15,7 +15,7 @@ import type { Quote } from "./30-market/quotes";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
-import type { OnCall } from "./47-staff/oncall";
+import type { Call, OnCall } from "./47-staff/oncall";
 import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
@@ -303,7 +303,7 @@ export interface GameState {
   // Favours asked of friends for datacenter hand work in a calendar year.
   friendFavours: { year: number; used: number };
   // Where the player is, and until which hour the drive there or the hand work on site keeps the computer locked.
-  player: { at: string; until: number; doing: "travel" | "work"; carrying: string | null };
+  player: { at: string; until: number; doing: "travel" | "work"; by: "drive" | "fly"; carrying: string | null };
   downSince: Record<string, number>;
   // Hours in a row each cluster node has run below the timeout performance.
   lowPerf: Record<string, number>;
@@ -356,6 +356,8 @@ export interface GameState {
   handsJobs: HandsJob[];
   techRules: TechRules;
   onCall: OnCall;
+  // Pages ringing on the player's own phone, and the ones answered in the last hour.
+  calls: Call[];
   marketing: Marketing;
   fairs: FairBooking[];
   // Community sponsoring requests and the events running on free services.
@@ -522,11 +524,11 @@ export const newGame = (seed: number): GameState => ({
   daemons: {},
   gameTitles: {},
   gameLost: {},
-  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work", carrying: null }, downSince: {}, lowPerf: {},
+  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work", by: "drive", carrying: null }, downSince: {}, lowPerf: {},
   company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING, address: null },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
-  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], handsJobs: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
+  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], handsJobs: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} }, calls: [],
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),
   ops: newOps(),

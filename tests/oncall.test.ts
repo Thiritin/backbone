@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { createTicket } from "../src/sim/40-support/tickets";
 import { cents } from "../src/sim/45-billing/billing";
-import { callOut, callOutRate, onCallAt, respond } from "../src/sim/47-staff/oncall";
+import { callOut, callOutRate, MISSED_CALL_HAPPINESS, onCallAt, phoneTick, playerOnCallAt, respond } from "../src/sim/47-staff/oncall";
 import { visibleCandidates, type Task } from "../src/sim/47-staff/staff";
 import { nextSlot } from "../src/sim/47-staff/technicians";
 import { type GameState } from "../src/sim/50-state";
-import { failComponents, tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { failComponents, tick, tickMinute, type SimEvent } from "../src/sim/88-tick/tick";
 import { halting } from "../src/sim/60-infra/status";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { setPower } from "../src/sim/90-actions/hardware";
 import { buyDevice, newGame } from "./fixtures";
-import { queueOperation, setOnCall, setTechRules } from "../src/sim/90-actions/staff";
+import { answerCall, queueOperation, setOnCall, setTechRules } from "../src/sim/90-actions/staff";
 import { hire } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
@@ -171,5 +171,66 @@ describe("on-call duty", () => {
     expect(back.onCall).toEqual({ roster: [], lastCall: {}, month: {} });
     expect(back.techRules.blackhole).toBe(true);
     run(back, 24);
+  });
+});
+
+describe("the player on call", () => {
+  // The basement server's fan fails at the given hour, as the tick's wear would.
+  function nightFailure(s: GameState, hour: number) {
+    s.hour = hour;
+    s.minute = 0;
+    const fan = dev(s, "dev3").components.find((c) => c.kind === "fan")!;
+    s.devices = s.devices.map((d) => (d.id === "dev3" ? failComponents(s, d, [fan.id]) : d));
+    return fan.id;
+  }
+
+  it("is on call at night while the rotation is empty", () => {
+    const s = withServer(newGame(1));
+    expect(playerOnCallAt(s, "loc1", TUESDAY_2)).toBe(true);
+    expect(playerOnCallAt(s, "loc1", MONDAY_9 + 24)).toBe(false);
+  });
+
+  it("gets a call for a failure at night and answering it stops the ringing", () => {
+    const s = withServer(newGame(1));
+    const fan = nightFailure(s, TUESDAY_2);
+    const events = phoneTick(s);
+    expect(events.map((e) => e.key)).toEqual(["event.phoneCall"]);
+    expect(s.calls).toMatchObject([{ locationId: "loc1", eventId: fan, deviceId: "dev3", answeredAt: null }]);
+    expect(phoneTick(s)).toEqual([]);
+    const r = answerCall(s, s.calls[0].id);
+    expect(r.ok).toBe(true);
+    expect(s.calls[0].answeredAt).toBe(TUESDAY_2 * 60);
+    expect(answerCall(s, s.calls[0].id).ok).toBe(false);
+    for (let m = 0; m < 40; m++) tickMinute(s);
+    expect(s.calls.filter((c) => c.answeredAt === null)).toEqual([]);
+  });
+
+  it("costs customer happiness when nobody answers in 30 minutes", () => {
+    const s = withServer(newGame(1));
+    const c = addCustomer(s, "Ada", "private");
+    const before = s.customers.find((x) => x.id === c)!.happiness;
+    nightFailure(s, TUESDAY_2);
+    phoneTick(s);
+    const events: SimEvent[] = [];
+    for (let m = 0; m < 30; m++) events.push(...tickMinute(s));
+    expect(events.filter((e) => e.key === "event.callMissed")).toHaveLength(1);
+    expect(s.calls).toEqual([]);
+    expect(s.customers.find((x) => x.id === c)!.happiness).toBe(Math.max(0, before + MISSED_CALL_HAPPINESS));
+  });
+
+  it("leaves the night to a technician in the rotation", () => {
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
+    ok(setOnCall(s, technician(s), true));
+    expect(playerOnCallAt(s, "loc1", TUESDAY_2)).toBe(false);
+    nightFailure(s, TUESDAY_2);
+    expect(phoneTick(s)).toEqual([]);
+    expect(s.calls).toEqual([]);
+  });
+
+  it("loads an old save with no calls", () => {
+    const s = withServer(newGame(1));
+    const raw = JSON.parse(serialize(s));
+    delete raw.calls;
+    expect(deserialize(JSON.stringify(raw)).calls).toEqual([]);
   });
 });

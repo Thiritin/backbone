@@ -8,7 +8,7 @@ import { dateOf, hourOf } from "../sim/00-core/time";
 // Highest priority first: one batch of events plays only its top sound.
 export const SOUNDS = ["month", "warn", "level", "research", "money", "ticket"] as const;
 export type Sound = (typeof SOUNDS)[number];
-export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug" | "typing" | "hover" | "select" | "back";
+export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug" | "typing" | "hover" | "select" | "back" | "ring";
 
 // How each Pear OS era voices the desktop sounds: glassy and long early on, flat and short in the middle years, soft and airy later.
 export interface Voice { wave: OscillatorType; len: number; lift: number; glass: number; air: number }
@@ -160,6 +160,10 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
         break;
       case "level":
         [523, 784, 1047].forEach((hz, i) => tone(c, out, hz, t + i * 0.07, 0.3, 0.045, "triangle"));
+        break;
+      case "ring":
+        // A bell trilling for a second, as the German ring cadence does before its pause.
+        for (let i = 0; i < 20; i++) tone(c, out, i % 2 ? 1180 : 1420, t + i * 0.05, 0.06, 0.03, "square");
         break;
       case "research":
         tone(c, out, 659, t, 0.8, 0.035);

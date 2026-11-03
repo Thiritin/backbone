@@ -1,5 +1,10 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
+import { type GameState } from "../src/sim/50-state";
+import { addLocation } from "../src/sim/90-actions/hardware";
+import { drive, flight, FLIGHT, greatCircleKm, travelTo } from "../src/sim/90-actions/travel";
+import { deserialize, serialize } from "../src/sim/91-save/save";
+import { newGame } from "./fixtures";
 import { COUNTRY, DATACENTERS, listed } from "../src/sim/20-world/datacenters";
 import { CITIES } from "../src/ui/map/world-data";
 import { BASEMENT_PLACE, PLACES } from "../src/sim/20-world/places";
@@ -63,5 +68,35 @@ describe("travel", () => {
 
   it("decodes packed street lines", () => {
     expect(decode("_p~iF~ps|U_ulLnnqC _mqNvxq`@")).toEqual([[[-120.2, 38.5], [-120.95, 40.7]], [[-126.453, 43.252]]]);
+  });
+});
+
+describe("trip mode", () => {
+  const at = (dc: string, space: "share" | "cage" = "cage") => {
+    const s: GameState = { ...newGame(1), cash: 100_000 };
+    const r = addLocation(s, dc, space, space === "cage" ? 4 : 1);
+    if (!r.ok) throw new Error(r.error);
+    return { s, loc: r.id! };
+  };
+
+  it("flies across the sea and drives on the mainland, by the flight table", () => {
+    const lon = at("globalsnitch-lon"), dist = greatCircleKm(BASEMENT_PLACE, DATACENTERS.find((d) => d.id === "globalsnitch-lon")!);
+    expect(Math.round(dist)).toBe(635);
+    expect(flight(dist)).toEqual({ hours: Math.ceil(FLIGHT.transferHours + dist / FLIGHT.kmh), fee: Math.round(dist * FLIGHT.perKm) });
+    expect(drive(lon.s, lon.loc)).toEqual({ hours: 4, fee: 222, by: "fly" });
+    expect(flight(100)).toEqual({ hours: 4, fee: FLIGHT.minFee });
+    expect(drive(at("hetzler-nbg", "share").s, at("hetzler-nbg", "share").loc)).toEqual({ hours: 4, fee: 90, by: "drive" });
+  });
+
+  it("stores the mode and books the flight", () => {
+    const { s, loc } = at("globalsnitch-lon"), cash = s.cash;
+    expect(travelTo(s, loc).ok).toBe(true);
+    expect(s.player).toMatchObject({ at: loc, by: "fly", until: s.hour + 4 });
+    expect(s.cash).toBe(cash - 222);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.fly", amount: -222 });
+    expect(deserialize(serialize(s)).player.by).toBe("fly");
+    const old = JSON.parse(serialize(s));
+    delete old.player.by;
+    expect(deserialize(JSON.stringify(old)).player.by).toBe("drive");
   });
 });
