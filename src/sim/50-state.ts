@@ -83,6 +83,8 @@ export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number 
 // Each location is an availability zone (az, like fra2) in the region of its city.
 // line is an office's business line, booked in the Network tab.
 export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean;
+  // The room's main breaker: tripped after TRIP_HOURS over its limit; overSince and trippedAt are game hours with minutes.
+  tripped: boolean; overSince?: number; trippedAt?: number;
   line?: { name: string; mbit: number; monthly: number } }
 // share-N racks belong to the provider of a rack share and hold N units.
 export type RackModel = "shelf" | "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
@@ -506,7 +508,7 @@ export const basementProperty = (locationId: string | null): Property => ({
 
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: 0, nextId: 8,
-  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: BASEMENT.positions, readyAt: 0, extraCircuit: false }],
+  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: BASEMENT.positions, readyAt: 0, extraCircuit: false, tripped: false }],
   properties: [basementProperty("loc1")],
   racks: [{ id: "rack2", model: "shelf", locationId: "loc1", position: 1, name: t("rack.shelf"), arriveAt: null, price: 0, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
   devices: [device("dev5", "home-router", "AVN", "rack2", 5, null, "fra1-gw-01", 0), device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],

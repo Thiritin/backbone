@@ -4,9 +4,10 @@ import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODEL
 import { type GameState } from "../src/sim/50-state";
 import { cpuLoad, freeSlots } from "../src/sim/60-infra/status";
 import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../src/sim/60-infra/status";
+import { breakerTick, TRIP_HOURS } from "../src/sim/60-infra/power";
 import { powerPerHour, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { deserialize } from "../src/sim/91-save/save";
-import { addLocation, buyRack, closeLocation, connect, moveRack, sellDevice, sellRack, unmountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, closeLocation, connect, moveRack, resetBreaker, sellDevice, sellRack, unmountDevice } from "../src/sim/90-actions/hardware";
 import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { runServers, withServer } from "./fixtures";
@@ -63,7 +64,7 @@ describe("addLocation and closeLocation", () => {
   it("rents space with a handoff on the carrier panel, ready after the lead time", () => {
     const s = rich();
     const id = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 8));
-    expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", az: "fra2", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720, extraCircuit: false });
+    expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", az: "fra2", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720, extraCircuit: false, tripped: false });
     expect(s.devices.find((d) => d.panel === id)).toMatchObject({ model: "handoff", rackId: null, name: "fra2-gw-01" });
     expect(loc(s, ok(addLocation(freeFloor(s), "tellyhouse-north", "suite", 20))).readyAt).toBe(2160);
     expect(loc(s, ok(addLocation(freeFloor(s), "hetzler-park", "share", 1))).readyAt).toBe(48);
@@ -105,7 +106,7 @@ describe("racks", () => {
     // Devices in a location that is not ready have no power.
     const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, id));
     ok(mountDevice(s, srv, r, 1));
-    expect(rackPower(s, r)).toEqual({ watts: 100, a: 100, b: 0, limitWatts: 6000, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 100, a: 100, b: 0, limitWatts: 6000, over: false });
     ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
     s.hour = 720;
@@ -174,7 +175,7 @@ describe("moveRack", () => {
     expect(linkStatus(s, "dev3").online).toBe(false);
     ok(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }, true));
     expect(linkStatus(s, "dev3")).toEqual({ online: true, gbit: 1, warning: null });
-    expect(rackPower(s, "rack2")).toEqual({ watts: 108, a: 108, b: 0, limitWatts: 8000, tripped: false });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 108, a: 108, b: 0, limitWatts: 8000, over: false });
   });
   it("takes three days and €1,200 to another city", () => {
     const s = rich(10_000);
@@ -203,21 +204,27 @@ describe("moveRack", () => {
 });
 
 describe("breakers", () => {
-  it("trips a rack that draws more than its position's limit and takes its devices offline", () => {
+  it("trips the room an hour after a rack draws more than its limit and takes its devices offline", () => {
     const s = rich();
     ok(buyDevice(s, "g1-compute", "Dwell", 11, "loc1"));
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 10));
     runServers(s);
-    expect(rackPower(s, "rack2")).toEqual({ watts: 2768, a: 2768, b: 0, limitWatts: 3000, tripped: false });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 2768, a: 2768, b: 0, limitWatts: 3000, over: false });
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 1));
     runServers(s);
-    expect(rackPower(s, "rack2")).toEqual({ watts: 3018, a: 3018, b: 0, limitWatts: 3000, tripped: true });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 3018, a: 3018, b: 0, limitWatts: 3000, over: true });
+    expect(linkStatus(s, "dev3").online).toBe(true);
+    breakerTick(s);
+    s.hour += TRIP_HOURS;
+    breakerTick(s);
     expect(linkStatus(s, "dev3").online).toBe(false);
     // The router on the rack's shelf goes dark with it.
     expect(linkStatus(s, "dev5").online).toBe(false);
     expect(powerPerHour(s)).toBe(0);
     s.workloads = [];
     ok(unmountDevice(s, "dev8", true));
+    expect(resetBreaker(s, "loc1").ok).toBe(true);
+    s.hour++;
     expect(linkStatus(s, "dev3").online).toBe(true);
   });
   it("uses the datacenter's kW per position", () => {
@@ -227,10 +234,10 @@ describe("breakers", () => {
     ok(buyDevice(s, "g1-compute", "Dwell", 17, id));
     ok(mountStack(s, "g1-compute", "Dwell", r, 16));
     runServers(s);
-    expect(rackPower(s, r)).toEqual({ watts: 4000, a: 4000, b: 0, limitWatts: 4000, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 4000, a: 4000, b: 0, limitWatts: 4000, over: false });
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
     runServers(s);
-    expect(rackPower(s, r).tripped).toBe(true);
+    expect(rackPower(s, r).over).toBe(true);
   });
 });
 
@@ -287,11 +294,14 @@ describe("rack shares", () => {
     expect(srv.name).toBe("fra2-srv-01");
     ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }, true));
     runServers(s);
-    expect(rackPower(s, r)).toEqual({ watts: 500, a: 500, b: 0, limitWatts: 500, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 500, a: 500, b: 0, limitWatts: 500, over: false });
     expect(linkStatus(s, srv.id).online).toBe(true);
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
     runServers(s);
-    expect(rackPower(s, r).tripped).toBe(true);
+    expect(rackPower(s, r).over).toBe(true);
+    breakerTick(s);
+    s.hour += TRIP_HOURS;
+    breakerTick(s);
     expect(linkStatus(s, srv.id).online).toBe(false);
     expect(err(mountStack(s, "g1-compute", "Dwell", r, 1))).toBe("error.notInStorage");
   });

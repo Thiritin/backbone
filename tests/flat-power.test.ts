@@ -4,6 +4,7 @@ import { businessPowerPrice } from "../src/sim/10-catalog/economy";
 import { DATACENTERS, datacenterById, FLAT_CONTRACTS, flatMonthly } from "../src/sim/20-world/datacenters";
 import { device, type GameState } from "../src/sim/50-state";
 import { cpuLoad, locationRent, rackPower, working } from "../src/sim/60-infra/status";
+import { breakerTick, TRIP_HOURS } from "../src/sim/60-infra/power";
 import { powerPerHour, tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, buyRack, setFlatPower } from "../src/sim/90-actions/hardware";
@@ -62,10 +63,14 @@ describe("flat-rate power contract", () => {
     expect(rackPower(s, rack).limitWatts).toBe(4400);
     fill(s, rack, 17);
     runServers(s);
-    expect(rackPower(s, rack)).toMatchObject({ watts: 4250, tripped: false });
+    expect(rackPower(s, rack)).toMatchObject({ watts: 4250, over: false });
     s.devices.push(device("extra", "g1-compute", "Dwell", rack, 20, null, "extra", 2500));
     runServers(s);
-    expect(rackPower(s, rack).tripped).toBe(true);
+    expect(rackPower(s, rack).over).toBe(true);
+    expect(working(s, "fill0")).toBe(true);
+    breakerTick(s);
+    s.hour += TRIP_HOURS;
+    breakerTick(s);
     expect(working(s, "fill0")).toBe(false);
   });
 

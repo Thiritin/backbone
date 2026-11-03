@@ -88,7 +88,7 @@ describe("new game", () => {
   it("starts with the basement shelf, the line jack and the flat's router on the shelf's top board", () => {
     const s = funded(blankGame(3));
     expect(s.cash).toBe(START_CASH);
-    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 3, readyAt: 0, extraCircuit: false }]);
+    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 3, readyAt: 0, extraCircuit: false, tripped: false }]);
     expect(s.racks).toEqual([{ id: "rack2", model: "shelf", locationId: "loc1", position: 1, name: "Shelf", arriveAt: null, price: 0, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
       ["home-router", "AVN", "fra1-gw-01", "rack2", null, 0, 0],

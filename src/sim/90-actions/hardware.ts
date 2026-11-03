@@ -16,8 +16,8 @@ import { chassisPrice, partPrice, partsPrice, presetPrice } from "../10-catalog/
 import { BASEMENT, DATACENTERS, datacenterById, EXTRA_POWER_LEAD_DAYS, EXTRA_STEP_KW, FLAT_CONTRACTS, HOME_LINES, maxExtraKw, LEAD_DAYS, nextAz, NOTICE_MONTHS, RACK_MODELS, rackUnits, RETENTION_PROVIDERS, SHARE_RACKS, SHELF, SPACE_SIZES, spacePrice, crossConnectSetup } from "../20-world/datacenters";
 import { crossConnectTargets, targetName } from "../10-catalog/network";
 import { deviceDefaults, type Billing, type BondMode, type Component, type Device, type End, type GameState, type LedgerEntry, type RackModel, type RaidLevel, type RebuildRate } from "../50-state";
-import { arrayLost, bootHours, connectError, drivesOf, energized, fits, flatOffer, freePositions, heightIn, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, parcelCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
-import { atFront, BMC_RESET_HOURS, bootUp, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
+import { arrayLost, bootHours, readOnlySweep, roomPower, connectError, drivesOf, energized, fits, flatOffer, freePositions, heightIn, holdsData, nodesOf, freeSlots, HOURS_PER_YEAR, hotKind, hotSwappable, isPlugged, locationOf, moveCost, parcelCost, psusOf, deviceValue, resaleValue, spotOf, travelCost, osInstalling, takesShutdown } from "../60-infra/status";
+import { atFront, BMC_RESET_HOURS, bootUp, closeBreaker, halt, hardReboot, plugCords, pullPlug, pushLog, rollStuck, type FrontOp } from "../60-infra/power";
 import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
 import { handJob, present, trip as drive, type HandJob, type How } from "../60-infra/handwork";
@@ -80,7 +80,7 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   if (order?.payment.kind === "debit" && !debitAllowed(dc.name)) return fail("error.debitAbroad");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
-  const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false };
+  const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false, tripped: false };
   s.locations.push(loc);
   s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly, endsAt: null, retainedAt: null, ...(order && { billing: { company: order.company, name: order.name, address: { street: order.address.street, zip: order.address.zip, city: order.address.city } } }) });
   if (order?.payment.kind === "debit") s.bank = { ...s.bank!, mandates: [...s.bank!.mandates.filter((x) => x !== dc.name), dc.name] };
@@ -771,6 +771,17 @@ export function setPower(s: GameState, deviceId: string, on: boolean): ActionRes
   if (on && d.maintenance?.mount) return fail("error.handWork");
   if (on && !d.on) bootUp(s, d);
   else if (!on && d.on) pullPlug(s, d);
+  return { ok: true };
+}
+
+// Closes a tripped main breaker by hand in the basement or an office; it holds only once the room's devices fit its limit.
+export function resetBreaker(s: GameState, locationId: string): ActionResult {
+  const loc = s.locations.find((l) => l.id === locationId);
+  if (!loc) return fail("error.unknownLocation");
+  if (!loc.tripped) return fail("error.breakerOn");
+  if (loc.dc) return fail("error.breakerProvider");
+  if (readOnlySweep(s, () => roomPower(s, loc, true).over)) return fail("error.breakerOverload");
+  closeBreaker(s, loc);
   return { ok: true };
 }
 

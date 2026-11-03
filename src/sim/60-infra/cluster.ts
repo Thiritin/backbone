@@ -14,7 +14,7 @@ import type { SimEvent } from "../88-tick/tick";
 import type { VmSample } from "./stats";
 import { isVm } from "./lan";
 import { privateNetDown } from "./private";
-import { deviceVendor, drivesOf, installedCompute, installedRamGb, installedThreads, linkStatus, locationOf, raidUsable, rackPower, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
+import { deviceVendor, drivesOf, installedCompute, installedRamGb, installedThreads, linkStatus, locationOf, raidUsable, readOnlySweep, serviceById, sweepGroups, working, burning } from "./status";
 import { COMPAT_VCPU } from "../10-catalog/cpus";
 import { hasPublicAddress, sellsFrom } from "./addresses";
 import { addressOf } from "./lan";
@@ -573,7 +573,7 @@ export function workloadOnline(s: GameState, w: Workload): boolean {
   }
   const rack = s.racks.find((r) => r.id === w.rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
-  return !!rack && !!loc && loc.readyAt <= s.hour && rack.arriveAt === null && !rackPower(s, rack.id).tripped;
+  return !!rack && !!loc && loc.readyAt <= s.hour && rack.arriveAt === null && !loc.tripped;
 }
 
 // A service without workloads (resold domains, certificates, contracts from before placement) is always up.

@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { type GameState } from "../src/sim/50-state";
-import { cpuLoad, deviceHealth, linkStatus, powered, rackPower, working } from "../src/sim/60-infra/status";
-import { connect, mountDevice, mountStack, setPlugged, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, newGame } from "./fixtures";
+import { cpuLoad, deviceHealth, linkStatus, powered, rackPower, roomPower, working } from "../src/sim/60-infra/status";
+import { addLocation, buyRack, connect, mountDevice, mountStack, resetBreaker, setPlugged, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
+import { buyDevice, freeFloor, newGame } from "./fixtures";
+import { breakerTick, TRIP_HOURS } from "../src/sim/60-infra/power";
+import { datacenterById } from "../src/sim/20-world/datacenters";
+import { nowHours } from "../src/sim/00-core/time";
+import { mountStack as mountPlugged } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { failComponents, powerPerHour, tick } from "../src/sim/88-tick/tick";
+import { failComponents, powerPerHour, tick, tickMinute } from "../src/sim/88-tick/tick";
 import { runServers, withServer } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(7)), cash: 1_000_000 });
@@ -128,5 +132,80 @@ describe("idle draw", () => {
     vi.restoreAllMocks();
     s.workloads = s.workloads.map((w) => ({ ...w, stopped: true }));
     expect(rackPower(s, "rack2").watts).toBe(100 + 8 + 10);
+  });
+});
+
+describe("main breaker", () => {
+  const basement = (s: GameState) => s.locations.find((l) => l.id === "loc1")!;
+  // Sets the shelf's limit just below its draw.
+  const overload = (s: GameState) => { s.racks.find((r) => r.id === "rack2")!.flatKw = rackPower(s, "rack2").watts / 1000 - 0.001; };
+  const minutes = (s: GameState, n: number) => Array.from({ length: n }, () => tickMinute(s)).flat();
+  const tripped = () => {
+    const s = rich();
+    overload(s);
+    minutes(s, 70);
+    return s;
+  };
+
+  it("trips after an hour over the limit and cuts every device in the room", () => {
+    const s = rich();
+    overload(s);
+    expect(minutes(s, 50).some((e) => e.key === "event.roomTripped")).toBe(false);
+    expect(working(s, "dev3")).toBe(true);
+    expect(minutes(s, 20)).toContainEqual({ app: "Locations", key: "event.roomTripped", params: { location: basement(s).name } });
+    expect(basement(s).tripped).toBe(true);
+    expect(powered(s, "dev3")).toBe(false);
+    expect(powered(s, "dev4")).toBe(false);
+    expect(dev(s, "dev3").on).toBe(true);
+    expect(roomPower(s, basement(s)).watts).toBe(0);
+  });
+
+  it("holds under the limit", () => {
+    const s = rich();
+    expect(minutes(s, 180).some((e) => e.key === "event.roomTripped")).toBe(false);
+    expect(basement(s).tripped).toBe(false);
+  });
+
+  it("refuses the reset while the room would still draw too much", () => {
+    const s = tripped();
+    expect(resetBreaker(s, "loc1")).toEqual({ ok: false, error: "error.breakerOverload" });
+    expect(basement(s).tripped).toBe(true);
+  });
+
+  it("resets once a device is off and boots the rest in order", () => {
+    const s = tripped();
+    expect(setPower(s, "dev3", false).ok).toBe(true);
+    expect(resetBreaker(s, "loc1").ok).toBe(true);
+    expect(basement(s).tripped).toBe(false);
+    expect(powered(s, "dev4")).toBe(true);
+    expect(dev(s, "dev4").bootUntil).toBeGreaterThan(nowHours(s));
+    expect(dev(s, "dev3").on).toBe(false);
+  });
+
+  it("is reset by the datacenter's remote hands for their hourly rate", () => {
+    const s = rich();
+    const id = ok(addLocation(freeFloor(s), "hetzler-park", "suite", 20));
+    const r = ok(buyRack(s, id, "rack-47", 1));
+    ok(buyDevice(s, "g1-compute", "Dwell", 17, id));
+    ok(mountPlugged(s, "g1-compute", "Dwell", r, 16));
+    runServers(s);
+    s.racks.find((x) => x.id === r)!.flatKw = rackPower(s, r).watts / 1000 - 0.001;
+    const loc = () => s.locations.find((l) => l.id === id)!;
+    breakerTick(s);
+    s.hour += TRIP_HOURS;
+    expect(breakerTick(s).map((e) => e.key)).toContain("event.roomTripped");
+    expect(resetBreaker(s, id)).toEqual({ ok: false, error: "error.breakerProvider" });
+    const hands = datacenterById(loc().dc!).remoteHands, cash = s.cash;
+    s.hour += hands.responseHours;
+    expect(breakerTick(s)).toContainEqual({ app: "Locations", key: "event.breakerReset", params: { location: loc().name, fee: hands.perHour } });
+    expect(loc().tripped).toBe(false);
+    expect(s.cash).toBeCloseTo(cash - hands.perHour);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", amount: -hands.perHour });
+  });
+
+  it("loads an old save untripped", () => {
+    const data = JSON.parse(serialize(rich()));
+    for (const l of data.locations) delete l.tripped;
+    expect(deserialize(JSON.stringify(data)).locations.every((l) => l.tripped === false)).toBe(true);
   });
 });
