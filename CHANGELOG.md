@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Bookkeeping vendors now ship new features over the years: browser programs get them at once, desktop programs with their next yearly update, and the vendor announces each one by mail.
+- Two bookkeeping programs lose support: one stops updates in 2012 and its online banking stops working in 2014, the other ends in 2020 with an offer to move and its tax filing stops working in 2021.
 - Each bookkeeping program now has its own strengths and gaps, so the free program offers reports without HBCI or tax filing, some programs include HBCI and payment matching in their smallest edition, and one sells HBCI as an add-on in its shop.
 - Two browser bookkeeping programs changed their monthly prices to match their place in the market.
 - Servers now sell one vCPU per CPU thread, while a second thread on a core adds only about a third of a core's real work, so servers with Hyper-Threading take more bookings but slow down sooner under load.
