@@ -17,6 +17,8 @@ export interface Datacenter {
   visitBooking: boolean;
   // How a rack position bills power: per kWh, as a flat-rate contract, or either.
   power: "metered" | "flat" | "both";
+  // Hot and cold aisles: rack rows face each other across an aisle instead of all facing one way.
+  aisles: boolean;
 }
 
 export const PROVIDERS: Provider[] = [
@@ -42,51 +44,52 @@ export const PROVIDERS: Provider[] = [
   { id: "myloch", name: "myLoch", host: "myloch.de" },
 ];
 
+// aisles: large and certified halls run hot and cold aisles, budget sites do not.
 type Row = [id: string, name: string, provider: string, city: string, carriers: number, exchange: string | null, onSite: boolean,
   ab: boolean, backup: Datacenter["backup"], green: boolean, kw: number, price: number, factor: number, cross: number,
-  handsPerHour: number, handsHours: number, certified: boolean, cages: boolean, power: Datacenter["power"]];
+  handsPerHour: number, handsHours: number, certified: boolean, cages: boolean, power: Datacenter["power"], aisles: boolean];
 
 const ROWS: Row[] = [
-  ["equinox-fr5", "Equinox FR5", "equinox", "Frankfurt", 30, "DE-KICKS", true, true, "ups+generator", true, 8, 750, 1.4, 250, 150, 1, true, true, "metered"],
-  ["interaction-fra", "Interaction FRA", "interaction", "Frankfurt", 25, "DE-KICKS", true, true, "ups+generator", false, 6, 600, 1.3, 200, 120, 2, true, true, "metered"],
-  ["mainqubes-fra", "mainqubes FRA", "mainqubes", "Frankfurt", 12, "DE-KICKS", false, true, "ups+generator", true, 6, 450, 1.3, 150, 100, 4, true, true, "metered"],
-  ["hetzler-park", "Hetzler Park", "hetzler", "Frankfurt", 1, null, false, false, "ups+generator", true, 4, 180, 1.1, 80, 60, 8, false, false, "both"],
-  ["tellyhouse-north", "Tellyhouse North", "tellyhouse", "London", 30, "LYNX", true, true, "ups+generator", false, 6, 800, 1.5, 300, 160, 1, true, true, "metered"],
-  ["globalsnitch-lon", "Global Snitch LON", "globalsnitch", "London", 20, "LYNX", false, true, "ups+generator", true, 8, 700, 1.4, 250, 140, 2, true, true, "metered"],
-  ["docklands-data", "Docklands Data", "docklands", "London", 3, null, false, false, "ups", false, 4, 350, 1.2, 100, 80, 8, false, false, "both"],
-  ["equinox-am3", "Equinox AM3", "equinox", "Amsterdam", 25, "HAMS-IX", true, true, "ups+generator", true, 8, 650, 1.3, 220, 140, 1, true, true, "metered"],
-  ["ironmolehill-ams", "Iron Molehill AMS", "ironmolehill", "Amsterdam", 10, "HAMS-IX", false, true, "ups+generator", true, 10, 500, 1.2, 180, 110, 4, true, true, "metered"],
-  ["tellyhouse-voltaire", "Tellyhouse Voltaire", "tellyhouse", "Paris", 25, "Franz-IX", true, true, "ups+generator", false, 6, 650, 1.3, 220, 140, 2, true, true, "metered"],
-  ["data5-marcoussis", "Data5 Marcoussis", "data5", "Paris", 8, "Franz-IX", false, true, "ups+generator", true, 10, 450, 1.2, 150, 100, 4, true, true, "metered"],
-  ["ntd-berlin1", "NTD Berlin 1", "ntd", "Berlin", 12, "BeCIX", true, true, "ups+generator", true, 6, 500, 1.3, 150, 110, 2, true, true, "metered"],
-  ["spree-colo", "Spree Colo", "spree", "Berlin", 3, null, false, false, "ups", true, 4, 250, 1.2, 90, 70, 8, false, false, "both"],
-  ["data5-milano", "Data5 Milano", "data5", "Milan", 10, "MIXup", true, true, "ups+generator", false, 6, 500, 1.3, 160, 110, 2, true, true, "metered"],
-  ["arubaba-hub", "Arubaba Hub", "arubaba", "Milan", 4, null, false, true, "ups+generator", true, 6, 350, 1.2, 100, 80, 4, true, false, "both"],
-  ["interaction-vie", "Interaction VIE", "interaction", "Vienna", 15, "VieX", true, true, "ups+generator", false, 6, 500, 1.3, 160, 120, 2, true, true, "metered"],
-  ["nextlair-vie", "Next Lair VIE", "nextlair", "Vienna", 4, "VieX", false, false, "ups+generator", false, 4, 300, 1.2, 100, 80, 4, false, false, "both"],
-  ["equinox-zh4", "Equinox ZH4", "equinox", "Zurich", 15, "SwizzIX", true, true, "ups+generator", true, 8, 800, 1.5, 250, 160, 1, true, true, "metered"],
-  ["greenchz-lupfig", "Green.chz Lupfig", "greenchz", "Zurich", 6, "SwizzIX", false, true, "ups+generator", true, 6, 550, 1.3, 180, 120, 4, true, true, "metered"],
-  ["equinox-du1", "Equinox DU1", "equinox", "Düsseldorf", 18, "ECKS-IX", true, true, "ups+generator", true, 8, 650, 1.35, 220, 140, 1, true, true, "metered"],
-  ["interaction-dus", "Interaction DUS", "interaction", "Düsseldorf", 14, "ECKS-IX", false, true, "ups+generator", false, 6, 520, 1.3, 180, 110, 2, true, true, "metered"],
-  ["ntd-dus1", "NTD Düsseldorf 1", "ntd", "Düsseldorf", 10, "ECKS-IX", false, true, "ups+generator", true, 6, 430, 1.25, 140, 100, 2, true, true, "metered"],
-  ["myloch-dus", "myLoch DUS", "myloch", "Düsseldorf", 8, "ECKS-IX", false, true, "ups+generator", false, 6, 380, 1.2, 120, 80, 4, true, true, "both"],
-  ["skyblink-eygelshoven", "SkyBlink Eygelshoven", "skyblink", "Kerkrade", 20, null, false, true, "ups+generator", true, 6, 300, 1.15, 60, 60, 2, true, false, "both"],
-  ["hetzler-nbg", "Hetzler NBG", "hetzler", "Nuremberg", 1, null, false, false, "ups+generator", true, 4, 170, 1.1, 80, 60, 8, false, false, "flat"],
-  ["boris-nbg", "Boris Network NBG", "borisnet", "Nuremberg", 10, "N-ICKS", true, true, "ups+generator", true, 6, 420, 1.25, 150, 100, 2, true, true, "metered"],
-  ["hetzler-fsn", "Hetzler FSN", "hetzler", "Falkenstein", 1, null, false, false, "ups+generator", true, 4, 160, 1.1, 80, 60, 8, false, false, "both"],
-  ["equinox-mu1", "Equinox MU1", "equinox", "Munich", 15, "IN-EXCESS", true, true, "ups+generator", true, 8, 700, 1.4, 230, 150, 1, true, true, "metered"],
-  ["interaction-muc", "Interaction MUC", "interaction", "Munich", 10, "IN-EXCESS", false, true, "ups+generator", false, 6, 550, 1.3, 180, 120, 2, true, true, "metered"],
-  ["equinox-dc2", "Equinox DC2", "equinox", "Ashburn", 60, "Equinox IX", true, true, "ups+generator", false, 8, 650, 1.15, 200, 130, 1, true, true, "metered"],
-  ["digitalreality-ash", "Digital Reality ACC", "digitalreality", "Ashburn", 25, "Equinox IX", false, true, "ups+generator", false, 10, 480, 1.1, 150, 100, 2, true, true, "metered"],
-  ["corespite-va1", "CoreSpite VA1", "corespite", "Ashburn", 15, "Equinox IX", false, true, "ups+generator", false, 8, 420, 1.1, 120, 90, 4, true, true, "both"],
-  ["equinox-ny4", "Equinox NY4", "equinox", "New York", 45, "NYIKES", true, true, "ups+generator", false, 8, 800, 1.4, 250, 160, 1, true, true, "metered"],
-  ["telex-60hudson", "Telex 60 Hudson", "telex", "New York", 35, "NYIKES", false, true, "ups+generator", false, 5, 700, 1.45, 220, 150, 2, true, true, "metered"],
-  ["digitalreality-cermak", "Digital Reality 350 Cermak", "digitalreality", "Chicago", 40, "CHI-KICKS", true, true, "ups+generator", false, 8, 550, 1.2, 180, 120, 2, true, true, "metered"],
-  ["corespite-ch1", "CoreSpite CH1", "corespite", "Chicago", 15, "CHI-KICKS", false, true, "ups+generator", false, 8, 450, 1.15, 140, 100, 4, true, true, "both"],
-  ["equinox-da1", "Equinox DA1", "equinox", "Dallas", 30, "Y'ALL-IX", true, true, "ups+generator", false, 8, 500, 1.1, 170, 120, 2, true, true, "metered"],
-  ["digitalreality-dfw", "Digital Reality DFW", "digitalreality", "Dallas", 12, "Y'ALL-IX", false, true, "ups+generator", false, 10, 400, 1.05, 130, 90, 4, true, true, "metered"],
-  ["corespite-la1", "CoreSpite One Wilshire", "corespite", "Los Angeles", 60, "Any3", true, true, "ups+generator", false, 6, 750, 1.45, 230, 150, 1, true, true, "metered"],
-  ["equinox-la1", "Equinox LA1", "equinox", "Los Angeles", 30, "Any3", false, true, "ups+generator", false, 8, 650, 1.4, 210, 140, 2, true, true, "metered"],
+  ["equinox-fr5", "Equinox FR5", "equinox", "Frankfurt", 30, "DE-KICKS", true, true, "ups+generator", true, 8, 750, 1.4, 250, 150, 1, true, true, "metered", true],
+  ["interaction-fra", "Interaction FRA", "interaction", "Frankfurt", 25, "DE-KICKS", true, true, "ups+generator", false, 6, 600, 1.3, 200, 120, 2, true, true, "metered", true],
+  ["mainqubes-fra", "mainqubes FRA", "mainqubes", "Frankfurt", 12, "DE-KICKS", false, true, "ups+generator", true, 6, 450, 1.3, 150, 100, 4, true, true, "metered", false],
+  ["hetzler-park", "Hetzler Park", "hetzler", "Frankfurt", 1, null, false, false, "ups+generator", true, 4, 180, 1.1, 80, 60, 8, false, false, "both", false],
+  ["tellyhouse-north", "Tellyhouse North", "tellyhouse", "London", 30, "LYNX", true, true, "ups+generator", false, 6, 800, 1.5, 300, 160, 1, true, true, "metered", true],
+  ["globalsnitch-lon", "Global Snitch LON", "globalsnitch", "London", 20, "LYNX", false, true, "ups+generator", true, 8, 700, 1.4, 250, 140, 2, true, true, "metered", true],
+  ["docklands-data", "Docklands Data", "docklands", "London", 3, null, false, false, "ups", false, 4, 350, 1.2, 100, 80, 8, false, false, "both", false],
+  ["equinox-am3", "Equinox AM3", "equinox", "Amsterdam", 25, "HAMS-IX", true, true, "ups+generator", true, 8, 650, 1.3, 220, 140, 1, true, true, "metered", true],
+  ["ironmolehill-ams", "Iron Molehill AMS", "ironmolehill", "Amsterdam", 10, "HAMS-IX", false, true, "ups+generator", true, 10, 500, 1.2, 180, 110, 4, true, true, "metered", true],
+  ["tellyhouse-voltaire", "Tellyhouse Voltaire", "tellyhouse", "Paris", 25, "Franz-IX", true, true, "ups+generator", false, 6, 650, 1.3, 220, 140, 2, true, true, "metered", true],
+  ["data5-marcoussis", "Data5 Marcoussis", "data5", "Paris", 8, "Franz-IX", false, true, "ups+generator", true, 10, 450, 1.2, 150, 100, 4, true, true, "metered", true],
+  ["ntd-berlin1", "NTD Berlin 1", "ntd", "Berlin", 12, "BeCIX", true, true, "ups+generator", true, 6, 500, 1.3, 150, 110, 2, true, true, "metered", true],
+  ["spree-colo", "Spree Colo", "spree", "Berlin", 3, null, false, false, "ups", true, 4, 250, 1.2, 90, 70, 8, false, false, "both", false],
+  ["data5-milano", "Data5 Milano", "data5", "Milan", 10, "MIXup", true, true, "ups+generator", false, 6, 500, 1.3, 160, 110, 2, true, true, "metered", true],
+  ["arubaba-hub", "Arubaba Hub", "arubaba", "Milan", 4, null, false, true, "ups+generator", true, 6, 350, 1.2, 100, 80, 4, true, false, "both", false],
+  ["interaction-vie", "Interaction VIE", "interaction", "Vienna", 15, "VieX", true, true, "ups+generator", false, 6, 500, 1.3, 160, 120, 2, true, true, "metered", true],
+  ["nextlair-vie", "Next Lair VIE", "nextlair", "Vienna", 4, "VieX", false, false, "ups+generator", false, 4, 300, 1.2, 100, 80, 4, false, false, "both", false],
+  ["equinox-zh4", "Equinox ZH4", "equinox", "Zurich", 15, "SwizzIX", true, true, "ups+generator", true, 8, 800, 1.5, 250, 160, 1, true, true, "metered", true],
+  ["greenchz-lupfig", "Green.chz Lupfig", "greenchz", "Zurich", 6, "SwizzIX", false, true, "ups+generator", true, 6, 550, 1.3, 180, 120, 4, true, true, "metered", true],
+  ["equinox-du1", "Equinox DU1", "equinox", "Düsseldorf", 18, "ECKS-IX", true, true, "ups+generator", true, 8, 650, 1.35, 220, 140, 1, true, true, "metered", true],
+  ["interaction-dus", "Interaction DUS", "interaction", "Düsseldorf", 14, "ECKS-IX", false, true, "ups+generator", false, 6, 520, 1.3, 180, 110, 2, true, true, "metered", true],
+  ["ntd-dus1", "NTD Düsseldorf 1", "ntd", "Düsseldorf", 10, "ECKS-IX", false, true, "ups+generator", true, 6, 430, 1.25, 140, 100, 2, true, true, "metered", false],
+  ["myloch-dus", "myLoch DUS", "myloch", "Düsseldorf", 8, "ECKS-IX", false, true, "ups+generator", false, 6, 380, 1.2, 120, 80, 4, true, true, "both", false],
+  ["skyblink-eygelshoven", "SkyBlink Eygelshoven", "skyblink", "Kerkrade", 20, null, false, true, "ups+generator", true, 6, 300, 1.15, 60, 60, 2, true, false, "both", false],
+  ["hetzler-nbg", "Hetzler NBG", "hetzler", "Nuremberg", 1, null, false, false, "ups+generator", true, 4, 170, 1.1, 80, 60, 8, false, false, "flat", false],
+  ["boris-nbg", "Boris Network NBG", "borisnet", "Nuremberg", 10, "N-ICKS", true, true, "ups+generator", true, 6, 420, 1.25, 150, 100, 2, true, true, "metered", false],
+  ["hetzler-fsn", "Hetzler FSN", "hetzler", "Falkenstein", 1, null, false, false, "ups+generator", true, 4, 160, 1.1, 80, 60, 8, false, false, "both", false],
+  ["equinox-mu1", "Equinox MU1", "equinox", "Munich", 15, "IN-EXCESS", true, true, "ups+generator", true, 8, 700, 1.4, 230, 150, 1, true, true, "metered", true],
+  ["interaction-muc", "Interaction MUC", "interaction", "Munich", 10, "IN-EXCESS", false, true, "ups+generator", false, 6, 550, 1.3, 180, 120, 2, true, true, "metered", true],
+  ["equinox-dc2", "Equinox DC2", "equinox", "Ashburn", 60, "Equinox IX", true, true, "ups+generator", false, 8, 650, 1.15, 200, 130, 1, true, true, "metered", true],
+  ["digitalreality-ash", "Digital Reality ACC", "digitalreality", "Ashburn", 25, "Equinox IX", false, true, "ups+generator", false, 10, 480, 1.1, 150, 100, 2, true, true, "metered", true],
+  ["corespite-va1", "CoreSpite VA1", "corespite", "Ashburn", 15, "Equinox IX", false, true, "ups+generator", false, 8, 420, 1.1, 120, 90, 4, true, true, "both", false],
+  ["equinox-ny4", "Equinox NY4", "equinox", "New York", 45, "NYIKES", true, true, "ups+generator", false, 8, 800, 1.4, 250, 160, 1, true, true, "metered", true],
+  ["telex-60hudson", "Telex 60 Hudson", "telex", "New York", 35, "NYIKES", false, true, "ups+generator", false, 5, 700, 1.45, 220, 150, 2, true, true, "metered", true],
+  ["digitalreality-cermak", "Digital Reality 350 Cermak", "digitalreality", "Chicago", 40, "CHI-KICKS", true, true, "ups+generator", false, 8, 550, 1.2, 180, 120, 2, true, true, "metered", true],
+  ["corespite-ch1", "CoreSpite CH1", "corespite", "Chicago", 15, "CHI-KICKS", false, true, "ups+generator", false, 8, 450, 1.15, 140, 100, 4, true, true, "both", false],
+  ["equinox-da1", "Equinox DA1", "equinox", "Dallas", 30, "Y'ALL-IX", true, true, "ups+generator", false, 8, 500, 1.1, 170, 120, 2, true, true, "metered", true],
+  ["digitalreality-dfw", "Digital Reality DFW", "digitalreality", "Dallas", 12, "Y'ALL-IX", false, true, "ups+generator", false, 10, 400, 1.05, 130, 90, 4, true, true, "metered", true],
+  ["corespite-la1", "CoreSpite One Wilshire", "corespite", "Los Angeles", 60, "Any3", true, true, "ups+generator", false, 6, 750, 1.45, 230, 150, 1, true, true, "metered", true],
+  ["equinox-la1", "Equinox LA1", "equinox", "Los Angeles", 30, "Any3", false, true, "ups+generator", false, 8, 650, 1.4, 210, 140, 2, true, true, "metered", true],
 ];
 
 const SIZE_OF: Record<string, Datacenter["size"]> = {
@@ -99,9 +102,9 @@ const SIZE_OF: Record<string, Datacenter["size"]> = {
 const topPrice = (city: string) => Math.max(...ROWS.filter((r) => r[3] === city).map((r) => r[11]));
 const rivals = (city: string) => ROWS.filter((r) => r[3] === city).length > 1;
 
-export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages, power]) => ({
+export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages, power, aisles]) => ({
   id, name, provider, city, carriers, exchange: ex ? { name: ex, onSite } : null, feeds: ab ? "ab" : "single", backup, green,
-  kwPerPosition: kw, positionPrice: price, powerFactor: factor, crossConnect: cross, remoteHands: { perHour, responseHours }, certified, cages, power,
+  kwPerPosition: kw, positionPrice: price, powerFactor: factor, crossConnect: cross, remoteHands: { perHour, responseHours }, certified, cages, power, aisles,
   size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city),
 }));
 

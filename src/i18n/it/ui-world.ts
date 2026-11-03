@@ -11,7 +11,6 @@ export default {
   "world.obj.shelf": () => "Scaffale del magazzino",
   "world.obj.fusebox": () => "Quadro elettrico",
   "world.obj.fan": () => "Ventilatore da finestra",
-  "world.obj.xconnect": () => "Pannello di cross-connect",
   "world.obj.cooling": () => "Unità di raffreddamento",
   "world.obj.pdu": () => "PDU",
   "world.obj.extinguisher": () => "Estintore",
