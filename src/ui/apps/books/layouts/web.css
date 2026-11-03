@@ -4,7 +4,7 @@
 .bk-web-links { padding: 5px 10px; border-bottom: 1px solid #ccc; flex: none; }
 .bk-web-links a { color: #00c; text-decoration: underline; }
 .bk-web-links a[aria-current] { color: #000; font-weight: 700; text-decoration: none; }
-.bk-web .bk-body { background: #fff; }
-.bk-web .table th { background: #eee; }
+.bk-web .bk-body { background: var(--win); color: var(--text); }
+.bk-web .table th { background: var(--win-bar); }
 .bk-web-links .tab-count::before { content: " ("; }
 .bk-web-links .tab-count::after { content: ")"; }

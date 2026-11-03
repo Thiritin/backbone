@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Every bookkeeping program now has a screen of its own: GnuCache's account tree with registers, Kontomix's form for booking a payment by document number, EightDesk's list that lines payments up with the invoices they match, Rexoffice's bank feed by day and Thyme 50's chart of accounts with account sheets.
+- Thyme 50's editions are now called Comfort and Quantum, and the WARUM logo stands out on its blue website header.
 - Every supplier, registrar and datacenter site now has a My account link, where you choose to pay by bank transfer, credit card or SEPA direct debit, which only German suppliers offer.
 - Electricity bills now list the kWh used and the price per kWh, E.OFF has its own customer portal with your monthly usage, and metered power in a datacenter is billed on that datacenter's invoice.
 - Bookkeeping vendors now ship new features over the years: browser programs get them at once, desktop programs with their next yearly update, and the vendor announces each one by mail.

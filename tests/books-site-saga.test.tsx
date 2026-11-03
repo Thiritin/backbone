@@ -16,8 +16,8 @@ describe("Thyme site", () => {
     expect(early).toContain("sg-classic");
     expect(early).toContain("<li>");
     expect(early).not.toContain("bv-table");
-    expect(early).toContain("<h2>Thyme 50 Office Line Plus</h2>");
-    expect(early).not.toContain("Office Line Office Line");
+    expect(early).toContain("<h2>Thyme 50 Quantum</h2>");
+    expect(early).not.toContain("Quantum Quantum");
     const late = page("2010-02");
     expect(late).toContain("sg-modern");
     expect(late).toContain("bv-table");
@@ -25,7 +25,7 @@ describe("Thyme site", () => {
 
   it("shows one edition on its edition path", () => {
     const one = page("2006-05", "/edition/office-line-plus");
-    expect(one).toContain("Office Line Plus");
+    expect(one).toContain("Thyme 50 Quantum");
     expect(one.match(/class="bv-edition"/g)).toHaveLength(1);
   });
 });

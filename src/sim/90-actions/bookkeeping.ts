@@ -9,6 +9,8 @@ import { invoicing } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import { bill, currentEdition, currentVendor, hasFeature, HBCI_KEY, LICENCE_KEY, licencePrice, matchByReference, monthlyFee, monthlyRun, MONTHLY_KEY, SEAT_KEY, updateOpen, works } from "../80-business/bookkeeping";
 import type { ActionResult } from "./hardware";
+import { matchTransfer } from "./billing";
+import { assignPayment } from "./bank";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -128,4 +130,13 @@ export function finishBooksSetup(s: GameState): ActionResult {
   if (!s.books.vendor) return fail("error.booksNotDownloaded");
   s.books = { ...s.books, setupDone: true };
   return { ok: true };
+}
+
+// Kontomix's booking form: a booking from the account against the invoice or supplier invoice number typed in. settle
+// writes off what a short payment leaves open.
+export function bookByNumber(s: GameState, bookingId: string, number: string, settle = false): ActionResult {
+  const n = number.trim(), tr = s.transfers.find((x) => x.id === bookingId);
+  const id = tr ? s.invoices.find((i) => i.number === n && i.synced !== false)?.id : s.payables.find((p) => p.number === n)?.id;
+  if (!id) return { ok: false, error: "books-screens.noDocument", params: { number: n } };
+  return tr ? matchTransfer(s, tr.id, id, settle) : assignPayment(s, bookingId, id);
 }
