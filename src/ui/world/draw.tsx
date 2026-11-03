@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { t } from "../../i18n/en";
-import type { Facing, Fixture, Tile } from "../../sim/20-world/layout";
+import type { Fixture, Tile } from "../../sim/20-world/layout";
 import type { Sky } from "../../sim/20-world/weather";
 import { RackFront, type RackItem } from "../art/RackFront";
 import { center, iso, type Pt } from "./grid";
@@ -348,37 +347,5 @@ export function RackBox({ tile, units, items, leds, zoomed }: { tile: Tile; unit
         </g>
       )}
     </>
-  );
-}
-
-// Feet at 0,0, facing the lower left; legs per stride frame as left and right [x, height].
-const LEGS: [number, number][][] = [[[-5, 12], [1, 12]], [[-6, 12], [2, 10]], [[-6, 10], [2, 12]]];
-
-// Front view for the two downward facings, back view for the two upward ones, mirrored for the right-hand side; a carried parcel rides above the head.
-export function Player({ at, facing, stride, carry }: { at: Pt; facing: Facing; stride: number; carry?: ReactNode }) {
-  const c = center(at.x, at.y), flip = facing === "e" || facing === "n", front = facing === "s" || facing === "e";
-  return (
-    <g pointerEvents="none" aria-label={t("world.you")}>
-      <g className="w-player" transform={`translate(${c.x} ${c.y})`}>
-        <ellipse className="w-shadow" cx="0" cy="0" rx="11" ry="5.5" />
-        <g transform={flip ? "scale(-1 1)" : undefined}>
-          {LEGS[stride].map(([x, h], i) => <rect key={i} className="w-pants" x={x} y={-12} width="4" height={h} rx="2" />)}
-          <rect className="w-skin" x="-9.5" y={carry ? -38 : -25} width="3.5" height="12" rx="1.75" />
-          <rect className="w-skin" x="6" y={carry ? -38 : -25} width="3.5" height="12" rx="1.75" />
-          <rect className="w-shirt" x="-7" y="-27" width="14" height="17" rx="5" />
-          <circle className="w-skin" cx="0" cy="-35" r="9" />
-          {front ? (
-            <>
-              <path className="w-hair" d="M-9.2,-35 A9.2,9.2 0 0 1 9.2,-35 Q3,-40 -9.2,-35 Z" />
-              <circle className="w-eye" cx="-3.4" cy="-33" r="1" />
-              <circle className="w-eye" cx="1.6" cy="-33" r="1" />
-            </>
-          ) : (
-            <path className="w-hair" d="M-9.2,-33 A9.2,9.2 0 1 1 9.2,-33 Q0,-29 -9.2,-33 Z" />
-          )}
-        </g>
-      </g>
-      {carry}
-    </g>
   );
 }

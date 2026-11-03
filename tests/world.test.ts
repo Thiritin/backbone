@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { t } from "../src/i18n/en";
 import { useStore } from "../src/ui/store";
 import { roomOf, World } from "../src/ui/world/World";
-import { pathTo } from "../src/ui/world/grid";
+import { tick } from "../src/sim/88-tick/tick";
+import { buyDevice } from "../src/sim/90-actions/hardware";
 import { readyGame } from "./fixtures";
 import { devName } from "../src/ui/apps/hw";
 
@@ -47,9 +48,25 @@ describe("world", () => {
     }
   });
 
-  it("walks around blocked tiles", () => {
-    const p = pathTo({ x: 0, y: 0 }, [{ x: 2, y: 0 }], 3, 3, new Set(["1,0"]))!;
-    expect(p.map((q) => `${q.x},${q.y}`)).toEqual(["0,1", "1,1", "2,1", "2,0"]);
-    expect(pathTo({ x: 0, y: 0 }, [{ x: 2, y: 0 }], 3, 1, new Set(["1,0"]))).toBeNull();
+  it("takes a parcel from the door into the hand and puts it on the shelf", () => {
+    const s = readyGame(7), here = roomOf(s);
+    s.cash = 1_000_000;
+    buyDevice(s, "g1-compute", "Dwell", 1, here.id);
+    const r = buyDevice(s, "g1-compute", "Dwell", 1, here.id);
+    if (!r.ok) throw new Error(r.error);
+    while (s.devices.find((d) => d.id === r.id)!.arriveAt !== null) tick(s);
+    useStore.setState({ game: s, speed: 0, surface: "world" });
+    const { container } = render(createElement(World));
+    const parcels = container.querySelector("[data-parcels]")!;
+    const id = s.devices.filter((d) => d.door?.at === here.id).pop()!.id;
+    fireEvent.click(parcels);
+    expect(useStore.getState().game.player.carrying).toBe(id);
+    fireEvent.pointerMove(container.querySelector("svg")!, { clientX: 40, clientY: 40 });
+    expect(container.querySelector(`.w-hand[data-carried="${id}"]`)).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: t("world.obj.shelf") }));
+    const g = useStore.getState().game;
+    expect(g.player.carrying).toBeNull();
+    expect(g.devices.find((d) => d.id === id)!.store).toBe(here.id);
+    expect(container.querySelector(".w-hand")).toBeNull();
   });
 });

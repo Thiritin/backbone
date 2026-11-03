@@ -11,10 +11,6 @@
   --w-wall-end: oklch(0.83 0.012 252);
   --w-wall-edge: oklch(0.8 0.012 252);
   --w-skirt: oklch(0.68 0.014 252);
-  --w-skin: oklch(0.84 0.06 60);
-  --w-hair: oklch(0.42 0.06 50);
-  --w-pants: oklch(0.4 0.04 262);
-  --w-ink: oklch(0.25 0.02 258);
   position: fixed;
   inset: 0;
   background: var(--w-bg);
@@ -26,8 +22,8 @@
 .w-floor { fill: var(--w-floor); pointer-events: none; }
 .w-grate { fill: var(--w-grate); }
 .w-grate-line { fill: none; stroke: var(--w-grate-line); stroke-width: 0.4; }
-.w-tile { fill: transparent; stroke: var(--w-grid); stroke-width: 0.5; cursor: pointer; }
-.w-cursor { fill: var(--accent); fill-opacity: 0.3; pointer-events: none; }
+.w-tile { fill: none; stroke: var(--w-grid); stroke-width: 0.5; pointer-events: none; }
+.w-carrying .world-svg { cursor: grabbing; }
 
 .w-walls polygon { stroke: var(--w-wall-edge); stroke-width: 0.6; stroke-linejoin: round; }
 .w-wall-l { fill: var(--w-wall-l); }
@@ -103,12 +99,6 @@
 .w-parcel-label { fill: oklch(0.97 0.005 90); }
 .w-parcel-brand { font-family: var(--font-ui); font-size: 3.2px; font-weight: 600; text-anchor: middle; fill: oklch(0.25 0.02 258); }
 
-.w-shadow { fill: oklch(0.2 0.02 262 / 0.2); }
-.w-skin { fill: var(--w-skin); }
-.w-hair { fill: var(--w-hair); }
-.w-pants { fill: var(--w-pants); }
-.w-shirt { fill: var(--accent); }
-.w-eye { fill: var(--w-ink); }
 
 .w-led { fill: oklch(0.35 0.01 255); }
 .w-led-on { fill: var(--ok); }
