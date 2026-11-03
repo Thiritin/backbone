@@ -11,7 +11,8 @@ import type { SimEvent } from "../src/sim/88-tick/tick";
 import { addressBills, addressTick } from "../src/sim/60-infra/addresses";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
-import { addLocation } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack } from "../src/sim/90-actions/hardware";
+import { mountDevice } from "./plugged";
 import { buyDevice, newGame } from "./fixtures";
 import {
   acceptPeering, addUplinkLink, freeRouterPort, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering, requestPeering, setBlackhole, setProtection,
@@ -41,7 +42,7 @@ function datacenter(seed = 1) {
   const loc = ok(addLocation(s, "equinox-fr5", "cage", 4));
   s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
   const router = ok(buyDevice(s, "edge-s", "Sysko", 1, loc));
-  s.devices = s.devices.map((d) => (d.id === router ? { ...d, store: null, panel: loc } : d));
+  ok(mountDevice(s, router, ok(buyRack(s, loc, "rack-42", 1)), 1));
   return { s, loc };
 }
 const ready = (s: GameState) => { s.hour += 24 * 15; };
@@ -129,7 +130,7 @@ describe("routing", () => {
     const { s, loc } = datacenter();
     expect(freeRouterPort(s, loc, 10)).toBeNull();
     expect(err(orderTransit(s, loc, "cogentle", 10, 0.2))).toBe("error.speedLater");
-    for (let i = 0; i < 6; i++) ok(orderTransit(s, loc, "cogentle", 1, 0.2));
+    for (let i = 0; i < 4; i++) ok(orderTransit(s, loc, "cogentle", 1, 0.2));
     expect(err(orderTransit(s, loc, "cogentle", 1, 0.2))).toBe("error.noRouterPort");
     expect(err(orderTransit(s, "loc1", "cogentle", 1, 0.2))).toBe("error.basementUplink");
     expect(err(orderTransit(s, loc, "nobody", 1, 0.2))).toBe("error.carrierAbsent");
@@ -193,7 +194,7 @@ describe("95th percentile billing", () => {
     expect(networkBills(s).map((b) => b.key)).toEqual(["ledger.exchangeMember"]);
     ready(s);
     const keys = networkBills(s).map((b) => b.key);
-    expect(keys).toEqual(["ledger.exchangePorts", "ledger.crossConnects", "ledger.transit", "ledger.crossConnects", "ledger.exchangeMember"]);
+    expect(keys).toEqual(["ledger.exchangePorts", "ledger.crossConnects", "ledger.transit", "ledger.uplinkLines", "ledger.crossConnects", "ledger.exchangeMember"]);
     expect(networkBills(s).find((b) => b.key === "ledger.exchangeMember")!.amount).toBe(-EXCHANGE_FEES.yearly / 12);
     expect(s.ledger.slice(-2).map((l) => l.amount)).toEqual([-ASN_FEE, -EXCHANGE_FEES.setup]);
     const cash = s.cash;

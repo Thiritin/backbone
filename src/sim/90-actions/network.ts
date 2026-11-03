@@ -11,7 +11,7 @@ import { acceptChance, activeExchanges, coolingDown, type Network, type Uplink }
 import { locationOf, peerOf } from "../60-infra/status";
 import type { ActionResult } from "./hardware";
 import { opticFor, portOptic, uplinkBand, uplinkOffers } from "../10-catalog/uplinks";
-import { freeJack } from "../60-infra/panels";
+import { freeJack, panelOf } from "../60-infra/panels";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const cents = (v: number) => Math.round(v * 100) / 100;
@@ -30,7 +30,7 @@ function zone(s: GameState, locationId: string): Location | string {
   return loc;
 }
 
-// The slowest free router port at least gbit fast in the zone, or in the rack when one is named: no cable in it and no uplink
+// The slowest free router port at least gbit fast in a zone rack with a provider panel, or in the named rack: no cable in it and no uplink
 // on it. Above 10 Gbit/s the port must take a module for the speed and the router must hold one more than its lines use.
 export function freeRouterPort(s: GameState, locationId: string, gbit: number, rackId?: string, modules = true): { device: string; port: number } | null {
   const lines = s.network.uplinks.flatMap((u) => u.links);
@@ -39,7 +39,7 @@ export function freeRouterPort(s: GameState, locationId: string, gbit: number, r
   let best: { device: string; port: number } | null = null, bestGbit = Infinity;
   for (const d of s.devices) {
     const m = modelById(d.model);
-    if (m.kind !== "gateway" || locationOf(s, d)?.id !== locationId || (rackId && d.rackId !== rackId)) continue;
+    if (m.kind !== "gateway" || !d.rackId || !panelOf(s, d.rackId) || locationOf(s, d)?.id !== locationId || (rackId && d.rackId !== rackId)) continue;
     const kindOf = (port: number) => portOptic(m.ports[port].gbit, m.ports[port].media);
     for (let i = 0; i < m.ports.length; i++) {
       const g = m.ports[i].gbit, po = kindOf(i);

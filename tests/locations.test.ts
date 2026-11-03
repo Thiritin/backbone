@@ -272,7 +272,7 @@ describe("rack shares", () => {
       const r = s.racks.find((x) => x.locationId === id)!;
       return [loc(s, id).positions, loc(s, id).readyAt, r.provided, r.position, r.price, freeSlots(s, r.id, 1).length, rackPower(s, r.id).limitWatts];
     });
-    expect(rows).toEqual([[1, 48, true, 1, 0, 5, 1000], [1, 48, true, 1, 0, 10, 2000], [1, 48, true, 1, 0, 21, 4000], [1, 48, true, 1, 0, 42, 8000]]);
+    expect(rows).toEqual([[1, 48, true, 1, 0, 4, 1000], [1, 48, true, 1, 0, 9, 2000], [1, 48, true, 1, 0, 20, 4000], [1, 48, true, 1, 0, 41, 8000]]);
     for (const dc of DATACENTERS) expect(addLocation(rich(), dc.id, "share", 8).ok).toBe(true);
   });
   it("mounts hardware into the provider rack and trips at the share's limit", () => {
@@ -283,7 +283,7 @@ describe("rack shares", () => {
     expect(rackPower(s, r).limitWatts).toBe(500);
     ok(buyDevice(s, "g1-compute", "Dwell", 3, id));
     ok(mountStack(s, "g1-compute", "Dwell", r, 2));
-    const srv = s.devices.find((d) => d.rackId === r)!;
+    const srv = s.devices.find((d) => d.rackId === r && d.model !== "panel-provider")!;
     expect(srv.name).toBe("fra2-srv-01");
     ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }, true));
     runServers(s);
