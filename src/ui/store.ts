@@ -18,6 +18,7 @@ import { SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
+import { booksAppUrl, currentVendor } from "../sim/80-business/bookkeeping";
 import { shopAdminUrl } from "../sim/80-business/portal";
 import { shopActive } from "../sim/80-business/shop";
 
@@ -26,7 +27,8 @@ export const DISCORD_URL = "https://discord.gg/e8nTAV8Yk7";
 export const SAVE_KEY = "backbone.save";
 
 // What another app asked a window to show; n changes on every request so repeating one still applies.
-export interface Focus { kind: string; id: string; n: number }
+// inner: the focus a page opened at this url applies, as Books inside a browser program.
+export interface Focus { kind: string; id: string; n: number; inner?: Omit<Focus, "n"> }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; draft?: string; focus?: Focus }
 export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; focus?: Omit<Focus, "n"> }
 
@@ -312,6 +314,9 @@ export const useStore = create<Store>((set, get) => ({
     // A quote request sent through the shop is answered in the shop admin.
     const asked = app === "Support" && target?.kind === "ticket" && shopAsk(get().game, target.id);
     if (asked) return get().openApp("Browser", { kind: "url", id: shopAdminUrl(get().game, { s: "quotes" }) });
+    // A browser bookkeeping program opens its records in the vendor's web app.
+    const web = currentVendor(get().game);
+    if (app === "Books" && target && web?.deployment === "browser") return get().openApp("Browser", { kind: "url", id: booksAppUrl(web), inner: target });
     const desk = app === "Support" && deskUrl(get().game, target);
     if (desk) return get().openApp("Browser", { kind: "url", id: desk });
     // Without a desk holding it, a request or a company email opens in Pear Mail at its message.

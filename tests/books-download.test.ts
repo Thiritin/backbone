@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { booksVendor } from "../src/sim/10-catalog/bookkeeping";
+import { booksAppUrl, currentVendor } from "../src/sim/80-business/bookkeeping";
 import { openAccount } from "../src/sim/46-finance/bank";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { buyBooks, installBooks, setupHours } from "../src/sim/90-actions/bookkeeping";
@@ -59,6 +60,7 @@ describe("bookkeeping programs from the vendor's site", () => {
     expect(buyBooks(s, "lexoffize")).toEqual({ ok: true });
     expect(s.books).toMatchObject({ vendor: "lexoffize", download: null });
     expect(s.installed).toContain("Books");
+    expect(booksAppUrl(currentVendor(s)!)).toBe("www.lexoffize.de/app");
   });
 
   it("a running program stays until the new one is installed", () => {
