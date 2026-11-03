@@ -1,6 +1,6 @@
 import { Warehouse } from "lucide-react";
 import { memo, useEffect, useRef, type ReactNode } from "react";
-import { Logo } from "../art/logos";
+import { hasMark, Logo } from "../art/logos";
 import { CABLES, CITIES, COAST, type City } from "./world-data";
 import "./map.css";
 
@@ -218,7 +218,7 @@ function Pin({ m, y, onClick }: { m: Marker; y: number; onClick: () => void }) {
       <title>{m.label}</title>
       <circle r="10" />
       <g transform="translate(-7 -7)">
-        {m.kind === "datacenter" ? <Warehouse width={14} height={14} strokeWidth={1.75} /> : <Logo provider={m.kind === "basement" ? null : m.provider ?? null} size={14} />}
+        {m.kind === "datacenter" && !(m.provider && hasMark(m.provider)) ? <Warehouse width={14} height={14} strokeWidth={1.75} /> : <Logo provider={m.kind === "basement" ? null : m.provider ?? null} size={14} />}
       </g>
       {(m.count ?? 0) > 1 && <g className="wm-badge" transform="translate(9 -8)"><circle r="6" /><text y="3">{m.count}</text></g>}
       {m.alert && <circle className="wm-alert" cx="7.5" cy="-7.5" r="3.5" />}
