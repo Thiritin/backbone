@@ -1,6 +1,6 @@
 import { t } from "../../../../../i18n/en";
 import { registrarHost } from "../../../../../sim/10-catalog/registrars";
-import { Account, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
+import { Account, AccountLink, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
 import "./internety.css";
 
 const Mark = ({ size }: { size: number }) => (
@@ -11,10 +11,10 @@ const Mark = ({ size }: { size: number }) => (
 );
 
 // InterNetY: the dense white and blue German reseller page in both eras; from 2014 a blue header band and bigger type.
-export function InterNetY({ game, r, look, year }: RegistrarProps) {
+export function InterNetY({ game, r, look, year, go }: RegistrarProps) {
   return (
     <div className={`rg rg-internety ${look}`}>
-      <header><span className="rg-wm"><Mark size={look === "late" ? 30 : 24} /><span>InterNet<b>Y</b></span></span><span className="sub">{t("browser-sites-1.in.sub")}</span></header>
+      <header><span className="rg-wm"><Mark size={look === "late" ? 30 : 24} /><span>InterNet<b>Y</b></span></span><span className="sub">{t("browser-sites-1.in.sub")}</span><AccountLink game={game} r={r} go={go} /></header>
       <main>
         <div className="left">
           <section><DomainSearch game={game} r={r} title={t("browser-sites-1.in.check")} button={t("browser-sites-1.in.checkButton")} /></section>

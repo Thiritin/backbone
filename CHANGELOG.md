@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-03
 
+- Every supplier, registrar and datacenter site now has a My account link, where you choose to pay by bank transfer, credit card or SEPA direct debit, which only German suppliers offer.
+- Electricity bills now list the kWh used and the price per kWh, E.OFF has its own customer portal with your monthly usage, and metered power in a datacenter is billed on that datacenter's invoice.
 - Servers now sell one vCPU per CPU thread, while a second thread on a core adds only about a third of a core's real work, so servers with Hyper-Threading take more bookings but slow down sooner under load.
 - The server inspector shows each CPU's cores and threads, and panel host settings show the host's compute next to its vCPU.
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.

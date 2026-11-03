@@ -4,7 +4,7 @@ import { filesIn, installDirIn, shopBroken, shopFolderAt } from "../60-infra/sho
 import { deskBroken, deskFilesIn, setupDirIn } from "../60-infra/desk-files";
 import type { SelfDeskId } from "../10-catalog/archives";
 import { DESKS, type DeskId } from "../10-catalog/desks";
-import { supplierHost } from "../46-finance/payables";
+import { supplierHost, UTILITY } from "../46-finance/payables";
 import { monthIndexOf, yearOf } from "../00-core/time";
 import { SOFTWARE } from "../10-catalog/platforms";
 import { registrarById, registrarHost, REGISTRARS, type RegistrarId } from "../10-catalog/registrars";
@@ -59,6 +59,7 @@ export type Page =
   | { kind: "parked"; registrar: RegistrarId; domain: string }
   | { kind: "bank"; id: BankId }
   | { kind: "supplier"; name: string }
+  | { kind: "utility" }
   | { kind: "lexwear" }
   | { kind: "market"; channel: Channel }
   | { kind: "books"; id: BooksVendorId }
@@ -313,9 +314,11 @@ export function resolve(s: GameState, raw: string): Resolved {
   const bank = BANKS.find((b) => named(b.host) && b.from <= year);
   if (bank) return out({ kind: "bank", id: bank.id });
   const registrar = REGISTRARS.find((r) => named(registrarHost(r)));
-  // A supplier's portal opens once it has sent an invoice; a registrar's sits under /account of its site.
+  // The utility's site is always up; another supplier's portal opens once it has sent an invoice. A registrar keeps its
+  // customer account on its own site.
+  if (named(supplierHost(UTILITY))) return out({ kind: "utility" });
   const supplier = [...new Set(s.payables.filter((p) => p.supplier !== "card").map((p) => p.name))].find((n) => named(supplierHost(n)));
-  if (supplier && (!registrar || path.startsWith("/account"))) return out({ kind: "supplier", name: supplier });
+  if (supplier && !registrar) return out({ kind: "supplier", name: supplier });
   if (registrar) return out({ kind: "registrar", id: registrar.id });
   if (named(VIDEO_HOST)) {
     return /[?&]v=uptime(&|$)/.test(path) ? out({ kind: "video" }) : out({ kind: "notfound" });

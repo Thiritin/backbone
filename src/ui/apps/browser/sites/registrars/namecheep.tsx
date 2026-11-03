@@ -1,6 +1,6 @@
 import { t } from "../../../../../i18n/en";
 import { registrarHost } from "../../../../../sim/10-catalog/registrars";
-import { Account, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
+import { Account, AccountLink, DomainSearch, own, Program, TldPrices, type RegistrarProps } from "./RegistrarPage";
 import "./namecheep.css";
 
 const Mark = ({ size }: { size: number }) => (
@@ -11,12 +11,12 @@ const Mark = ({ size }: { size: number }) => (
 );
 
 // NameCheep: the orange 2005 search page with a TLD price grid; from 2015 flat orange on dark grey with cards.
-export function NameCheep({ game, r, look, year }: RegistrarProps) {
+export function NameCheep({ game, r, look, year, go }: RegistrarProps) {
   const wm = <span className="rg-wm"><Mark size={look === "late" ? 26 : 34} /><span>Name<b>Cheep</b></span></span>;
   if (look === "late") {
     return (
       <div className="rg rg-namecheep late">
-        <header>{wm}<span className="tag">{t("browser-sites-1.nc.tagLate")}</span></header>
+        <header>{wm}<span className="tag">{t("browser-sites-1.nc.tagLate")}</span><AccountLink game={game} r={r} go={go} /></header>
         <section className="hero"><DomainSearch game={game} r={r} title={t("browser-sites-1.nc.find")} /></section>
         <main>
           <section className="card"><TldPrices game={game} r={r} title={t("browser-sites-1.nc.prices")} columns={2} /></section>
@@ -29,7 +29,7 @@ export function NameCheep({ game, r, look, year }: RegistrarProps) {
   }
   return (
     <div className="rg rg-namecheep early">
-      <header>{wm}<span className="tag">{t("browser-sites-1.nc.tagEarly")}</span></header>
+      <header>{wm}<span className="tag">{t("browser-sites-1.nc.tagEarly")}</span><AccountLink game={game} r={r} go={go} /></header>
       <div className="stripe" />
       <main>
         <section className="box find"><DomainSearch game={game} r={r} title={t("browser-sites-1.nc.search")} button={t("browser-sites-1.nc.go")} /></section>

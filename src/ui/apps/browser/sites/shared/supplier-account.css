@@ -1,0 +1,6 @@
+.pay-methods { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.pay-methods legend { padding: 0; margin-bottom: 4px; font-weight: bold; }
+.pay-methods label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.pay-methods label.off { opacity: 0.55; cursor: default; }
+.pay-methods small { font-size: 0.9em; }
+.inv-line td { font-size: 0.92em; color: #555; padding-top: 0; }

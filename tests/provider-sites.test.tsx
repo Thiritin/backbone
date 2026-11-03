@@ -99,7 +99,8 @@ describe("colocation order and customer portal", () => {
     const g = order(t("providers.byInvoice"));
     const html = renderToString(<PortalShell game={g} p={EQUINOX} route={{ page: "account", sub: ["profile"] }} go={() => {}} signOut={() => {}} />);
     expect(html).toContain("Kellerweg 1");
-    expect(html).toContain(t("providers.byInvoice"));
-    expect(html).toContain(t("bank.supplier.setUp"));
+    expect(html).toContain(FR5.name);
+    expect(html).toContain(t("accounts.pay.transfer"));
+    expect(html).toContain(t("accounts.pay.debit"));
   });
 });

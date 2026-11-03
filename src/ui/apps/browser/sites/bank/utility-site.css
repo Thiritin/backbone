@@ -1,0 +1,28 @@
+/* E.OFF: a red utility customer portal on white with rounded cards. */
+.eo { --red: #e3241b; min-height: 100%; display: flex; flex-direction: column; background: #f5f5f5; color: #1d1d1b; font: 14px/1.45 "Helvetica Neue", Arial, sans-serif; }
+.eo-head { display: flex; align-items: center; gap: 10px; padding: 12px 28px; background: #fff; border-bottom: 3px solid var(--red); }
+.eo-logo { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--red); color: #fff; font: bold 22px/1 Arial, sans-serif; }
+.eo-name { font: bold 20px Arial, sans-serif; color: var(--red); letter-spacing: 0.02em; }
+.eo-head nav { margin-left: auto; display: flex; gap: 20px; }
+.eo-head nav a { color: #1d1d1b; text-decoration: none; font-weight: bold; padding: 4px 0; border-bottom: 2px solid transparent; }
+.eo-head nav a:hover, .eo-head nav a[aria-current] { color: var(--red); border-bottom-color: var(--red); }
+.eo-main { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 20px 16px 28px; box-sizing: border-box; }
+.eo-main h1 { margin: 0 0 4px; font-size: 24px; }
+.eo-who { margin: 0 0 16px; color: #555; }
+.eo-card, .eo-hero { background: #fff; border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; box-shadow: 0 1px 3px rgb(0 0 0 / 0.08); }
+.eo-hero { border-top: 6px solid var(--red); }
+.eo-card h2 { margin: 0 0 10px; font-size: 16px; color: var(--red); }
+.eo-kv { margin: 0 0 12px; display: grid; grid-template-columns: max-content 1fr; gap: 4px 18px; }
+.eo-kv div { display: contents; }
+.eo-kv dt { color: #666; }
+.eo-kv dd { margin: 0; }
+.eo-table { width: 100%; border-collapse: collapse; }
+.eo-table th, .eo-table td { padding: 5px 6px; text-align: left; border-bottom: 1px solid #e6e6e6; }
+.eo-table th { font-size: 12px; color: #666; font-weight: normal; }
+.eo-table .r { text-align: right; }
+.eo-table .neg { color: var(--red); }
+.eo-table .inv-line td { border-bottom: 0; }
+.eo-now td { font-weight: bold; }
+.eo-btn { background: var(--red); color: #fff; border: 0; border-radius: 20px; padding: 8px 20px; font-weight: bold; cursor: pointer; }
+.eo-btn:hover { filter: brightness(0.92); }
+.eo-foot { padding: 12px 28px; font-size: 12px; color: #777; background: #fff; border-top: 1px solid #e0e0e0; }
