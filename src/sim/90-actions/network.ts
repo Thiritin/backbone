@@ -10,6 +10,8 @@ import type { GameState, Location } from "../50-state";
 import { acceptChance, activeExchanges, coolingDown, type Network, type Uplink } from "../60-infra/network";
 import { locationOf, peerOf } from "../60-infra/status";
 import type { ActionResult } from "./hardware";
+import { opticFor, portOptic, uplinkBand, uplinkOffers } from "../10-catalog/uplinks";
+import { freeJack, panelOf } from "../60-infra/panels";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const cents = (v: number) => Math.round(v * 100) / 100;
@@ -28,42 +30,68 @@ function zone(s: GameState, locationId: string): Location | string {
   return loc;
 }
 
-// The slowest free router port at least gbit fast in the zone: no cable in it and no uplink on it.
-export function freeRouterPort(s: GameState, locationId: string, gbit: number): { device: string; port: number } | null {
-  const taken = new Set(s.network.uplinks.flatMap((u) => u.links.map((l) => `${l.device}:${l.port}`)));
+// The slowest free router port at least gbit fast in a zone rack with a provider panel, or in the named rack: no cable in it and no uplink
+// on it. Above 10 Gbit/s the port must take a module for the speed and the router must hold one more than its lines use.
+export function freeRouterPort(s: GameState, locationId: string, gbit: number, rackId?: string, modules = true): { device: string; port: number } | null {
+  const lines = s.network.uplinks.flatMap((u) => u.links);
+  const taken = new Set(lines.map((l) => `${l.device}:${l.port}`));
+  const need = opticFor(gbit);
   let best: { device: string; port: number } | null = null, bestGbit = Infinity;
   for (const d of s.devices) {
     const m = modelById(d.model);
-    if (m.kind !== "gateway" || locationOf(s, d)?.id !== locationId) continue;
+    if (m.kind !== "gateway" || !d.rackId || !panelOf(s, d.rackId) || locationOf(s, d)?.id !== locationId || (rackId && d.rackId !== rackId)) continue;
+    const kindOf = (port: number) => portOptic(m.ports[port].gbit, m.ports[port].media);
     for (let i = 0; i < m.ports.length; i++) {
-      const g = m.ports[i].gbit;
-      if (g >= gbit && g < bestGbit && !taken.has(`${d.id}:${i}`) && !peerOf(s, { device: d.id, port: i })) { best = { device: d.id, port: i }; bestGbit = g; }
+      const g = m.ports[i].gbit, po = kindOf(i);
+      if (g < gbit || g >= bestGbit || taken.has(`${d.id}:${i}`) || peerOf(s, { device: d.id, port: i })) continue;
+      if ((po?.kind === "ib") !== (need?.kind === "ib")) continue;
+      if (need && modules) {
+        const held = d.components.filter((c) => c.kind === "optic" && c.size === po!.gbit && c.failedAt === null).length;
+        const used = lines.filter((l) => l.device === d.id && l.gbit > 10 && kindOf(l.port)?.kind === po!.kind).length;
+        if (held <= used) continue;
+      }
+      best = { device: d.id, port: i }; bestGbit = g;
     }
   }
   return best;
 }
 
-function addLink(s: GameState, u: Uplink, gbit: number): ActionResult {
-  if (!speedsIn(yearOf(s.hour)).includes(gbit)) return fail("error.speedLater");
-  const port = freeRouterPort(s, u.locationId, gbit);
-  if (!port) return fail("error.noRouterPort");
-  const link = { id: `lnk${s.nextId++}`, gbit, ...port, readyAt: s.hour + LEAD_HOURS };
+// A line of gbit on the rack's router, landing on a free jack of the rack's provider panel. With a location id instead of a
+// rack, the line takes the zone's free router port and that router's rack.
+function addLink(s: GameState, u: Uplink, gbit: number, rackId?: string): ActionResult {
+  const year = yearOf(s.hour);
+  if (gbit < uplinkBand(year).floor) return fail("error.speedRetired");
+  if (!uplinkOffers(year).includes(gbit)) return fail("error.speedLater");
+  const port = freeRouterPort(s, u.locationId, gbit, rackId);
+  if (!port) return fail(freeRouterPort(s, u.locationId, gbit, rackId, false) ? "error.needsModule" : "error.noRouterPort");
+  const rack = s.devices.find((d) => d.id === port.device)?.rackId;
+  const jack = rack && freeJack(s, rack);
+  if (!jack) return fail("error.noFreeJack");
+  const link = { id: `lnk${s.nextId++}`, gbit, ...port, jack, readyAt: s.hour + LEAD_HOURS };
   set(s, { uplinks: [...s.network.uplinks.filter((x) => x.id !== u.id), { ...u, links: [...u.links, link] }] });
   return { ok: true, id: link.id };
 }
 
+// where is a rack, or a whole location.
+const placeOf = (s: GameState, where: string): { locationId: string; rackId?: string } => {
+  const r = s.racks.find((x) => x.id === where);
+  return r ? { locationId: r.locationId, rackId: r.id } : { locationId: where };
+};
+
 // Signs a transit contract with a carrier on site: one link of gbit, with a commit share from COMMITS.
-export function orderTransit(s: GameState, locationId: string, carrierId: string, gbit: number, commit: number): ActionResult {
+export function orderTransit(s: GameState, where: string, carrierId: string, gbit: number, commit: number): ActionResult {
+  const { locationId, rackId } = placeOf(s, where);
   const loc = zone(s, locationId);
   if (typeof loc === "string") return fail(loc);
   if (!carriersAt(datacenterById(loc.dc!)).some((c) => c.id === carrierId)) return fail("error.carrierAbsent");
   if (!COMMITS.some((c) => c.share === commit)) return fail("error.unknownCommit");
   const u: Uplink = { id: `up${s.nextId++}`, locationId, kind: "transit", partner: carrierId, commit, links: [], samples: [] };
-  return addLink(s, u, gbit);
+  return addLink(s, u, gbit, rackId);
 }
 
 // Adds a port at the zone's exchange; the first port in a zone opens the exchange uplink there.
-export function orderExchangePort(s: GameState, locationId: string, gbit: number): ActionResult {
+export function orderExchangePort(s: GameState, where: string, gbit: number): ActionResult {
+  const { locationId, rackId } = placeOf(s, where);
   const loc = zone(s, locationId);
   if (typeof loc === "string") return fail(loc);
   const x = exchangeAt(datacenterById(loc.dc!));
@@ -71,12 +99,14 @@ export function orderExchangePort(s: GameState, locationId: string, gbit: number
   if (!s.network.memberships.includes(x.id)) return fail("error.notMember");
   const u = s.network.uplinks.find((v) => v.kind === "exchange" && v.partner === x.id && v.locationId === locationId)
     ?? { id: `up${s.nextId++}`, locationId, kind: "exchange" as const, partner: x.id, commit: 0, links: [], samples: [] };
-  return addLink(s, u, gbit);
+  return addLink(s, u, gbit, rackId);
 }
 
-export function addUplinkLink(s: GameState, uplinkId: string, gbit: number): ActionResult {
+// A second line on the contract, billed like the first; the router bundles them.
+export function addUplinkLink(s: GameState, uplinkId: string, gbit: number, rackId?: string): ActionResult {
   const u = s.network.uplinks.find((x) => x.id === uplinkId);
-  return u ? addLink(s, u, gbit) : fail("error.unknownUplink");
+  if (rackId && !s.racks.some((r) => r.id === rackId && r.locationId === u?.locationId)) return fail("error.unknownRack");
+  return u ? addLink(s, u, gbit, rackId) : fail("error.unknownUplink");
 }
 
 export function cancelUplink(s: GameState, uplinkId: string): ActionResult {

@@ -113,6 +113,8 @@ export default {
   "apps.hw.cable.copper": () => "cuivre",
   "apps.hw.cable.fiber": () => "fibre",
   "apps.hw.cable.rollover": () => "rollover",
+  "apps.hw.cable.provider": () => "fournisseur",
+  "apps.hw.part.optic": () => "Module réseau",
   "apps.hw.part.psu": () => "Alimentation",
   "apps.hw.part.fan": () => "Ventilateur",
   "apps.hw.part.ram": () => "Barrette de RAM",

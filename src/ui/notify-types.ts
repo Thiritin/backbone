@@ -28,7 +28,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack", "contractEnded", "contractRolled", "leaseEnded"),
     type("Internet line", "lineReady", "lineFull"),
     type("Burn-in and refunds", "burninQuick", "burninFull", "burninAborted", "usedRefund"),
-    type("Hand work", "workDone"),
+    type("Hand work", "workDone", "providerCable"),
     type("Workloads and migrations", "migrated", "migrationFailed", "failedOver", "failoverStuck"),
     type("Backups", "backupFailed"),
     type("Installs", "installed", "switched", "updateBroke"),

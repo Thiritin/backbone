@@ -9,6 +9,7 @@ import * as burnin from "./burnin";
 import * as changes from "./changes";
 import * as checklist from "./checklist";
 import * as clusters from "./clusters";
+import * as connectivity from "./connectivity";
 import * as datastores from "./datastores";
 import * as community from "./community";
 import * as console_ from "./console";
@@ -110,7 +111,7 @@ export type Call = [Action, ...unknown[]];
 export type { LogEntry };
 export const LOG_CAP = 50_000;
 
-const modules = [post, games, webspace, webspaceFiles, webdomains, webspaceMail, programs, deskInstall, deskSetup, addresses, lan, backups, bank, billing, bookkeeping, burnin, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, domains, holds, licence, licences, shoplink, vendorShop, oversell, packages, panelOps, portal, firewall, horizont, quorum, replication, webpanel, docs, paperwork, tax, files, hardware, layout, mail, mailbox, mailProvider, mailHosted, mailmsg, pearMail, pearRules, pearJunk, pearPrefs, mailServer, webmailUser, maintenance, market, marketing, media, moves, properties, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, registrar, remote, routers, sales, security, shop, shopSetup, shopOrders, snapshots, software, staff, start, store, suite, switches, support, desk, templates, travel, carry, presence, used, vms, vmwhere, vswitch, website, limits];
+const modules = [post, connectivity, games, webspace, webspaceFiles, webdomains, webspaceMail, programs, deskInstall, deskSetup, addresses, lan, backups, bank, billing, bookkeeping, burnin, changes, checklist, clusters, community, datastores, company, console_, cpus, customers, dev, domains, holds, licence, licences, shoplink, vendorShop, oversell, packages, panelOps, portal, firewall, horizont, quorum, replication, webpanel, docs, paperwork, tax, files, hardware, layout, mail, mailbox, mailProvider, mailHosted, mailmsg, pearMail, pearRules, pearJunk, pearPrefs, mailServer, webmailUser, maintenance, market, marketing, media, moves, properties, netsvcDns, netsvcMail, netsvcQuota, netsvcStorage, netsvcVpn, network, openveezee, os, orders, registrar, remote, routers, sales, security, shop, shopSetup, shopOrders, snapshots, software, staff, start, store, suite, switches, support, desk, templates, travel, carry, presence, used, vms, vmwhere, vswitch, website, limits];
 const hyperModules = [haGroups, projects];
 // Every exported function of 90-actions by its name, so a replay can call the actions a run logged.
 export const ACTIONS: Record<string, Action> = Object.fromEntries([...modules, ...hyperModules].flatMap((m) => Object.entries(m).filter(([, f]) => typeof f === "function"))) as Record<string, Action>;

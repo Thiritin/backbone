@@ -78,7 +78,7 @@ describe("switches, firewalls and patch panels", () => {
     for (let y = 2005; y <= 2030; y++) expect(shopModels(y).filter((m) => m.kind === "firewall" && m.price < 1000).length, `${y}`).toBeGreaterThan(0);
     expect(modelById("fw-10g")).toMatchObject({ height: 1, kind: "firewall", brand: "Sysko", throughputGbit: 10 });
     expect(MODELS.filter((m) => m.kind === "patch").map((m) => [m.id, m.ports.length / 2, m.ports[0].media])).toEqual([
-      ["patch-24", 24, "rj45"], ["patch-24f", 24, "sfp"], ["patch-48", 48, "rj45"], ["patch-48f", 48, "sfp"],
+      ["patch-24", 24, "rj45"], ["patch-24f", 24, "sfp"], ["patch-48", 48, "rj45"], ["patch-48f", 48, "sfp"], ["panel-provider", 24, "sfp"],
     ]);
   });
 });
