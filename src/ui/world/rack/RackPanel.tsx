@@ -23,12 +23,12 @@ import "./rack.css";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
 const CAP = 36, SIDE = 18, FOOT = 18;
-// The back keeps the desktop rack view's scale so every port stays clickable; the panel scrolls.
-const BACK_U = 22;
+// Drawn scales; CSS shrinks the art to the popup height.
+const FRONT_U = 28, BACK_U = 30;
 const CABLED = ["switch", "gateway", "firewall", "patch", "server"];
 const same = (a: End, b: End) => a.device === b.device && a.port === b.port;
 
-// The rack close-up that slides up over the room: the rack on the left, the picked unit's card on the right.
+// The rack close-up popup over the room: the rack on the left, the picked unit's card on the right.
 // On the back, a click on a free port takes it as the cable in hand and a click on a second port plugs it in; the hand outlives the panel.
 export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null }: { rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
@@ -99,10 +99,9 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   );
 }
 
-// The rack's metal frame around the drawn units, sized so the units stay readable in the panel.
+// The rack's metal frame around the drawn units.
 function RackFrame({ units, children }: { units: number; children: (w: number, u: number) => ReactNode }) {
-  const room = (typeof innerHeight === "number" ? innerHeight : 768) * 0.66 - 120 - CAP - FOOT;
-  const u = Math.max(10, Math.min(24, Math.floor((room - 8) / units))), w = u * 19;
+  const u = FRONT_U, w = u * 19;
   // RackFront's front view without the cable channel it draws to the right.
   const iw = w + 36, ih = units * u + 8, ow = iw + 2 * SIDE, oh = ih + CAP + FOOT;
   return (
