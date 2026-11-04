@@ -72,6 +72,8 @@ export function deserialize(raw: string): GameState {
   if ((data.version ?? 1) < 2) for (const k of INFRA) delete data[k];
   // Hardware insurance is gone; repairs cost what they cost.
   delete (data as { insurance?: unknown }).insurance;
+  // The leaderboard scores are gone.
+  delete (data as { score?: unknown }).score;
   // Customer-wide holds are gone; services are held one by one.
   delete (data as { heldCustomers?: unknown }).heldCustomers;
   // ChadGPT Support left the Pear Store for the hosted desks' AI.
@@ -132,7 +134,6 @@ export function deserialize(raw: string): GameState {
     }),
     // Saves from before free mail had no mail service at all.
     company: { ...base.company, ...data.company, ...((data.company?.mail as { kind: string } | undefined)?.kind === "none" && { mail: base.company.mail }) },
-    score: { ...base.score, ...data.score },
     network: { ...base.network, ...data.network },
     ops: { ...base.ops, ...data.ops },
     friendFavours: { ...base.friendFavours, ...data.friendFavours },
