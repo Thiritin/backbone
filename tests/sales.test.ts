@@ -72,7 +72,7 @@ describe("customer choice", () => {
   it("compares you only with competitors that sell the product to that profile", () => {
     expect(rivals("gamer", "gameServer").map((c) => c.name)).toContain("Nitradoh");
     expect(rivals("private", "gameServer").map((c) => c.name)).not.toContain("Nitradoh");
-    expect(rivals("private", "webHosting").map((c) => c.name)).not.toContain("Hetzna");
+    expect(rivals("private", "webHosting").map((c) => c.name)).not.toContain("Hetzler");
   });
 
   it("wins more leads with trust and fewer with high prices", () => {

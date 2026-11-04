@@ -2,7 +2,7 @@
 
 Backbone is a browser management game in which you grow a hosting company from a 2005 basement to your own datacenter.
 
-Play it at [thiritin.github.io/backbone](https://thiritin.github.io/backbone/).
+Play it at [raid0.dev](https://raid0.dev/).
 
 ## Inspiration
 

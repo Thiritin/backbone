@@ -64,6 +64,8 @@ export default {
   "desktop.update.title": () => "Update available",
   "desktop.update.text": () => "A newer version of the game is online. Reload to use it; your game and open windows are kept.",
   "desktop.update.reload": () => "Reload",
+  "desktop.update.appText": () => "A newer version of the game is available. Installing restarts the app; your game is kept.",
+  "desktop.update.install": () => "Install and restart",
   "desktop.news.title": () => "Pear OS update",
   "desktop.changes.version": (p) => `Version ${p.version}`,
   "desktop.changes.more": (p) => `${p.n} more ${Number(p.n) === 1 ? "change" : "changes"}`,

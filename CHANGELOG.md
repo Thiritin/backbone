@@ -2,6 +2,13 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-04
+
+- The game has a new red and black logo with a command prompt mark.
+- Backbone can be installed as a desktop app for macOS, Windows and Linux that offers new versions on launch and installs them with one click.
+- The rival hosting company Hetzna is now called Hetzler, the same company as the colocation provider.
+- The Hetzler website lists its VPS, dedicated server, storage, cloud and GPU products with specifications and monthly prices.
+
 ## 2026-11-03
 
 - The bookkeeping program opens its setup wizard from the app menu, and the web version shows it only on the overview page.
