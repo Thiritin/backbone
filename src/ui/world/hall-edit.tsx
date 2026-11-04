@@ -1,44 +1,111 @@
-// GDD, Own datacenter, Edit mode: the plan board puts the hall's room into edit mode. A flat grid shows on the floor and a parts
-// strip runs along the bottom edge. Racks, zones and cooling units are dragged from the strip, moved on the floor, turned with R
-// and dropped on the strip to sell or remove them. Every hovered tile asks the sim's editHallError check and turns green or red.
+// GDD, Own datacenter, Edit mode: the plan board puts every area of the hall location into edit mode. The player holds a part from
+// the strip and places it, lays lines of it with a drag, selects with a click or a rectangle, moves, turns, copies and sells. Every
+// hovered tile asks the sim's editHallError check and the ghost shows the footprint, the service front and the way to it.
 import { useEffect, type ReactNode } from "react";
 import { create } from "zustand";
 import { t } from "../../i18n/en";
-import { euro } from "../../sim/00-core/money";
-import { yearOf } from "../../sim/00-core/time";
-import { footprint, type Facing, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
-import { RACK_MODELS, rackUnits } from "../../sim/20-world/datacenters";
-import { HALL, hallCapacity, hallKw, hallSpots, zoneSpots } from "../../sim/20-world/properties";
-import { roomPower } from "../../sim/60-infra/status";
-import type { GameState, HallZone, Location } from "../../sim/50-state";
-import { hallAt, editHall, editHallError, type HallEdit } from "../../sim/90-actions/hall";
+import { areaAt, fixtures, footprint, exhaust, siteAreas, customerTiles, type Area, type Facing, type OfficePlan } from "../../sim/20-world/layout";
+import { rackUnits } from "../../sim/20-world/datacenters";
+import { HALL, isHalle, zoneSpots } from "../../sim/20-world/properties";
+import type { GameState, HallItemKind, HallZone, Location, RackModel } from "../../sim/50-state";
+import { editHall, editHallError, hallAt, type HallEdit, type HallPlace, type LayoutError } from "../../sim/90-actions/hall";
 import { useStore } from "../store";
-import { Cooling, pts, onX, Prism, rackHeight, RackBox } from "./draw";
-import { iso } from "./grid";
+import { onX, pts, rackHeight, RackBox } from "./draw";
+import { iso, type Pt } from "./grid";
+import { Battery, Containment, Crac, CratedRack, Generator, NocDesk, Switchgear, Transformer, Ups, Vent, WallScreen } from "./hall-art";
+import { dragLine, frontOf, key, tilesOf, turnParts, walkPath, type Part } from "./hall-edit-geom";
+import { corner, itemTiles } from "./hall-annex";
 
-type Pt = { x: number; y: number };
-// What the pointer holds: a new part from the strip, or a rack, zone or cooling unit grabbed off the floor.
-type Drag =
-  | { kind: "rack"; model: string; units: number; facing: Facing }
-  | { kind: "rack-move"; id: string; units: number; origin: Pt; off: Pt; facing: Facing }
-  | { kind: "zone"; zone: HallZone["kind"]; id?: string; origin: Pt; facing: Facing }
-  | { kind: "cooler"; id: string | null; origin: Pt; facing: Facing };
+// What a part is: a new or delivered rack, a zone, or an item of the layout.
+export type Spec = { kind: "rack"; model: string; units: number; rackId?: string } | { kind: "zone"; zone: HallZone["kind"] } | { kind: HallItemKind };
+// One part of a hold or a selection; `ref` names the placed object it moves, `length` is a zone's.
+export interface Entry extends Part { spec: Spec; ref?: string; length?: number }
+// What the pointer carries: parts fixed to the grabbed tile.
+export interface Hold { entries: Entry[]; anchor: Pt; moving: boolean }
+export type Tab = "racks" | "cooling" | "areas" | "power" | "delivered";
 
 interface Edit {
   loc: string;
-  drag: Drag | null;
+  hold: Hold | null;
+  sel: string[];
   at: Pt | null;
   onStrip: boolean;
+  line: { from: Pt; to: Pt } | null;
+  box: { from: Pt; to: Pt } | null;
   msg: { text: string; at: Pt; n: number } | null;
-  begin: (loc: string, drag: Drag) => void;
-  cancel: () => void;
+  clip: Entry[];
+  tab: Tab;
+  open: (loc: string, hold: Hold | null) => void;
+  escape: () => boolean;
 }
 
-const TURN: Record<Facing, Facing> = { n: "e", e: "s", s: "w", w: "n" };
-const tk = (p: Pt) => `${p.x},${p.y}`;
-const MSG_MS = 2000;
-// Tiles a zone dragged straight from the strip covers.
-const ZONE_LEN: Record<HallZone["kind"], number> = { colo: 4, cage: 4, meetme: 3 };
+const MSG_MS = 2000, ZONE_LEN: Record<HallZone["kind"], number> = { colo: 4, cage: 4, meetme: 3 };
+let seq = 0;
+export const useEdit = create<Edit>((set, get) => ({
+  loc: "", hold: null, sel: [], at: null, onStrip: false, line: null, box: null, msg: null, clip: [], tab: "racks",
+  open: (loc, hold) => set({ loc, hold, line: null, msg: null }),
+  // Escape drops the hold first, then the selection; false when there was nothing to drop.
+  escape: () => {
+    const s = get();
+    if (s.hold) { set({ hold: null, line: null }); return true; }
+    if (s.sel.length) { set({ sel: [] }); return true; }
+    return false;
+  },
+}));
+
+export const shout = (text: string, at: Pt) => {
+  const n = ++seq;
+  useEdit.setState({ msg: { text, at, n } });
+  setTimeout(() => { if (useEdit.getState().msg?.n === n) useEdit.setState({ msg: null }); }, MSG_MS);
+};
+
+// ---- Parts and objects ----
+
+export const extentOf = (p: Pt[]) => ({ w: Math.max(...p.map((q) => q.x)) + 1, h: Math.max(...p.map((q) => q.y)) + 1 });
+
+export function entryOf(spec: Spec, facing: Facing, halle: boolean): Entry {
+  const base = { spec, x: 0, y: 0, facing };
+  if (spec.kind === "rack") return { ...base, fw: 1, fh: 1 };
+  if (spec.kind === "zone") { const len = ZONE_LEN[spec.zone]; return sized({ ...base, fw: 1, fh: 1, length: len }, len); }
+  if (HALL.items[spec.kind].layer === "wall") return { ...base, facing: "e", fw: 1, fh: HALL.items[spec.kind].w as number, wall: true };
+  const e = extentOf(footprint(spec.kind, { x: 0, y: 0, facing }, halle));
+  return { ...base, fw: e.w, fh: e.h };
+}
+
+// A zone entry of the given length lies along x when it faces n or s, along y otherwise.
+const sized = (e: Entry, len: number): Entry => {
+  const along = e.facing === "n" || e.facing === "s";
+  return { ...e, length: len, fw: along ? len : 1, fh: along ? 1 : len };
+};
+
+interface Ctx { game: GameState; loc: Location; plan: OfficePlan; areas: Area[]; halle: boolean }
+interface Obj { ref: string; entry: Entry; tiles: Pt[]; layer: "body" | "floor" | "zone"; height: number }
+
+// Everything the player can select: own racks, every item and every zone. Customers and the exchange are never selectable.
+function objectsOf(c: Ctx): Obj[] {
+  const out: Obj[] = [], hall = c.plan.hall!;
+  for (const r of c.game.racks) {
+    if (r.locationId !== c.loc.id || !r.tile || r.provided) continue;
+    out.push({ ref: `rack:${r.id}`, entry: { spec: { kind: "rack", model: r.model, units: rackUnits(r.model) }, ref: `rack:${r.id}`, x: r.tile.x, y: r.tile.y, fw: 1, fh: 1, facing: r.tile.facing }, tiles: [r.tile], layer: "body", height: rackHeight(rackUnits(r.model)) });
+  }
+  for (const i of hall.items) {
+    const p = itemTiles(i, c.areas, c.halle), o = corner(p), wall = HALL.items[i.kind].layer === "wall", layer = HALL.items[i.kind].layer;
+    const e = { x: Math.max(...p.map((q) => q.x)) - o.x + 1, y: Math.max(...p.map((q) => q.y)) - o.y + 1 };
+    out.push({ ref: `item:${i.id}`, entry: { spec: { kind: i.kind }, ref: `item:${i.id}`, ...o, fw: e.x, fh: e.y, facing: i.facing, wall }, tiles: p, layer: layer === "body" ? "body" : "floor", height: 80 });
+  }
+  for (const z of hall.zones) {
+    const sp = zoneSpots(z), along = z.facing === "n" || z.facing === "s";
+    out.push({ ref: `zone:${z.id}`, entry: { spec: { kind: "zone", zone: z.kind }, ref: `zone:${z.id}`, x: z.x, y: z.y, fw: along ? z.length : 1, fh: along ? 1 : z.length, facing: z.facing, length: z.length }, tiles: sp, layer: "zone", height: 0 });
+  }
+  return out;
+}
+
+function ctxOf(locId: string): Ctx | null {
+  const game = useStore.getState().game, at = hallAt(game, locId);
+  if (!at) return null;
+  const plan = { sections: [], hour: game.hour, floor: 1, hall: at.hall } as OfficePlan;
+  return { game, loc: at.loc, plan, areas: siteAreas(game, at.loc), halle: isHalle(at.p.buildingId) };
+}
 
 // The floor tile under the pointer, through the room's own view transform.
 function tileAt(e: { clientX: number; clientY: number }): Pt | null {
@@ -48,143 +115,309 @@ function tileAt(e: { clientX: number; clientY: number }): Pt | null {
   return { x: Math.floor((p.x / 32 + p.y / 16) / 2), y: Math.floor((p.y / 16 - p.x / 32) / 2) };
 }
 
-// A press on a tall body lands on a floor tile behind it; the rack is the nearer tile whose body covers the pressed point.
-function bodyUnder(e: { clientX: number; clientY: number }, p: Pt, has: (q: Pt) => boolean, height: number, half: number): Pt | null {
+// A press on a tall body lands on a floor tile behind it; the object is the nearer tile whose body covers the pressed point.
+function pick(e: { clientX: number; clientY: number }, p: Pt, objs: Obj[]): Obj | null {
   const svg = document.querySelector<SVGSVGElement>(".world-svg"), ctm = svg?.getScreenCTM();
   if (!ctm) return null;
   const s = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
-  for (let k = 0; k <= 3; k++) {
-    const q = { x: p.x + k, y: p.y + k }, c = iso(q.x + 0.5, q.y + 0.5);
-    if (has(q) && Math.abs(s.x - c.x) <= half && s.y <= c.y + 6 && s.y >= c.y - height) return q;
+  const at = (layer: Obj["layer"], q: Pt) => objs.find((o) => o.layer === layer && o.tiles.some((tl) => key(tl) === key(q)));
+  for (let k = 3; k >= 0; k--) {
+    const q = { x: p.x + k, y: p.y + k }, o = at("body", q), c = iso(q.x + 0.5, q.y + 0.5);
+    if (o && Math.abs(s.x - c.x) <= 30 && s.y <= c.y + 6 && s.y >= c.y - o.height) return o;
   }
-  return null;
+  return at("floor", p) ?? at("zone", p) ?? null;
 }
+
+// ---- What a drop does ----
+
+interface Verdict { edit: HallEdit; entries: Entry[]; error: LayoutError | null }
+
+function shifted(e: Entry, dx: number, dy: number): Entry { return { ...e, x: e.x + dx, y: e.y + dy }; }
+
+// The edit that putting the hold's parts down with its anchor on `at` makes. A line lays the single held part along the drag.
+export function verdictOf(c: Ctx, h: Hold, at: Pt, line: Edit["line"]): Verdict {
+  let entries: Entry[];
+  const one = h.entries.length === 1 && !h.moving ? h.entries[0] : null;
+  if (one && line && (line.from.x !== line.to.x || line.from.y !== line.to.y)) {
+    if (one.spec.kind === "zone") {
+      const spec = one.spec, along = one.facing === "n" || one.facing === "s", max = spec.zone === "cage" ? HALL.zones.cage.max : spec.zone === "meetme" ? HALL.zones.meetme.max : 12;
+      const d = along ? line.to.x - line.from.x : line.to.y - line.from.y, perpendicular = Math.abs(along ? line.to.y - line.from.y : line.to.x - line.from.x) > Math.abs(d);
+      const len = perpendicular ? one.length! : Math.max(1, Math.min(max, Math.abs(d) + 1)), start = d < 0 ? d : 0;
+      entries = [shifted(sized(one, len), line.from.x - h.anchor.x + (along ? start : 0), line.from.y - h.anchor.y + (along ? 0 : start))];
+    } else {
+      entries = dragLine(line.from, line.to, one.fw, one.fh).map((p) => shifted(one, p.x - h.anchor.x, p.y - h.anchor.y));
+    }
+  } else entries = h.entries.map((e) => shifted(e, at.x - h.anchor.x, at.y - h.anchor.y));
+  return { entries, ...editOf(c, entries) };
+}
+
+function editOf(c: Ctx, entries: Entry[]): { edit: HallEdit; error: LayoutError | null } {
+  const move: NonNullable<HallEdit["move"]> = [], place: HallPlace[] = [];
+  for (const e of entries) {
+    let { x, y } = e, area: Area["id"] | undefined;
+    if (e.spec.kind !== "rack" && e.spec.kind !== "zone") {
+      const a = areaAt(c.areas, { x, y });
+      if (!a) return { edit: {}, error: { key: "error.wrongRoom", at: { x, y } } };
+      x -= a.rect.x; y -= a.rect.y; area = a.id;
+    }
+    if (e.ref) move.push({ ref: e.ref, x, y, facing: e.facing, area });
+    else if (e.spec.kind === "rack") place.push({ kind: "rack", model: e.spec.model as RackModel, rackId: e.spec.rackId, x, y, facing: e.facing });
+    else if (e.spec.kind === "zone") place.push({ kind: "zone", zone: e.spec.zone, length: e.length!, x, y, facing: e.facing });
+    else place.push({ kind: e.spec.kind, area, x, y, facing: e.facing });
+  }
+  const edit: HallEdit = { move: move.length ? move : undefined, place: place.length ? place : undefined };
+  return { edit, error: editHallError(c.game, c.loc.id, edit) };
+}
+
+const bodyKind = (s: Spec) => s.kind === "rack" || s.kind === "zone" || HALL.items[s.kind].layer === "body";
+
+// Tiles with a body in the hall as it stands, without the objects in `skip`, and the fixtures that stand in the way.
+function blockedOf(c: Ctx, skip: Set<string>): Set<string> {
+  const out = new Set<string>();
+  for (const o of objectsOf(c)) if (!skip.has(o.ref) && o.entry.spec.kind !== "vent" && o.entry.spec.kind !== "containment" && bodyKind(o.entry.spec) && o.entry.spec.kind !== "screen") for (const q of o.tiles) out.add(key(q));
+  for (const q of customerTiles(c.loc, c.plan)) out.add(key(q.tile));
+  const ex = c.plan.hall!.exchange?.tile;
+  if (ex) out.add(key(ex));
+  for (const [id, f] of Object.entries(fixtures(c.loc, c.plan))) {
+    if (f.kind === "noc" || f.kind === "cooling") continue;
+    for (let i = 0; i < (f.w ?? 1) * (f.h ?? 1); i++) out.add(key({ x: f.x + (i % (f.w ?? 1)), y: f.y + Math.floor(i / (f.w ?? 1)) }));
+    if (id === "door" || f.kind === "meetmedoor") out.add(key({ x: f.x + 1, y: f.y }));
+  }
+  return out;
+}
+
+const entryTile = (c: Ctx): Pt => { const d = fixtures(c.loc, c.plan).door; return { x: d.x + 1, y: d.y }; };
+
+// ---- Gestures ----
+
+type Gesture =
+  | { kind: "place"; from: Pt }
+  | { kind: "object"; ref: string; from: Pt; x: number; y: number; moved: boolean; shift: boolean }
+  | { kind: "box"; from: Pt }
+  | { kind: "bg"; x: number; y: number; shift: boolean };
+let gesture: Gesture | null = null;
 
 const overStrip = (e: { clientX: number; clientY: number }) => !!document.elementFromPoint(e.clientX, e.clientY)?.closest("[data-strip]");
 
-// What dropping the drag at `at` does: the sim's verdict, the tiles it colours and the edit to run.
-interface Verdict { error: string | null; tiles: Pt[]; edit: HallEdit }
+function selectionHold(c: Ctx, refs: string[], anchor: Pt): Hold | null {
+  const entries = objectsOf(c).filter((o) => refs.includes(o.ref)).map((o) => o.entry);
+  return entries.length ? { entries, anchor, moving: true } : null;
+}
 
-function editOf(d: Drag, at: Pt): { edit: HallEdit; tiles: Pt[] } {
-  if (d.kind === "rack") return { edit: { place: [{ kind: "rack", model: d.model as never, ...at, facing: d.facing }] }, tiles: [at] };
-  if (d.kind === "rack-move") { const to = { x: at.x + d.off.x, y: at.y + d.off.y }; return { edit: { move: [{ ref: `rack:${d.id}`, ...to, facing: d.facing }] }, tiles: [to] }; }
-  if (d.kind === "zone") {
-    const zone = { x: at.x, y: at.y, length: ZONE_LEN[d.zone], facing: d.facing } as HallZone;
-    return { edit: d.id ? { move: [{ ref: `zone:${d.id}`, ...at, facing: d.facing }] } : { place: [{ kind: "zone", zone: d.zone, length: zone.length, ...at, facing: d.facing }] }, tiles: zoneSpots(zone) };
+// Applies the edit the hold makes at `at`. A failure is shown at the tile the sim names.
+function drop(c: Ctx, h: Hold, at: Pt, line: Edit["line"]): boolean {
+  const v = verdictOf(c, h, at, line);
+  if (v.error) { shout(t(v.error.key), v.error.at ?? at); return false; }
+  const r = useStore.getState().attempt(editHall, c.loc.id, v.edit);
+  if (!r.ok) { shout(t(r.error ?? "error.occupied"), at); return false; }
+  return true;
+}
+
+function remove(c: Ctx, refs: string[], at: Pt): boolean {
+  const edit: HallEdit = { remove: refs }, err = editHallError(c.game, c.loc.id, edit);
+  if (err) { shout(t(err.key), err.at ?? at); return false; }
+  const r = useStore.getState().attempt(editHall, c.loc.id, edit);
+  if (!r.ok) shout(t(r.error ?? "error.occupied"), at);
+  return r.ok;
+}
+
+function turnHold() {
+  const { hold, sel, loc } = useEdit.getState();
+  if (hold) { useEdit.setState({ hold: { ...hold, entries: turnParts(hold.entries, hold.anchor) as Entry[] } }); return; }
+  const c = ctxOf(loc);
+  if (!c || !sel.length) return;
+  const first = objectsOf(c).find((o) => sel.includes(o.ref));
+  if (!first) return;
+  const pivot = { x: first.entry.x, y: first.entry.y }, h = selectionHold(c, sel, pivot);
+  if (h) drop(c, { ...h, entries: turnParts(h.entries, pivot) as Entry[] }, pivot, null);
+}
+
+function onKey(e: KeyboardEvent) {
+  if ((e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable]")) return;
+  const s = useEdit.getState(), k = e.key.toLowerCase(), mod = e.ctrlKey || e.metaKey;
+  if (!mod && k === "r") { e.preventDefault(); turnHold(); return; }
+  const c = ctxOf(s.loc);
+  if (!c) return;
+  if (mod && k === "c" && s.sel.length) {
+    e.preventDefault();
+    useEdit.setState({ clip: objectsOf(c).filter((o) => s.sel.includes(o.ref)).map((o) => ({ ...o.entry, ref: undefined })) });
+  } else if (mod && k === "v" && s.clip.length) {
+    e.preventDefault();
+    const a = { x: s.clip[0].x, y: s.clip[0].y };
+    useEdit.setState({ hold: { entries: s.clip, anchor: a, moving: false }, sel: [], line: null });
+  } else if ((e.key === "Delete" || e.key === "Backspace") && s.sel.length) {
+    e.preventDefault();
+    const o = objectsOf(c).find((q) => s.sel.includes(q.ref));
+    if (remove(c, s.sel, o ? { x: o.entry.x, y: o.entry.y } : { x: 0, y: 0 })) useEdit.setState({ sel: [] });
   }
-  const tiles = footprint("crac", { ...at, facing: d.facing }, false);
-  return { edit: d.id ? { move: [{ ref: `item:${d.id}`, ...at, facing: d.facing }] } : { place: [{ kind: "crac", ...at, facing: d.facing, area: "hall" }] }, tiles };
 }
 
-export function verdict(game: GameState, locId: string, d: Drag, at: Pt): Verdict {
-  const { edit, tiles } = editOf(d, at);
-  return { error: editHallError(game, locId, edit)?.key ?? null, tiles, edit };
-}
-
-// Dropping on the strip sells a rack or removes a zone or a cooling unit.
-function stripEdit(d: Drag): HallEdit | null {
-  if (d.kind === "rack-move") return { remove: [`rack:${d.id}`] };
-  if (d.kind === "zone" && d.id) return { remove: [`zone:${d.id}`] };
-  if (d.kind === "cooler" && d.id) return { remove: [`item:${d.id}`] };
-  return null;
-}
-
-let seq = 0;
-export const useEdit = create<Edit>((set, get) => {
-  const finish = () => {
-    window.removeEventListener("pointermove", move);
-    window.removeEventListener("pointerup", up);
-    window.removeEventListener("contextmenu", menu);
-    window.removeEventListener("keydown", key);
-    set({ drag: null, at: null, onStrip: false });
-  };
-  const move = (e: PointerEvent) => set({ at: tileAt(e) ?? get().at, onStrip: overStrip(e) });
-  const turn = () => {
-    const d = get().drag;
-    if (d) set({ drag: { ...d, facing: TURN[d.facing] } });
-  };
-  const menu = (e: Event) => { e.preventDefault(); turn(); };
-  const key = (e: KeyboardEvent) => { if (e.key === "r" || e.key === "R") turn(); };
-  const up = (e: PointerEvent) => {
-    const { drag, loc } = get(), at = tileAt(e) ?? get().at;
-    finish();
-    if (!drag) return;
-    const onStrip = overStrip(e), edit = onStrip ? stripEdit(drag) : at ? editOf(drag, at).edit : null;
-    if (!edit) return;
-    const anchor = onStrip && "origin" in drag ? drag.origin : at!;
-    const r = useStore.getState().attempt(editHall, loc, edit);
-    if (!r.ok) {
-      const n = ++seq;
-      set({ msg: { text: t(r.error ?? "error.occupied"), at: anchor ?? { x: 0, y: 0 }, n } });
-      setTimeout(() => { if (get().msg?.n === n) set({ msg: null }); }, MSG_MS);
+function onMove(e: PointerEvent) {
+  const s = useEdit.getState(), at = tileAt(e) ?? s.at, patch: Partial<Edit> = { at, onStrip: overStrip(e) };
+  const g = gesture;
+  if (g?.kind === "place" && at) patch.line = { from: g.from, to: at };
+  if (g?.kind === "box" && at) patch.box = { from: g.from, to: at };
+  if (g?.kind === "object" && !g.moved && Math.hypot(e.clientX - g.x, e.clientY - g.y) > 4) {
+    const c = ctxOf(s.loc);
+    if (c) {
+      g.moved = true;
+      const refs = s.sel.includes(g.ref) ? s.sel : [g.ref], h = selectionHold(c, refs, g.from);
+      if (h) { patch.hold = h; patch.sel = refs; }
     }
-  };
-  return {
-    loc: "", drag: null, at: null, onStrip: false, msg: null,
-    begin: (loc, drag) => {
-      set({ loc, drag, msg: null });
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", up);
-      window.addEventListener("contextmenu", menu);
-      window.addEventListener("keydown", key);
-    },
-    cancel: finish,
-  };
-});
+  }
+  if (g?.kind === "bg" && Math.hypot(e.clientX - g.x, e.clientY - g.y) > 4) gesture = null;
+  useEdit.setState(patch);
+}
+
+function onUp(e: PointerEvent) {
+  const g = gesture, s = useEdit.getState(), at = tileAt(e) ?? s.at;
+  gesture = null;
+  if (!g) return;
+  const c = ctxOf(s.loc);
+  if (!c) return;
+  if (g.kind === "place" && s.hold && at) {
+    drop(c, s.hold, at, s.line);
+    useEdit.setState({ line: null });
+  } else if (g.kind === "object") {
+    if (g.moved && s.hold) {
+      const refs = s.hold.entries.map((q) => q.ref!);
+      if (overStrip(e)) { if (remove(c, refs, g.from)) useEdit.setState({ sel: [] }); }
+      else if (at) drop(c, s.hold, at, null);
+      useEdit.setState({ hold: null });
+    } else if (g.shift) useEdit.setState({ sel: s.sel.includes(g.ref) ? s.sel.filter((r) => r !== g.ref) : [...s.sel, g.ref] });
+    else useEdit.setState({ sel: [g.ref] });
+  } else if (g.kind === "box" && s.box) {
+    const x0 = Math.min(s.box.from.x, s.box.to.x), x1 = Math.max(s.box.from.x, s.box.to.x), y0 = Math.min(s.box.from.y, s.box.to.y), y1 = Math.max(s.box.from.y, s.box.to.y);
+    const inside = objectsOf(c).filter((o) => o.tiles.some((q) => q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1)).map((o) => o.ref);
+    useEdit.setState({ sel: [...new Set([...s.sel, ...inside])], box: null });
+  } else if (g.kind === "bg" && !g.shift) useEdit.setState({ sel: [] });
+}
+
+// ---- Drawing ----
 
 const Quad = ({ p, cls }: { p: Pt; cls: string }) => <polygon className={cls} points={pts(iso(p.x, p.y), iso(p.x + 1, p.y), iso(p.x + 1, p.y + 1), iso(p.x, p.y + 1))} pointerEvents="none" />;
 
-// The grid and the layer that catches presses on the floor, for the room's depth-sorted things.
-export function editThings(game: GameState, loc: Location, plan: OfficePlan, size: { w: number; h: number }, tiles: Record<string, Tile>, push: (depth: number, node: ReactNode) => void): void {
+// The grid of every area and the layer that takes the presses on the floor, among the room's depth-sorted things.
+export function editThings(game: GameState, loc: Location, plan: OfficePlan, push: (depth: number, node: ReactNode) => void): void {
   if (!plan.hall) return;
   const lines: string[] = [];
-  for (let x = 0; x <= size.w; x++) lines.push(`M${pts(iso(x, 0))} L${pts(iso(x, size.h))}`);
-  for (let y = 0; y <= size.h; y++) lines.push(`M${pts(iso(0, y))} L${pts(iso(size.w, y))}`);
+  for (const a of siteAreas(game, loc)) {
+    const { x, y, w, h } = a.rect;
+    for (let i = 0; i <= w; i++) lines.push(`M${pts(iso(x + i, y))} L${pts(iso(x + i, y + h))}`);
+    for (let j = 0; j <= h; j++) lines.push(`M${pts(iso(x, y + j))} L${pts(iso(x + w, y + j))}`);
+  }
   push(-3, <path key="egrid" className="w-edit-grid" d={lines.join(" ")} pointerEvents="none" />);
-  push(1e8, <EditLayer key="elayer" game={game} loc={loc} plan={plan} size={size} tiles={tiles} />);
+  push(1e8, <EditLayer key="elayer" game={game} loc={loc} plan={plan} />);
 }
 
-function EditLayer({ game, loc, plan, size, tiles }: { game: GameState; loc: Location; plan: OfficePlan; size: { w: number; h: number }; tiles: Record<string, Tile> }) {
-  const { drag, at, onStrip, msg, begin, cancel } = useEdit();
-  useEffect(() => () => { cancel(); }, [cancel]);
-  const hall = plan.hall!, dock = !!plan.dock;
-  const byTile = new Map(game.racks.filter((r) => tiles[r.id]).map((r) => [tk(tiles[r.id]), r]));
-  const cracs = hall.items.filter((i) => i.kind === "crac").map((i) => ({ i, pts: footprint("crac", i, dock) }));
-  const customerAt = new Set(hall.customers.flatMap((c) => (c.tile ? [tk(c.tile)] : [])));
+function GhostArt({ e, halle, ok }: { e: Entry; halle: boolean; ok: boolean }) {
+  const s = e.spec, p = { x: e.x, y: e.y, facing: e.facing, ghost: true };
+  if (s.kind === "rack") return s.rackId ? <CratedRack {...p} /> : <RackBox tile={{ x: e.x, y: e.y, facing: e.facing }} units={s.units} items={[]} leds={[]} zoomed={false} />;
+  if (s.kind === "zone") return <>{tilesOf(e).map((q) => <polygon key={key(q)} className={`w-zone-${s.zone}`} points={pts(iso(q.x, q.y), iso(q.x + 1, q.y), iso(q.x + 1, q.y + 1), iso(q.x, q.y + 1))} />)}</>;
+  switch (s.kind) {
+    case "crac": return <Crac {...p} />;
+    case "vent": return <Vent x={e.x} y={e.y} reach={ok} ghost />;
+    case "containment": return <Containment x={e.x} y={e.y} ghost />;
+    case "transformer": return <Transformer {...p} size={halle ? "halle" : "office"} />;
+    case "switchgear": return <Switchgear {...p} />;
+    case "generator": return <Generator {...p} />;
+    case "ups": return <Ups {...p} running={false} />;
+    case "battery": return <Battery {...p} />;
+    case "nocdesk": return <NocDesk {...p} seats={HALL.items.nocdesk.seats ?? 2} occupied={[]} />;
+    case "screen": return <WallScreen y={e.y} state="ok" ghost />;
+  }
+}
+
+function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: OfficePlan }) {
+  const { hold, sel, at, onStrip, line, box, msg } = useEdit();
+  useEffect(() => {
+    useEdit.setState({ loc: loc.id });
+    const menu = (e: Event) => { if (document.querySelector(".world-svg")?.contains(e.target as Node) || useEdit.getState().hold) { e.preventDefault(); turnHold(); } };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("contextmenu", menu);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("contextmenu", menu);
+      gesture = null;
+      useEdit.setState({ hold: null, sel: [], line: null, box: null, at: null, onStrip: false, msg: null });
+    };
+  }, [loc.id]);
+
+  const c: Ctx | null = (() => { const a = hallAt(game, loc.id); return a ? { game, loc, plan, areas: siteAreas(game, loc), halle: isHalle(a.p.buildingId) } : null; })();
+  if (!c) return null;
+  const objs = objectsOf(c);
 
   const press = (e: React.PointerEvent) => {
     if (e.button) return;
     const p = tileAt(e);
     if (!p) return;
-    const grab = (d: Drag) => { e.stopPropagation(); e.preventDefault(); begin(loc.id, d); useEdit.setState({ at: p }); };
-    const cq = bodyUnder(e, p, (q) => cracs.some((c) => c.pts.some((r) => tk(r) === tk(q))), 90, 40);
-    const crac = cq ? cracs.find((c) => c.pts.some((r) => tk(r) === tk(cq))) : undefined;
-    if (crac) return grab({ kind: "cooler", id: crac.i.id, origin: crac.pts[0], facing: crac.i.facing });
-    const under = bodyUnder(e, p, (q) => byTile.has(tk(q)), rackHeight(42), 26);
-    const rack = under ? byTile.get(tk(under)) : undefined;
-    if (rack && !e.shiftKey && !rack.provided) return grab({ kind: "rack-move", id: rack.id, units: rackUnits(rack.model), origin: under ?? p, off: under ? { x: under.x - p.x, y: under.y - p.y } : { x: 0, y: 0 }, facing: tiles[rack.id].facing });
-    if (customerAt.has(tk(p)) && !e.shiftKey) return;
-    const zone = hall.zones.find((z) => zoneSpots(z).some((q) => tk(q) === tk(p)));
-    if (zone) grab({ kind: "zone", zone: zone.kind, id: zone.id, origin: p, facing: zone.facing });
+    const st = useEdit.getState();
+    if (st.hold) { e.stopPropagation(); e.preventDefault(); gesture = { kind: "place", from: p }; useEdit.setState({ at: p, line: { from: p, to: p } }); return; }
+    const hit = pick(e, p, objs);
+    if (hit) {
+      e.stopPropagation(); e.preventDefault();
+      gesture = { kind: "object", ref: hit.ref, from: p, x: e.clientX, y: e.clientY, moved: false, shift: e.shiftKey };
+      if (!e.shiftKey && !st.sel.includes(hit.ref)) useEdit.setState({ sel: [hit.ref] });
+    } else if (e.shiftKey) { e.stopPropagation(); e.preventDefault(); gesture = { kind: "box", from: p }; useEdit.setState({ box: { from: p, to: p } }); }
+    else gesture = { kind: "bg", x: e.clientX, y: e.clientY, shift: false };
   };
 
-  const v = drag && at && !onStrip ? verdict(game, loc.id, drag, at) : null;
-  const tone = v ? (v.error ? "w-edit-bad" : "w-edit-ok") : "";
+  const v = hold && at && !onStrip ? verdictOf(c, hold, at, line) : null;
+  const bad = !!v?.error;
+  const footprintTiles = v ? v.entries.flatMap((e) => tilesOf(e)) : [];
+  // Service fronts, exhaust tiles and the way from the door to every front.
+  const fronts: Pt[] = [], exh: Pt[] = [], edges = new Set<string>(), cut = new Set<string>();
+  if (v) {
+    const skip = new Set(v.entries.flatMap((e) => (e.ref ? [e.ref] : []))), blocked = blockedOf(c, skip), entry = entryTile(c);
+    const bodies = v.entries.filter((e) => bodyKind(e.spec) && e.spec.kind !== "screen");
+    for (const e of bodies) for (const q of tilesOf(e)) blocked.add(key(q));
+    blocked.delete(key(entry));
+    for (const a of c.areas) for (const q of a.passages) blocked.delete(key(q.tile));
+    const seen = new Set<string>();
+    for (const e of bodies) {
+      for (const f of frontOf(tilesOf(e), e.facing)) {
+        if (seen.has(key(f))) continue;
+        seen.add(key(f)); fronts.push(f);
+        const path = walkPath(c.areas, blocked, entry, f);
+        if (!path || blocked.has(key(f))) cut.add(key(f));
+        else path.forEach((q, i) => { if (i) edges.add(`${path[i - 1].x},${path[i - 1].y}>${q.x},${q.y}`); });
+      }
+      if (e.spec.kind === "rack") for (const q of tilesOf(e)) exh.push(exhaust({ ...q, facing: e.facing }));
+    }
+  }
+  const blockedKey = v?.error && (v.error.key === "error.blocked" || v.error.key === "error.noPath") ? v.error.key : null;
+  const centre = (q: Pt) => iso(q.x + 0.5, q.y + 0.5);
+  const pathD = [...edges].map((k) => { const [a, b] = k.split(">").map((s) => s.split(",").map(Number)); const p = centre({ x: a[0], y: a[1] }), q = centre({ x: b[0], y: b[1] }); return `M${p.x} ${p.y}L${q.x} ${q.y}`; }).join("");
+  const selTiles = objs.filter((o) => sel.includes(o.ref)).flatMap((o) => o.tiles);
+  const boxTiles: Pt[] = [];
+  if (box) for (let x = Math.min(box.from.x, box.to.x); x <= Math.max(box.from.x, box.to.x); x++) for (let y = Math.min(box.from.y, box.to.y); y <= Math.max(box.from.y, box.to.y); y++) boxTiles.push({ x, y });
+  const bounds = c.areas.map((a) => a.rect);
+
   return (
     <g>
-      <polygon points={pts(iso(0, 0), iso(size.w, 0), iso(size.w, size.h), iso(0, size.h))} fill="rgba(0,0,0,0)" onPointerDown={press} />
-      {/* Units on the far wall stand taller than the floor, so a press on their upper body lands on the wall. */}
-      <polygon points={pts(iso(0, 0), iso(size.w, 0), { x: iso(size.w, 0).x, y: iso(size.w, 0).y - 100 }, { x: iso(0, 0).x, y: iso(0, 0).y - 100 })} fill="rgba(0,0,0,0)" onPointerDown={press} />
-      {v && v.tiles.map((p) => <Quad key={tk(p)} p={p} cls={tone} />)}
-      {v && drag && (
+      {bounds.map((r, i) => <g key={i}>
+        <polygon points={pts(iso(r.x, r.y), iso(r.x + r.w, r.y), iso(r.x + r.w, r.y + r.h), iso(r.x, r.y + r.h))} fill="rgba(0,0,0,0)" onPointerDown={press} />
+        {/* Units on the far wall stand taller than the floor, so a press on their upper body lands on the wall. */}
+        {r.y === 0 && <polygon points={pts(iso(r.x, 0), iso(r.x + r.w, 0), { x: iso(r.x + r.w, 0).x, y: iso(r.x + r.w, 0).y - 100 }, { x: iso(r.x, 0).x, y: iso(r.x, 0).y - 100 })} fill="rgba(0,0,0,0)" onPointerDown={press} />}
+      </g>)}
+      {selTiles.map((q) => <Quad key={`s${key(q)}`} p={q} cls="w-edit-sel" />)}
+      {boxTiles.map((q) => <Quad key={`b${key(q)}`} p={q} cls="w-edit-box" />)}
+      {v && <>
+        {exh.map((q) => <Quad key={`x${key(q)}`} p={q} cls="w-edit-exhaust" />)}
+        {fronts.map((q) => <Quad key={`f${key(q)}`} p={q} cls={cut.has(key(q)) || (blockedKey && v.error?.at && key(v.error.at) === key(q)) ? "w-edit-clear-bad" : "w-edit-clear"} />)}
+        {blockedKey && v.error?.at && !fronts.some((q) => key(q) === key(v.error!.at!)) && <Quad p={v.error.at} cls="w-edit-clear-bad" />}
+        {pathD && <path className="w-edit-path" d={pathD} pointerEvents="none" />}
+        {footprintTiles.map((q) => <Quad key={`g${key(q)}`} p={q} cls={bad ? "w-edit-bad" : "w-edit-ok"} />)}
         <g className="w-edit-ghost" pointerEvents="none">
-          {(drag.kind === "rack" || drag.kind === "rack-move") && <RackBox tile={{ ...v.tiles[0], facing: drag.facing }} units={drag.units} items={[]} leds={[]} zoomed={false} />}
-          {drag.kind === "zone" && v.tiles.map((p) => <polygon key={tk(p)} className={`w-zone-${drag.zone}`} points={pts(iso(p.x, p.y), iso(p.x + 1, p.y), iso(p.x + 1, p.y + 1), iso(p.x, p.y + 1))} />)}
-          {drag.kind === "cooler" && <Cooler f={{ x: v.tiles[0].x, y: v.tiles[0].y, ...(drag.facing === "n" || drag.facing === "s" ? { w: 2 } : { h: 2 }), kind: "cooling" }} />}
+          {[...v.entries].sort((a, b) => a.x + a.y - b.x - b.y).map((e, i) => <g key={i}><GhostArt e={e} halle={c.halle} ok={!bad} /></g>)}
         </g>
-      )}
+      </>}
       {msg && (
-        <g pointerEvents="none" transform={`translate(${iso(msg.at.x + 0.5, msg.at.y + 0.5).x} ${iso(msg.at.x + 0.5, msg.at.y + 0.5).y - 58})`}>
+        <g pointerEvents="none" transform={`translate(${centre(msg.at).x} ${centre(msg.at).y - 58})`}>
           <rect className="w-edit-msg" x={-5 - msg.text.length * 2.6} y="-10" width={10 + msg.text.length * 5.2} height="14" rx="2" />
           <text className="w-edit-msg-t" x="0" y="0">{msg.text}</text>
         </g>
@@ -193,23 +426,8 @@ function EditLayer({ game, loc, plan, size, tiles }: { game: GameState; loc: Loc
   );
 }
 
-// A cooling unit on the far wall faces the room; one on the right wall shows its louvres on the side that faces the viewer.
-export function Cooler({ f }: { f: Fixture }) {
-  if (!f.h) return <Cooling f={f} />;
-  const x0 = f.x + 0.3, x1 = f.x + 0.94, y0 = f.y + 0.06, y1 = f.y + f.h - 0.06, H = 84, len = (y1 - y0) * 32;
-  return (
-    <>
-      <Prism x0={x0} y0={y0} x1={x1} y1={y1} z1={H} tone="w-tone-cool" />
-      <g transform={onX(x1, y0, H - 8)}>
-        <rect className="w-lcd" x="5" y="0" width="11" height="6" rx="1" />
-        {Array.from({ length: 9 }, (_, i) => <rect key={i} className="w-grille" x="4" y={10 + i * 6} width={len - 8} height="3" rx="1" />)}
-      </g>
-    </>
-  );
-}
-
 // The floor plan on the wall beside the door; clicking it enters edit mode.
-export function PlanBoard({ f }: { f: Fixture }) {
+export function PlanBoard({ f }: { f: { y: number } }) {
   return (
     <g transform={onX(0, f.y + 0.4, 66)}>
       <rect className="w-plan-frame" x="0" y="0" width="26" height="19" rx="1" />
@@ -220,45 +438,3 @@ export function PlanBoard({ f }: { f: Fixture }) {
   );
 }
 
-const STRIP_H = 56;
-function Mini({ children, box }: { children: ReactNode; box: string }) {
-  return <svg className="w-parts-art" height={STRIP_H} viewBox={box} aria-hidden>{children}</svg>;
-}
-
-// The parts strip along the bottom edge of the room: parts to drag out, the hall's meters, and the way out of edit mode.
-export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }) {
-  const game = useStore((s) => s.game), begin = useEdit((s) => s.begin), onStrip = useEdit((s) => s.onStrip), dragging = useEdit((s) => s.drag);
-  const h = hallAt(game, loc.id);
-  if (!h) return null;
-  const n = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  const cap = hallCapacity(h.p), used = hallSpots(h.hall, Object.fromEntries(game.racks.filter((r) => r.locationId === loc.id).map((r) => [r.id, r.tile ?? null])));
-  const heat = roomPower(game, loc).watts / 1000, cracs = h.hall.items.filter((i) => i.kind === "crac").length;
-  const pick = (d: Drag) => (e: React.PointerEvent) => { if (e.button) return; e.preventDefault(); begin(loc.id, d); };
-  const rackBox = `-34 ${-rackHeight(47) - 8} 68 ${rackHeight(47) + 44}`;
-  return (
-    <div className={`w-parts${onStrip && dragging ? " w-parts-drop" : ""}`} data-strip>
-      {RACK_MODELS.filter((m) => m.id !== "shelf").map((m) => (
-        <div key={m.id} className="w-parts-item" onPointerDown={pick({ kind: "rack", model: m.id, units: m.units, facing: "s" })} role="button" aria-label={t("hall.edit.rack", { u: m.units })}>
-          <Mini box={rackBox}><RackBox tile={{ x: 0, y: 0, facing: "s" }} units={m.units} items={[]} leds={[]} zoomed={false} /></Mini>
-          <span>{t("hall.edit.rack", { u: m.units })}</span><b className="num">{euro(m.price)}</b>
-        </div>
-      ))}
-      <div className="w-parts-item" onPointerDown={pick({ kind: "cooler", id: null, origin: { x: 0, y: 0 }, facing: "s" })} role="button" aria-label={t("hall.edit.cooler")}>
-        <Mini box="-30 -92 100 140"><Cooling f={{ x: 0, y: 0, w: 2 }} /></Mini>
-        <span>{t("hall.edit.cooler")}</span><b className="num">{euro(HALL.items.crac.price)}</b>
-      </div>
-      {(["colo", "cage", "meetme"] as const).filter((z) => z !== "cage" || yearOf(game.hour) >= HALL.zones.cage.from).map((z) => (
-        <div key={z} className="w-parts-item" onPointerDown={pick({ kind: "zone", zone: z, origin: { x: 0, y: 0 }, facing: "s" })} role="button" aria-label={t(`hall.edit.${z}`)}>
-          <Mini box="-40 -2 140 66">{[0, 1, 2].map((i) => <polygon key={i} className={`w-zone-${z}`} points={pts(iso(i, 0.2), iso(i + 1, 0.2), iso(i + 1, 1.2), iso(i, 1.2))} />)}{z !== "colo" && <polygon className="w-zone-fence" points={pts(iso(0, 0.2), iso(3, 0.2), iso(3, 1.2), iso(0, 1.2))} />}</Mini>
-          <span>{t(`hall.edit.${z}`)}</span>{z !== "colo" && <b className="num">{euro(z === "cage" ? HALL.zones.cage.perPosition : HALL.zones.meetme.price)}</b>}
-        </div>
-      ))}
-      <div className="w-parts-meters num">
-        <span>{t("hall.edit.kw", { used: n(heat), max: n(hallKw(h.p)) })}</span>
-        <span>{t("hall.edit.cooling", { cool: n(cracs * (HALL.items.crac.kw as number)), heat: n(heat) })}</span>
-        <span>{t("hall.edit.places", { used: n(used), cap: n(cap) })}</span>
-      </div>
-      <button className="w-parts-done" onClick={onDone}>{t("hall.edit.done")}</button>
-    </div>
-  );
-}

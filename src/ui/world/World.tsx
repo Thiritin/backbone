@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode }
 import { floodedDevice } from "../../sim/60-infra/network";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
-import { cage, fixtures, neighbourRacks, officeFloors, officePlan, rackTiles, roomSize, shareMates, type Fixture } from "../../sim/20-world/layout";
+import { cage, fixtures, neighbourRacks, officeFloors, officePlan, rackTiles, roomSize, shareMates, siteAreas, type Fixture } from "../../sim/20-world/layout";
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { sky, temperature } from "../../sim/20-world/weather";
 import { isOfficeRouter, modelById } from "../../sim/10-catalog/hardware";
@@ -40,7 +40,8 @@ import {
 } from "./office";
 import { Closet } from "./office";
 import { hallScene } from "./hall";
-import { HallStrip, useEdit } from "./hall-edit";
+import { useEdit } from "./hall-edit";
+import { HallStrip } from "./hall-parts";
 import { MeetMeRoom } from "./hall-doors";
 import "./world.css";
 
@@ -106,12 +107,13 @@ export function World() {
   }, [loc]);
   useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org, lights }; }, [loc.id, zoomSet, org, lights]);
   const box = { x: iso(0, h).x - 8, y: -WALL - 12, w: (w + h) * 32 + 16, h: (w + h) * 16 + WALL + 12 };
-  const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, size.h * 0.94 / box.h);
+  const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, (size.h - (editing ? 110 : 0)) * 0.94 / box.h);
   const zoom = zoomSet ?? fit;
   const o = org ?? { x: box.x + box.w / 2 - size.w / 2 / zoom, y: box.y + box.h / 2 - size.h / 2 / zoom };
   const view = useRef({ zoom, o, fit });
   view.current = { zoom, o, fit };
   const zoomed = zoom >= 2;
+  const hallRect = loc.space === "hall" ? siteAreas(game, loc).find((a) => a.id === "hall")?.rect : undefined;
 
   useEffect(() => {
     const el = svg.current;
@@ -140,7 +142,7 @@ export function World() {
 
   // Escape drops a cable in progress; open panels close themselves.
   const escape = useRef(() => {});
-  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (useEdit.getState().drag) useEdit.getState().cancel(); else setEditing(false); } };
+  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (!useEdit.getState().escape()) setEditing(false); } };
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
@@ -275,7 +277,7 @@ export function World() {
     light: () => setLights((v) => !v),
     board: () => setPanel({ kind: "board", title: t(label) }),
     edit: () => setEditing((v) => !v),
-    xfmr: () => setPanel({ kind: "xfmr", title: t(label) }),
+    mainboard: () => {},
     meetme: () => setPanel({ kind: "meetme", title: t(label) }),
     phone: () => {
       const g = useStore.getState().game, c = g.calls.find((x) => x.answeredAt === null) ?? g.calls[g.calls.length - 1] ?? null;
@@ -370,12 +372,12 @@ export function World() {
         <Defs />
         <Walls w={w} h={h} dc={!home && !office} color={game.company.color} />
         {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></>
-          : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={w} h={h} />}
+          : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={hallRect?.w ?? w} h={hallRect?.h ?? h} />}
         {back}
         {things.map((x) => x.node)}
         {(home || office) && <Night w={w} h={h} opacity={loc.tripped ? TRIPPED_DARK : darkness(hd, month, lights)} />}
         {bright}
-        {!home && !office && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
+        {!home && !office && loc.space !== "hall" && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
         {over}
         {linkAt && link.current && tiles[link.current] && (() => {

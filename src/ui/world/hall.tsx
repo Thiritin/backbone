@@ -3,10 +3,12 @@
 // rows, positions beyond the cooled count shimmer while the hall runs hot, and a tripped hall goes dark.
 import type { ReactNode } from "react";
 import { t } from "../../i18n/en";
-import { customerTiles, intake, zoneTiles, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
+import { customerTiles, zoneTiles, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
 import type { GameState, Location } from "../../sim/50-state";
-import { editThings, Cooler, PlanBoard } from "./hall-edit";
-import { at3, cageFence, Door, Night, onX, onY, pts, Prism, rackHeight, RackBox, WALL } from "./draw";
+import { editThings, PlanBoard } from "./hall-edit";
+import { annexScene } from "./hall-annex";
+import { Hatch, MainBoard } from "./hall-art";
+import { at3, cageFence, Door, Night, onX, onY, pts, rackHeight, RackBox, WALL } from "./draw";
 import { hueOf } from "./hall-doors";
 import { iso } from "./grid";
 import "./hall.css";
@@ -61,38 +63,32 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
   const hall = plan?.hall;
   if (!hall) return;
   Object.assign(draw, {
-    xfmrdoor: (f: Fixture) => <ServiceDoor f={f} label={t("hall.room.transformer")} />,
     meetmedoor: (f: Fixture) => <ServiceDoor f={f} label={t("hall.room.meetme")} />,
     planboard: (f: Fixture) => <PlanBoard f={f} />,
-    cooling: (f: Fixture) => <Cooler f={f} />,
     camera: (f: Fixture) => <Camera f={f} />,
-    // Placeholder until the transformer room is drawn.
-    mainboard: (f: Fixture) => <Prism x0={f.x + 0.15} y0={f.y + 0.05} x1={f.x + 0.85} y1={f.y + 0.3} z1={60} tone="w-tone-cool" />,
+    mainboard: (f: Fixture) => <MainBoard x={f.x} y={f.y} axis="y" />,
+    // Cooling units and NOC desks are items of the layout, drawn with the rest of the placed things.
+    cooling: () => null,
+    noc: (f: Fixture) => <polygon points={pts(iso(f.x, f.y), iso(f.x + (f.w ?? 1), f.y), iso(f.x + (f.w ?? 1), f.y + 1), iso(f.x, f.y + 1))} fill="rgba(0,0,0,0)" />,
   });
+  annexScene(game, loc, plan, tiles, (depth, node) => things.push({ depth, node }));
   const taken = new Set(Object.values(tiles).map(key)), customers = customerTiles(loc, plan);
   for (const c of customers) taken.add(key(c.tile));
-  // The cold aisle: floor tiles two racks or zone tiles face onto.
-  const standing = [...Object.values(tiles), ...zoneTiles(loc, plan).flatMap((z) => z.tiles)];
-  const fronts = new Map<string, number>();
-  for (const tl of standing) { const f = key(intake(tl)); fronts.set(f, (fronts.get(f) ?? 0) + 1); }
-  for (const [k, n] of fronts) {
-    if (n < 2) continue;
-    const [x, y] = k.split(",").map(Number);
-    things.push({ depth: -2, node: <polygon key={`aisle${k}`} className="w-hall-aisle" pointerEvents="none" points={pts(iso(x, y), iso(x + 1, y), iso(x + 1, y + 1), iso(x, y + 1))} /> });
-  }
   // Zones are floor paint: a grey band for open colocation; cages and the meet-me area carry the fence as well.
   for (const z of zoneTiles(loc, plan)) {
     if (!z.tiles.length) continue;
     for (const tl of z.tiles) things.push({ depth: -1.8, node: <polygon key={`z${z.id}${key(tl)}`} className={`w-zone-${z.kind}`} pointerEvents="none" points={pts(iso(tl.x, tl.y), iso(tl.x + 1, tl.y), iso(tl.x + 1, tl.y + 1), iso(tl.x, tl.y + 1))} /> });
     for (const tl of z.tiles) if (!taken.has(key(tl))) things.push({ depth: -1, node: <g key={`mark${key(tl)}`} aria-hidden pointerEvents="none"><Mark tile={tl} /></g> });
+    const xs = z.tiles.map((q) => q.x), ys = z.tiles.map((q) => q.y), x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0 + 1, h = Math.max(...ys) - y0 + 1;
+    things.push({ depth: -1.7, node: <polygon key={`ze${z.id}`} className={`w-zone-edge w-zone-edge-${z.kind}`} pointerEvents="none" points={pts(iso(x0, y0), iso(x0 + w, y0), iso(x0 + w, y0 + h), iso(x0, y0 + h))} /> });
+    if (z.kind === "meetme") things.push({ depth: -1.6, node: <g key={`zh${z.id}`} pointerEvents="none"><Hatch x={x0} y={y0} w={w} h={h} m={0.12} /></g> });
     if (z.kind === "colo") continue;
-    const xs = z.tiles.map((q) => q.x), ys = z.tiles.map((q) => q.y), x0 = Math.min(...xs);
     things.push(...cageFence({ x0, y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys), door: x0 }).map((f, i) => ({ ...f, node: <g key={`${z.id}:${i}`}>{f.node}</g> })));
   }
   for (const c of customers) {
     const ex = c.id === hall.exchange?.id;
     things.push({ depth: c.tile.x + c.tile.y, node: <g key={`colo${c.id}${key(c.tile)}`} aria-label={c.name}><RackBox tile={c.tile} units={42} items={[]} leds={[]} zoomed={false} mesh neighbour /><Lock tile={c.tile} />{ex && <Plate tile={c.tile} name={c.name} hue={hueOf(c.id)} />}</g> });
   }
-  if (editing) editThings(game, loc, plan, size, tiles, (depth, node) => things.push({ depth, node }));
+  if (editing) editThings(game, loc, plan, (depth, node) => things.push({ depth, node }));
   if (loc.tripped) things.push({ depth: 1e9, node: <Night key="dark" w={size.w} h={size.h} opacity={0.6} /> });
 }

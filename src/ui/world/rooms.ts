@@ -1,6 +1,6 @@
 import type { Fixture } from "../../sim/20-world/layout";
 
-export type Use = "desktop" | "storage" | "power" | "door" | "post" | "scan" | "stairs" | "light" | "phone" | "board" | "edit" | "xfmr" | "meetme";
+export type Use = "desktop" | "storage" | "power" | "door" | "post" | "scan" | "stairs" | "light" | "phone" | "board" | "edit" | "mainboard" | "meetme";
 
 // What using a fixture kind does. Wall ones, and flat marks on the floor, are drawn behind everything standing; top ones hang over the room; the rest are depth-sorted with the racks.
 // A fixture without a label is clutter, hidden from assistive tech.
@@ -43,7 +43,7 @@ export const ART: Record<string, FixtureArt> = {
   "odesk-s": {}, "odesk-n": {}, "ochair-s": {}, "ochair-n": {}, buckets: {}, ladder: {}, toolbox: {},
   corkboard: { label: "world.obj.board", use: "board", wall: true },
   // The own hall's service doors and camera.
-  xfmrdoor: { label: "hall.room.transformer", use: "xfmr", wall: true }, meetmedoor: { label: "hall.room.meetme", use: "meetme", wall: true }, camera: { wall: true }, mainboard: { wall: true }, planboard: { label: "hall.room.plan", use: "edit", wall: true },
+  meetmedoor: { label: "hall.room.meetme", use: "meetme", wall: true }, camera: { wall: true }, mainboard: { label: "hall.obj.mainboard", use: "mainboard", wall: true }, planboard: { label: "hall.room.plan", use: "edit", wall: true },
 };
 
 export const artOf = (id: string, f: Fixture): FixtureArt => ART[f.kind ?? id];
