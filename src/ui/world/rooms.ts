@@ -43,7 +43,7 @@ export const ART: Record<string, FixtureArt> = {
   "odesk-s": {}, "odesk-n": {}, "ochair-s": {}, "ochair-n": {}, buckets: {}, ladder: {}, toolbox: {},
   corkboard: { label: "world.obj.board", use: "board", wall: true },
   // The own hall's service doors and camera.
-  xfmrdoor: { label: "hall.room.transformer", use: "xfmr", wall: true }, meetmedoor: { label: "hall.room.meetme", use: "meetme", wall: true }, camera: { wall: true }, planboard: { label: "hall.room.plan", use: "edit", wall: true },
+  xfmrdoor: { label: "hall.room.transformer", use: "xfmr", wall: true }, meetmedoor: { label: "hall.room.meetme", use: "meetme", wall: true }, camera: { wall: true }, mainboard: { wall: true }, planboard: { label: "hall.room.plan", use: "edit", wall: true },
 };
 
 export const artOf = (id: string, f: Fixture): FixtureArt => ART[f.kind ?? id];

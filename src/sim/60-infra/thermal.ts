@@ -3,8 +3,7 @@
 import { nowMinutes } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import { BASEMENT } from "../20-world/datacenters";
-import { hallCoverage, hallSize } from "../20-world/layout";
-import { HALL, hallCapacity, hallCustomerKw, hallOf, isHalle } from "../20-world/properties";
+import { HALL, hallCustomerKw, hallOf } from "../20-world/properties";
 import type { Device, GameState, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { heatIncident } from "./incidents";
@@ -31,16 +30,9 @@ export const THERMAL = {
   cpuThrottleC: 85, cpuFloorC: 95, cpuFloorPerf: 0.5, cpuHotC: 90,
 };
 
-// Whether each position of an own hall is covered by a cooling unit (index = position - 1), by the rule in hallCoverage.
-export function coverage(s: GameState, loc: Location): boolean[] {
-  const p = s.properties.find((x) => x.hall?.locationId === loc.id);
-  return p?.hall ? hallCoverage(p.hall, hallSize(hallCapacity(p), isHalle(p.buildingId)), isHalle(p.buildingId), HALL.cooling.positions) : [];
-}
-
-// A device in an own hall's rack on a position no cooling unit covers wears as if hot every hour.
-export function hotSpot(s: GameState, d: Device): boolean {
-  const rack = d.rackId ? s.racks.find((r) => r.id === d.rackId) : undefined, loc = rack && s.locations.find((l) => l.id === rack.locationId);
-  return !!rack && loc?.space === "hall" && coverage(s, loc)[rack.position - 1] === false;
+// ponytail: S2 replaces this with the airflow model; until then no hall rack runs hot.
+export function hotSpot(_s: GameState, _d: Device): boolean {
+  return false;
 }
 
 // The share of its performance a server keeps for heat, the worse of its inlet and its CPU, and whether this hour wears it.
@@ -72,7 +64,7 @@ function step(s: GameState, loc: Location, at: number, events: SimEvent[]): bool
   // An own hall cools with the units the player put on its walls, and its customers' kW warms it.
   const hall = loc.space === "hall" && hallOf(s, loc.id), floor = loc.dc || hall;
   const kw = racks.reduce((n, p) => n + p.watts, 0) / 1000 + (hall ? hallCustomerKw(hall) : 0);
-  const cooling = hall ? (out ? 0 : hall.coolers.length * HALL.cooling.kw) : !loc.dc ? BASEMENT.kw : out ? 0 : (THERMAL.headroom * racks.reduce((n, p) => n + p.limitWatts, 0)) / 1000;
+  const cooling = hall ? (out ? 0 : hall.items.filter((i) => i.kind === "crac").length * (HALL.items.crac.kw as number)) : !loc.dc ? BASEMENT.kw : out ? 0 : (THERMAL.headroom * racks.reduce((n, p) => n + p.limitWatts, 0)) / 1000;
   const mass = floor ? Math.max(1, loc.positions) : THERMAL.basementMass;
   const shed = floor ? THERMAL.shed * mass : THERMAL.basementShed;
   const next = Math.max(0, heat + (THERMAL.climb * (kw - cooling - shed * heat)) / mass);

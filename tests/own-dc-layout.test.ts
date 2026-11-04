@@ -1,209 +1,190 @@
 import { describe, expect, it } from "vitest";
-import { hourOf } from "../src/sim/00-core/time";
-import { rackTiles, officePlan, fixtures, wallTiles } from "../src/sim/20-world/layout";
-import { HALL, hallKw, REFIT } from "../src/sim/20-world/properties";
-import type { GameState } from "../src/sim/50-state";
-import { tick } from "../src/sim/88-tick/tick";
-import { coverage, hotSpot } from "../src/sim/60-infra/thermal";
-import { buyDevice, buyRack, buyRackError, mountDevice } from "../src/sim/90-actions/hardware";
-import {
-  buyTransformer, buyTransformerError, layRow, layRowError, moveCooler, moveCoolerError, placeCooler, placeCoolerError, removeCooler, removeCoolerError, removeRow, removeRowError,
-} from "../src/sim/90-actions/hall";
-import { buyBuilding, refitSection } from "../src/sim/90-actions/properties";
-import { placeRack, placeRackError } from "../src/sim/90-actions/layout";
-import { deserialize, serialize } from "../src/sim/91-save/save";
-import { newGame } from "./fixtures";
+import { footprint, officePlan, rackTiles, siteAreas } from "../src/sim/20-world/layout";
+import { HALL, hallKw } from "../src/sim/20-world/properties";
+import { panelOf } from "../src/sim/60-infra/panels";
+import { freePositions, spotOf } from "../src/sim/60-infra/status";
+import { buyDevice, buyRack, mountDevice } from "../src/sim/90-actions/hardware";
+import { cityCarriers, buildCarrier, editHall, editHallError, hallLayoutError, hallPath } from "../src/sim/90-actions/hall";
+import { orderTransit } from "../src/sim/90-actions/network";
+import { at, customer, edit, item, ok, ownHall, place, rack, snapshot, zone } from "./own-dc-hall";
 
-const ok = (r: { ok: boolean; error?: string; id?: string }) => { if (!r.ok) throw new Error(r.error); return r.id!; };
+const err = (e: ReturnType<typeof ownHall>, ed: Parameters<typeof editHall>[2]) => editHallError(e.s, e.hallId, ed)?.key;
+const put = (e: ReturnType<typeof ownHall>, x: number, y: number, facing: "n" | "e" | "s" | "w" = "s", kind: "rack" = "rack") => err(e, { place: [{ kind, model: "rack-42", x, y, facing }] });
 
-// An owned Gallushof (office hall, 20 positions: rows A y=2 facing s and B y=4 facing n share the aisle y=3) or the Halle.
-function setup(building = "gallushof") {
-  const s = newGame(7);
-  s.cash = 10_000_000;
-  s.hour = hourOf(new Date(Date.UTC(2013, 2, 2, 10)));
-  const propertyId = ok(buyBuilding(s, building));
-  const p = s.properties.find((x) => x.id === propertyId)!;
-  const hallId = ok(refitSection(s, propertyId, p.sections.find((x) => x.floor === 1)!.id, "hall"));
-  s.hour += 24 * REFIT.hall.days;
-  s.unlocks = ["network"];
-  s.player = { ...s.player, at: hallId };
-  const hall = () => s.properties.find((x) => x.id === propertyId)!.hall!, loc = () => s.locations.find((l) => l.id === hallId)!;
-  return { s, propertyId, hallId, hall, loc };
-}
-
-// An action fails with exactly the key its check returns and leaves the state as it was.
-function refuses(s: GameState, error: string | null, run: () => { ok: boolean; error?: string }) {
-  const before = JSON.stringify(s);
-  expect(error).not.toBeNull();
-  expect(run()).toEqual({ ok: false, error });
-  expect(JSON.stringify(s)).toBe(before);
-}
-
-describe("own datacenter layout: rows and aisles", () => {
-  it("a row needs a free aisle line front and back and may share one", () => {
-    const { s, hallId, hall } = setup();
-    const [a, b] = hall().rows;
-    ok(removeRow(s, hallId, a.id)); ok(removeRow(s, hallId, b.id));
-    ok(layRow(s, hallId, { x: 3, y: 2, length: 5, facing: "s" }));
-    refuses(s, layRowError(s, hallId, { x: 3, y: 3, length: 5, facing: "s" }), () => layRow(s, hallId, { x: 3, y: 3, length: 5, facing: "s" }));
-    expect(layRowError(s, hallId, { x: 3, y: 3, length: 5, facing: "s" })).toBe("error.noAisle");
-    ok(layRow(s, hallId, { x: 3, y: 4, length: 5, facing: "n" }));
-    expect(layRowError(s, hallId, { x: 3, y: 5, length: 5, facing: "s" })).toBe("error.noAisle");
+describe("own datacenter: free placement", () => {
+  it("a rack stands on any free tile in all four facings, with its back to a wall or to another rack", () => {
+    const e = ownHall();
+    place(e, { kind: "rack", model: "rack-42", x: 3, y: 3, facing: "n" }, { kind: "rack", model: "rack-42", x: 6, y: 3, facing: "e" },
+      { kind: "rack", model: "rack-42", x: 9, y: 3, facing: "s" }, { kind: "rack", model: "rack-42", x: 12, y: 3, facing: "w" });
+    const loc = e.s.locations.find((l) => l.id === e.hallId)!;
+    expect(Object.values(rackTiles(loc, e.s.racks, officePlan(e.s, loc))).map((t) => t.facing).sort()).toEqual(["e", "n", "s", "w"]);
+    expect(put(e, 3, 1, "s")).toBeUndefined();
+    place(e, { kind: "rack", model: "rack-42", x: 5, y: 4, facing: "n" });
+    expect(put(e, 5, 5, "s")).toBeUndefined();
   });
 
-  it("refuses a row on the door's tile", () => {
-    const { s, hallId } = setup();
-    expect(layRowError(s, hallId, { x: 0, y: 5, length: 3, facing: "s" })).toBe("error.rowOutside");
-    expect(layRowError(s, hallId, { x: 1, y: 5, length: 3, facing: "s" })).toBe("error.rowOutside");
+  it("overlap, a fixture tile and the tile inside a door or doorway are occupied", () => {
+    const e = ownHall();
+    rack(e, 5, 2);
+    expect(put(e, 5, 2)).toBe("error.occupied");
+    expect(put(e, 1, 0)).toBe("error.occupied");
+    expect(put(e, 1, 5)).toBe("error.occupied");
+    expect(put(e, 15, 1)).toBe("error.occupied");
   });
 
-  it("the hall has a plan board on a tile no other fixture uses", () => {
-    const { s, loc } = setup();
-    const f = fixtures(loc(), officePlan(s, loc())), plan = f.plan;
-    expect(plan).toMatchObject({ kind: "planboard", x: 0 });
-    expect(Object.entries(f).filter(([k, o]) => k !== "plan" && o.x === plan.x && o.y === plan.y)).toEqual([]);
-    expect(wallTiles(loc(), officePlan(s, loc())).some((t) => t.x === plan.x && t.y === plan.y)).toBe(false);
+  it("a body on a front tile is blocked, and so is a rack turned onto a body", () => {
+    const e = ownHall();
+    rack(e, 5, 2);
+    expect(put(e, 5, 3)).toBe("error.blocked");
+    rack(e, 9, 3);
+    expect(put(e, 9, 2, "s")).toBe("error.blocked");
+    expect(put(e, 8, 3, "e")).toBe("error.blocked");
   });
 
-  it("moving a row moves its racks and darkens them for two hours, then they run", () => {
-    const { s, hallId, hall, loc } = setup();
-    const [a] = hall().rows;
-    const rack = ok(buyRack(s, hallId, "rack-42", 1));
-    const dev = ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), rack, 1));
-    const empty = ok(buyRack(s, hallId, "rack-42", 2));
-    ok(layRow(s, hallId, { ...a, x: 4 }));
-    const r = s.racks.find((x) => x.id === rack)!;
-    expect(r.position).toBe(1);
-    expect(rackTiles(loc(), s.racks, officePlan(s, loc()))[rack]).toMatchObject({ x: 4, y: 2 });
-    expect(r.arriveAt).toBe(s.hour + HALL.moveHours);
-    expect(s.racks.find((x) => x.id === empty)!.arriveAt).toBeNull();
-    expect(s.devices.find((d) => d.id === dev)!.rackId).toBe(rack);
-    s.hour = r.arriveAt!;
-    tick(s);
-    expect(s.racks.find((x) => x.id === rack)!.arriveAt).toBeNull();
+  it("two racks facing each other share one clearance tile", () => {
+    const e = ownHall();
+    place(e, { kind: "rack", model: "rack-42", x: 5, y: 2, facing: "s" }, { kind: "rack", model: "rack-42", x: 5, y: 4, facing: "n" });
+    expect(hallLayoutError(e.s, e.hallId)).toBeNull();
   });
 
-  it("a mounted rack moved to another free position keeps its devices and is dark for two hours", () => {
-    const { s, hallId, loc } = setup();
-    const rack = ok(buyRack(s, hallId, "rack-42", 1));
-    const dev = ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), rack, 1));
-    const to = wallTiles(loc(), officePlan(s, loc()))[4];
-    const cables = s.cables.length;
-    ok(placeRack(s, rack, to));
-    const r = s.racks.find((x) => x.id === rack)!;
-    expect(r).toMatchObject({ position: 5, arriveAt: s.hour + HALL.moveHours });
-    expect(s.devices.find((d) => d.id === dev)!.rackId).toBe(rack);
-    expect(s.cables).toHaveLength(cables);
-    refuses(s, placeRackError(s, rack, wallTiles(loc(), officePlan(s, loc()))[6]), () => placeRack(s, rack, wallTiles(loc(), officePlan(s, loc()))[6]));
-    s.hour = r.arriveAt!;
-    tick(s);
-    expect(s.racks.find((x) => x.id === rack)!.arriveAt).toBeNull();
-    refuses(s, placeRackError(s, rack, to), () => placeRack(s, rack, to));
+  it("a rack walled in has no way through, and the path finds a reachable front", () => {
+    const e = ownHall();
+    const r = (x: number, y: number, facing: "n" | "s") => ({ kind: "rack" as const, model: "rack-42" as const, x, y, facing });
+    expect(edit(e, { place: [r(4, 2, "s"), r(3, 3, "n"), r(5, 3, "n"), r(4, 4, "s")] })).toEqual({ ok: false, error: "error.noPath" });
+    rack(e, 5, 2);
+    const path = hallPath(e.s, e.hallId, { x: 1, y: 5 }, { x: 5, y: 3 })!;
+    expect(path[0]).toEqual({ x: 1, y: 5 });
+    expect(path.at(-1)).toEqual({ x: 5, y: 3 });
+    expect(hallPath(e.s, e.hallId, { x: 1, y: 5 }, { x: 5, y: 2 })).toBeNull();
+    expect(hallPath(e.s, e.hallId, { x: 1, y: 5 }, siteAreas(e.s, e.s.locations.find((l) => l.id === e.hallId)!)[1].rect)).not.toBeNull();
   });
 
-  it("a row with a customer cannot move, turn or shrink, and an empty row can go", () => {
-    const { s, hallId, hall } = setup();
-    const [a, b] = hall().rows;
-    hall().customers.push({ id: "c1", name: "Mainbit", position: 3, monthly: 300, since: s.hour, kw: 3, zoneId: null });
-    for (const next of [{ ...a, x: 4 }, { ...a, facing: "n" as const }, { ...a, length: 5 }]) {
-      refuses(s, layRowError(s, hallId, next), () => layRow(s, hallId, next));
-      expect(layRowError(s, hallId, next)).toBe("error.rowInUse");
+  it("vent and containment share a tile but never lie under a body; the wrong room refuses", () => {
+    const e = ownHall();
+    place(e, { kind: "vent", x: 4, y: 6, facing: "s", area: "hall" }, { kind: "containment", x: 4, y: 6, facing: "s", area: "hall" });
+    rack(e, 8, 2);
+    expect(err(e, { place: [{ kind: "vent", x: 8, y: 2, facing: "s", area: "hall" }] })).toBe("error.occupied");
+    expect(err(e, { place: [{ kind: "transformer", x: 4, y: 6, facing: "s", area: "hall" }] })).toBe("error.wrongRoom");
+    expect(err(e, { place: [{ kind: "ups", x: 3, y: 0, facing: "s", area: "xfmr" }] })).toBe("error.wrongRoom");
+  });
+
+  it("limits the transformers, switchgear and the last NOC desk, and refuses removing a transformer below the draw", () => {
+    const e = ownHall();
+    const second = item(e, "transformer", "xfmr");
+    expect(err(e, { place: [{ kind: "transformer", x: 5, y: 0, facing: "s", area: "xfmr" }] })).toBe("error.limit");
+    item(e, "switchgear", "xfmr");
+    expect(err(e, { place: [{ kind: "switchgear", x: 5, y: 0, facing: "s", area: "xfmr" }] })).toBe("error.limit");
+    e.hall().customers.push(customer(e, 1, null, null, 150));
+    expect(err(e, { remove: [`item:${second}`] })).toBe("error.overload");
+    const desk = e.hall().items.find((i) => i.kind === "nocdesk")!;
+    expect(err(e, { remove: [`item:${desk.id}`] })).toBe("error.lastDesk");
+  });
+});
+
+describe("own datacenter: racks in use", () => {
+  it("a rack with devices cannot be removed; moving it keeps devices and cables and darkens it for 2 hours", () => {
+    const e = ownHall();
+    e.s.player = { ...e.s.player, at: e.hallId };
+    const id = rack(e, 5, 2);
+    const dev = ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId));
+    ok(mountDevice(e.s, dev, id, 1));
+    expect(err(e, { remove: [`rack:${id}`] })).toBe("error.notEmpty");
+    const cables = JSON.stringify(e.s.cables);
+    ok(edit(e, { move: [{ ref: `rack:${id}`, x: 8, y: 2, facing: "s" }] }));
+    const r = e.s.racks.find((x) => x.id === id)!;
+    expect(r.tile).toMatchObject({ x: 8, y: 2 });
+    expect(r.arriveAt).toBe(e.s.hour + HALL.moveHours);
+    expect(e.s.devices.find((d) => d.id === dev)!.rackId).toBe(id);
+    expect(JSON.stringify(e.s.cables)).toBe(cables);
+    expect(err(e, { move: [{ ref: `rack:${id}`, x: 10, y: 2, facing: "s" }] })).toBe("error.rackMoving");
+  });
+
+  it("a linked meet-me rack cannot leave the zone, and a customer's zone cannot move", () => {
+    const e = ownHall();
+    e.s.unlocks = ["network"];
+    e.s.player = { ...e.s.player, at: e.hallId };
+    const z = zone(e, "meetme", 2, 4, 2, "n");
+    const id = ok(buyRack(e.s, e.hallId, "rack-42", freePositions(e.s, e.hallId)[0]));
+    ok(edit(e, { move: [{ ref: `rack:${id}`, x: 2, y: 4, facing: "n" }] }));
+    e.s.racks.find((r) => r.id === id)!.arriveAt = null;
+    ok(mountDevice(e.s, ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId)), id, 1));
+    const panel = ok(buyDevice(e.s, "patch-24f", "Pandoot", 1, e.hallId));
+    ok(mountDevice(e.s, panel, id, 3));
+    const carrier = cityCarriers("Frankfurt")[0].id;
+    ok(buildCarrier(e.s, e.hallId, carrier));
+    ok(orderTransit(e.s, e.hallId, carrier, 1, 0.2));
+    expect(panelOf(e.s, id)?.id).toBe(panel);
+    expect(err(e, { move: [{ ref: `rack:${id}`, x: 8, y: 6, facing: "s" }] })).toBe("error.rackLinked");
+    expect(err(e, { move: [{ ref: `rack:${id}`, x: 3, y: 4, facing: "n" }] })).toBeUndefined();
+    const c = zone(e, "colo", 6, 2, 2);
+    e.hall().customers.push(customer(e, 1, { x: 6, y: 2, facing: "s" }, c));
+    expect(err(e, { move: [{ ref: `zone:${c}`, x: 8, y: 2, facing: "s" }] })).toBe("error.locked");
+    expect(err(e, { remove: [`zone:${z}`] })).toBe("error.locked");
+  });
+});
+
+describe("own datacenter: edits and money", () => {
+  it("a group move with rotation applies all or nothing", () => {
+    const e = ownHall();
+    const a = rack(e, 4, 2), b = rack(e, 8, 2);
+    const before = snapshot(e.s);
+    expect(edit(e, { move: [{ ref: `rack:${a}`, x: 4, y: 6, facing: "n" }, { ref: `rack:${b}`, x: 15, y: 1, facing: "n" }] })).toEqual({ ok: false, error: "error.occupied" });
+    expect(snapshot(e.s)).toBe(before);
+    ok(edit(e, { move: [{ ref: `rack:${a}`, x: 4, y: 6, facing: "n" }, { ref: `rack:${b}`, x: 8, y: 6, facing: "w" }] }));
+    expect(e.s.racks.find((r) => r.id === a)!.tile).toMatchObject({ x: 4, y: 6, facing: "n" });
+    expect(e.s.racks.find((r) => r.id === b)!.tile).toMatchObject({ x: 8, y: 6, facing: "w" });
+  });
+
+  it("refunds half the price paid and a refit transformer refunds nothing", () => {
+    const e = ownHall();
+    const crac = item(e, "crac"), cash = e.s.cash;
+    ok(edit(e, { remove: [`item:${crac}`] }));
+    expect(e.s.cash - cash).toBe(HALL.items.crac.price * HALL.refund);
+    expect(e.s.ledger.at(-1)).toMatchObject({ key: "ledger.hallRefund" });
+    const base = e.hall().items.find((i) => i.kind === "transformer")!, c2 = e.s.cash;
+    item(e, "transformer", "xfmr");
+    ok(edit(e, { remove: [`item:${base.id}`] }));
+    expect(e.s.cash).toBe(c2 - HALL.items.transformer.price);
+    expect(hallKw(e.s.properties.find((p) => p.id === e.propertyId)!)).toBe(100);
+  });
+
+  it("the NOC room is built for 30,000 and adds its area; containment before 2008 and a cage before 2015 are not yet available", () => {
+    const e = ownHall();
+    const loc = e.s.locations.find((l) => l.id === e.hallId)!, cash = e.s.cash;
+    expect(siteAreas(e.s, loc).map((a) => a.id)).toEqual(["hall", "xfmr", "battery"]);
+    place(e, { kind: "noc", x: 0, y: 0, facing: "n" });
+    expect(cash - e.s.cash).toBe(HALL.noc.price);
+    expect(siteAreas(e.s, loc).map((a) => a.id)).toContain("noc");
+    expect(err(e, { place: [{ kind: "noc", x: 0, y: 0, facing: "n" }] })).toBe("error.limit");
+    e.s.hour = at(2007);
+    expect(err(e, { place: [{ kind: "containment", x: 4, y: 6, facing: "s", area: "hall" }] })).toBe("error.notYet");
+    expect(err(e, { place: [{ kind: "zone", zone: "cage", length: 3, x: 2, y: 2, facing: "s" }] })).toBe("error.notYet");
+    expect(footprint("generator", { x: 1, y: 1, facing: "e" }, false, { x: 10, y: 0 })).toHaveLength(4);
+  });
+});
+
+describe("own datacenter: contracts", () => {
+  it("a failing edit returns the key editHallError gives and leaves the state unchanged", () => {
+    const e = ownHall();
+    rack(e, 5, 2);
+    const before = snapshot(e.s);
+    for (const ed of [{ place: [{ kind: "rack" as const, model: "rack-42" as const, x: 5, y: 3, facing: "s" as const }] }, { place: [{ kind: "ups" as const, x: 3, y: 0, facing: "s" as const, area: "hall" as const }] }, { remove: ["rack:nope"] }]) {
+      const key = editHallError(e.s, e.hallId, ed)!.key;
+      expect(editHall(e.s, e.hallId, ed)).toEqual({ ok: false, error: key });
+      expect(snapshot(e.s)).toBe(before);
     }
-    refuses(s, removeRowError(s, hallId, a.id), () => removeRow(s, hallId, a.id));
-    expect(removeRow(s, hallId, b.id).ok).toBe(true);
   });
 
-  it("buying a rack on a taken position returns the check's key", () => {
-    const { s, hallId } = setup();
-    ok(buyRack(s, hallId, "rack-42", 1));
-    refuses(s, buyRackError(s, hallId, "rack-42", 1), () => buyRack(s, hallId, "rack-42", 1));
-  });
-});
-
-describe("own datacenter layout: cooling", () => {
-  it("front-to-back rows make every position of the front row hot", () => {
-    const { s, hallId, hall, loc } = setup();
-    const [, b] = hall().rows;
-    ok(removeRow(s, hallId, b.id));
-    ok(layRow(s, hallId, { x: 3, y: 4, length: 10, facing: "s" }));
-    for (const slot of [0, 1, 5]) ok(placeCooler(s, hallId, slot));
-    const covered = coverage(s, loc());
-    expect(covered.slice(0, 10).every((c) => !c)).toBe(true);
-    expect(covered.slice(10).some((c) => c)).toBe(true);
-  });
-
-  it("two units cover the 16 nearest positions and a third covers the rest", () => {
-    const { s, hallId, hall, loc } = setup();
-    ok(placeCooler(s, hallId, 0)); ok(placeCooler(s, hallId, 5));
-    const two = coverage(s, loc());
-    expect(two.filter(Boolean)).toHaveLength(16);
-    expect(two[0] && two[10]).toBe(true);
-    expect(two.slice(13, 17).some(Boolean)).toBe(false);
-    ok(placeCooler(s, hallId, 1));
-    expect(coverage(s, loc()).every(Boolean)).toBe(true);
-    expect(hall().coolers).toEqual([0, 1, 5]);
-  });
-
-  it("moves a unit free and removing one refunds half", () => {
-    const { s, hallId, hall, loc } = setup();
-    ok(placeCooler(s, hallId, 0));
-    const cash = s.cash;
-    ok(moveCooler(s, hallId, 0, 3));
-    expect(s.cash).toBe(cash);
-    expect(hall().coolers).toEqual([3]);
-    ok(removeCooler(s, hallId, 3));
-    expect(s.cash).toBe(cash + HALL.cooling.price / 2);
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.coolerRefund", amount: HALL.cooling.price / 2 });
-    expect(coverage(s, loc()).some(Boolean)).toBe(false);
-  });
-
-  it("the right wall holds units and every check matches its action", () => {
-    const { s, hallId } = setup();
-    ok(placeCooler(s, hallId, 6));
-    refuses(s, placeCoolerError(s, hallId, 6), () => placeCooler(s, hallId, 6));
-    refuses(s, placeCoolerError(s, hallId, 99), () => placeCooler(s, hallId, 99));
-    refuses(s, moveCoolerError(s, hallId, 2, 3), () => moveCooler(s, hallId, 2, 3));
-    refuses(s, removeCoolerError(s, hallId, 2), () => removeCooler(s, hallId, 2));
-    s.cash = 0;
-    refuses(s, placeCoolerError(s, hallId, 1), () => placeCooler(s, hallId, 1));
-  });
-
-  it("a device on an uncovered position wears hot, one under a unit does not", () => {
-    const { s, hallId, loc } = setup();
-    ok(placeCooler(s, hallId, 0));
-    const near = ok(buyRack(s, hallId, "rack-42", 1)), far = ok(buyRack(s, hallId, "rack-42", 15));
-    const d1 = ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), near, 1));
-    const d2 = ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), far, 1));
-    expect(coverage(s, loc())[14]).toBe(false);
-    expect(hotSpot(s, s.devices.find((d) => d.id === d2)!)).toBe(true);
-    expect(hotSpot(s, s.devices.find((d) => d.id === d1)!)).toBe(false);
-  });
-});
-
-describe("own datacenter layout: transformer and saves", () => {
-  it("one extra transformer per floor raises the limit and bills monthly", () => {
-    const { s, propertyId, hallId } = setup();
-    const p = () => s.properties.find((x) => x.id === propertyId)!;
-    expect(hallKw(p())).toBe(HALL.transformerKw.office);
-    ok(buyTransformer(s, hallId));
-    expect(hallKw(p())).toBe(2 * HALL.transformerKw.office);
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.transformer", amount: -HALL.transformer.price });
-    refuses(s, buyTransformerError(s, hallId), () => buyTransformer(s, hallId));
-    s.cash = 0;
-    const big = setup("fechenhalle");
-    big.s.cash = 0;
-    refuses(big.s, buyTransformerError(big.s, big.hallId), () => buyTransformer(big.s, big.hallId));
-  });
-
-  it("an old save with a cooling count loads with coolers for the first slots", () => {
-    const { s, propertyId } = setup();
-    const raw = JSON.parse(serialize(s));
-    const hall = raw.properties.find((x: { id: string }) => x.id === propertyId).hall;
-    delete hall.coolers; delete hall.transformers;
-    hall.cooling = 3;
-    const back = deserialize(JSON.stringify(raw)).properties.find((x) => x.id === propertyId)!.hall!;
-    expect(back.coolers).toEqual([0, 1, 2]);
-    expect(back.transformers).toBe(0);
-    expect("cooling" in back).toBe(false);
+  it("a delivered rack has no tile, counts as moving, draws no power and places for free", () => {
+    const e = ownHall();
+    const id = ok(buyRack(e.s, e.hallId, "rack-42", freePositions(e.s, e.hallId)[0]));
+    const r = e.s.racks.find((x) => x.id === id)!;
+    expect(r.tile).toBeUndefined();
+    expect(spotOf(e.s, id)!.moving).toBe(true);
+    const cash = e.s.cash;
+    ok(edit(e, { place: [{ kind: "rack", rackId: id, x: 5, y: 2, facing: "s" }] }));
+    expect(e.s.cash).toBe(cash);
+    expect(r.tile).toMatchObject({ x: 5, y: 2 });
+    expect(spotOf(e.s, id)!.moving).toBe(false);
   });
 });

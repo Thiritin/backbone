@@ -39,7 +39,22 @@ Other tenants hold a share of each building's sections (25 to 70%), fixed by the
 | Line | SDSL 2 Mbit/s | SDSL 20 Mbit/s | Fiber 100 Mbit/s | Fiber 1 Gbit/s | Fiber 10 Gbit/s |
 | Per month | €120 | €150 | €200 | €300 | €450 |
 
-**Own hall.** The design is in [Own datacenter](../gdd/own-datacenter.md). Rows are free; racks are bought per position as everywhere. A rack position takes up to 6 kW. Each hall floor has a transformer of 100 kW, 300 kW in a Halle; above it the main breaker trips as in every room, and only the player resets it.
+**Own hall.** The design is in [Own datacenter](../gdd/own-datacenter.md). Racks are bought per position as everywhere and stand on any free tile. A rack position takes up to 6 kW. Items are placed in the hall or its annex rooms, each bought once at the price shown, billed monthly where a monthly cost is shown, and refunded at half the price paid when removed; an item the refit placed refunds nothing. Over the limit of the placed transformers the main breaker trips as in every room, and only the player resets it.
+
+| Item | Where | Size | One-time | Monthly | Does |
+| --- | --- | --- | --- | --- | --- |
+| Cooling unit | Hall | 2 × 1 | €18,000 | €150 | 40 kW of cooling |
+| Vent | Hall | 1 × 1 | €400 | none | Floor vent |
+| Containment | Hall, from 2008 | 1 × 1 | €1,500 | none | Frame over a tile |
+| Transformer | Transformer room | 1 × 2 (Halle 2 × 2) | €80,000 | €400 | 100 kW of limit (Halle 300 kW), two per hall floor, one per floor free from the refit |
+| Switchgear B | Transformer room | 1 × 2 | €25,000 | €200 | Opens feed B on every rack; one per hall |
+| Generator | Transformer room | 2 × 2 | €60,000 | €500 | Carries 300 kW in a grid outage |
+| UPS | Battery room | 1 × 2 | €40,000 | €300 | Carries 150 kW from the batteries |
+| Battery cabinet | Battery room | 1 × 2 | €8,000 | none | Stores 50 kWh |
+| NOC desk | Hall or NOC room | 2 × 1 | €3,000 | none | Two seats, one placed free by the refit |
+| Wall screen | NOC room | 2 wide | €6,000 | none | At most four |
+
+The NOC room costs €30,000 once and is built instantly below the hall. A cage fence costs €2,000 per position and the meet-me fence €5,000; both refund half.
 
 | Item | One-time | Monthly | What it does |
 | --- | --- | --- | --- |

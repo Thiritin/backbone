@@ -98,7 +98,7 @@ export function orderExchangePort(s: GameState, where: string, gbit: number, jac
   const { locationId, rackId } = placeOf(s, where);
   const loc = zone(s, locationId);
   if (typeof loc === "string") return fail(loc);
-  const hx = hallOf(s, loc.id)?.exchange, x = loc.dc ? exchangeAt(datacenterById(loc.dc)) : hx?.position ? exchangeById(hx.id) : null;
+  const hx = hallOf(s, loc.id)?.exchange, x = loc.dc ? exchangeAt(datacenterById(loc.dc)) : hx?.tile ? exchangeById(hx.id) : null;
   if (!x) return fail("error.noExchange");
   if (!s.network.memberships.includes(x.id)) return fail("error.notMember");
   const u = s.network.uplinks.find((v) => v.kind === "exchange" && v.partner === x.id && v.locationId === locationId)

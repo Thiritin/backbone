@@ -1,6 +1,6 @@
 // docs/design/gdd/connectivity.md: the provider's patch panel on every rented rack and what each of its jacks carries.
 import { panelJacks, PROVIDER_PANEL } from "../10-catalog/uplinks";
-import { zonePositions } from "../20-world/properties";
+import { zoneSpots } from "../20-world/properties";
 import type { Device, GameState, Rack } from "../50-state";
 
 export type JackRole = "free" | "uplink" | "xconnect" | "provider-cable" | "customer";
@@ -17,7 +17,7 @@ const hallOfRack = (s: GameState, rackId: string) => {
 // In a hall only a rack inside the meet-me zone has a panel.
 export const inMeetMe = (s: GameState, rackId: string): boolean => {
   const h = hallOfRack(s, rackId), r = s.racks.find((x) => x.id === rackId);
-  return !!h && !!r && h.zones.some((z) => z.kind === "meetme" && zonePositions(h, z).includes(r.position));
+  return !!h && !!r && h.zones.some((z) => z.kind === "meetme" && !!r.tile && zoneSpots(z).some((t) => t.x === r.tile!.x && t.y === r.tile!.y));
 };
 export const panelOf = (s: GameState, rackId: string): Device | undefined =>
   s.devices.find((d) => d.rackId === rackId && isProviderPanel(d)) ?? (hallOfRack(s, rackId) && inMeetMe(s, rackId) ? s.devices.find((d) => d.rackId === rackId && MEETME_PANELS.includes(d.model)) : undefined);

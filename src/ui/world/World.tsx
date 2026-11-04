@@ -41,7 +41,7 @@ import {
 import { Closet } from "./office";
 import { hallScene } from "./hall";
 import { HallStrip, useEdit } from "./hall-edit";
-import { MeetMeRoom, XfmrRoom } from "./hall-doors";
+import { MeetMeRoom } from "./hall-doors";
 import "./world.css";
 
 // How dark a tripped room is drawn, darker than a night with the lights off.
@@ -390,7 +390,6 @@ export function World() {
       {editing && loc.space === "hall" && <HallStrip loc={loc} onDone={() => setEditing(false)} />}
       {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
       {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} kind={panel.id ?? ""} onClose={() => setPanel(null)} />}
-      {panel?.kind === "xfmr" && <XfmrRoom loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "meetme" && <MeetMeRoom loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "phone" && <PhonePanel title={panel.title} call={panel.call ?? null} cordless={cordless} onOpenRack={(id) => { setPanel(null); setRackOpen({ id }); }} onClose={() => setPanel(null)} />}

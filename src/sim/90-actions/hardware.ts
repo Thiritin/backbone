@@ -217,7 +217,7 @@ export function buyRack(s: GameState, locationId: string, model: RackModel, posi
   if (error) return fail(error);
   const spec = RACK_MODELS.find((m) => m.id === model)!;
   const name = model === "shelf" ? t("rack.shelf") : nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
-  const at = s.locations.find((l) => l.id === locationId)!, tile = freeRackTiles(at, s.racks, officePlan(s, at))[0];
+  const at = s.locations.find((l) => l.id === locationId)!, tile = at.space === "hall" ? undefined : freeRackTiles(at, s.racks, officePlan(s, at))[0];
   const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null }, tile };
   s.racks.push(rack);
   syncProviderPanels(s);
@@ -1043,7 +1043,7 @@ export function setFeed(s: GameState, rackId: string, feed: "b" | "highDensity",
   if (!rack) return fail("error.unknownRack");
   if (rack.provided) return fail("error.providedRack");
   // An own hall offers feed B once its second feed is built.
-  if (!s.locations.find((l) => l.id === rack.locationId)!.dc && !(feed === "b" && hallOf(s, rack.locationId)?.feedB)) return fail("error.noFeeds");
+  if (!s.locations.find((l) => l.id === rack.locationId)!.dc && !(feed === "b" && hallOf(s, rack.locationId)?.items.some((i) => i.kind === "switchgear"))) return fail("error.noFeeds");
   if (feed === "b") rack.feedB = on;
   else if (feed === "highDensity") rack.highDensity = on;
   else return fail("error.unknownFeed");

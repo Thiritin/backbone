@@ -9,7 +9,7 @@ import { CustomerLink } from "../customers/open";
 import { initials, patience, PRODUCT, stamp } from "../support/labels";
 import { UpgradeCompose } from "../support/CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
-import { customerPositions, zonePositions } from "../../../sim/20-world/properties";
+import { customerSpots, zoneSpots } from "../../../sim/20-world/properties";
 import type { Hall } from "../../../sim/50-state";
 import { goingRate, setColoRate } from "../../../sim/90-actions/hall";
 import { PriceField } from "./PriceField";
@@ -18,8 +18,8 @@ import "./sales.css";
 
 // Positions a customer could take: free ones in colocation zones and the positions of empty cages.
 const spareToRent = (h: Hall): number => {
-  const taken = new Set(h.customers.flatMap((c) => customerPositions(h, c)));
-  return h.zones.filter((z) => z.kind !== "meetme").flatMap((z) => zonePositions(h, z)).filter((q) => !taken.has(q)).length;
+  const taken = new Set(h.customers.flatMap((c) => customerSpots(h, c)).map((q) => `${q.x},${q.y}`));
+  return h.zones.filter((z) => z.kind !== "meetme").flatMap(zoneSpots).filter((q) => !taken.has(`${q.x},${q.y}`)).length;
 };
 
 export const OPEN = ["open", "countered", "refused"];
@@ -126,7 +126,7 @@ export function ColoListing() {
             <table className="table">
               <thead><tr><th>{t("misc2.customer")}</th><th className="num">{t("hall.position")}</th><th className="num">{t("misc2.monthlyPrice")}</th><th>{t("hall.since")}</th></tr></thead>
               <tbody>
-                {h.customers.map((c) => <tr key={c.id}><td>{c.name}</td><td className="num">{c.position}</td><td className="num">{euroCents(c.monthly)}</td><td className="num">{stamp(c.since)}</td></tr>)}
+                {h.customers.map((c) => <tr key={c.id}><td>{c.name}</td><td className="num">{c.tile ? `${c.tile.x + 1}.${c.tile.y + 1}` : "-"}</td><td className="num">{euroCents(c.monthly)}</td><td className="num">{stamp(c.since)}</td></tr>)}
               </tbody>
             </table>
           </div>

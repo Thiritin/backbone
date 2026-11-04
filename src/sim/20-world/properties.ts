@@ -1,5 +1,5 @@
 import { hashRng, rand } from "../00-core/rng";
-import type { Building, ColoCustomer, GameState, Hall, HallZone, Property } from "../50-state";
+import type { Building, ColoCustomer, GameState, Hall, HallItemKind, HallZone, Property } from "../50-state";
 
 // Office buildings to rent sections in or buy (GDD, Properties; economy/properties.md). region matches a location's city;
 // rent is the factor on the era's rent per section; price is the buy price in 2005 euros, null when not for sale.
@@ -27,19 +27,18 @@ export const DESKS_PER_SECTION = 4;
 export const RACKS_PER_SERVER_SECTION = 4;
 // A closet keeps the section's four desks and adds a cupboard in its corner with one rack on the section's own circuit.
 export const CLOSET_KW = 2;
-// A hall refit takes a whole floor and costs that once; its positions come from the hall's rows.
+// A hall refit takes a whole floor and costs that once.
 export const REFIT = { desks: { cost: 3_000, days: 5 }, servers: { cost: 12_000, days: 14 }, closet: { cost: 4_000, days: 3 }, hall: { cost: 90_000, days: 45 } } as const;
 export const FIT_POSITIONS = { desks: 0, servers: RACKS_PER_SERVER_SECTION, closet: 1, hall: 0 } as const;
 // Rack positions a floor fitted as a hall holds: an office building's floor, or a Halle's.
 export const HALL_POSITIONS = { office: 20, halle: 60 } as const;
-// An own hall's power and cooling (economy/properties.md, Own hall): kW per rack position, the transformer's limit per hall
-// floor, cooling units on the walls each cooling `positions` positions, and the upgrades with their one-time price and monthly cost.
+// An own hall (GDD, Own datacenter; economy/properties.md, Own hall): kW per rack position, hours a moved rack is dark,
+// colocation customers, zones, carriers and the exchange, and the placeable items. An item is w wide along its front and d deep;
+// layer body blocks walking, floor lies in the raised floor, top hangs over a tile and wall hangs on a wall. Refunds are `refund` of the price paid.
+type ItemSpec = { w: number | { office: number; halle: number }; d: number; layer: "body" | "floor" | "top" | "wall"; areas: readonly string[]; price: number; monthly: number;
+  kw?: number | { office: number; halle: number }; from?: number; max?: number; perFloor?: number; containedKw?: number; kwh?: number; seats?: number };
 export const HALL = {
-  kwPerPosition: 6, transformerKw: { office: 100, halle: 300 },
-  cooling: { price: 18_000, monthly: 150, positions: 8, kw: 40, refund: 0.5 },
-  // One extra transformer per hall floor, bought in the transformer room: it adds the floor's base limit again.
-  transformer: { price: 80_000, monthly: 400 },
-  // Hours a moved rack is dark.
+  kwPerPosition: 6,
   moveHours: 2,
   // Colocation customers: at the city's going rate a spare position finds a customer in a month with chance `signs`, which
   // falls to nothing at twice the going rate and climbs by half again at half of it; each customer leaves in a month with chance `leaves`.
@@ -56,32 +55,60 @@ export const HALL = {
   hub: { carrierAt: 8, carrierChance: 0.3, exchangeCarriers: 3, exchangeCustomers: 12 },
   // A carrier's one-time fee to build its fiber into the hall's meet-me room.
   carrierFee: 15_000,
-  upgrades: { feedB: { price: 25_000, monthly: 200 }, ups: { price: 40_000, monthly: 300 }, generator: { price: 60_000, monthly: 500 } },
-} as const;
-export type HallUpgrade = keyof typeof HALL.upgrades;
-export const hallKw = (p: Property): number =>
-  (new Set(p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size + (p.hall?.transformers ?? 0)) * HALL.transformerKw[isHalle(p.buildingId) ? "halle" : "office"];
-// Index of a row's first position (0-based over the whole hall).
-export const rowStart = (h: Hall, rowId: string): number => h.rows.slice(0, h.rows.findIndex((r) => r.id === rowId)).reduce((n, r) => n + r.length, 0);
-// The hall position numbers a zone covers.
-export const zonePositions = (h: Hall, z: HallZone): number[] => Array.from({ length: z.length }, (_, i) => rowStart(h, z.rowId) + z.from + i + 1);
-// Positions a customer holds: a cage customer holds its whole zone.
-export const customerPositions = (h: Hall, c: ColoCustomer): number[] => {
+  refund: 0.5,
+  items: {
+    crac: { w: 2, d: 1, layer: "body", areas: ["hall"], price: 18_000, monthly: 150, kw: 40 },
+    vent: { w: 1, d: 1, layer: "floor", areas: ["hall"], price: 400, monthly: 0, kw: 12, containedKw: 16 },
+    containment: { w: 1, d: 1, layer: "top", areas: ["hall"], price: 1_500, monthly: 0, from: 2008 },
+    transformer: { w: { office: 1, halle: 2 }, d: 2, layer: "body", areas: ["xfmr", "yard"], price: 80_000, monthly: 400, kw: { office: 100, halle: 300 }, perFloor: 2 },
+    switchgear: { w: 1, d: 2, layer: "body", areas: ["xfmr"], price: 25_000, monthly: 200, max: 1 },
+    generator: { w: 2, d: 2, layer: "body", areas: ["xfmr", "yard"], price: 60_000, monthly: 500, kw: 300 },
+    ups: { w: 1, d: 2, layer: "body", areas: ["battery", "yard"], price: 40_000, monthly: 300, kw: 150 },
+    battery: { w: 1, d: 2, layer: "body", areas: ["battery", "yard"], price: 8_000, monthly: 0, kwh: 50 },
+    nocdesk: { w: 2, d: 1, layer: "body", areas: ["hall", "noc"], price: 3_000, monthly: 0, seats: 2 },
+    screen: { w: 2, d: 0, layer: "wall", areas: ["noc"], price: 6_000, monthly: 0, max: 4 },
+  } as Record<HallItemKind, ItemSpec>,
+  air: { reach: 12, base: 0.7, fedGain: 0.2, containedGain: 0.1, recircLoss: 0.2, min: 0.5, roomC: 4, perKwC: 1, recircC: 6, blockedC: 3, containedC: 2, hotDelta: 6, pueBase: 1.2, pueSlope: 0.5 },
+  noc: { price: 30_000, w: 8, d: 5, resetMin: 30, resetMinScreens: 10 },
+  annex: { w: 6 },
+  generatorStartMin: 1,
+};
+const itemKw = (p: Property, kind: HallItemKind): number => {
+  const k = HALL.items[kind].kw;
+  return typeof k === "object" ? k[isHalle(p.buildingId) ? "halle" : "office"] : (k ?? 0);
+};
+// The kW a hall's placed transformers give: its main breaker limit.
+export const hallKw = (p: Property): number => (p.hall?.items ?? []).filter((i) => i.kind === "transformer").length * itemKw(p, "transformer");
+// Monthly cost of the items paid for; an item the refit placed costs nothing.
+export const hallMonthly = (hall: Hall): number => hall.items.reduce((n, i) => n + (i.price > 0 ? HALL.items[i.kind].monthly : 0), 0);
+const tileKey = (t: { x: number; y: number }) => `${t.x},${t.y}`;
+const STEP = { n: [0, -1], e: [1, 0], s: [0, 1], w: [-1, 0] } as const;
+export const stepTile = (t: { x: number; y: number }, f: "n" | "e" | "s" | "w", k = 1) => ({ x: t.x + STEP[f][0] * k, y: t.y + STEP[f][1] * k });
+// The tiles of a zone, each standing as a rack does.
+export const zoneSpots = (z: HallZone): { x: number; y: number; facing: HallZone["facing"] }[] => {
+  const along = z.facing === "n" || z.facing === "s";
+  return Array.from({ length: z.length }, (_, i) => ({ x: z.x + (along ? i : 0), y: z.y + (along ? 0 : i), facing: z.facing }));
+};
+// Spots a customer holds: a cage customer holds its whole zone.
+export const customerSpots = (h: Hall, c: ColoCustomer): { x: number; y: number; facing: HallZone["facing"] }[] => {
   const z = c.zoneId ? h.zones.find((x) => x.id === c.zoneId) : undefined;
-  return z?.kind === "cage" ? zonePositions(h, z) : [c.position];
+  return z?.kind === "cage" ? zoneSpots(z) : c.tile ? [c.tile] : [];
 };
-// The row and 0-based index a hall position number lies at.
-export const rowOfPosition = (h: Hall, position: number): { rowId: string; index: number } | null => {
-  let start = 0;
-  for (const r of h.rows) { if (position > start && position <= start + r.length) return { rowId: r.id, index: position - start - 1 }; start += r.length; }
-  return null;
-};
-// kW a customer draws; a cage draws it per position.
-export const customerKw = (h: Hall, c: ColoCustomer): number => c.kw * customerPositions(h, c).length;
+// kW a customer draws; a cage draws it per tile.
+export const customerKw = (h: Hall, c: ColoCustomer): number => c.kw * Math.max(1, customerSpots(h, c).length);
 export const hallCustomerKw = (h: Hall | undefined): number => (h ? h.customers.reduce((n, c) => n + customerKw(h, c), 0) : 0);
-export const hallBackup = (h: Hall): "none" | "ups" | "ups+generator" => (h.ups && h.generator ? "ups+generator" : h.ups ? "ups" : "none");
-// Default rows a new hall floor gets: rows of HALL_ROW positions, facing each other in pairs.
-export const HALL_ROW = 10;
+// ponytail: S2 replaces this with the capacities of the placed items.
+// Rack spots a hall holds: its zone tiles, its racks off the zones (delivered ones too) and customers off the zones.
+export function hallSpots(h: Hall, racks: Record<string, { x: number; y: number } | null>, zones: HallZone[] = h.zones): number {
+  const zk = new Set(zones.flatMap(zoneSpots).map(tileKey));
+  const loose = [...h.customers.flatMap((c) => customerSpots(h, c)), ...(h.exchange?.tile ? [h.exchange.tile] : [])].filter((t) => !zk.has(tileKey(t))).length;
+  return zk.size + Object.values(racks).filter((t) => !t || !zk.has(tileKey(t))).length + loose;
+}
+
+export const hallBackup = (h: Hall): "none" | "ups" | "ups+generator" => {
+  const ups = h.items.some((i) => i.kind === "ups");
+  return ups && h.items.some((i) => i.kind === "generator") ? "ups+generator" : ups ? "ups" : "none";
+};
 // Business lines from the city's provider into an office server room or closet, by the first year each is sold; the price is fixed when booked.
 export const OFFICE_LINES = [
   { from: 2005, name: "SDSL", mbit: 2, monthly: 120 },

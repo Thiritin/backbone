@@ -1,7 +1,7 @@
-import type { GameState, Hall as OwnHall, HallRow, Location, Rack, Section, SpaceKind } from "../50-state";
+import type { AreaId, GameState, Hall as OwnHall, HallItem, HallItemKind, Location, Rack, Section, SpaceKind } from "../50-state";
 import { datacenterById } from "./datacenters";
 import { exchangeById } from "../10-catalog/network";
-import { customerPositions, hallCapacity, holdsDesks, isHalle, zonePositions } from "./properties";
+import { customerSpots, HALL, hallCapacity, holdsDesks, isHalle, stepTile, zoneSpots } from "./properties";
 
 export type Facing = "n" | "e" | "s" | "w";
 // floor is set only in an office with more than one floor of server rooms; it counts from 1.
@@ -138,7 +138,7 @@ const key = (t: { x: number; y: number; floor?: number }) => `${t.floor ?? 1},${
 // Tiles that take a rack: the basement's listed tiles beside the shelf, or in a rented room the player's part of the rack rows.
 // An office's are the server rooms' tiles on every floor.
 export function wallTiles(loc: Location, plan?: OfficePlan): Tile[] {
-  if (loc.space === "hall") return officeOf(loc, plan)?.racks ?? [];
+  if (loc.space === "hall") return hallFloor(loc, plan);
   if (loc.space === "office" && plan) return officeFloors(plan.sections).flatMap((floor) => officeRoom({ ...plan, floor }).racks.map((t) => ({ ...t, floor })));
   if (loc.space === "basement") return BASEMENT.racks;
   return hallTiles(loc).filter((t) => t.mine).map(({ x, y, facing }) => ({ x, y, facing }));
@@ -148,10 +148,9 @@ export function rackTiles(loc: Location, racks: Rack[], plan?: OfficePlan): Reco
   const here = racks.filter((r) => r.locationId === loc.id).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   const out: Record<string, Tile> = {}, shelf = loc.space === "basement" ? BASEMENT.shelf : undefined;
   for (const r of here) if (r.model === "shelf" && shelf) out[r.id] = shelf;
-  // An own hall's position numbers run along its rows, so a rack stands where its position is.
+  // An own hall's rack stands on its own tile; a delivered one has none.
   if (loc.space === "hall") {
-    const at = wallTiles(loc, plan);
-    for (const r of here) if (at[r.position - 1]) out[r.id] = at[r.position - 1];
+    for (const r of here) if (r.tile) out[r.id] = r.tile;
     return out;
   }
   const spots = wallTiles(loc, plan), taken = new Set<string>(), valid = new Map(spots.map((t) => [key(t), t]));
@@ -175,7 +174,21 @@ export function shareMates(loc: Location, locations: Location[], racks: Rack[], 
   return Object.fromEntries(mates.slice(0, spots.length).map((r, i) => [r.id, { ...spots[i], facing: mine.facing }]));
 }
 
+// Every tile of a hall's floor area that no fixture covers.
+function hallFloor(loc: Location, plan?: OfficePlan): Tile[] {
+  const o = officeOf(loc, plan);
+  if (!o || !plan?.hall) return [];
+  const { w, h } = hallSize(plan.capacity ?? 0, !!plan.dock), fixed = new Set(fixtureTiles(loc, plan).map(key));
+  return Array.from({ length: w * h }, (_, i) => ({ x: i % w, y: Math.floor(i / w), facing: "s" as Facing })).filter((t) => !fixed.has(key(t)));
+}
+
 export function freeRackTiles(loc: Location, racks: Rack[], plan?: OfficePlan): Tile[] {
+  if (loc.space === "hall" && plan?.hall) {
+    const h = plan.hall, bodies = new Set<string>();
+    for (const t of [...Object.values(rackTiles(loc, racks, plan)), ...customerTiles(loc, plan).map((c) => c.tile), ...h.zones.flatMap(zoneSpots)]) bodies.add(key(t));
+    for (const i of h.items) if (HALL.items[i.kind].layer === "body" && i.area === "hall") for (const p of footprint(i.kind, i, !!plan.dock)) bodies.add(key(p));
+    return hallFloor(loc, plan).filter((t) => !bodies.has(key(t)));
+  }
   const taken = new Set([...Object.values(rackTiles(loc, racks, plan)), ...customerTiles(loc, plan).map((c) => c.tile)].map(key));
   return wallTiles(loc, plan).filter((t) => !taken.has(key(t)));
 }
@@ -222,7 +235,7 @@ export function officeWalk(plan: OfficePlan, seat: Seat): { x: number; y: number
 }
 
 // One office floor; rows are its server rooms' rack rows, fronts to the room.
-interface OfficeRoom { size: RoomSize; fixtures: Record<string, Fixture>; rows: { y: number; x0: number; x1: number }[]; racks: Tile[] }
+export interface OfficeRoom { size: RoomSize; fixtures: Record<string, Fixture>; rows: { y: number; x0: number; x1: number }[]; racks: Tile[] }
 
 function officeRoom(plan: OfficePlan): OfficeRoom {
   const bs = blocks(plan), lobby = bs[0]?.ox ?? 0, floors = officeFloors(plan.sections);
@@ -278,87 +291,84 @@ function officeRoom(plan: OfficePlan): OfficeRoom {
   return { size: { w, h: SECTION_H }, fixtures: f, rows, racks };
 }
 
-// GDD, Own datacenter, In the room. The hall floor is wide enough for a cooling unit per 8 positions along the far wall, beside
-// the loading dock in a Halle, and grows two rows deep per ten positions. The left wall holds the door, the transformer room and
-// the meet-me room; the NOC desk stands on the near row. Rows stay inside the margin: two tiles from the left and far walls,
-// one from the right one and two from the near one.
+// GDD, Own datacenter, In the room. The hall area is wide enough for the dock in a Halle and grows two rows deep per ten
+// positions; the transformer and battery rooms stand on its right side and the NOC room, once built, below its near side.
+// Everything stands on a tile with a facing inside an area.
 export const hallSize = (capacity: number, dock = false): RoomSize => ({
   w: Math.max(16, 4 + 2 * Math.ceil(capacity / 8) + (dock ? 3 : 0)), h: 4 + 2 * Math.max(2, Math.ceil(capacity / 10)),
 });
-export const HALL_MARGIN = { x0: 2, y0: 2, right: 1, bottom: 2 };
 
-export function rowTiles(r: HallRow): Tile[] {
-  const along = r.facing === "n" || r.facing === "s";
-  return Array.from({ length: r.length }, (_, i) => ({ x: r.x + (along ? i : 0), y: r.y + (along ? 0 : i), facing: r.facing }));
-}
+export interface Pt { x: number; y: number }
+export interface Rect { x: number; y: number; w: number; h: number }
+// A rectangle of the location's scene: what it accepts and where its passages lead. A passage tile lies in this area and joins
+// the facing tile of the area `to`.
+export interface Area { id: AreaId; rect: Rect; floor: "raised" | "concrete" | "epoxy" | "office" | "outdoor"; accepts: string[]; passages: { tile: Pt; to: AreaId }[] }
 
-// The cooling slots: two tiles each along the far wall, left to right short of the dock, then down the right wall from the
-// second row to the near margin. A unit stored by slot index stays on its slot when the room grows.
-export function coolingSlots(size: RoomSize, dock = false): Fixture[] {
-  const far = Array.from({ length: Math.floor((size.w - 4 - (dock ? 3 : 0)) / 2) }, (_, i) => ({ x: 3 + 2 * i, y: 0, w: 2 }));
-  const right = Array.from({ length: Math.floor((size.h - 4) / 2) }, (_, i) => ({ x: size.w - 1, y: 2 + 2 * i, h: 2 }));
-  return [...far, ...right];
-}
+const accepting = (id: AreaId): string[] => [...(id === "hall" ? ["rack", "zone"] : []), ...(Object.keys(HALL.items) as HallItemKind[]).filter((k) => HALL.items[k].areas.includes(id))];
 
-const step = (t: { x: number; y: number }, f: HallRow["facing"], k: number) => ({ x: t.x + (f === "e" ? k : f === "w" ? -k : 0), y: t.y + (f === "s" ? k : f === "n" ? -k : 0) });
-// The aisle lines of a row: the tiles one step in front of its racks and one step behind them.
-export const rowFront = (r: HallRow) => rowTiles(r).map((t) => step(t, r.facing, 1));
-export const rowBack = (r: HallRow) => rowTiles(r).map((t) => step(t, r.facing, -1));
-
-// GDD, Own datacenter, Cooling: whether each position (index = position - 1) is covered. Units take their 8 nearest free
-// positions in slot order, ties by position number; every position of a row whose front aisle is another row's back aisle runs hot.
-export function hallCoverage(hall: OwnHall, size: RoomSize, dock: boolean, perUnit: number): boolean[] {
-  const tiles = hall.rows.flatMap(rowTiles), slots = coolingSlots(size, dock), covered = tiles.map(() => false);
-  for (const slot of [...hall.coolers].sort((a, b) => a - b)) {
-    const c = slots[slot];
-    if (!c) continue;
-    const cx = c.x + ((c.w ?? 1) - 1) / 2, cy = c.y + ((c.h ?? 1) - 1) / 2;
-    tiles.map((t, i) => ({ i, d: (t.x - cx) ** 2 + (t.y - cy) ** 2 })).filter((e) => !covered[e.i]).sort((a, b) => a.d - b.d || a.i - b.i)
-      .slice(0, perUnit).forEach((e) => { covered[e.i] = true; });
+// The areas of a hall from its size; the NOC room exists once built.
+export function areasOf(size: RoomSize, noc: boolean): Area[] {
+  const { w: W, h: H } = size, S = Math.ceil(H / 2), A = HALL.annex.w;
+  const out: Area[] = [
+    { id: "hall", rect: { x: 0, y: 0, w: W, h: H }, floor: "raised", accepts: accepting("hall"), passages: [{ tile: { x: W - 1, y: 1 }, to: "xfmr" }, { tile: { x: W - 1, y: S + 1 }, to: "battery" }] },
+    { id: "xfmr", rect: { x: W, y: 0, w: A, h: S }, floor: "concrete", accepts: accepting("xfmr"), passages: [{ tile: { x: W, y: 1 }, to: "hall" }] },
+    { id: "battery", rect: { x: W, y: S, w: A, h: H - S }, floor: "epoxy", accepts: accepting("battery"), passages: [{ tile: { x: W, y: S + 1 }, to: "hall" }] },
+  ];
+  if (noc) {
+    out.push({ id: "noc", rect: { x: 0, y: H, w: HALL.noc.w, h: HALL.noc.d }, floor: "office", accepts: accepting("noc"), passages: [{ tile: { x: 3, y: H }, to: "hall" }] });
+    out[0].passages.push({ tile: { x: 3, y: H - 1 }, to: "noc" });
   }
-  let start = 0;
-  for (const r of hall.rows) {
-    const front = new Set(rowFront(r).map(tk));
-    if (hall.rows.some((q) => q !== r && rowBack(q).some((t) => front.has(tk(t))))) for (let i = 0; i < r.length; i++) covered[start + i] = false;
-    start += r.length;
-  }
-  return covered;
+  return out;
 }
-const tk = (t: { x: number; y: number }) => `${t.x},${t.y}`;
 
-function hallRoom(hall: OwnHall, capacity: number, dock: boolean): OfficeRoom {
-  const size = hallSize(capacity, dock), f: Record<string, Fixture> = {};
-  f.door = { x: 0, y: size.h - 3 };
+// The areas of a hall location in scene tiles; plan-site adds the yard here.
+export function siteAreas(s: GameState, loc: Location): Area[] {
+  const p = s.properties.find((x) => x.hall?.locationId === loc.id);
+  return p?.hall ? areasOf(hallSize(hallCapacity(p), isHalle(p.buildingId)), p.hall.noc) : [];
+}
+
+export const areaAt = (areas: Area[], p: Pt): Area | undefined => areas.find((a) => p.x >= a.rect.x && p.y >= a.rect.y && p.x < a.rect.x + a.rect.w && p.y < a.rect.y + a.rect.h);
+
+// Scene tiles an object covers. w runs along its front, d deep; facing e or w swaps the axes. x and y are area-local, so origin is the area's corner.
+export function footprint(kind: HallItemKind, item: Pick<HallItem, "x" | "y" | "facing">, isHalleBuilding: boolean, origin: Pt = { x: 0, y: 0 }): Pt[] {
+  const spec = HALL.items[kind], w = typeof spec.w === "object" ? spec.w[isHalleBuilding ? "halle" : "office"] : spec.w;
+  const alongX = item.facing === "n" || item.facing === "s", fw = alongX ? w : spec.d, fh = alongX ? spec.d : w;
+  return Array.from({ length: fw * fh }, (_, i) => ({ x: origin.x + item.x + (i % fw), y: origin.y + item.y + Math.floor(i / fw) }));
+}
+// The tile in front of a tile and the one behind it.
+export const intake = (t: Pt & { facing: Facing }): Pt => stepTile(t, t.facing, 1);
+export const exhaust = (t: Pt & { facing: Facing }): Pt => stepTile(t, t.facing, -1);
+
+export function hallRoom(hall: OwnHall, capacity: number, dock: boolean): OfficeRoom {
+  const hs = hallSize(capacity, dock), f: Record<string, Fixture> = {}, areas = areasOf(hs, hall.noc), { w: W, h: H } = hs;
+  f.door = { x: 0, y: H - 3 };
   f.switch = { ...f.door, kind: "switch" };
-  f.transformer = { x: 0, y: 1, kind: "xfmrdoor" };
   f.meetme = { x: 0, y: 3, kind: "meetmedoor" };
   f.extinguisher = { x: 0, y: 5, kind: "extinguisher" };
   f.camera = { x: 1, y: 0, kind: "camera" };
-  f.plan = { x: 0, y: size.h - 2, kind: "planboard" };
-  f.noc = { x: 6, y: size.h - 1, w: 3, kind: "noc" };
-  if (dock) f.dock = { x: size.w - 4, y: 0, w: 3, kind: "dock" };
-  const slots = coolingSlots(size, dock);
-  hall.coolers.forEach((slot) => { if (slots[slot]) f[`cooling${slot}`] = { ...slots[slot], kind: "cooling" }; });
-  const racks = hall.rows.flatMap(rowTiles);
-  // walkways() reads a row's front one tile below its y, so a row facing north sits two above its rack tiles.
-  const rows = hall.rows.filter((r) => r.facing === "n" || r.facing === "s").map((r) => ({ y: r.facing === "s" ? r.y : r.y - 2, x0: r.x, x1: r.x + r.length - 1 }));
-  return { size, fixtures: f, rows, racks };
+  f.plan = { x: 0, y: H - 2, kind: "planboard" };
+  f.mainboard = { x: W + 1, y: 0, kind: "mainboard" };
+  // The first desk of the hall stands where the NOC counter used to be drawn.
+  const desk = hall.items.find((i) => i.kind === "nocdesk" && i.area === "hall");
+  if (desk) f.noc = { x: desk.x, y: desk.y, w: 3, kind: "noc" };
+  if (dock) f.dock = { x: W - 4, y: 0, w: 3, kind: "dock" };
+  // The room draws a cooling unit as a fixture on the tiles of each CRAC item.
+  for (const i of hall.items) if (i.kind === "crac") { const along = i.facing === "n" || i.facing === "s"; f[`cooling${i.id}`] = { x: i.x, y: i.y, ...(along ? { w: 2 } : { h: 2 }), kind: "cooling" }; }
+  const size = { w: Math.max(...areas.map((a) => a.rect.x + a.rect.w)), h: Math.max(...areas.map((a) => a.rect.y + a.rect.h)) };
+  return { size, fixtures: f, rows: [], racks: [] };
 }
 
-// The positions colocation customers hold, with the tile each stands on.
+// Spots with a body in a hall's candidate or current layout: customers' tiles, the exchange and zone tiles.
 export function customerTiles(loc: Location, plan?: OfficePlan): { id: string; name: string; tile: Tile }[] {
   if (loc.space !== "hall" || !plan?.hall) return [];
-  const at = wallTiles(loc, plan);
   const h = plan.hall;
-  // A cage customer stands on every position of its cage; the exchange on its own.
-  const held = h.customers.flatMap((c) => customerPositions(h, c).map((p) => ({ id: c.id, name: c.name, p })));
-  if (h.exchange?.position) held.push({ id: h.exchange.id, name: exchangeById(h.exchange.id)?.name ?? h.exchange.id, p: h.exchange.position });
-  return held.flatMap(({ id, name, p }) => (at[p - 1] ? [{ id, name, tile: at[p - 1] }] : []));
+  const held = h.customers.flatMap((c) => customerSpots(h, c).map((tile) => ({ id: c.id, name: c.name, tile })));
+  if (h.exchange?.tile) held.push({ id: h.exchange.id, name: exchangeById(h.exchange.id)?.name ?? h.exchange.id, tile: h.exchange.tile });
+  return held;
 }
 
 // The tiles a zone covers, with the zone's id and kind.
 export function zoneTiles(loc: Location, plan?: OfficePlan): { id: string; kind: "colo" | "cage" | "meetme"; tiles: Tile[] }[] {
   if (loc.space !== "hall" || !plan?.hall) return [];
-  const at = wallTiles(loc, plan), h = plan.hall;
-  return h.zones.map((z) => ({ id: z.id, kind: z.kind, tiles: zonePositions(h, z).flatMap((p) => (at[p - 1] ? [at[p - 1]] : [])) }));
+  return plan.hall.zones.map((z) => ({ id: z.id, kind: z.kind, tiles: zoneSpots(z) }));
 }

@@ -1,21 +1,28 @@
-// GDD, Own datacenter: what the player lays out in a hall of their own.
-import { coolingSlots, fixtures, fixtureTiles, HALL_MARGIN, hallSize, officePlan, rowBack, rowFront, rowTiles } from "../20-world/layout";
+// GDD, Own datacenter: what the player lays out in a hall of their own. Racks, zones and items stand on tiles with a facing
+// inside the location's areas; one validator checks a whole candidate layout and one action applies any edit.
+import { areaAt, areasOf, footprint, hallRoom, hallSize, intake, type Area, type Facing, type Pt, type Tile } from "../20-world/layout";
 import { euro } from "../00-core/money";
 import { hashRng, rand } from "../00-core/rng";
 import { carriersAt, EXCHANGES, exchangeAt, type Carrier } from "../10-catalog/network";
-import { DATACENTERS } from "../20-world/datacenters";
-import { customerPositions, HALL, hallCapacity, isHalle, zonePositions, type HallUpgrade } from "../20-world/properties";
+import { DATACENTERS, RACK_MODELS } from "../20-world/datacenters";
+import { customerSpots, HALL, hallCapacity, hallKw, hallSpots, isHalle, stepTile, zoneSpots } from "../20-world/properties";
 import { cents } from "../45-billing/billing";
-import type { GameState, Hall, HallRow, HallZone, Location, Property, Rack } from "../50-state";
+import type { AreaId, GameState, Hall, HallItem, HallItemKind, HallZone, Location, Property, Rack, RackModel } from "../50-state";
 import { yearOf } from "../00-core/time";
-import { freeJack } from "../60-infra/panels";
+import { freeJack, jackRoles, panelOf } from "../60-infra/panels";
+import { freePositions, roomPower } from "../60-infra/status";
+import { t } from "../../i18n/en";
 import type { SimEvent } from "../88-tick/tick";
-import type { ActionResult } from "./hardware";
+import { buyRack, sellRack, type ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const pay = (s: GameState, key: string, params: Record<string, string | number>, amount: number) => {
   s.cash = cents(s.cash - amount);
   s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key, params, amount: -amount }];
+};
+const refund = (s: GameState, key: string, params: Record<string, string | number>, amount: number) => {
+  s.cash = cents(s.cash + amount);
+  s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key, params, amount }];
 };
 const tileKey = (t: { x: number; y: number }) => `${t.x},${t.y}`;
 
@@ -23,221 +30,336 @@ export function hallAt(s: GameState, locationId: string): { p: Property; hall: H
   const p = s.properties.find((x) => x.hall?.locationId === locationId), loc = s.locations.find((l) => l.id === locationId);
   return p?.hall && loc ? { p, hall: p.hall, loc } : null;
 }
-
 type HallAt = NonNullable<ReturnType<typeof hallAt>>;
-// Positions run along the rows in order, so a change to the rows renumbers the racks and customers. A position keeps its
-// index in its row, except in the row `moved` gives, which maps old indexes to new ones.
-function relayRows(s: GameState, h: HallAt, rows: HallRow[], moved?: { id: string; to: (i: number) => number }): void {
-  const old = h.hall.rows, oldStart = new Map<string, number>();
-  old.reduce((n, r) => (oldStart.set(r.id, n), n + r.length), 0);
-  const newStart = new Map<string, number>();
-  rows.reduce((n, r) => (newStart.set(r.id, n), n + r.length), 0);
-  const renumber = (position: number) => {
-    const r = old.find((x) => position > oldStart.get(x.id)! && position <= oldStart.get(x.id)! + x.length);
-    if (!r) return position;
-    const i = position - oldStart.get(r.id)! - 1;
-    return newStart.get(r.id)! + 1 + (moved?.id === r.id ? moved.to(i) : i);
-  };
-  for (const r of s.racks) if (r.locationId === h.loc.id) r.position = renumber(r.position);
-  h.hall.customers = h.hall.customers.map((c) => ({ ...c, position: renumber(c.position) }));
-  if (h.hall.exchange?.position) h.hall.exchange = { ...h.hall.exchange, position: renumber(h.hall.exchange.position) };
-  // Zones are kept by row and index, so only the moved row's indexes change.
-  if (moved) h.hall.zones = h.hall.zones.map((z) => (z.rowId === moved.id ? { ...z, from: moved.to(z.from) } : z));
-  h.hall.rows = rows;
-  h.loc.positions = rows.reduce((n, r) => n + r.length, 0);
-}
-
-// The player's racks standing on a row, with the index each holds in it.
-function rowRacks(s: GameState, h: HallAt, rowId: string) {
-  const start = h.hall.rows.slice(0, h.hall.rows.findIndex((r) => r.id === rowId)).reduce((n, r) => n + r.length, 0), len = h.hall.rows.find((r) => r.id === rowId)?.length ?? 0;
-  const inRow = (p: number) => p > start && p <= start + len;
-  // Customers, a cage's every position and the exchange's rack count as standing on the row.
-  const sold = [...h.hall.customers.flatMap((c) => customerPositions(h.hall, c)), ...(h.hall.exchange?.position ? [h.hall.exchange.position] : [])].filter(inRow).map((position) => ({ position }));
-  return { racks: s.racks.filter((x) => x.locationId === h.loc.id && inRow(x.position)), customers: sold, start };
-}
-
-// Whether a row holds a rack or a customer.
-export function rowInUse(s: GameState, locationId: string, rowId: string): boolean {
-  const h = hallAt(s, locationId);
-  if (!h || !h.hall.rows.some((r) => r.id === rowId)) return false;
-  const u = rowRacks(s, h, rowId);
-  return u.racks.length > 0 || u.customers.length > 0;
-}
 
 const hasDevices = (s: GameState, rackId: string) => s.devices.some((d) => d.rackId === rackId);
 // A rack with devices goes dark while it is moved.
 export const darken = (s: GameState, rack: Rack): void => { if (hasDevices(s, rack.id)) rack.arriveAt = s.hour + HALL.moveHours; };
 
-const inBounds = (t: { x: number; y: number }, size: { w: number; h: number }) => t.x >= 0 && t.y >= 0 && t.x < size.w && t.y < size.h;
+// ---- Layout: the part of a hall the player edits ----
 
-// Why a row cannot be laid, or null. Without an id it is a new row; with one, the row moves, turns or resizes.
-export function layRowError(s: GameState, locationId: string, row: Omit<HallRow, "id"> & { id?: string }): string | null {
-  const h = hallAt(s, locationId);
-  if (!h) return "error.unknownLocation";
-  if (!["n", "e", "s", "w"].includes(row.facing) || !Number.isInteger(row.length) || row.length < 1) return "error.badRow";
-  const current = row.id ? h.hall.rows.find((r) => r.id === row.id) : undefined;
-  if (row.id && !current) return "error.unknownRow";
-  const capacity = hallCapacity(h.p), dock = isHalle(h.p.buildingId), size = hallSize(capacity, dock), next: HallRow = { ...row, id: row.id ?? "new" };
-  const others = h.hall.rows.filter((r) => r.id !== next.id), taken = new Set(others.flatMap(rowTiles).map(tileKey));
-  const inside = (t: { x: number; y: number }) => t.x >= HALL_MARGIN.x0 && t.y >= HALL_MARGIN.y0 && t.x < size.w - HALL_MARGIN.right && t.y < size.h - HALL_MARGIN.bottom;
-  const tiles = rowTiles(next);
-  if (!tiles.every(inside)) return "error.rowOutside";
-  if (tiles.some((t) => taken.has(tileKey(t)))) return "error.rowOverlap";
-  if (others.reduce((n, r) => n + r.length, 0) + next.length > capacity) return "error.rowsFull";
-  const plan = officePlan(s, h.loc), blocked = new Set(fixtureTiles(h.loc, plan).map(tileKey));
-  const door = fixtures(h.loc, plan).door;
-  blocked.add(tileKey({ x: door.x + 1, y: door.y }));
-  if (tiles.some((t) => blocked.has(tileKey(t)))) return "error.occupied";
-  // Each row needs a free aisle line in front and behind; rows may share one.
-  const aisle = (r: HallRow) => [...rowFront(r), ...rowBack(r)];
-  const mine = new Set(tiles.map(tileKey)), theirs = new Set(others.flatMap(rowTiles).map(tileKey));
-  if (aisle(next).some((t) => !inBounds(t, size) || theirs.has(tileKey(t)))) return "error.noAisle";
-  if (others.some((r) => aisle(r).some((t) => mine.has(tileKey(t))))) return "error.noAisle";
-  if (current) {
-    const u = rowRacks(s, h, current.id), same = rowTiles(current).map(tileKey);
-    const resize = next.facing === current.facing && next.length !== current.length;
-    if (resize) {
-      // Lengthening or shortening keeps every tile where it is, so nothing may stand on a removed one.
-      const keep = new Set(tiles.map(tileKey));
-      const zoned = h.hall.zones.filter((z) => z.rowId === current.id).flatMap((z) => zonePositions(h.hall, z));
-      const standing = [...u.racks.map((x) => x.position), ...u.customers.map((c) => c.position), ...zoned];
-      if (standing.some((pos) => !keep.has(same[pos - u.start - 1])) || (u.customers.length && next.length < current.length)) return "error.rowInUse";
-    } else if ((next.x !== current.x || next.y !== current.y || next.facing !== current.facing) && u.customers.length) return "error.rowInUse";
+// Racks by id with their tile (null while delivered), the placed items, the zones and whether the NOC room stands.
+export interface Layout { racks: Record<string, Tile | null>; items: HallItem[]; zones: HallZone[]; noc: boolean }
+export interface LayoutError { key: string; at: Pt | null }
+
+export const currentLayout = (s: GameState, h: HallAt): Layout => ({
+  racks: Object.fromEntries(s.racks.filter((r) => r.locationId === h.loc.id).map((r) => [r.id, r.tile ?? null])),
+  items: h.hall.items, zones: h.hall.zones, noc: h.hall.noc,
+});
+
+interface Ctx { h: HallAt; areas: Area[]; halle: boolean; fixed: Set<string>; entry: Pt; size: { w: number; h: number } }
+function ctxOf(h: HallAt, noc: boolean): Ctx {
+  const halle = isHalle(h.p.buildingId), cap = hallCapacity(h.p), size = hallSize(cap, halle);
+  const room = hallRoom({ ...h.hall, noc }, cap, halle), areas = areasOf(size, noc), fixed = new Set<string>();
+  for (const [id, f] of Object.entries(room.fixtures)) {
+    if (f.kind === "noc" || f.kind === "cooling") continue;
+    for (let i = 0; i < (f.w ?? 1) * (f.h ?? 1); i++) fixed.add(tileKey({ x: f.x + (i % (f.w ?? 1)), y: f.y + Math.floor(i / (f.w ?? 1)) }));
+    if (id === "door" || f.kind === "meetmedoor") fixed.add(tileKey({ x: f.x + 1, y: f.y }));
   }
+  for (const a of areas) for (const p of a.passages) fixed.add(tileKey(p.tile));
+  const door = room.fixtures.door;
+  return { h, areas, halle, fixed, entry: { x: door.x + 1, y: door.y }, size };
+}
+
+const areaOf = (c: Ctx, id: AreaId) => c.areas.find((a) => a.id === id);
+const WALL_KINDS = new Set<HallItemKind>(["screen"]);
+const layerOf = (kind: HallItemKind) => HALL.items[kind].layer;
+
+// Scene tiles an item covers; a wall item runs w tiles down its area's left wall.
+function itemPts(c: Ctx, i: HallItem): Pt[] {
+  const a = areaOf(c, i.area);
+  if (!a) return [];
+  if (WALL_KINDS.has(i.kind)) return Array.from({ length: HALL.items[i.kind].w as number }, (_, k) => ({ x: a.rect.x + i.x, y: a.rect.y + i.y + k }));
+  return footprint(i.kind, i, c.halle, a.rect);
+}
+
+// The tiles one step in front of an object's footprint, as wide as the footprint.
+function frontOf(pts: Pt[], facing: Facing): Pt[] {
+  const edge = facing === "s" ? Math.max(...pts.map((p) => p.y)) : facing === "n" ? Math.min(...pts.map((p) => p.y)) : facing === "e" ? Math.max(...pts.map((p) => p.x)) : Math.min(...pts.map((p) => p.x));
+  const along = facing === "n" || facing === "s";
+  return pts.filter((p) => (along ? p.y : p.x) === edge).map((p) => stepTile(p, facing, 1));
+}
+
+interface Body { ref: string; pts: Pt[]; front: Pt[]; kind: string }
+
+// Everything with a body in the layout: racks, zone tiles, customers and the exchange off their zones, and the body items.
+function bodiesOf(c: Ctx, l: Layout): Body[] {
+  const h = c.h.hall, out: Body[] = [];
+  for (const [id, t] of Object.entries(l.racks)) if (t) out.push({ ref: `rack:${id}`, pts: [t], front: [intake(t)], kind: "rack" });
+  const zoneTiles = new Set(l.zones.flatMap(zoneSpots).map(tileKey));
+  for (const z of l.zones) for (const t of zoneSpots(z)) out.push({ ref: `zone:${z.id}`, pts: [t], front: [intake(t)], kind: "zone" });
+  for (const x of [...h.customers.flatMap((cu) => customerSpots(h, cu)), ...(h.exchange?.tile ? [h.exchange.tile] : [])])
+    if (!zoneTiles.has(tileKey(x))) out.push({ ref: "locked", pts: [x], front: [intake(x)], kind: "rack" });
+  for (const i of l.items) if (layerOf(i.kind) === "body") { const pts = itemPts(c, i); out.push({ ref: `item:${i.id}`, pts, front: frontOf(pts, i.facing), kind: i.kind }); }
+  return out;
+}
+
+// Tiles reachable on foot from the tile inside the entry door, with each tile's predecessor. Passages join areas.
+function walk(c: Ctx, blocked: Set<string>, from: Pt): Map<string, string | null> {
+  const seen = new Map<string, string | null>([[tileKey(from), null]]), queue: Pt[] = [from];
+  const link = (a: Pt, b: Pt, aa: Area, ba: Area) => aa.passages.some((p) => p.to === ba.id && tileKey(p.tile) === tileKey(a)) && ba.passages.some((p) => p.to === aa.id && tileKey(p.tile) === tileKey(b));
+  for (let i = 0; i < queue.length; i++) {
+    const p = queue[i], pa = areaAt(c.areas, p)!;
+    for (const f of ["n", "e", "s", "w"] as Facing[]) {
+      const q = stepTile(p, f), qa = areaAt(c.areas, q);
+      if (!qa || seen.has(tileKey(q)) || blocked.has(tileKey(q)) || (qa !== pa && !link(p, q, pa, qa))) continue;
+      seen.set(tileKey(q), tileKey(p));
+      queue.push(q);
+    }
+  }
+  return seen;
+}
+
+const blockedOf = (c: Ctx, bodies: Body[]): Set<string> => new Set([...bodies.flatMap((b) => b.pts.map(tileKey)), ...[...c.fixed].filter((k) => !isPassageOrInside(c, k))]);
+const isPassageOrInside = (c: Ctx, k: string): boolean => {
+  const [x, y] = k.split(",").map(Number);
+  return c.areas.some((a) => a.passages.some((p) => p.tile.x === x && p.tile.y === y)) || (x === c.entry.x && y === c.entry.y) || (x === 1 && y === 3);
+};
+
+// The way on foot between two tiles of the hall as it stands, tile by tile, or null.
+export function hallPath(s: GameState, locationId: string, from: Pt, to: Pt): Pt[] | null {
+  const h = hallAt(s, locationId);
+  if (!h) return null;
+  const c = ctxOf(h, h.hall.noc), seen = walk(c, blockedOf(c, bodiesOf(c, currentLayout(s, h))), from);
+  if (!seen.has(tileKey(to))) return null;
+  const path: Pt[] = [];
+  for (let k: string | null = tileKey(to); k; k = seen.get(k) ?? null) { const [x, y] = k.split(",").map(Number); path.unshift({ x, y }); }
+  return path;
+}
+
+// Decision 3, rules 1 to 7, over a whole candidate layout: first failure wins.
+export function hallLayoutError(s: GameState, locationId: string, layout?: Layout): LayoutError | null {
+  const h = hallAt(s, locationId);
+  if (!h) return { key: "error.unknownLocation", at: null };
+  const l = layout ?? currentLayout(s, h), c = ctxOf(h, l.noc), bodies = bodiesOf(c, l);
+  const err = (key: string, at: Pt | null): LayoutError => ({ key, at });
+  // 1. Every tile inside an area that takes the kind.
+  const inArea = (pts: Pt[], kind: string, area: AreaId): Pt | null => pts.find((p) => { const a = areaAt(c.areas, p); return !a || a.id !== area || !a.accepts.includes(kind); }) ?? null;
+  for (const b of bodies) if (b.ref !== "locked") { const bad = inArea(b.pts, b.kind, b.ref.startsWith("item:") ? l.items.find((i) => `item:${i.id}` === b.ref)!.area : "hall"); if (bad) return err("error.wrongRoom", bad); }
+  for (const i of l.items) if (!areaOf(c, i.area)) return err("error.wrongRoom", null);
+  for (const i of l.items) if (layerOf(i.kind) !== "body") { const bad = inArea(itemPts(c, i), i.kind, i.area); if (bad) return err("error.wrongRoom", bad); }
+  for (const i of l.items) if (WALL_KINDS.has(i.kind) && i.x !== 0) return err("error.wrongRoom", itemPts(c, i)[0] ?? null);
+  // 2 and 3. Bodies overlap neither each other, zone tiles, fixtures, door tiles nor locked spots; one vent, one containment and one wall item per tile.
+  const zoneAt = new Map(l.zones.flatMap((z) => zoneSpots(z).map((t) => [tileKey(t), z] as const)));
+  const seated = new Set<string>(), owner = new Map<string, string>();
+  const locked = new Set<string>([...h.hall.customers.flatMap((cu) => customerSpots(h.hall, cu)), ...(h.hall.exchange?.tile ? [h.hall.exchange.tile] : [])].map(tileKey));
+  for (const b of bodies) for (const p of b.pts) {
+    const k = tileKey(p), z = zoneAt.get(k);
+    if (c.fixed.has(k)) return err("error.occupied", p);
+    if (b.kind === "zone") { if (owner.has(k)) return err("error.occupied", p); owner.set(k, b.ref); continue; }
+    if (b.kind === "rack" && b.ref.startsWith("rack:") && z) {
+      if (z.kind !== "meetme" || seated.has(k) || locked.has(k)) return err("error.occupied", p);
+      seated.add(k);
+      continue;
+    }
+    if (b.ref === "locked") continue;
+    if (owner.has(k) || (z && b.kind !== "zone")) return err("error.occupied", p);
+    owner.set(k, b.ref);
+  }
+  const bodyAt = new Set([...owner.keys(), ...seated]);
+  const stacked = new Set<string>();
+  for (const i of l.items) {
+    if (layerOf(i.kind) === "body") continue;
+    for (const p of itemPts(c, i)) {
+      const k = `${i.kind}@${tileKey(p)}`;
+      if (stacked.has(k) || (layerOf(i.kind) !== "wall" && (bodyAt.has(tileKey(p)) || c.fixed.has(tileKey(p)) || zoneAt.has(tileKey(p))))) return err("error.occupied", p);
+      stacked.add(k);
+    }
+  }
+  // 4. Clearance: the tile in front of every rack, zone tile and body item stays inside its area and free of bodies.
+  const solid = new Set([...bodyAt, ...c.fixed].filter((k) => !isPassageOrInside(c, k)));
+  for (const b of bodies) for (const f of b.front) {
+    const a = areaAt(c.areas, b.pts[0]), fa = areaAt(c.areas, f);
+    if (!fa || fa !== a || solid.has(tileKey(f))) return err("error.blocked", f);
+  }
+  // 5. Every clearance tile has a way to the entry door.
+  const seen = walk(c, solid, c.entry);
+  for (const b of bodies) for (const f of b.front) if (!seen.has(tileKey(f))) return err("error.noPath", f);
+  // 6. Rack spots.
+  if (hallSpots(h.hall, l.racks, l.zones) > hallCapacity(h.p)) return err("error.hallFull", null);
+  // 7. Limits.
+  const n = (k: HallItemKind) => l.items.filter((i) => i.kind === k).length, floors = new Set(h.p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size;
+  if (n("transformer") > HALL.items.transformer.perFloor! * floors || n("switchgear") > HALL.items.switchgear.max! || n("screen") > HALL.items.screen.max! || l.zones.filter((z) => z.kind === "meetme").length > 1) return err("error.limit", null);
   return null;
 }
 
-// Places a new row, or moves, turns or resizes one given by id; its racks go with it and are dark for two hours.
-export function layRow(s: GameState, locationId: string, row: Omit<HallRow, "id"> & { id?: string }): ActionResult {
-  const error = layRowError(s, locationId, row);
-  if (error) return fail(error);
-  const h = hallAt(s, locationId)!, next: HallRow = { ...row, id: row.id ?? `row${s.nextId}` };
-  if (!row.id) {
-    s.nextId++;
-    relayRows(s, h, [...h.hall.rows, next]);
-    return { ok: true, id: next.id };
+// Puts an item on the first spot of an area the validator accepts. Used by the refit and the old-save load.
+// ponytail: row-major scan; an area too full for it takes the item on its corner anyway so the power it gives is not lost.
+export function packArea(s: GameState, locationId: string, kind: HallItemKind, area: AreaId, price: number): HallItem {
+  const h = hallAt(s, locationId)!, c = ctxOf(h, h.hall.noc), a = areaOf(c, area)!, l = currentLayout(s, h);
+  const make = (x: number, y: number, facing: Facing): HallItem => ({ id: `item${s.nextId}`, kind, area, x, y, facing, price, builtAt: s.hour });
+  let item = make(0, 0, "s");
+  search: for (let y = 0; y < a.rect.h; y++) for (let x = 0; x < a.rect.w; x++) for (const f of ["s", "n", "e", "w"] as Facing[]) {
+    const cand = make(x, y, f);
+    if (!hallLayoutError(s, locationId, { ...l, items: [...l.items, cand] })) { item = cand; break search; }
   }
-  const current = h.hall.rows.find((r) => r.id === row.id)!, u = rowRacks(s, h, row.id);
-  const resize = next.facing === current.facing && next.length !== current.length;
-  const moves = !resize && (next.x !== current.x || next.y !== current.y || next.facing !== current.facing);
-  const cur = rowTiles(current), now = rowTiles(next);
-  // A resize keeps each tile; a move keeps each index.
-  const to = resize ? (i: number) => now.findIndex((t) => tileKey(t) === tileKey(cur[i])) : (i: number) => i;
-  const moving = u.racks;
-  relayRows(s, h, h.hall.rows.map((r) => (r.id === next.id ? next : r)), { id: next.id, to });
-  if (moves) for (const x of moving) darken(s, x);
-  return { ok: true, id: next.id };
+  s.nextId++;
+  h.hall.items = [...h.hall.items, item];
+  return item;
 }
 
-export function removeRowError(s: GameState, locationId: string, rowId: string): string | null {
+// ---- Edits ----
+
+type At = { x: number; y: number; facing: Facing; area?: AreaId };
+export type HallPlace = At & ({ kind: "rack"; model?: RackModel; rackId?: string } | { kind: HallItemKind } | { kind: "zone"; zone: HallZone["kind"]; length: number } | { kind: "noc" });
+export interface HallEdit {
+  place?: HallPlace[];
+  // ref is "rack:<id>", "item:<id>" or "zone:<id>"; x and y are local to the item's area.
+  move?: (At & { ref: string })[];
+  remove?: string[];
+}
+
+export const fenceCost = (z: Pick<HallZone, "kind" | "length">): number => (z.kind === "cage" ? z.length * HALL.zones.cage.perPosition : z.kind === "meetme" ? HALL.zones.meetme.price : 0);
+const FACINGS = ["n", "e", "s", "w"];
+const rackPrice = (model: RackModel) => RACK_MODELS.find((m) => m.id === model)?.price ?? 0;
+
+// The tile of a rack on a meet-me zone takes the zone's facing.
+const settle = (zones: HallZone[], a: At): Tile => {
+  const z = zones.find((q) => q.kind === "meetme" && zoneSpots(q).some((t) => t.x === a.x && t.y === a.y));
+  return { x: a.x, y: a.y, facing: z ? z.facing : a.facing };
+};
+
+interface Plan { layout: Layout; cost: number; sell: string[]; refunds: number; buy: { id: string; model: RackModel; tile: Tile }[]; newItems: HallItem[]; newZones: HallZone[]; building: boolean; moved: string[]; removedItems: HallItem[]; removedZones: HallZone[] }
+
+// Builds the layout an edit would give, or the reason it cannot.
+function planOf(s: GameState, h: HallAt, edit: HallEdit): Plan | LayoutError {
+  const l = currentLayout(s, h), racks = { ...l.racks };
+  let items = [...l.items], zones = [...l.zones], noc = l.noc, cost = 0, refunds = 0;
+  const plan: Plan = { layout: l, cost: 0, sell: [], refunds: 0, buy: [], newItems: [], newZones: [], building: false, moved: [], removedItems: [], removedZones: [] };
+  const bad = (key: string): LayoutError => ({ key, at: null });
+  for (const ref of edit.remove ?? []) {
+    const [kind, id] = ref.split(":");
+    if (kind === "rack") {
+      if (!(id in racks)) return bad("error.unknownRack");
+      if (hasDevices(s, id)) return bad("error.notEmpty");
+      delete racks[id]; plan.sell.push(id);
+    } else if (kind === "item") {
+      const i = items.find((x) => x.id === id);
+      if (!i) return bad("error.unknownItem");
+      items = items.filter((x) => x !== i); plan.removedItems.push(i); refunds += i.price * HALL.refund;
+    } else if (kind === "zone") {
+      const z = zones.find((x) => x.id === id);
+      if (!z) return bad("error.unknownZone");
+      zones = zones.filter((x) => x !== z); plan.removedZones.push(z); refunds += fenceCost(z) * HALL.zones.refund;
+    } else return bad("error.unknownItem");
+  }
+  for (const m of edit.move ?? []) {
+    const [kind, id] = m.ref.split(":");
+    if (!FACINGS.includes(m.facing)) return bad("error.badZone");
+    if (kind === "rack") {
+      if (!(id in racks)) return bad("error.unknownRack");
+      racks[id] = settle(zones, m); plan.moved.push(m.ref);
+    } else if (kind === "item") {
+      if (!items.some((x) => x.id === id)) return bad("error.unknownItem");
+      items = items.map((x) => (x.id === id ? { ...x, x: m.x, y: m.y, facing: m.facing, area: m.area ?? x.area } : x)); plan.moved.push(m.ref);
+    } else if (kind === "zone") {
+      if (!zones.some((x) => x.id === id)) return bad("error.unknownZone");
+      zones = zones.map((x) => (x.id === id ? { ...x, x: m.x, y: m.y, facing: m.facing } : x)); plan.moved.push(m.ref);
+    } else return bad("error.unknownItem");
+  }
+  let n = 0;
+  for (const p of edit.place ?? []) {
+    if (!FACINGS.includes(p.facing) || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return bad("error.badZone");
+    if (p.kind === "rack") {
+      if (p.rackId) {
+        if (!(p.rackId in racks) || racks[p.rackId]) return bad("error.locked");
+        racks[p.rackId] = settle(zones, p);
+      } else {
+        const model = p.model;
+        if (!model || !RACK_MODELS.some((m) => m.id === model)) return bad("error.unknownRackModel");
+        const id = `new${n++}`, tile = settle(zones, p);
+        racks[id] = tile; plan.buy.push({ id, model, tile }); cost += rackPrice(model);
+      }
+    } else if (p.kind === "zone") {
+      if (!["colo", "cage", "meetme"].includes(p.zone) || !Number.isInteger(p.length) || p.length < 1) return bad("error.badZone");
+      if (p.zone === "cage" && (p.length < HALL.zones.cage.min || p.length > HALL.zones.cage.max)) return bad("error.zoneSize");
+      if (p.zone === "meetme" && p.length > HALL.zones.meetme.max) return bad("error.zoneSize");
+      const z: HallZone = { id: `new-zone${plan.newZones.length}`, kind: p.zone, x: p.x, y: p.y, length: p.length, facing: p.facing, builtAt: s.hour };
+      zones = [...zones, z]; plan.newZones.push(z); cost += fenceCost(z);
+    } else if (p.kind === "noc") {
+      if (noc) return bad("error.limit");
+      noc = true; plan.building = true; cost += HALL.noc.price;
+    } else {
+      if (!(p.kind in HALL.items)) return bad("error.unknownItem");
+      const i: HallItem = { id: `new-item${plan.newItems.length}`, kind: p.kind, area: p.area ?? HALL.items[p.kind].areas[0] as AreaId, x: p.x, y: p.y, facing: p.facing, price: HALL.items[p.kind].price, builtAt: s.hour };
+      items = [...items, i]; plan.newItems.push(i); cost += i.price;
+    }
+  }
+  return { ...plan, layout: { racks, items, zones, noc }, cost, refunds };
+}
+
+// Why an edit cannot be applied, or null: the physical rules over the whole next layout, then the rules about what is in use and money.
+export function editHallError(s: GameState, locationId: string, edit: HallEdit): LayoutError | null {
   const h = hallAt(s, locationId);
-  if (!h) return "error.unknownLocation";
-  if (!h.hall.rows.some((r) => r.id === rowId)) return "error.unknownRow";
-  return rowInUse(s, locationId, rowId) ? "error.rowInUse" : null;
+  if (!h) return { key: "error.unknownLocation", at: null };
+  const plan = planOf(s, h, edit);
+  if ("key" in plan) return plan;
+  const next = plan.layout, prev = currentLayout(s, h), fail2 = (key: string, at: Pt | null = null): LayoutError => ({ key, at });
+  const physical = hallLayoutError(s, locationId, next);
+  if (physical) return physical;
+  // 8. Not yet on sale.
+  const year = yearOf(s.hour);
+  if (plan.newItems.some((i) => (HALL.items[i.kind].from ?? 0) > year) || plan.newZones.some((z) => z.kind === "cage" && year < HALL.zones.cage.from)) return fail2("error.notYet");
+  // 9. The transformers left must carry the draw.
+  const kwOf = (items: HallItem[]) => hallKw({ ...h.p, hall: { ...h.hall, items } });
+  if (kwOf(next.items) < kwOf(prev.items) && roomPower(s, h.loc).watts > 1000 * kwOf(next.items)) return fail2("error.overload");
+  // 10. One NOC desk stays.
+  const desks = (items: HallItem[]) => items.filter((i) => i.kind === "nocdesk").length;
+  if (desks(prev.items) > 0 && desks(next.items) === 0) return fail2("error.lastDesk");
+  // 11. What is in use stays.
+  for (const ref of [...plan.moved, ...(edit.remove ?? [])]) {
+    const [kind, id] = ref.split(":"), rack = kind === "rack" ? s.racks.find((r) => r.id === id) : undefined;
+    if (rack?.arriveAt != null && plan.moved.includes(ref)) return fail2("error.rackMoving");
+    if (kind === "zone") {
+      const z = prev.zones.find((q) => q.id === id)!, at = new Set(zoneSpots(z).map(tileKey));
+      const held = s.racks.some((r) => r.locationId === locationId && r.tile && at.has(tileKey(r.tile))) || h.hall.customers.some((c) => c.zoneId === z.id) || (!!h.hall.exchange?.tile && at.has(tileKey(h.hall.exchange.tile)));
+      if (held) return fail2("error.locked");
+    }
+    if (kind === "item" && prev.items.find((i) => i.id === id)?.kind === "switchgear" && (edit.remove ?? []).includes(ref) && s.racks.some((r) => r.locationId === locationId && r.feedB)) return fail2("error.locked");
+  }
+  const meetme = new Set(next.zones.filter((z) => z.kind === "meetme").flatMap(zoneSpots).map(tileKey));
+  for (const r of s.racks) {
+    if (r.locationId !== locationId || !r.tile) continue;
+    const panel = panelOf(s, r.id);
+    if (!panel || !jackRoles(s, panel.id).some((role) => role !== "free")) continue;
+    const to = next.racks[r.id];
+    if (!to || !meetme.has(tileKey(to))) return fail2("error.rackLinked");
+  }
+  // 12. Cash.
+  return s.cash < plan.cost ? fail2("error.noCash") : null;
 }
 
-export function removeRow(s: GameState, locationId: string, rowId: string): ActionResult {
-  const error = removeRowError(s, locationId, rowId);
-  if (error) return fail(error);
-  const h = hallAt(s, locationId)!;
-  relayRows(s, h, h.hall.rows.filter((r) => r.id !== rowId));
-  h.hall.zones = h.hall.zones.filter((z) => z.rowId !== rowId);
-  return { ok: true };
+// Places, moves and removes in one transaction. Moved racks with devices go dark for two hours.
+export function editHall(s: GameState, locationId: string, edit: HallEdit): ActionResult {
+  const error = editHallError(s, locationId, edit);
+  if (error) return fail(error.key);
+  const h = hallAt(s, locationId)!, plan = planOf(s, h, edit) as Plan, params = { location: h.loc.name };
+  let made: string | undefined;
+  for (const id of plan.sell) sellRack(s, id);
+  for (const i of plan.removedItems) if (i.price > 0) refund(s, "ledger.hallRefund", { ...params, item: t(`hall.item.${i.kind}`) }, i.price * HALL.refund);
+  for (const z of plan.removedZones) if (fenceCost(z)) refund(s, "ledger.fence", params, fenceCost(z) * HALL.zones.refund);
+  for (const m of plan.moved) {
+    const [kind, id] = m.split(":"), to = plan.layout;
+    if (kind === "rack") {
+      const rack = s.racks.find((r) => r.id === id)!, was = rack.tile;
+      rack.tile = to.racks[id]!;
+      if (was) darken(s, rack);
+    }
+    if (kind === "item") { const i = to.items.find((x) => x.id === id)!; h.hall.items = h.hall.items.map((x) => (x.id === id ? i : x)); }
+    if (kind === "zone") { const z = to.zones.find((x) => x.id === id)!; h.hall.zones = h.hall.zones.map((x) => (x.id === id ? z : x)); }
+  }
+  for (const [id, tile] of Object.entries(plan.layout.racks)) if (!id.startsWith("new")) { const rack = s.racks.find((r) => r.id === id); if (rack && !rack.tile && tile) rack.tile = tile; }
+  for (const b of plan.buy) {
+    const position = freePositions(s, locationId)[0], r = buyRack(s, locationId, b.model, position);
+    if (r.ok && r.id) { s.racks.find((x) => x.id === r.id)!.tile = b.tile; made = r.id; }
+  }
+  h.hall.items = h.hall.items.filter((i) => !plan.removedItems.some((x) => x.id === i.id));
+  h.hall.zones = h.hall.zones.filter((z) => !plan.removedZones.some((x) => x.id === z.id));
+  for (const i of plan.newItems) { const id = `item${s.nextId++}`; pay(s, "ledger.hallItem", { ...params, item: t(`hall.item.${i.kind}`) }, i.price); h.hall.items = [...h.hall.items, { ...i, id }]; made = id; }
+  for (const z of plan.newZones) { const id = `zone${s.nextId++}`; if (fenceCost(z)) pay(s, "ledger.fence", params, fenceCost(z)); h.hall.zones = [...h.hall.zones, { ...z, id }]; made = id; }
+  if (plan.building) { pay(s, "ledger.nocRoom", params, HALL.noc.price); h.hall.noc = true; }
+  return { ok: true, id: made };
 }
-
-const slotsOf = (h: HallAt) => coolingSlots(hallSize(hallCapacity(h.p), isHalle(h.p.buildingId)), isHalle(h.p.buildingId));
-
-export function placeCoolerError(s: GameState, locationId: string, slot: number): string | null {
-  const h = hallAt(s, locationId);
-  if (!h) return "error.unknownLocation";
-  if (!Number.isInteger(slot) || !slotsOf(h)[slot]) return "error.noWallSlot";
-  if (h.hall.coolers.includes(slot)) return "error.occupied";
-  return s.cash < HALL.cooling.price ? "error.noCash" : null;
-}
-
-// A cooling unit on a wall slot.
-export function placeCooler(s: GameState, locationId: string, slot: number): ActionResult {
-  const error = placeCoolerError(s, locationId, slot);
-  if (error) return fail(error);
-  const h = hallAt(s, locationId)!;
-  pay(s, "ledger.hallCooling", { location: h.loc.name }, HALL.cooling.price);
-  h.hall.coolers = [...h.hall.coolers, slot].sort((a, b) => a - b);
-  return { ok: true };
-}
-
-// A cooling unit on the first free wall slot.
-export function addCooling(s: GameState, locationId: string): ActionResult {
-  const h = hallAt(s, locationId);
-  if (!h) return fail("error.unknownLocation");
-  const slot = slotsOf(h).findIndex((_, i) => !h.hall.coolers.includes(i));
-  return slot < 0 ? fail("error.wallsFull") : placeCooler(s, locationId, slot);
-}
-
-export function moveCoolerError(s: GameState, locationId: string, from: number, to: number): string | null {
-  const h = hallAt(s, locationId);
-  if (!h) return "error.unknownLocation";
-  if (!h.hall.coolers.includes(from) || !Number.isInteger(to) || !slotsOf(h)[to]) return "error.noWallSlot";
-  return h.hall.coolers.includes(to) ? "error.occupied" : null;
-}
-
-export function moveCooler(s: GameState, locationId: string, from: number, to: number): ActionResult {
-  const error = moveCoolerError(s, locationId, from, to);
-  if (error) return fail(error);
-  const h = hallAt(s, locationId)!;
-  h.hall.coolers = h.hall.coolers.map((c) => (c === from ? to : c)).sort((a, b) => a - b);
-  return { ok: true };
-}
-
-export function removeCoolerError(s: GameState, locationId: string, slot: number): string | null {
-  const h = hallAt(s, locationId);
-  return !h ? "error.unknownLocation" : h.hall.coolers.includes(slot) ? null : "error.noWallSlot";
-}
-
-// Removing a unit refunds half its price; racks it covered may run hot.
-export function removeCooler(s: GameState, locationId: string, slot: number): ActionResult {
-  const error = removeCoolerError(s, locationId, slot);
-  if (error) return fail(error);
-  const h = hallAt(s, locationId)!, refund = HALL.cooling.price * HALL.cooling.refund;
-  h.hall.coolers = h.hall.coolers.filter((c) => c !== slot);
-  s.cash = cents(s.cash + refund);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.coolerRefund", params: { location: h.loc.name }, amount: refund }];
-  return { ok: true };
-}
-
-export function buyTransformerError(s: GameState, locationId: string): string | null {
-  const h = hallAt(s, locationId);
-  if (!h) return "error.unknownLocation";
-  if (h.hall.transformers >= new Set(h.p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size) return "error.upgradeBuilt";
-  return s.cash < HALL.transformer.price ? "error.noCash" : null;
-}
-
-// One extra transformer per hall floor, raising the floor's limit by its base value.
-export function buyTransformer(s: GameState, locationId: string): ActionResult {
-  const error = buyTransformerError(s, locationId);
-  if (error) return fail(error);
-  const h = hallAt(s, locationId)!;
-  pay(s, "ledger.transformer", { location: h.loc.name }, HALL.transformer.price);
-  h.hall.transformers++;
-  return { ok: true };
-}
-
-// Feed B, the UPS and the generator are built once and billed monthly from then on; the generator needs the UPS to bridge its start.
-export function buyHallUpgrade(s: GameState, locationId: string, what: HallUpgrade): ActionResult {
-  const h = hallAt(s, locationId);
-  if (!h) return fail("error.unknownLocation");
-  if (!(what in HALL.upgrades)) return fail("error.unknownUpgrade");
-  if (h.hall[what]) return fail("error.upgradeBuilt");
-  if (what === "generator" && !h.hall.ups) return fail("error.needsUps");
-  const { price } = HALL.upgrades[what];
-  if (s.cash < price) return fail("error.noCash");
-  pay(s, `ledger.hall.${what}`, { location: h.loc.name }, price);
-  h.hall[what] = true;
-  return { ok: true };
-}
-
-// The monthly cost of a hall's cooling units and upgrades.
-export const hallMonthly = (hall: Hall): number =>
-  hall.coolers.length * HALL.cooling.monthly + hall.transformers * HALL.transformer.monthly + (Object.keys(HALL.upgrades) as HallUpgrade[]).reduce((n, k) => n + (hall[k] ? HALL.upgrades[k].monthly : 0), 0);
 
 // The carriers present in the hall's city: every one on site at one of its datacenters.
 export const cityCarriers = (city: string): Carrier[] => [...new Map(DATACENTERS.filter((d) => d.city === city).flatMap(carriersAt).map((c) => [c.id, c])).values()];
@@ -253,66 +375,6 @@ export function buildCarrier(s: GameState, locationId: string, carrierId: string
   if (s.cash < HALL.carrierFee) return fail("error.noCash");
   pay(s, "ledger.carrierBuild", { carrier: c.name, location: h.loc.name }, HALL.carrierFee);
   h.hall.carriers = [...h.hall.carriers, carrierId];
-  return { ok: true };
-}
-
-type ZoneSpec = { kind: HallZone["kind"]; rowId: string; from: number; length: number };
-const fenceCost = (z: Pick<ZoneSpec, "kind" | "length">): number => (z.kind === "cage" ? z.length * HALL.zones.cage.perPosition : z.kind === "meetme" ? HALL.zones.meetme.price : 0);
-
-// Why a zone cannot be painted, or null.
-export function paintZoneError(s: GameState, locationId: string, z: ZoneSpec): string | null {
-  const h = hallAt(s, locationId);
-  if (!h) return "error.unknownLocation";
-  const row = h.hall.rows.find((r) => r.id === z.rowId);
-  if (!row) return "error.unknownRow";
-  if (!["colo", "cage", "meetme"].includes(z.kind) || !Number.isInteger(z.from) || !Number.isInteger(z.length) || z.length < 1) return "error.badZone";
-  if (z.from < 0 || z.from + z.length > row.length) return "error.zoneOutside";
-  if (z.kind === "cage") {
-    if (yearOf(s.hour) < HALL.zones.cage.from) return "error.cageLater";
-    if (z.length < HALL.zones.cage.min || z.length > HALL.zones.cage.max) return "error.zoneSize";
-  }
-  if (z.kind === "meetme") {
-    if (z.length > HALL.zones.meetme.max) return "error.zoneSize";
-    if (h.hall.zones.some((x) => x.kind === "meetme")) return "error.zoneExists";
-  }
-  if (h.hall.zones.some((x) => x.rowId === z.rowId && x.from < z.from + z.length && z.from < x.from + x.length)) return "error.occupied";
-  if (z.kind !== "meetme") {
-    const at = new Set(zonePositions(h.hall, { ...z, id: "", builtAt: 0 }));
-    if (s.racks.some((r) => r.locationId === locationId && at.has(r.position))) return "error.zoneRack";
-  }
-  return s.cash < fenceCost(z) ? "error.noCash" : null;
-}
-
-// Sets a run of positions in one row aside as open colocation, a fenced cage or the meet-me area; the fence is paid once.
-export function paintZone(s: GameState, locationId: string, z: ZoneSpec): ActionResult {
-  const error = paintZoneError(s, locationId, z);
-  if (error) return fail(error);
-  const h = hallAt(s, locationId)!, cost = fenceCost(z), id = `zone${s.nextId++}`;
-  if (cost) pay(s, "ledger.fence", { location: h.loc.name }, cost);
-  h.hall.zones = [...h.hall.zones, { id, kind: z.kind, rowId: z.rowId, from: z.from, length: z.length, builtAt: s.hour }];
-  return { ok: true, id };
-}
-
-export function removeZoneError(s: GameState, locationId: string, zoneId: string): string | null {
-  const h = hallAt(s, locationId);
-  if (!h) return "error.unknownLocation";
-  const z = h.hall.zones.find((x) => x.id === zoneId);
-  if (!z) return "error.unknownZone";
-  const at = new Set(zonePositions(h.hall, z));
-  const rented = h.hall.customers.some((c) => c.zoneId === z.id || customerPositions(h.hall, c).some((p) => at.has(p))) || (!!h.hall.exchange && at.has(h.hall.exchange.position));
-  return rented || s.racks.some((r) => r.locationId === locationId && at.has(r.position)) ? "error.zoneInUse" : null;
-}
-
-// Takes a zone away; a fence refunds half.
-export function removeZone(s: GameState, locationId: string, zoneId: string): ActionResult {
-  const error = removeZoneError(s, locationId, zoneId);
-  if (error) return fail(error);
-  const h = hallAt(s, locationId)!, z = h.hall.zones.find((x) => x.id === zoneId)!, refund = fenceCost(z) * HALL.zones.refund;
-  h.hall.zones = h.hall.zones.filter((x) => x.id !== zoneId);
-  if (refund) {
-    s.cash = cents(s.cash + refund);
-    s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.fence", params: { location: h.loc.name }, amount: refund }];
-  }
   return { ok: true };
 }
 
@@ -339,15 +401,15 @@ export const signChance = (rate: number, going: number): number => Math.max(0, M
 
 // The first free jack on a fiber panel of a rack in the meet-me zone.
 function meetMeJack(s: GameState, hall: Hall, locationId: string): { device: string; port: number } | null {
-  const at = new Set(hall.zones.filter((z) => z.kind === "meetme").flatMap((z) => zonePositions(hall, z)));
-  for (const r of s.racks) if (r.locationId === locationId && at.has(r.position)) { const j = freeJack(s, r.id); if (j) return j; }
+  const at = new Set(hall.zones.filter((z) => z.kind === "meetme").flatMap(zoneSpots).map(tileKey));
+  for (const r of s.racks) if (r.locationId === locationId && r.tile && at.has(tileKey(r.tile))) { const j = freeJack(s, r.id); if (j) return j; }
   return null;
 }
 
-// Positions of the meet-me zone with no player rack and not taken by the exchange.
-const freeMeetMe = (s: GameState, hall: Hall, locationId: string): number[] => {
-  const racks = new Set(s.racks.filter((r) => r.locationId === locationId).map((r) => r.position));
-  return hall.zones.filter((z) => z.kind === "meetme").flatMap((z) => zonePositions(hall, z)).filter((p) => !racks.has(p) && p !== hall.exchange?.position);
+// Tiles of the meet-me zone with no player rack and not taken by the exchange.
+const freeMeetMe = (s: GameState, hall: Hall, locationId: string): Tile[] => {
+  const racks = new Set(s.racks.filter((r) => r.locationId === locationId && r.tile).map((r) => tileKey(r.tile!)));
+  return hall.zones.filter((z) => z.kind === "meetme").flatMap(zoneSpots).filter((t) => !racks.has(tileKey(t)) && tileKey(t) !== (hall.exchange?.tile ? tileKey(hall.exchange.tile) : ""));
 };
 
 // At each month start: customers pay their month and their cross-connects, order new cross-connects, some leave (more after a
@@ -407,14 +469,14 @@ function hubTick(s: GameState, hall: Hall, loc: Location, pi: number, events: Si
   }
   if (hall.carriers.length < HALL.hub.exchangeCarriers || hall.customers.length < HALL.hub.exchangeCustomers) return;
   const x = hall.exchange ? EXCHANGES.find((e) => e.id === hall.exchange!.id) : DATACENTERS.filter((d) => d.city === loc.city).map(exchangeAt).find(Boolean);
-  if (!x || hall.exchange?.position) return;
+  if (!x || hall.exchange?.tile) return;
   if (!hall.exchange) {
-    hall.exchange = { id: x.id, position: 0 };
+    hall.exchange = { id: x.id, tile: null };
     events.push({ app: "Locations", key: "event.exchangeComing", params: { exchange: x.name, location: loc.name } });
   }
   const at = freeMeetMe(s, hall, loc.id)[0];
   if (at === undefined) return;
-  hall.exchange = { id: x.id, position: at };
+  hall.exchange = { id: x.id, tile: at };
   events.push({ app: "Locations", key: "event.exchangeOpened", params: { exchange: x.name, location: loc.name } });
 }
 
@@ -422,23 +484,24 @@ function hubTick(s: GameState, hall: Hall, loc: Location, pi: number, events: Si
 function signTick(s: GameState, hall: Hall, loc: Location, pi: number, events: SimEvent[]): void {
   const going = goingRate(loc.city);
   if (hall.rate === null || loc.readyAt > s.hour || !going) return;
-  const taken = () => new Set(hall.customers.flatMap((c) => customerPositions(hall, c)));
-  const freeColo = () => hall.zones.filter((z) => z.kind === "colo").flatMap((z) => zonePositions(hall, z)).filter((q) => !taken().has(q));
+  const taken = () => new Set(hall.customers.flatMap((c) => customerSpots(hall, c)).map(tileKey));
+  const zoneOrder = (a: HallZone, b: HallZone) => a.id.localeCompare(b.id, undefined, { numeric: true });
+  const freeColo = () => hall.zones.filter((z) => z.kind === "colo").sort(zoneOrder).flatMap((z) => zoneSpots(z).map((t) => ({ t, z }))).filter((q) => !taken().has(tileKey(q.t)));
   const kw = (n: number) => HALL.colo.kw.min + Math.floor(rand(hashRng(s.seed, s.hour, pi, 3, n)) * (HALL.colo.kw.max - HALL.colo.kw.min + 1));
   const name = () => COLO_NAMES[s.nextId % COLO_NAMES.length];
   const chances = 1 + Math.floor(freeColo().length / 10);
   for (let k = 0; k < chances; k++) {
     const free = freeColo()[0];
     if (free === undefined || rand(hashRng(s.seed, s.hour, pi, 2, k)) >= signChance(hall.rate, going)) continue;
-    const zone = hall.zones.find((z) => z.kind === "colo" && zonePositions(hall, z).includes(free))!, n = name(), id = `colo${s.nextId++}`;
-    hall.customers = [...hall.customers, { id, name: n, position: free, monthly: hall.rate, since: s.hour, kw: kw(k), zoneId: zone.id }];
+    const zone = free.z, n = name(), id = `colo${s.nextId++}`;
+    hall.customers = [...hall.customers, { id, name: n, tile: free.t, monthly: hall.rate, since: s.hour, kw: kw(k), zoneId: zone.id }];
     events.push({ app: "Locations", key: "event.coloSigned", params: { customer: n, location: loc.name, amount: euro(hall.rate) } });
   }
   if (yearOf(s.hour) < HALL.zones.cage.from) return;
   hall.zones.forEach((z, zi) => {
     if (z.kind !== "cage" || hall.customers.some((c) => c.zoneId === z.id) || rand(hashRng(s.seed, s.hour, pi, 4, zi)) >= HALL.colo.signs) return;
     const n = name(), monthly = Math.round(z.length * hall.rate! * HALL.colo.cageMarkup), id = `colo${s.nextId++}`;
-    hall.customers = [...hall.customers, { id, name: n, position: zonePositions(hall, z)[0], monthly, since: s.hour, kw: kw(100 + zi), zoneId: z.id }];
+    hall.customers = [...hall.customers, { id, name: n, tile: null, monthly, since: s.hour, kw: kw(100 + zi), zoneId: z.id }];
     events.push({ app: "Locations", key: "event.cageSigned", params: { customer: n, location: loc.name, amount: euro(monthly), positions: z.length } });
   });
 }

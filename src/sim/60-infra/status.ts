@@ -8,7 +8,7 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, PARCEL, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
-import { CLOSET_KW, customerPositions, HALL, hallCustomerKw, hallKw, hallOf, zonePositions } from "../20-world/properties";
+import { CLOSET_KW, HALL, hallCapacity, hallCustomerKw, hallKw, hallOf, hallSpots } from "../20-world/properties";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
@@ -144,9 +144,11 @@ function computeLinkStatus(s: GameState, deviceId: string): LinkStatus {
 }
 
 // Where a rack stands, whether it is still in transit, and its height in units.
+// A rack delivered to an own hall stands crated at the entry until the player places it.
+export const unplaced = (s: GameState, rack: Rack): boolean => !rack.tile && s.locations.find((l) => l.id === rack.locationId)?.space === "hall";
 export function spotOf(s: GameState, id: string | null): { locationId: string; moving: boolean; units: number } | undefined {
   const rack = s.racks.find((r) => r.id === id);
-  return rack && { locationId: rack.locationId, moving: rack.arriveAt !== null, units: rackUnits(rack.model) };
+  return rack && { locationId: rack.locationId, moving: rack.arriveAt !== null || unplaced(s, rack), units: rackUnits(rack.model) };
 }
 
 // One step of a route. device is set for your own hardware; location for a line or uplink, whose load slows it.
@@ -567,7 +569,7 @@ function computePowered(s: GameState, deviceId: string): boolean {
   if (d.chassisId) return !chassisOut(s, d) && powered(s, d.chassisId);
   if (!d.rackId) return true;
   const rack = s.racks.find((r) => r.id === d.rackId)!;
-  return rack.arriveAt === null && pluggedIn(d);
+  return rack.arriveAt === null && !unplaced(s, rack) && pluggedIn(d);
 }
 
 // A device switched on with every power cord pulled is as safe to open as one switched off.
@@ -576,11 +578,11 @@ export const energized = (d: Device): boolean => d.on && (!psusOf(d).length || p
 export function freePositions(s: GameState, locationId: string): number[] {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return [];
-  const hall = hallOf(s, locationId);
-  // In a hall the customers, the exchange and the colocation and cage zones are not the player's to fill.
-  const sold = hall ? [...hall.customers.flatMap((c) => customerPositions(hall, c)), ...(hall.exchange ? [hall.exchange.position] : []), ...hall.zones.filter((z) => z.kind !== "meetme").flatMap((z) => zonePositions(hall, z))] : [];
-  const taken = new Set([...s.racks.filter((r) => r.locationId === locationId).map((r) => r.position), ...sold]);
-  return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p));
+  const taken = new Set(s.racks.filter((r) => r.locationId === locationId).map((r) => r.position));
+  const prop = loc.space === "hall" ? s.properties.find((x) => x.hall?.locationId === locationId) : undefined;
+  // In a hall the numbers are spare ones up to the capacity left after the racks, the customers and the zones.
+  const room = prop?.hall ? hallCapacity(prop) - hallSpots(prop.hall, Object.fromEntries(s.racks.filter((r) => r.locationId === locationId).map((r) => [r.id, r.tile ?? null]))) : Infinity;
+  return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p)).slice(0, Math.max(0, room));
 }
 
 const KIND_ORDER: DeviceKind[] = ["server", "chassis", "switch", "firewall", "patch", "ups", "pdu", "kvm", "console", "oob", "gateway", "part"];

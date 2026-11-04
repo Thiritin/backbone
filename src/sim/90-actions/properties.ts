@@ -2,13 +2,14 @@
 import { t } from "../../i18n/en";
 import { yearOf } from "../00-core/time";
 import { nextAz } from "../20-world/datacenters";
+import { hallSize } from "../20-world/layout";
 import {
-  DEPOSIT_MONTHS, FIT_POSITIONS, HALL_ROW, hallCapacity, holdsDesks, isHalle, listingById, NOTICE_MONTHS, officeLineIn, priceFor, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
+  DEPOSIT_MONTHS, FIT_POSITIONS, hallCapacity, hallMonthly, holdsDesks, isHalle, listingById, NOTICE_MONTHS, officeLineIn, priceFor, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
 } from "../20-world/properties";
 import { cents } from "../45-billing/billing";
 import { device, type GameState, type LedgerEntry, type Property, type SectionFit } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
-import { hallMonthly } from "./hall";
+import { packArea } from "./hall";
 import { closeLocation, noticeEnd, type ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -137,15 +138,18 @@ function refitHall(s: GameState, p: Property, floor: number): ActionResult {
   if (!p.hall) {
     const city = s.locations[0]?.city ?? "Frankfurt", id = `loc${s.nextId++}`;
     s.locations = [...s.locations, { id, dc: null, city, az: nextAz(s.locations, city), name: t("location.hall", { building: p.building.name }), space: "hall", positions: 0, readyAt: until, extraCircuit: false, tripped: false }];
-    p.hall = { locationId: id, rows: [], coolers: [], transformers: 0, feedB: false, ups: false, generator: false, carriers: [], rate: null, customers: [], zones: [], xconnects: [], exchange: null, outage: false };
+    p.hall = { locationId: id, items: [], carriers: [], rate: null, customers: [], zones: [], xconnects: [], exchange: null, outage: false, noc: false };
   }
   const hall = p.hall, loc = s.locations.find((k) => k.id === hall.locationId)!;
   // ponytail: a floor added to an open hall is usable at once; per-row ready hours if the wait should show.
   if (loc.readyAt > s.hour) loc.readyAt = until;
-  const want = hallCapacity(p) - hall.rows.reduce((n, r) => n + r.length, 0);
-  for (let k = hall.rows.length, left = want; left > 0; k++, left -= HALL_ROW)
-    hall.rows = [...hall.rows, { id: `row${s.nextId++}`, x: 3, y: 2 + 2 * k, length: Math.min(HALL_ROW, left), facing: k % 2 ? "n" : "s" }];
-  loc.positions = hall.rows.reduce((n, r) => n + r.length, 0);
+  loc.positions = hallCapacity(p);
+  // Each hall floor brings its transformer; a new hall also gets its NOC desk where the counter used to stand.
+  if (!hall.items.some((i) => i.kind === "nocdesk")) {
+    const { h } = hallSize(hallCapacity(p), isHalle(p.buildingId));
+    hall.items = [...hall.items, { id: `item${s.nextId++}`, kind: "nocdesk", area: "hall", x: 6, y: h - 1, facing: "n", price: 0, builtAt: s.hour }];
+  }
+  while (hall.items.filter((i) => i.kind === "transformer").length < new Set(p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size) packArea(s, hall.locationId, "transformer", "xfmr", 0);
   return { ok: true, id: hall.locationId };
 }
 

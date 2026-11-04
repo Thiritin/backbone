@@ -21,7 +21,7 @@ How every game system meets the 2D plane. Decided 2026-11-03. The desktop stays 
 | Customers, sales, support, marketing | | | All on the desktop |
 | Products, clusters, software, research | | | All on the desktop |
 | Network and DDoS | The router's LEDs go frantic under attack | | Network app |
-| Own datacenter (end game) | A bought building fitted as a hall: rows the player lays out, cooling, a generator, a NOC; built from the same floor as a suite | Rack and panel scenes | Properties tab, build orders |
+| Own datacenter (end game) | A bought building fitted as a hall: racks and zones the player places on free tiles, cooling, a generator, a NOC; built from the same floor as a suite | Rack and panel scenes | Properties tab, build orders |
 | Multiplayer | Parked until the sync design is written | | |
 
 ## Rules that follow
