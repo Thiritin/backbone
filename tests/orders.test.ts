@@ -142,7 +142,7 @@ describe("work orders: figures", () => {
 });
 
 describe("work orders: seats", () => {
-  it("gives the player the first seat and sends the last-seated staff member beside the entry", () => {
+  it("seats the hires at their desks and sends the player beside the entry when they fill every seat", () => {
     const e = ownHall();
     e.s.hour = at(2013, 3, 4, 10);
     const loc = e.s.locations.find((l) => l.id === e.hallId)!, seats = 3;
@@ -154,10 +154,10 @@ describe("work orders: seats", () => {
     expect(none).toHaveLength(seats);
     e.s.player = { ...e.s.player, at: e.hallId };
     const some = seating(e.s, loc, e.s.hour);
-    expect(some[0]).toMatchObject({ id: "player", seated: true });
-    expect(some.at(-1)).toMatchObject({ id: "s3", seated: false });
+    expect(some.find((x) => x.id === "player")).toMatchObject({ seated: false });
+    expect(some.filter((x) => x.seated)).toHaveLength(seats);
     const door = entryTile(loc);
-    expect(some.at(-1)!.at).toEqual({ x: door.x, y: door.y + 1 });
+    expect(some.find((x) => x.id === "player")!.at).toEqual({ x: door.x, y: door.y + 1 });
   });
 });
 

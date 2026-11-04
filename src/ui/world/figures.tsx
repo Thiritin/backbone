@@ -4,8 +4,9 @@ import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { dateOf } from "../../sim/00-core/time";
 import { rackUnits } from "../../sim/20-world/datacenters";
-import { type Facing, type OfficePlan, seatsAt, siteAreas, type Tile } from "../../sim/20-world/layout";
+import { type Facing, type OfficePlan, seatsAt, type Tile } from "../../sim/20-world/layout";
 import type { GameState, Location } from "../../sim/50-state";
+import { seatChairs, seatDepth } from "./chairs";
 import { figuresIn, pathOf, type Figure } from "../../sim/60-infra/figures";
 import { present } from "../../sim/60-infra/handwork";
 import { nowMin, seatOf } from "../../sim/90-actions/work-orders";
@@ -139,18 +140,12 @@ const sitAt = (p: Pt, facing: Facing | undefined, office: boolean): Pt => office
 
 // The people in this room as depth-sorted things: seated at their seat, walking to a rack, working there and back. Every position comes from the saved
 // work orders at the game minute; the next minute's position sets where the browser glides to, so no frame state is kept.
-// A hall seat is saved relative to its area's corner; the scene needs it in hall tiles.
-function sceneSeat(game: GameState, loc: Location, seat: Pt | null): Pt | null {
-  const area = (seat as { area?: string | null } | null)?.area;
-  const rect = area ? siteAreas(game, loc).find((a) => a.id === area)?.rect : undefined;
-  return seat && rect ? { ...seat, x: seat.x + rect.x, y: seat.y + rect.y } : seat;
-}
 
 export function useFigures(game: GameState, loc: Location, plan: OfficePlan | undefined, tiles: Record<string, Tile>, speed: number): { depth: number; node: ReactNode }[] {
   const [hover, setHover] = useState<string | null>(null);
   const walk = useVisit((v) => v.walk), at = useVisit((v) => v.at), set = useVisit((v) => v.set);
   const floor = plan?.floor ?? 1, office = loc.space === "office", m = nowMin(game), out: { depth: number; node: ReactNode }[] = [];
-  const msPerMin = speed > 0 ? 1000 / speed : 0, here = present(game, loc.id), seat = here ? sceneSeat(game, loc, seatOf(game, loc.id, "player")) : null;
+  const msPerMin = speed > 0 ? 1000 / speed : 0, here = present(game, loc.id), seat = here ? seatOf(game, loc.id, "player") : null;
   const busy = game.orders.some((o) => o.worker === "player" && o.locationId === loc.id && !o.applied);
   const pending = useVisit((v) => v.pending);
   const walkHere = walk?.locationId === loc.id ? walk : null;
@@ -159,7 +154,7 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
   useEffect(() => {
     if (busy) { if (at) set({ at: null }); return; }
     if (!pending || pending.locationId !== loc.id || walk) return;
-    const from = at?.locationId === loc.id ? at.pt : sceneSeat(game, loc, seatOf(game, loc.id, "player"));
+    const from = at?.locationId === loc.id ? at.pt : seatOf(game, loc.id, "player");
     if (!from) { set({ pending: null }); pending.run(); return; }
     const path = pathOf(game, loc, from, pending.to), seconds = walkSeconds(path);
     set({ pending: null });
@@ -169,6 +164,7 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
 
   const now = figuresIn(game, loc.id, m), next = msPerMin ? figuresIn(game, loc.id, m + 1) : [];
   const list: Figure[] = now.slice();
+  out.push(...seatChairs(game, loc));
   if (seat && !list.some((f) => f.id === "player")) {
     const p = at?.locationId === loc.id ? at.pt : seat, sitting = key(p) === key(seat);
     list.push({ id: "player", name: "", role: "player", tile: { x: p.x, y: p.y, facing: (seat as Tile).facing ?? "n" }, facing: (seat as Tile).facing ?? "n", colour: null, busy: false, seated: sitting, pose: sitting ? "sit" : "stand", path: [p], progress: 0 });
@@ -190,7 +186,7 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
     }
     const sitting = f.pose === "sit" && !walking, pos = sitting ? sitAt(f.tile, f.tile.facing, office) : centre(f.tile), p0 = pts ? pts[0] : pos;
     const mid = pts ? pts[Math.floor(pts.length / 2)] : pos;
-    const depth = sitting ? f.tile.x + f.tile.y + (f.facing === "s" ? 0.001 : -0.001) : Math.floor(mid.x) + Math.floor(mid.y) + 0.5;
+    const depth = sitting ? seatDepth(game, loc, f.tile) ?? f.tile.x + f.tile.y + (f.facing === "s" ? 0.001 : -0.001) : Math.floor(mid.x) + Math.floor(mid.y) + 0.5;
     const pose = walking ? "walk" : f.pose, s = iso(p0.x, p0.y);
     const enter = () => setHover(f.id), exit = () => setHover((v) => (v === f.id ? null : v));
     const body = pose === "sit" ? <Seated l={l} facing={toViewer(f.facing) ? "s" : "n"} /> : pose === "walk" ? <Walking l={l} /> : <Standing l={l} facing={f.facing} busy={pose === "work"} />;

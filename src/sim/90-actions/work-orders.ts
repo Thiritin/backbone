@@ -35,13 +35,17 @@ export function targetFront(s: GameState, o: Pick<WorkOrder, "locationId" | "tar
   return tile ? frontOf(tile) : null;
 }
 
-// The seat a worker leaves from: the player's is the first seat, an employee's their desk's, else the first seat or the entry.
+// The seat a worker leaves from: the player's is the first seat no hire claims, an employee's their desk's, else the first seat or the entry.
 export function seatOf(s: GameState, locationId: string, worker: string): Pt | null {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return null;
   const seats = seatsAt(s, loc), e = s.staff.find((x) => x.id === worker);
   const mine = e?.desk && seats.find((q) => q.sectionId === e.desk!.sectionId && q.index === e.desk!.index);
-  return mine ?? seats[0] ?? entryTile(loc, officePlan(s, loc));
+  if (mine) return mine;
+  if (e) return seats[0] ?? entryTile(loc, officePlan(s, loc));
+  // The player takes the first seat no hire has claimed, else stands at the entry.
+  const claimed = new Set(s.staff.filter((x) => x.desk).map((x) => `${x.desk!.sectionId}#${x.desk!.index}`));
+  return seats.find((q) => !claimed.has(`${q.sectionId}#${q.index}`)) ?? entryTile(loc, officePlan(s, loc));
 }
 
 const manhattan = (a: Pt, b: Pt): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);

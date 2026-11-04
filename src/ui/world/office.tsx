@@ -43,20 +43,24 @@ function ScreenBack({ cx, y }: { cx: number; y: number }) {
   );
 }
 
-// A swivel chair centred on (cx, cy); the backrest is on the side away from the desk.
-export function OfficeChair({ cx, cy, facing }: { cx: number; cy: number; facing: "s" | "n" }) {
-  const hub = at3(cx, cy, 3), k = facing === "s" ? -1 : 1;
+// A swivel chair centred on (cx, cy) whose sitter looks toward `facing`; the backrest is on the opposite side.
+const LOOK = { n: [0, -1], e: [1, 0], s: [0, 1], w: [-1, 0] } as const;
+export function OfficeChair({ cx, cy, facing }: { cx: number; cy: number; facing: "n" | "e" | "s" | "w" }) {
+  const hub = at3(cx, cy, 3), [dx, dy] = LOOK[facing], behind = dx + dy > 0;
   const feet = [0, 1, 2, 3, 4].map((i) => at3(cx + 0.28 * Math.cos(i * 1.2566 + 0.4), cy + 0.28 * Math.sin(i * 1.2566 + 0.4), 1.2));
-  const back = <Prism x0={cx - 0.21} y0={k > 0 ? cy + 0.24 : cy - 0.31} x1={cx + 0.21} y1={k > 0 ? cy + 0.31 : cy - 0.24} z0={22} z1={42} tone="w-tone-fabric" />;
-  const post = <Prism x0={cx - 0.03} y0={k > 0 ? cy + 0.22 : cy - 0.27} x1={cx + 0.03} y1={k > 0 ? cy + 0.27 : cy - 0.22} z0={15} z1={22} tone="w-tone-dark" />;
+  const rod = (d: number, t: number, z0: number, z1: number, tone: string) => {
+    const mx = cx - dx * d, my = cy - dy * d, hx = dx ? t : 0.21, hy = dx ? 0.21 : t;
+    return <Prism x0={mx - hx} y0={my - hy} x1={mx + hx} y1={my + hy} z0={z0} z1={z1} tone={tone} />;
+  };
+  const rest = <>{rod(0.245, 0.025, 15, 22, "w-tone-dark")}{rod(0.275, 0.035, 22, 42, "w-tone-fabric")}</>;
   return (
     <>
       {feet.map((p, i) => <path key={i} className="w-chair-leg" d={`M${pts(hub)} L${pts(p)}`} />)}
       {feet.map((p, i) => <circle key={i} className="w-caster" cx={p.x} cy={p.y + 0.8} r="1.1" />)}
-      {k < 0 && <>{post}{back}</>}
+      {behind && rest}
       <Prism x0={cx - 0.03} y0={cy - 0.03} x1={cx + 0.03} y1={cy + 0.03} z0={3} z1={14} tone="w-tone-dark" />
       <Prism x0={cx - 0.24} y0={cy - 0.22} x1={cx + 0.24} y1={cy + 0.22} z0={14} z1={18} tone="w-tone-fabric" />
-      {k > 0 && <>{post}{back}</>}
+      {!behind && rest}
     </>
   );
 }

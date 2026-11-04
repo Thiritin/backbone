@@ -23,15 +23,22 @@ export interface Figure {
 // Standing places for people who find no seat: the site plan's lobby once it exists.
 export const lobbySeats = (_s: GameState, _loc: Location): Pt[] => [];
 
-// The seats at a location go to the player first when present, then staff who are in, by hiring then id; the rest stand in the lobby or beside the entry.
+// The seats at a location: a hire sits at the desk assigned to them; the player takes the first seat no hire has claimed; staff without a desk
+// fill the seats left, by hiring then id. Whoever finds no seat stands in the lobby or beside the entry.
 export function seating(s: GameState, loc: Location, hour: number): { id: string; at: Pt; seated: boolean }[] {
   const seats = seatsAt(s, loc), p = s.properties.find((x) => (x.locationId === loc.id || x.hall?.locationId === loc.id) && x.kind !== "basement");
   const staff = (p ? whoIsIn(s, p.id, hour) : []).slice().sort((a, b) => a.hiredAt - b.hiredAt || a.id.localeCompare(b.id));
-  const people = [...(present(s, loc.id) ? [{ id: "player" }] : []), ...staff];
-  const entry = entryTile(loc, officePlan(s, loc)), lobby = lobbySeats(s, loc);
+  const deskOf = (e: { desk?: { sectionId: string; index: number } | null }) => seats.findIndex((q) => e.desk && q.sectionId === e.desk.sectionId && q.index === e.desk.index);
+  const claimed = new Set(s.staff.map(deskOf).filter((i) => i >= 0)), used = new Set<number>(), seat = new Map<string, number>();
+  for (const e of staff) { const i = deskOf(e); if (i >= 0) { seat.set(e.id, i); used.add(i); } }
+  const free = (): number => seats.findIndex((_, i) => !used.has(i));
+  if (present(s, loc.id)) { const i = seats.findIndex((_, k) => !claimed.has(k)); if (i >= 0) { seat.set("player", i); used.add(i); } }
+  for (const e of staff) if (!seat.has(e.id)) { const i = free(); if (i >= 0) { seat.set(e.id, i); used.add(i); } }
+  const entry = entryTile(loc, officePlan(s, loc)), lobby = lobbySeats(s, loc), people = [...(present(s, loc.id) ? [{ id: "player" }] : []), ...staff];
   let out = 0;
-  return people.map((e, i) => {
-    if (i < seats.length) return { id: e.id, at: seats[i], seated: true };
+  return people.map((e) => {
+    const i = seat.get(e.id);
+    if (i !== undefined) return { id: e.id, at: seats[i], seated: true };
     const k = out++;
     return { id: e.id, at: lobby[k] ?? { x: entry.x, y: entry.y + 1 + k }, seated: false };
   });
