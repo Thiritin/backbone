@@ -29,6 +29,8 @@ export function jacksOf(game: GameState, panel: Device): Jack[] {
   const at = (e: End | undefined, i: number) => e?.device === panel.id && e.port === i;
   const rackName = (e: End) => game.racks.find((r) => r.id === game.devices.find((d) => d.id === e.device)?.rackId)?.name ?? "";
   return jackRoles(game, panel.id).map((role, i) => {
+    const hx = game.properties.flatMap((p) => p.hall?.xconnects.map((x) => ({ x, hall: p.hall! })) ?? []).find((h) => at(h.x.jack, i));
+    if (hx) return { role, label: `${hx.hall.customers.find((c) => c.id === hx.x.customerId)?.name ?? ""} · ${partner(hx.x.carrierId)}` };
     const line = game.network.uplinks.flatMap((u) => u.links.map((l) => ({ u, l }))).find((x) => at(x.l.jack, i));
     if (line) return { role, label: `${speed(line.l.gbit)} ${partner(line.u.partner)}` };
     const xc = game.crossConnects.find((x) => at(x.jack, i));
@@ -41,7 +43,8 @@ export function jacksOf(game: GameState, panel: Device): Jack[] {
   });
 }
 
-export const jackText = (j: Jack) => (j.role === "free" ? j.label : `${roleName(j.role)} ${j.label}`);
+const roleLabel = (r: JackRole) => (r === "customer" ? t("hall.jack.customer") : roleName(r));
+export const jackText = (j: Jack) => (j.role === "free" ? j.label : `${roleLabel(j.role)} ${j.label}`);
 export const jackTitle = (i: number, j: Jack) => `${t("locations-1.carrierPanel")} ${i + 1}: ${jackText(j)}`;
 
 // The top unit's provider side, 24 duplex jacks above their label strips; a queued cable order hangs its due tag under the strip.

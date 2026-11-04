@@ -5,14 +5,15 @@ import { useEffect, type ReactNode } from "react";
 import { create } from "zustand";
 import { t } from "../../i18n/en";
 import { euro } from "../../sim/00-core/money";
-import { coolingSlots, hallSize, rowTiles, wallTiles, type Facing, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
+import { yearOf } from "../../sim/00-core/time";
+import { coolingSlots, hallSize, rowTiles, wallTiles, zoneTiles, type Facing, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
 import { RACK_MODELS, rackUnits } from "../../sim/20-world/datacenters";
 import { HALL, hallCapacity, hallKw, isHalle } from "../../sim/20-world/properties";
 import { coverage } from "../../sim/60-infra/thermal";
 import { roomPower } from "../../sim/60-infra/status";
-import type { GameState, HallRow, Location } from "../../sim/50-state";
+import type { GameState, HallRow, HallZone, Location } from "../../sim/50-state";
 import { buyRack, buyRackError, sellRack } from "../../sim/90-actions/hardware";
-import { hallAt, layRow, layRowError, moveCooler, moveCoolerError, placeCooler, placeCoolerError, removeCooler, removeCoolerError, removeRow, removeRowError } from "../../sim/90-actions/hall";
+import { hallAt, layRow, layRowError, moveCooler, moveCoolerError, paintZone, paintZoneError, placeCooler, placeCoolerError, removeCooler, removeCoolerError, removeRow, removeRowError, removeZone, removeZoneError } from "../../sim/90-actions/hall";
 import { placeRack, placeRackError } from "../../sim/90-actions/layout";
 import { useStore } from "../store";
 import { Cooling, pts, onX, Prism, rackHeight, RackBox } from "./draw";
@@ -25,7 +26,8 @@ type Drag =
   | { kind: "rack"; model: string; units: number }
   | { kind: "rack-move"; id: string; units: number; origin: Pt; off: Pt }
   | { kind: "row"; row: RowDraft; index: number; size: boolean; origin: Pt }
-  | { kind: "cooler"; from: number | null; origin: Pt };
+  | { kind: "cooler"; from: number | null; origin: Pt }
+  | { kind: "zone"; zone: HallZone["kind"]; rowId?: string; from?: number; id?: string; origin: Pt };
 
 interface Edit {
   loc: string;
@@ -33,6 +35,8 @@ interface Edit {
   at: Pt | null;
   onStrip: boolean;
   msg: { text: string; at: Pt; n: number } | null;
+  // The zone paint armed on the strip: a drag along a row paints a run of that length.
+  brush: HallZone["kind"] | null;
   begin: (loc: string, drag: Drag) => void;
   cancel: () => void;
 }
@@ -40,6 +44,8 @@ interface Edit {
 const TURN: Record<Facing, Facing> = { n: "e", e: "s", s: "w", w: "n" };
 const tk = (p: Pt) => `${p.x},${p.y}`;
 const MSG_MS = 2000, NEW_ROW = 4;
+// Positions a zone dragged straight from the strip covers.
+const ZONE_LEN: Record<HallZone["kind"], number> = { colo: 4, cage: 4, meetme: 3 };
 
 // The floor tile under the pointer, through the room's own view transform.
 function tileAt(e: { clientX: number; clientY: number }): Pt | null {
@@ -97,6 +103,15 @@ export function verdict(game: GameState, locId: string, d: Drag, at: Pt): Verdic
     const same = d.row.id && ["x", "y", "length", "facing"].every((k) => row[k as keyof RowDraft] === (h.hall.rows.find((r) => r.id === d.row.id) as never)?.[k]);
     return { error: same ? null : layRowError(game, locId, row), tiles: rowTiles({ ...row, id: "" }), row, run: same ? null : () => attempt(layRow, locId, row) };
   }
+  if (d.kind === "zone") {
+    if (d.id) return { error: null, tiles: [], run: null };
+    const row = d.rowId ? h.hall.rows.find((r) => r.id === d.rowId) : h.hall.rows.find((r) => rowTiles(r).some((q) => tk(q) === tk(at)));
+    if (!row) return { error: "error.zoneOutside", tiles: [at], run: null };
+    const along = row.facing === "n" || row.facing === "s", idx = Math.max(0, Math.min(row.length - 1, along ? at.x - row.x : at.y - row.y));
+    const from = d.rowId ? Math.min(d.from!, idx) : idx, length = d.rowId ? Math.abs(idx - d.from!) + 1 : Math.min(ZONE_LEN[d.zone], row.length - idx);
+    const spec = { kind: d.zone, rowId: row.id, from, length };
+    return { error: paintZoneError(game, locId, spec), tiles: rowTiles(row).slice(from, from + length), run: () => attempt(paintZone, locId, spec) };
+  }
   const slots = coolingSlots(hallSize(hallCapacity(h.p), isHalle(h.p.buildingId)), isHalle(h.p.buildingId)), slot = nearestSlot(slots, at);
   const move = d.from !== null;
   return {
@@ -111,6 +126,7 @@ function stripVerdict(game: GameState, locId: string, d: Drag): { error: string 
   const { attempt } = useStore.getState();
   if (d.kind === "rack-move") return { error: null, run: () => attempt(sellRack, d.id) };
   if (d.kind === "row" && d.row.id) { const id = d.row.id; return { error: removeRowError(game, locId, id), run: () => attempt(removeRow, locId, id) }; }
+  if (d.kind === "zone" && d.id) { const id = d.id; return { error: removeZoneError(game, locId, id), run: () => attempt(removeZone, locId, id) }; }
   if (d.kind === "cooler" && d.from !== null) { const from = d.from; return { error: removeCoolerError(game, locId, from), run: () => attempt(removeCooler, locId, from) }; }
   return { error: null, run: null };
 }
@@ -136,7 +152,9 @@ export const useEdit = create<Edit>((set, get) => {
     finish();
     if (!drag) return;
     const game = useStore.getState().game;
-    const onStrip = overStrip(e), v = onStrip ? { ...stripVerdict(game, loc, drag), tiles: [] as Pt[] } : at ? verdict(game, loc, drag, at) : null;
+    const onStrip = overStrip(e);
+    if (drag.kind === "zone" && !drag.rowId && !drag.id && onStrip) return set({ brush: get().brush === drag.zone ? null : drag.zone });
+    const v = onStrip ? { ...stripVerdict(game, loc, drag), tiles: [] as Pt[] } : at ? verdict(game, loc, drag, at) : null;
     if (!v) return;
     const anchor = onStrip ? (drag.kind === "row" ? { x: drag.row.x, y: drag.row.y } : "origin" in drag ? drag.origin : at!) : at!;
     let error = v.error;
@@ -148,7 +166,7 @@ export const useEdit = create<Edit>((set, get) => {
     }
   };
   return {
-    loc: "", drag: null, at: null, onStrip: false, msg: null,
+    loc: "", drag: null, at: null, onStrip: false, msg: null, brush: null,
     begin: (loc, drag) => {
       set({ loc, drag, msg: null });
       window.addEventListener("pointermove", move);
@@ -176,8 +194,8 @@ export function editThings(game: GameState, loc: Location, plan: OfficePlan, siz
 }
 
 function EditLayer({ game, loc, plan, size, tiles }: { game: GameState; loc: Location; plan: OfficePlan; size: { w: number; h: number }; tiles: Record<string, Tile> }) {
-  const { drag, at, onStrip, msg, begin, cancel } = useEdit();
-  useEffect(() => cancel, [cancel]);
+  const { drag, at, onStrip, msg, brush, begin, cancel } = useEdit();
+  useEffect(() => () => { cancel(); useEdit.setState({ brush: null }); }, [cancel]);
   const hall = plan.hall!, dock = !!plan.dock, slots = coolingSlots(size, dock);
   const byTile = new Map(game.racks.filter((r) => tiles[r.id]).map((r) => [tk(tiles[r.id]), r]));
   const customerAt = new Set(wallTiles(loc, plan).filter((_, i) => hall.customers.some((c) => c.position === i + 1)).map(tk));
@@ -193,9 +211,13 @@ function EditLayer({ game, loc, plan, size, tiles }: { game: GameState; loc: Loc
     if (slot !== undefined) return grab({ kind: "cooler", from: slot, origin: slotTiles(slots[slot])[0] });
     const under = bodyUnder(e, p, (q) => byTile.has(tk(q)), rackHeight(42), 26);
     const rack = under ? byTile.get(tk(under)) : undefined;
+    const rowHit = hall.rows.find((r) => rowTiles(r).some((q) => tk(q) === tk(p)));
+    if (brush && rowHit) return grab({ kind: "zone", zone: brush, rowId: rowHit.id, from: rowTiles(rowHit).findIndex((q) => tk(q) === tk(p)), origin: p });
     if (rack && !e.shiftKey && !rack.provided) return grab({ kind: "rack-move", id: rack.id, units: rackUnits(rack.model), origin: under ?? p, off: under ? { x: under.x - p.x, y: under.y - p.y } : { x: 0, y: 0 } });
     if (customerAt.has(tk(p)) && !e.shiftKey) return;
-    const row = hall.rows.find((r) => rowTiles(r).some((q) => tk(q) === tk(p)));
+    const zoneId = e.shiftKey ? undefined : zoneTiles(loc, plan).find((z) => z.tiles.some((q) => tk(q) === tk(p)))?.id;
+    if (zoneId) return grab({ kind: "zone", zone: hall.zones.find((z) => z.id === zoneId)!.kind, id: zoneId, origin: p });
+    const row = rowHit;
     if (!row) return;
     const index = rowTiles(row).findIndex((q) => tk(q) === tk(p));
     grab({ kind: "row", row, index, size: index === row.length - 1 && row.length > 0, origin: p });
@@ -263,7 +285,7 @@ function Mini({ children, box }: { children: ReactNode; box: string }) {
 
 // The parts strip along the bottom edge of the room: parts to drag out, the hall's meters, and the way out of edit mode.
 export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }) {
-  const game = useStore((s) => s.game), begin = useEdit((s) => s.begin), onStrip = useEdit((s) => s.onStrip), dragging = useEdit((s) => s.drag);
+  const game = useStore((s) => s.game), begin = useEdit((s) => s.begin), onStrip = useEdit((s) => s.onStrip), dragging = useEdit((s) => s.drag), brush = useEdit((s) => s.brush);
   const h = hallAt(game, loc.id);
   if (!h) return null;
   const n = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -287,6 +309,12 @@ export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }
         <Mini box="-30 -92 100 140"><Cooling f={{ x: 0, y: 0, w: 2 }} /></Mini>
         <span>{t("hall.edit.cooler")}</span><b className="num">{euro(HALL.cooling.price)}</b>
       </div>
+      {(["colo", "cage", "meetme"] as const).filter((z) => z !== "cage" || yearOf(game.hour) >= HALL.zones.cage.from).map((z) => (
+        <div key={z} className={`w-parts-item${brush === z ? " w-parts-on" : ""}`} onPointerDown={pick({ kind: "zone", zone: z, origin: { x: 0, y: 0 } })} role="button" aria-pressed={brush === z} aria-label={t(`hall.edit.${z}`)}>
+          <Mini box="-40 -2 140 66">{[0, 1, 2].map((i) => <polygon key={i} className={`w-zone-${z}`} points={pts(iso(i, 0.2), iso(i + 1, 0.2), iso(i + 1, 1.2), iso(i, 1.2))} />)}{z !== "colo" && <polygon className="w-zone-fence" points={pts(iso(0, 0.2), iso(3, 0.2), iso(3, 1.2), iso(0, 1.2))} />}</Mini>
+          <span>{t(`hall.edit.${z}`)}</span>{z !== "colo" && <b className="num">{euro(z === "cage" ? HALL.zones.cage.perPosition : HALL.zones.meetme.price)}</b>}
+        </div>
+      ))}
       <div className="w-parts-meters num">
         <span>{t("hall.edit.kw", { used: n(heat), max: n(hallKw(h.p)) })}</span>
         <span>{t("hall.edit.cooling", { cool: n(h.hall.coolers.length * HALL.cooling.kw), heat: n(heat) })}</span>

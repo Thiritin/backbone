@@ -68,4 +68,12 @@ export default {
   "hall.edit.kw": (p) => `kW ${p.used} / ${p.max}`,
   "hall.edit.cooling": (p) => `Refroidissement ${p.cool} / ${p.heat} kW`,
   "hall.edit.places": (p) => `Emplacements ${p.used} / ${p.cap}`,
+  "hall.edit.colo": () => "Colocation ouverte",
+  "hall.edit.cage": () => "Cage",
+  "hall.edit.meetme": () => "Zone meet-me",
+  "hall.door.buy": () => "Acheter",
+  "hall.door.kw": (p) => `${p.kw} kW`,
+  "hall.door.noMeetMe": () => "Aucune zone meet-me.",
+  "hall.jack.customer": () => "Client",
+  "hall.coolingKw": () => "Capacité de refroidissement",
 } satisfies Dict;

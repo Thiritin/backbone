@@ -3,11 +3,12 @@
 // rows, positions beyond the cooled count shimmer while the hall runs hot, and a tripped hall goes dark.
 import type { ReactNode } from "react";
 import { t } from "../../i18n/en";
-import { customerTiles, rowTiles, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
+import { customerTiles, rowTiles, zoneTiles, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
 import type { GameState, HallRow, Location } from "../../sim/50-state";
 import { coverage } from "../../sim/60-infra/thermal";
 import { editThings, Cooler, PlanBoard } from "./hall-edit";
-import { at3, Door, Night, onX, onY, pts, Prism, rackHeight, RackBox, Shimmer, Tubes, WALL } from "./draw";
+import { at3, cageFence, Door, Night, onX, onY, pts, Prism, rackHeight, RackBox, Shimmer, Tubes, WALL } from "./draw";
+import { hueOf } from "./hall-doors";
 import { iso } from "./grid";
 import "./hall.css";
 
@@ -29,6 +30,17 @@ const Lock = ({ tile }: { tile: Tile }) => {
     <g className="w-hall-lock" transform={`translate(${c.x} ${c.y})`}>
       <path d="M-3,-2 v-3 a3,3 0 0 1 6,0 v3" />
       <rect x="-4.5" y="-2" width="9" height="7" rx="1.2" />
+    </g>
+  );
+};
+
+// The exchange's rack carries a plate in the exchange's colour with its name.
+const Plate = ({ tile, name, hue }: { tile: Tile; name: string; hue: number }) => {
+  const c = at3(tile.x + 0.5, tile.y + 0.5, rackHeight(42) + 12);
+  return (
+    <g className="w-hall-plate" transform={`translate(${c.x} ${c.y})`} pointerEvents="none">
+      <rect x="-20" y="-7" width="40" height="11" rx="1.5" style={{ fill: `oklch(0.62 0.14 ${hue})` }} />
+      <text x="0" y="1" >{name}</text>
     </g>
   );
 };
@@ -71,8 +83,18 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
   }
   for (const r of hall.rows)
     rowTiles(r).forEach((tl) => { if (!taken.has(key(tl))) things.push({ depth: -1, node: <g key={`mark${key(tl)}`} aria-hidden pointerEvents="none"><Mark tile={tl} /></g> }); });
-  for (const c of customers)
-    things.push({ depth: c.tile.x + c.tile.y, node: <g key={`colo${c.id}`} aria-label={c.name}><RackBox tile={c.tile} units={42} items={[]} leds={[]} zoomed={false} mesh neighbour /><Lock tile={c.tile} /></g> });
+  // Zones are floor paint: a grey band for open colocation; cages and the meet-me area carry the fence as well.
+  for (const z of zoneTiles(loc, plan)) {
+    if (!z.tiles.length) continue;
+    for (const tl of z.tiles) things.push({ depth: -1.8, node: <polygon key={`z${z.id}${key(tl)}`} className={`w-zone-${z.kind}`} pointerEvents="none" points={pts(iso(tl.x, tl.y), iso(tl.x + 1, tl.y), iso(tl.x + 1, tl.y + 1), iso(tl.x, tl.y + 1))} /> });
+    if (z.kind === "colo") continue;
+    const xs = z.tiles.map((q) => q.x), ys = z.tiles.map((q) => q.y), x0 = Math.min(...xs);
+    things.push(...cageFence({ x0, y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys), door: x0 }).map((f, i) => ({ ...f, node: <g key={`${z.id}:${i}`}>{f.node}</g> })));
+  }
+  for (const c of customers) {
+    const ex = c.id === hall.exchange?.id;
+    things.push({ depth: c.tile.x + c.tile.y, node: <g key={`colo${c.id}`} aria-label={c.name}><RackBox tile={c.tile} units={42} items={[]} leds={[]} zoomed={false} mesh neighbour /><Lock tile={c.tile} />{ex && <Plate tile={c.tile} name={c.name} hue={hueOf(c.id)} />}</g> });
+  }
   // Positions no cooling unit covers shimmer while the hall carries heat.
   const cov = coverage(game, loc), all = hall.rows.flatMap(rowTiles);
   if ((game.ops.heat[loc.id] ?? 0) > 0.5)

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Paint colocation, cage and meet-me areas on your own hall's floor, and buy transformers, backup power and carrier connections at the hall's service doors.
 - Clouds show in the windows on partly cloudy days, snow shows on the office sill, and your own rack stands out in a shared hall.
 - In your own hall you can click the floor plan on the wall to lay out rows, racks and cooling units by dragging them, and sell them by dropping them on the parts strip.
 - In your own hall you now choose which positions to rent out, larger customers rent cages from 2015, customers order cross-connects in your meet-me area, and a busy hall draws carriers and the city's exchange.

@@ -27,3 +27,46 @@
 .w-parts-art { display: block; width: auto; }
 .w-parts-meters { display: flex; flex-direction: column; gap: 2px; margin-left: auto; }
 .w-parts-done { background: oklch(0.36 0.02 250); color: oklch(0.95 0.005 250); border: 0; border-radius: 4px; padding: 6px 14px; font: inherit; cursor: pointer; }
+
+/* Zones: open colocation is a grey band, the cage and the meet-me area add a fence; the meet-me area has a hatched yellow edge. */
+.w-zone-colo { fill: oklch(0.7 0.012 250 / 0.55); }
+.w-zone-cage { fill: oklch(0.62 0.03 235 / 0.4); }
+.w-zone-meetme { fill: oklch(0.82 0.1 90 / 0.5); stroke: oklch(0.45 0.05 85); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.w-zone-fence { fill: none; stroke: oklch(0.4 0.02 250); stroke-width: 1.2; }
+.w-hall-plate text { font-size: 5.4px; text-anchor: middle; fill: oklch(0.99 0 0); font-weight: 600; }
+.w-parts-on { outline: 2px solid oklch(0.78 0.12 90); outline-offset: 2px; border-radius: 4px; }
+.pp-jack.customer .pp-plug { fill: oklch(0.66 0.13 20); }
+.pp-jack.customer .pp-plate { fill: oklch(0.9 0.04 20); }
+
+/* The plan in the Locations app: tiles painted by zone. */
+.hall-tile.zone-colo { background: color-mix(in oklch, var(--field) 70%, oklch(0.7 0.01 250)); }
+.hall-tile.zone-cage { border-style: dashed; }
+.hall-tile.zone-meetme { border-color: oklch(0.78 0.12 90); background: color-mix(in oklch, var(--field) 70%, oklch(0.82 0.1 90)); }
+
+/* The service door close-ups. */
+.hd-room { gap: 28px; }
+.hd-row { display: flex; align-items: flex-end; justify-content: center; flex-wrap: wrap; gap: 36px; }
+.hd-spot { position: relative; }
+.hd-plinth { fill: oklch(0.55 0.01 250); }
+.hd-spotline { fill: none; stroke: oklch(0.6 0.01 250); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.hd-xf { fill: oklch(0.62 0.04 235); }
+.hd-xf-top { fill: oklch(0.5 0.04 235); }
+.hd-fin { fill: oklch(0.52 0.04 235); }
+.hd-insul { fill: oklch(0.82 0.04 60); }
+.hd-cab { fill: oklch(0.6 0.02 250); }
+.hd-feedB { fill: oklch(0.6 0.08 60); }
+.hd-ups { fill: oklch(0.55 0.08 150); }
+.hd-cab-door { fill: oklch(0.46 0.015 250); }
+.hd-frame { fill: oklch(0.45 0.015 250); }
+.hd-sky { fill: oklch(0.8 0.05 230); }
+.hd-yard { fill: oklch(0.55 0.05 140); }
+.hd-gen { fill: oklch(0.62 0.12 80); }
+.hd-gen-top { fill: oklch(0.5 0.1 80); }
+.hd-pipe { fill: oklch(0.38 0.01 250); }
+.hd-mullion { fill: oklch(0.45 0.015 250); }
+.hd-wall { fill: oklch(0.36 0.01 250); }
+.hd-collar { fill: oklch(0.7 0.01 250); }
+.hd-cap { fill: oklch(0.3 0.01 250); }
+.hd-jack { fill: oklch(0.82 0.01 250); }
+.hd-slip.wr-tag { position: relative; left: auto; top: auto; margin: 0 auto; }
+.hd-refused { color: oklch(0.5 0.17 25); }

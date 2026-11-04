@@ -26,6 +26,12 @@ An office building the company owns can have a floor fitted as a hall (refit `ha
 
 The hall is drawn like a suite from the same floor: raised floor, the rows the player laid out, cooling units, the transformer room door, the meet-me room door, the loading dock, a NOC desk with three screens, fluorescent tubes, cable trays the player's cables run along. Empty positions show as marked floor tiles. A hot zone shows the heat shimmer; a tripped floor goes dark.
 
+Zones are painted in edit mode from the parts strip: dragging a zone paint onto a row paints a default run, and a click on the paint arms it so a drag along a row sets the length. Dragging a zone onto the strip removes it. Open colocation is a grey band, cages and the meet-me area are fenced, and the meet-me area has a hatched yellow edge. Customer racks stand locked inside their zone; the exchange's rack carries a plate with its name.
+
+The transformer door opens the transformer room drawn large: the transformer, a plinth for the second one, the feed B switchgear, the UPS cabinet and the generator in the yard. An empty spot carries a paper tag with the price; the tag opens a slip, and signing it buys the part. The meet-me door shows one fiber duct per carrier of the city: a built one runs on to the patch rack, an unbuilt one carries a price tag that builds it in, and without a meet-me zone the tags read "No meet-me area.". On the back of a meet-me rack, customer jacks carry label strips with the customer and the carrier.
+
+The floor plan in the Locations app is read only: rows and zones drawn small, with positions, cooling, kW and carriers.
+
 ## Pieces
 
 - Sim: the hall refit and the Halle listing, rows and positions as layout state on the property, cooling and power limits with their upgrades, the carriers' build fees, colocation customers as a product, zones, cross-connects and the hub, trips without provider panel or remote hands, old saves unchanged (a colocation zone appears under each customer and a meet-me zone under the first rack with an uplink).

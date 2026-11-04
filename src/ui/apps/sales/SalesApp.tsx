@@ -9,11 +9,18 @@ import { CustomerLink } from "../customers/open";
 import { initials, patience, PRODUCT, stamp } from "../support/labels";
 import { UpgradeCompose } from "../support/CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
-import { freePositions } from "../../../sim/60-infra/status";
+import { customerPositions, zonePositions } from "../../../sim/20-world/properties";
+import type { Hall } from "../../../sim/50-state";
 import { goingRate, setColoRate } from "../../../sim/90-actions/hall";
 import { PriceField } from "./PriceField";
 import "../support/support.css";
 import "./sales.css";
+
+// Positions a customer could take: free ones in colocation zones and the positions of empty cages.
+const spareToRent = (h: Hall): number => {
+  const taken = new Set(h.customers.flatMap((c) => customerPositions(h, c)));
+  return h.zones.filter((z) => z.kind !== "meetme").flatMap((z) => zonePositions(h, z)).filter((q) => !taken.has(q)).length;
+};
 
 export const OPEN = ["open", "countered", "refused"];
 export const STATUS: Record<SalesRequest["status"], string> = {
@@ -106,7 +113,7 @@ export function ColoListing() {
     <div className="sales-lost">
       <div className="sup-list-h"><h2>{t("hall.rackSpace")}</h2></div>
       {halls.map((h) => {
-        const loc = game.locations.find((l) => l.id === h.locationId)!, going = goingRate(loc.city), spare = freePositions(game, loc.id).length;
+        const loc = game.locations.find((l) => l.id === h.locationId)!, going = goingRate(loc.city), spare = spareToRent(h);
         return (
           <div key={h.locationId} className="colo-card">
             <div className="sup-list-h"><strong>{loc.name}</strong><span className="num">{t("hall.spare", { n: spare })}</span></div>
