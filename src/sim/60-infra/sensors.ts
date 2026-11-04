@@ -3,6 +3,7 @@ import { dateOf } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import type { Device, GameState, Location, LogSev } from "../50-state";
 import { pushLog } from "./syslog";
+import { rackDelta } from "./airflow";
 import { heatOf, THERMAL } from "./thermal";
 import { busyDevices, isPlugged, locationOf, rackPower, readOnlySweep, roomPower, utilOf } from "./status";
 
@@ -33,14 +34,15 @@ export function roomTemperature(s: GameState, loc: Location): number {
   return base + (fan ? ROOM.fanPerKw : ROOM.perKw) * kw + heat;
 }
 
-// The room, up to 3 degrees more from the rack's load and 6 more behind a failed fan.
+// The room, up to 3 degrees more from the rack's load, 6 more behind a failed fan and a hall rack's airflow delta.
 export function inletTemperature(s: GameState, d: Device): number {
   const loc = locationOf(s, d);
   const room = loc ? roomTemperature(s, loc) : 22;
   const rack = d.rackId ? rackPower(s, d.rackId) : null;
   const load = rack && rack.limitWatts ? Math.min(1, rack.watts / rack.limitWatts) * 3 : 0;
   const fans = d.components.some((c) => c.kind === "fan" && c.failedAt !== null) ? 6 : 0;
-  return Math.round((room + load + fans) * 10) / 10;
+  const delta = d.rackId ? rackDelta(s, s.racks.find((r) => r.id === d.rackId) ?? { locationId: "" }) : 0;
+  return Math.round((room + load + fans + delta) * 10) / 10;
 }
 
 // The inlet plus up to 20 degrees at full load, as much again per failed fan.

@@ -8,6 +8,7 @@ import type { Device, GameState, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { heatIncident } from "./incidents";
 import { losePower, pushLog } from "./power";
+import { coolingKw, rackDelta } from "./airflow";
 import { cpuTemperature, inletTemperature } from "./sensors";
 import { bootHours, locationOf, rackPower, readOnlySweep } from "./status";
 
@@ -30,16 +31,17 @@ export const THERMAL = {
   cpuThrottleC: 85, cpuFloorC: 95, cpuFloorPerf: 0.5, cpuHotC: 90,
 };
 
-// ponytail: S2 replaces this with the airflow model; until then no hall rack runs hot.
-export function hotSpot(_s: GameState, _d: Device): boolean {
-  return false;
+// A hall rack runs hot while its air brings its inlet up by the hot delta or more.
+export function hotSpot(s: GameState, d: Device): boolean {
+  const rack = d.rackId ? s.racks.find((r) => r.id === d.rackId) : undefined;
+  return !!rack && rackDelta(s, rack) >= HALL.air.hotDelta;
 }
 
 // The share of its performance a server keeps for heat, the worse of its inlet and its CPU, and whether this hour wears it.
 // Without built-up heat or a failed fan neither threshold is reachable (30 + 20 °C at most), so the sensors are read only then.
 export function heatOf(s: GameState, d: Device): { perf: number; hot: boolean } {
   const loc = locationOf(s, d);
-  if (!loc || (!s.ops.heat[loc.id] && !d.components.some((c) => c.kind === "fan" && c.failedAt !== null))) return { perf: 1, hot: false };
+  if (!loc || (!s.ops.heat[loc.id] && !rackDelta(s, s.racks.find((r) => r.id === d.rackId) ?? { locationId: "" }) && !d.components.some((c) => c.kind === "fan" && c.failedAt !== null))) return { perf: 1, hot: false };
   const inlet = inletTemperature(s, d) >= THERMAL.throttleC, cpu = cpuTemperature(s, d);
   const over = Math.min(1, Math.max(0, (cpu - THERMAL.cpuThrottleC) / (THERMAL.cpuFloorC - THERMAL.cpuThrottleC)));
   return { perf: Math.min(inlet ? THERMAL.throttlePerf : 1, 1 - (1 - THERMAL.cpuFloorPerf) * over), hot: inlet || cpu >= THERMAL.cpuHotC };
@@ -64,7 +66,7 @@ function step(s: GameState, loc: Location, at: number, events: SimEvent[]): bool
   // An own hall cools with the units the player put on its walls, and its customers' kW warms it.
   const hall = loc.space === "hall" && hallOf(s, loc.id), floor = loc.dc || hall;
   const kw = racks.reduce((n, p) => n + p.watts, 0) / 1000 + (hall ? hallCustomerKw(hall) : 0);
-  const cooling = hall ? (out ? 0 : hall.items.filter((i) => i.kind === "crac").length * (HALL.items.crac.kw as number)) : !loc.dc ? BASEMENT.kw : out ? 0 : (THERMAL.headroom * racks.reduce((n, p) => n + p.limitWatts, 0)) / 1000;
+  const cooling = hall ? coolingKw(s, loc, at) : !loc.dc ? BASEMENT.kw : out ? 0 : (THERMAL.headroom * racks.reduce((n, p) => n + p.limitWatts, 0)) / 1000;
   const mass = floor ? Math.max(1, loc.positions) : THERMAL.basementMass;
   const shed = floor ? THERMAL.shed * mass : THERMAL.basementShed;
   const next = Math.max(0, heat + (THERMAL.climb * (kw - cooling - shed * heat)) / mass);

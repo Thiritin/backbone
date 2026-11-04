@@ -73,4 +73,8 @@ The NOC room costs €30,000 once and is built instantly below the hall. A cage 
 
 **Cross-connects and the hub.** Each month a customer orders a cross-connect with chance 15%, up to 3, paying €150 a month (`HALL.xconnect`). At 8 customers a free city carrier builds in with chance 30% a month; with 3 carriers and 12 customers the city's exchange takes the first free meet-me position (`HALL.hub`).
 
-**Power price.** An own hall buys power at the business price times `HALL.powerFactor` 1.0 times `HALL.pue` 1.3, below the household factor 1.6.
+**Power price.** An own hall buys power at the business price times `HALL.powerFactor` 1.0 times the hall's PUE, below the household factor 1.6.
+
+**Airflow** (`HALL.air`). Efficiency = 0.7 + 0.2 fed + 0.1 contained - 0.2 recirculating (kW-weighted shares of rack spots), clamped to 0.5 to 1.0; a fed intake has a vent within 12 tiles of a cooling unit. Effective cooling = 40 kW per unit times efficiency; PUE = 1.2 + 0.5 (1 - efficiency), so room cooling alone is 1.35, vents 1.25 and vents with containment 1.2. Inlet delta per rack: room cooling +4 +1 per kW above 4; vent-fed +1 per kW above its share of 12 kW (16 contained); +6 recirculation, +3 blocked exhaust, -2 contained, never below -2; 6 or more is hot.
+
+**Grid outage.** At load L the batteries bridge min(50 kWh x batteries / L x 60, 240) minutes when the UPS units (150 kW each) total at least L, else nothing. Generators (300 kW each) totalling at least L carry the hall after a bridge of at least 1 minute.

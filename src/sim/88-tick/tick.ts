@@ -80,6 +80,7 @@ import { familyById, familyFailure } from "../10-catalog/families";
 import { lessorName } from "../10-catalog/leasing";
 import { BURNIN_BONUS_HOURS, BURNIN_FACTOR } from "../10-catalog/burnin";
 import { burninTick } from "../60-infra/burnin";
+import { airflow } from "../60-infra/airflow";
 import { sensorTick } from "../60-infra/sensors";
 import { heatOf, hotSpot, THERMAL, thermalTick } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
@@ -130,7 +131,7 @@ export function endLease(s: GameState, leaseId: string) {
 }
 
 // The factor on the business price: a datacenter's own, an own hall's cheaper one, or the household's.
-const powerFactorOf = (loc: Location): number => (loc.dc ? datacenterById(loc.dc).powerFactor : loc.space === "hall" ? HALL.powerFactor * HALL.pue : HOUSEHOLD_FACTOR);
+const powerFactorOf = (s: GameState, loc: Location): number => (loc.dc ? datacenterById(loc.dc).powerFactor : loc.space === "hall" ? HALL.powerFactor * airflow(s, loc).pue : HOUSEHOLD_FACTOR);
 // Power drawn in one hour per location: kWh, and euros at the business price × the datacenter's power factor, or the household
 // price in the basement. Racks on a flat-rate contract pay it monthly instead.
 export function powerByLocation(s: GameState): Record<string, PowerUse> {
@@ -141,7 +142,7 @@ export function powerByLocation(s: GameState): Record<string, PowerUse> {
       if (!d.on || flat.has(d.rackId ?? "") || !powered(s, d.id)) continue;
       const loc = locationOf(s, d)!, kwh = drawWatts(s, d, busy) / 1000, u = (out[loc.id] ??= { kwh: 0, eur: 0 });
       u.kwh += kwh;
-      u.eur += kwh * price * powerFactorOf(loc);
+      u.eur += kwh * price * powerFactorOf(s, loc);
     }
   });
   // A hall's customers draw their kW all hour.
@@ -150,7 +151,7 @@ export function powerByLocation(s: GameState): Record<string, PowerUse> {
     if (!kw || !loc) continue;
     const u = (out[loc.id] ??= { kwh: 0, eur: 0 });
     u.kwh += kw;
-    u.eur += kw * price * powerFactorOf(loc);
+    u.eur += kw * price * powerFactorOf(s, loc);
   }
   return out;
 }

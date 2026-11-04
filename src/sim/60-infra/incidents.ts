@@ -1,5 +1,6 @@
 // economy/README.md, Power outages and Legal requests: grid outages per location, server seizures and the incident log.
-import { hallBackup, hallOf } from "../20-world/properties";
+import { access, HALL, hallOf } from "../20-world/properties";
+import { airflow } from "./airflow";
 import { holdsCopy } from "./backups";
 import { noticeChance, segmentOf } from "../10-catalog/attention";
 import { hashRng, rand, type Rng } from "../00-core/rng";
@@ -7,7 +8,7 @@ import { modelById } from "../10-catalog/hardware";
 import { datacenterById } from "../20-world/datacenters";
 import type { Customer } from "../30-customers/customers";
 import { bump, createTicket, profileStats } from "../40-support/tickets";
-import type { Device, GameState, Location, Rack } from "../50-state";
+import type { Device, GameState, Hall, Location, Rack } from "../50-state";
 import { addReview, announceReview, starsFor, type ReviewReason } from "../80-business/marketing";
 import type { SimEvent } from "../88-tick/tick";
 import { insideVm, isOwnVm, moveControlPlaneOff, pickNode, vmOf, type Workload } from "./cluster";
@@ -109,12 +110,36 @@ function outageFallout(s: GameState, workloads: Workload[], dark: number, r: Rng
 
 const normal = (r: Rng) => Math.sqrt(-2 * Math.log(1 - rand(r))) * Math.cos(2 * Math.PI * rand(r));
 
-// One grid outage at a location: the site and the location's UPS carry what they can, the rest goes dark.
+// Minutes a hall's batteries carry `kw`: its UPS must cover the whole load, then the stored energy lasts kWh / kW, at most 4 hours.
+export function hallBackupMinutes(s: GameState, hall: Hall, kw: number): number {
+  if (kw <= 0) return HALL.backupMaxMin;
+  return hallCapacity(s, hall, "ups", "kw") >= kw ? Math.min((hallCapacity(s, hall, "battery", "kwh") / kw) * 60, HALL.backupMaxMin) : 0;
+}
+
+// The capacity of a hall's backup gear; gear without a way to its service front gives only HALL.service.derate of it.
+function hallCapacity(s: GameState, hall: Hall, kind: "ups" | "battery" | "generator", f: "kw" | "kwh"): number {
+  const cut = access.cut(s, hall.locationId);
+  return hall.items.filter((i) => i.kind === kind).reduce((n, i) => n + (HALL.items[kind][f] as number) * (cut.has(i.id) ? HALL.service.derate : 1), 0);
+}
+
+// One grid outage at a location: the site and the location's UPS carry what they can, the rest goes dark. A hall's batteries
+// bridge what its UPS can carry; its generators then carry the load they are sized for, once the bridge outlasts their start.
 export function gridOutage(s: GameState, loc: Location, minutes: number, r: Rng, events: SimEvent[]): Incident {
-  const hall = hallOf(s, loc.id), site = loc.dc ? datacenterById(loc.dc).backup : hall ? hallBackup(hall) : "none";
-  const generatorFails = site === "ups+generator" && rand(r) < GRID.generatorFails;
-  const bridged = upsMinutes(s, loc.id) + (site === "none" ? 0 : GRID.siteUpsMinutes);
-  const dark = site === "ups+generator" && !generatorFails ? 0 : Math.max(0, Math.round(minutes - bridged));
+  const hall = hallOf(s, loc.id), site = loc.dc ? datacenterById(loc.dc).backup : "none";
+  let generatorFails: boolean, bridged: number, carried: boolean;
+  if (hall && !loc.dc) {
+    const load = airflow(s, loc).load, own = upsMinutes(s, loc.id), bank = hallBackupMinutes(s, hall, load);
+    const gen = hallCapacity(s, hall, "generator", "kw");
+    bridged = own + bank;
+    carried = gen >= load && bank >= HALL.generatorStartMin;
+    generatorFails = carried && rand(r) < GRID.generatorFails;
+    carried &&= !generatorFails;
+  } else {
+    generatorFails = site === "ups+generator" && rand(r) < GRID.generatorFails;
+    bridged = upsMinutes(s, loc.id) + (site === "none" ? 0 : GRID.siteUpsMinutes);
+    carried = site === "ups+generator" && !generatorFails;
+  }
+  const dark = carried ? 0 : Math.max(0, Math.round(minutes - bridged));
   const workloads = dark ? s.workloads.filter((w) => atLocation(s, w, loc.id)) : [];
   const hit = customersOf(s, workloads);
   const here = dark ? s.devices.filter((d) => d.rackId && locationOf(s, d)?.id === loc.id) : [];

@@ -45,8 +45,8 @@ export const HALL = {
   // leavesAfterOutage replaces `leaves` in a month the room's breaker tripped; a cage customer pays cageMarkup times the open rate per position.
   // kw is a customer's draw per position, drawn at signing.
   colo: { signs: 0.5, leaves: 0.04, leavesAfterOutage: 0.25, cageMarkup: 1.1, kw: { min: 2, max: 5 } },
-  // The player's own hall buys power at powerFactor times the cooling overhead pue, instead of the household factor.
-  powerFactor: 1.0, pue: 1.3,
+  // The player's own hall buys power at powerFactor times the PUE its airflow gives (HALL.air), instead of the household factor.
+  powerFactor: 1.0,
   // Zones: a cage needs the year `from` and 2 to 8 positions; the meet-me zone holds 1 to 4; fences cost per position (meet-me a flat price) and refund half.
   zones: { cage: { from: 2015, min: 2, max: 8, perPosition: 2000 }, meetme: { min: 1, max: 4, price: 5000 }, refund: 0.5 },
   // A customer orders a cross-connect to a built carrier each month with chance `chance`, up to `max`, for `monthly`.
@@ -73,7 +73,7 @@ export const HALL = {
   annex: { w: 6 },
   // Service front: gear of largeTiles or more tiles keeps largeDepth tiles clear in front, the rest one. Gear without a way to its front gives derate of its capacity.
   service: { largeTiles: 4, largeDepth: 2, derate: 0.5 },
-  generatorStartMin: 1,
+  generatorStartMin: 1, backupMaxMin: 240,
 };
 const itemKw = (p: Property, kind: HallItemKind): number => {
   const k = HALL.items[kind].kw;

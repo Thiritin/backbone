@@ -3,6 +3,7 @@ import { datacenterById } from "../src/sim/20-world/datacenters";
 import { customerSpots, HALL, hallSpots } from "../src/sim/20-world/properties";
 import { businessPowerPrice } from "../src/sim/10-catalog/economy";
 import type { HallZone } from "../src/sim/50-state";
+import { airflow } from "../src/sim/60-infra/airflow";
 import { powerByLocation } from "../src/sim/88-tick/tick";
 import { breakerTick, TRIP_HOURS } from "../src/sim/60-infra/power";
 import { jackRoles, panelOf } from "../src/sim/60-infra/panels";
@@ -166,7 +167,7 @@ describe("own datacenter: customers", () => {
     const use = powerByLocation(e.s)[e.hallId];
     expect(use.kwh).toBe(4);
     const perKwh = use.eur / use.kwh, dc = businessPowerPrice(yearOf(e.s.hour)) * datacenterById("equinox-fr5").powerFactor;
-    expect(perKwh).toBeCloseTo(businessPowerPrice(yearOf(e.s.hour)) * HALL.powerFactor * HALL.pue, 6);
+    expect(perKwh).toBeCloseTo(businessPowerPrice(yearOf(e.s.hour)) * HALL.powerFactor * airflow(e.s, e.s.locations.find((l) => l.id === e.hallId)!).pue, 6);
     expect(perKwh).toBeLessThan(dc);
   });
 });
