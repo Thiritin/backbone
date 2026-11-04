@@ -247,6 +247,7 @@ export default {
   "apps.guide.savingText": () => "Das Spiel speichert sich selbst in diesem Browser. Über das Logo-Menü ganz links in der Menüleiste exportierst du deinen Spielstand in eine Datei, importierst einen Spielstand und löschst deinen Fortschritt.",
   "apps.guide.step.register": () => "Melde deine Firma im Handelsamt im Browser an.",
   "apps.guide.step.payBill": () => "Das Gewerbeamt schickt die Anmeldegebühr per Brief. Hol ihn aus dem Briefkasten an der Tür und bezahle ihn.",
+  "apps.guide.step.payBills": () => "Lieferanten sperren Leistungen, wenn eine Rechnung offen bleibt. Bezahle jede offene Rechnung in der Buchhaltung, bevor sie überfällig wird.",
   "apps.guide.step.buyServer": () => "Kaufe deinen ersten Server im Shop. Das Limit der Kreditkarte ist am Anfang niedrig, bezahle also per Überweisung oder wähle ein Leasing-Angebot im Warenkorb.",
   "apps.guide.step.mountServer": () => "Bau ihn aus dem Lager ins Rack ein und schalte ihn ein.",
   "apps.guide.step.mountRouter": () => "Verkabel die Fritz!Bocks auf dem Regal: ihren DSL-Anschluss mit der Wanddose und einen ihrer LAN-Anschlüsse mit dem Server.",

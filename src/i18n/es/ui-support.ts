@@ -83,6 +83,7 @@ export default {
   "support.loadBar": (p) => `${p.label} ${p.before} % ahora, ${p.after} % después`,
   "support.server": () => "Servidor",
   "support.full": () => "Lleno",
+  "support.noPowerPill": () => "Sin luz",
   "support.suggested": () => "Sugerido",
   "support.selected": () => "Seleccionado",
   "support.select": () => "Seleccionar",

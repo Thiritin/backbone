@@ -1,5 +1,5 @@
 // docs/design/plans/billing-by-hand.md, 9b: the company's bank account. Cash stays s.cash, the account's balance.
-import { arrived, bookPayment, cardBlocked, invoice, open, payableFor, supplierAccount, supplierAt, supplierIban } from "./payables";
+import { arrived, bookPayment, cardBlocked, invoice, open, payableFor, supplierAccount, supplierAt, supplierCode, supplierIban } from "./payables";
 import { t } from "../../i18n/en";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart, monthIndexOf, nowMinutes, yearOf } from "../00-core/time";
@@ -27,7 +27,8 @@ export interface Payee { id: string; name: string; account: string; code?: strin
 export interface Draft { name: string; account: string; code?: string; amount: number; reference: string; payableId?: string }
 // A transfer waiting for its TAN: the list position asked for (iTAN), the code texted (mTAN) and the minute the text arrives.
 // day is set when the TAN confirms a standing order for that day of the month instead of a transfer.
-export interface Pending { draft: Draft; index: number | null; code: string | null; sendAt: number | null; day?: number }
+// batch is a collective order: draft shows its total and the one TAN sends every transfer in it.
+export interface Pending { draft: Draft; index: number | null; code: string | null; sendAt: number | null; day?: number; batch?: Draft[] }
 // The account the company switched away from: it pays its last fee at the next month start (closed then), and customers'
 // payments to its number still arrive for PREVIOUS_HOURS after at.
 export interface OldAccount { id: BankId; number: string; plan: PlanId; at: number; closed: boolean; standingOrders: StandingOrder[]; mandates: string[] }
@@ -227,6 +228,10 @@ export function payAll(s: GameState, before = Infinity): number {
   }
   return n;
 }
+
+// One transfer per open invoice that no transfer covers yet.
+export const billDrafts = (s: GameState): Draft[] =>
+  open(s).map((p) => ({ name: p.name, account: ibanEra(s) ? supplierIban(p.supplier) : supplierAccount(p.supplier), ...(ibanEra(s) ? {} : { code: supplierCode }), amount: cents(p.amount - p.sent), reference: p.number, payableId: p.id })).filter((d) => d.amount > 0);
 
 // The mTAN text arrives a minute after the transfer asks for it.
 export function tanTick(s: GameState): void {

@@ -8,6 +8,8 @@ const APP: Record<string, string> = {
   "event.vuln.announced": "Security", "event.vuln.poc": "Security", "event.vuln.warning": "Security", "event.vuln.patch": "Security", "event.vuln.hacked": "Security",
   "event.dataLoss": "Locations", "event.dataCorrupted": "Locations", "event.seized": "Support", "event.ddos": "Locations", "event.gridDark": "Locations", "event.feedDark": "Locations", "event.feedCascade": "Locations", "event.overheated": "Locations", "event.vulnCritical": "Security",
   "event.breach": "Support",
+  "event.billCut.dark": "Books",
+  "event.billCut.domains": "Books",
 };
 
 describe("alerts", () => {

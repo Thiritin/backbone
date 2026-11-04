@@ -11,7 +11,7 @@ export interface Card { id: StepId; done: boolean }
 export interface Board { cards: Card[]; under: StepId[]; current?: StepId }
 export interface Spot { id: string; name: string }
 
-const FIRST: readonly string[] = TUTORIAL;
+const FIRST: readonly string[] = [...TUTORIAL, "payBills"];
 
 // The current chapter's cards; once the first chapter is done, the later steps are pinned over it.
 export function boardOf(s: GameState): Board {

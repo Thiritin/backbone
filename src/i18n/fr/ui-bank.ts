@@ -59,6 +59,8 @@ export default {
   "bank.site.date": () => "Date",
   "bank.site.text": () => "Libellé",
   "bank.site.amount": () => "Montant",
+  "bank.site.total": () => "Total",
+  "bank.site.confirmBatch": () => "Confirmer le virement groupé",
   "bank.site.noBookings": () => "Aucune opération",
   "bank.site.locked": (p) => `La banque en ligne est bloquée jusqu'au ${p.date}.`,
   "bank.site.sent": () => "Virement envoyé.",

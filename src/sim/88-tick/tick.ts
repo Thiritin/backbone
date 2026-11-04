@@ -479,7 +479,7 @@ export function tick(state: GameState): SimEvent[] {
   paperworkTick(state);
   taxTick(state);
   lettersTick(state);
-  payablesTick(state);
+  events.push(...payablesTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));
   events.push(...phoneTick(state));

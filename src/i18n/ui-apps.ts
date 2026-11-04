@@ -247,6 +247,7 @@ export default {
   "apps.guide.savingText": () => "The game saves itself in this browser. The logo menu at the far left of the menu bar exports your save to a file, imports a save, and deletes your progress.",
   "apps.guide.step.register": () => "Register your company at the trade office in the Browser.",
   "apps.guide.step.payBill": () => "The trade office sends its registration fee by letter. Fetch it from the letterbox by the door and pay it.",
+  "apps.guide.step.payBills": () => "Suppliers cut services when a bill stays open. Pay every open bill in the payables list before it is overdue.",
   "apps.guide.step.buyServer": () => "Buy your first server in the Shop. The credit card limit starts low, so pay by bank transfer or choose one of the lease offers in the cart.",
   "apps.guide.step.mountServer": () => "Mount it in the rack from storage and power it on.",
   "apps.guide.step.mountRouter": () => "Cable the Fritz!Bocks on the shelf: its DSL port to the wall socket and one of its LAN ports to the server.",

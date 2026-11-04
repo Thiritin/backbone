@@ -247,6 +247,7 @@ export default {
   "apps.guide.savingText": () => "O jogo grava-se sozinho neste navegador. O menu do logótipo, no extremo esquerdo da barra de menus, exporta o teu jogo para um ficheiro, importa um jogo e apaga o teu progresso.",
   "apps.guide.step.register": () => "Regista a tua empresa na conservatória comercial no navegador.",
   "apps.guide.step.payBill": () => "A conservatória comercial envia a taxa de registo por carta. Tira a carta da caixa do correio junto à porta e paga-a.",
+  "apps.guide.step.payBills": () => "Os fornecedores cortam serviços quando uma fatura fica em aberto. Paga cada fatura em aberto na lista de faturas recebidas antes de vencer.",
   "apps.guide.step.buyServer": () => "Compra o teu primeiro servidor na loja. O limite do cartão de crédito é baixo no início, por isso paga por transferência ou escolhe uma oferta de leasing no carrinho.",
   "apps.guide.step.mountServer": () => "Monta-o no rack a partir do armazém e liga-o.",
   "apps.guide.step.mountRouter": () => "Liga a Fritz!Bocks na estante: a porta DSL à tomada da parede e uma das portas LAN ao servidor.",

@@ -59,6 +59,8 @@ export default {
   "bank.site.date": () => "Date",
   "bank.site.text": () => "Description",
   "bank.site.amount": () => "Amount",
+  "bank.site.total": () => "Total",
+  "bank.site.confirmBatch": () => "Confirm collective transfer",
   "bank.site.noBookings": () => "No bookings",
   "bank.site.locked": (p) => `Online banking is locked until ${p.date}.`,
   "bank.site.sent": () => "Transfer sent.",

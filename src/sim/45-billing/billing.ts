@@ -538,6 +538,7 @@ export function billingTick(s: GameState): SimEvent[] {
   }
   if (changed || issued.length) s.invoices = [...invoices, ...issued];
   if (arrived.length) s.transfers = [...s.transfers, ...arrived];
+  for (const tr of arrived) events.push({ app: "Books", key: "event.paymentIn", params: { from: tr.from, amount: tr.amount } });
   if (monthStart && issued.length) {
     events.push({ app: "Books", key: "event.invoices", params: { count: issued.length, total: cents(issued.reduce((sum, i) => sum + invoiceTotal(i), 0)) } });
   }

@@ -1,4 +1,5 @@
 import { isOfficeRouter, modelById } from "../../sim/10-catalog/hardware";
+import { overdue } from "../../sim/46-finance/payables";
 import { locationOf } from "../../sim/60-infra/status";
 import { FRITZ_HOST } from "../../sim/60-infra/lan";
 import { registrarById, REGISTRARS } from "../../sim/10-catalog/registrars";
@@ -36,6 +37,10 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.register"), text: t("apps.guide.step.register"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
     case "payBill":
       return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post" };
+    case "payBills": {
+      const late = s.payables.find((p) => overdue(s, p) && p.sent < p.amount - 0.005) ?? s.payables.find((p) => p.paidAt === null);
+      return { title: t("guide.step.payBills"), text: t("apps.guide.step.payBills"), app: "Books", focus: late && { kind: "payable", id: late.id } };
+    }
     case "books":
       return { title: t("guide.step.books"), text: t("apps.guide.step.books"), app: "Browser", focus: { kind: "url", id: `${HOME_URL}${dirSlug(t("sim.index.cat.bookkeeping"))}` } };
     case "buyServer":

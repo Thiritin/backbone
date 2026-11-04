@@ -83,6 +83,7 @@ export default {
   "support.loadBar": (p) => `${p.label} ${p.before}% now, ${p.after}% after`,
   "support.server": () => "Server",
   "support.full": () => "Full",
+  "support.noPowerPill": () => "No power",
   "support.suggested": () => "Suggested",
   "support.selected": () => "Selected",
   "support.select": () => "Select",

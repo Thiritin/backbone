@@ -82,7 +82,7 @@ export function BooksProgram() {
     if (f.kind === "register") return setRegister(true);
     if (f.kind === "setup") return setSetup(true);
     const to = f.kind === "invoice" ? (hasFeature(game, "dunning") && game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
-      : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : null;
+      : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : f.kind === "payable" ? "payables" : null;
     if (!to) return;
     setTab(to);
     setFocus(f.kind === "newCustomer" ? `${NEW}${f.id}` : f.id);

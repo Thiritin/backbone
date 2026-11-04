@@ -169,6 +169,7 @@ export default {
   "doc.untitled": () => "Ohne Titel",
   "guide.step.register": () => "Firma anmelden",
   "guide.step.payBill": () => "Erste Rechnung bezahlen",
+  "guide.step.payBills": () => "Rechnungen bezahlen",
   "guide.step.buyServer": () => "Server kaufen",
   "guide.step.mountServer": () => "Einbauen und einschalten",
   "guide.step.mountRouter": () => "Router verkabeln",

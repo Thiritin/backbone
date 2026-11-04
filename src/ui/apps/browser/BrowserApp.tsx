@@ -331,8 +331,13 @@ export function BrowserApp() {
   useFocus("Browser", (f) => {
     if (f.kind !== "url") return;
     const have = tabs.find((x) => x.history[x.at] === f.id);
-    if (have) setActive(have.id);
-    else open(f.id);
+    if (have) return setActive(have.id);
+    // One bank tab: a payment link steers the open one instead of adding another.
+    const bank = resolve(game, f.id).page.kind === "bank" && tabs.find((x) => resolve(game, x.history[x.at]).page.kind === "bank");
+    if (bank) {
+      patch(bank.id, (x) => ({ ...x, history: [...x.history.slice(0, x.at + 1), f.id], at: x.at + 1, nav: x.nav + 1 }));
+      setActive(bank.id);
+    } else open(f.id);
   });
 
   const bookmarks = [...defaultBookmarks(game), ...marks];

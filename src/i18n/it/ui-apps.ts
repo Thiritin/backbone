@@ -247,6 +247,7 @@ export default {
   "apps.guide.savingText": () => "Il gioco si salva da solo in questo browser. Il menu del logo all'estrema sinistra della barra dei menu esporta il salvataggio in un file, ne importa uno e cancella i tuoi progressi.",
   "apps.guide.step.register": () => "Registra la tua azienda presso l'ufficio del commercio nel Browser.",
   "apps.guide.step.payBill": () => "L'ufficio del commercio invia la tassa di registrazione per posta. Prendi la lettera dalla cassetta accanto alla porta e pagala.",
+  "apps.guide.step.payBills": () => "I fornitori sospendono i servizi quando una fattura resta aperta. Paga ogni fattura aperta nell'elenco delle fatture ricevute prima della scadenza.",
   "apps.guide.step.buyServer": () => "Compra il tuo primo server nel negozio. Il limite della carta di credito è basso all'inizio, quindi paga con bonifico o scegli un'offerta di leasing nel carrello.",
   "apps.guide.step.mountServer": () => "Montalo nel rack dal magazzino e accendilo.",
   "apps.guide.step.mountRouter": () => "Collega la Fritz!Bocks sullo scaffale: la porta DSL alla presa a muro e una delle porte LAN al server.",
