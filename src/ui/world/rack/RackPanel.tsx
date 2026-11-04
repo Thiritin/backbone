@@ -29,6 +29,7 @@ import "../panel/panel.css";
 import "./rack.css";
 import { WorkTag } from "../figures";
 import { UnitTag } from "./UnitTag";
+import { clampZoom, stepZoom, tagLeft, wheelZoom } from "./zoom";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
 const CAP = 36, SIDE = 18, FOOT = 18;
@@ -36,7 +37,9 @@ const FRONT_U = 28, BACK_U = 30;
 // Each half of the turn between front and back.
 const TURN_MS = 150;
 // The tag's distance from the rack and its string hole's offset from the tag's corner.
-const TAG_GAP = 56, HOLE = 16;
+const TAG_GAP = 56, HOLE = 16, TAG_W = 260;
+// The stage height the fitted rack leaves for the room around it; rack.css reserves the same in the fit height.
+const CHROME = 84;
 const CABLED = ["switch", "gateway", "firewall", "patch", "server"];
 const same = (a: End, b: End) => a.device === b.device && a.port === b.port;
 const key = (e: End) => `${e.device}:${e.port}`;
@@ -59,7 +62,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const [cart, setCart] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [pin, setPin] = useState<{ x: number; y: number; top: number } | null>(null);
+  const [pin, setPin] = useState<{ x: number; y: number; top: number; left: number } | null>(null);
   // The provider jack whose tag hangs open.
   const [jack, setJack] = useState<number | null>(null);
   const stage = useRef<HTMLDivElement>(null), scene = useRef<HTMLDivElement>(null), tagEl = useRef<HTMLDivElement>(null);
@@ -77,14 +80,117 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
 
   const gone = !rack;
   useEffect(() => { if (gone) onClose(); }, [gone, onClose]);
-  // The wheel zooms the scene between its fitted size and twice that; a native listener, since React's wheel handler is passive.
+  // The scroll position that keeps the point under the pointer still once the zoom changes.
+  const anchorAt = useRef<{ fx: number; fy: number; px: number; py: number; z: number } | null>(null);
+  const zoomRef = useRef(1);
+  zoomRef.current = zoom;
+  const zoomTo = (z: number, at?: { x: number; y: number }) => {
+    const el = stage.current, next = clampZoom(z);
+    if (!el || next === zoomRef.current) return;
+    const r = el.getBoundingClientRect(), px = at ? at.x - r.left : r.width / 2, py = at ? at.y - r.top : r.height / 2;
+    anchorAt.current = { fx: (el.scrollLeft + px) / zoomRef.current, fy: (el.scrollTop + py) / zoomRef.current, px, py, z: next };
+    zoomRef.current = next;
+    setZoom(next);
+  };
+  const zoomFns = useRef({ zoomTo, turn, fit: () => {} });
+  zoomFns.current = { ...zoomFns.current, zoomTo, turn };
+  // The default framing makes the rack at least 60 percent of the stage wide, centred on its occupied units; the fit key shows it whole.
+  const [view, setView] = useState<{ t: number; h: number; marks: [number, number][] } | null>(null);
+  const sync = () => {
+    const el = stage.current;
+    if (!el) return;
+    const o = el.getBoundingClientRect(), n = el.scrollHeight, h = el.clientHeight / n;
+    const marks = [...el.querySelectorAll(".wr-face:not(.out) .rack-dev")].map((d) => d.getBoundingClientRect()).map((r): [number, number] => [(r.top - o.top + el.scrollTop) / n, r.height / n]);
+    setView(!n || h > 0.98 ? null : { t: el.scrollTop / n, h, marks });
+  };
+  const jump = (e: React.PointerEvent) => {
+    const el = stage.current, r = e.currentTarget.getBoundingClientRect();
+    if (el && (e.type === "pointerdown" || e.buttons)) el.scrollTop = Math.max(0, Math.min(el.scrollHeight - el.clientHeight, ((e.clientY - r.top) / r.height) * el.scrollHeight - el.clientHeight / 2));
+  };
+  const framing = useRef(0), framed = useRef(1);
+  useLayoutEffect(() => {
+    const el = stage.current, svg = el?.querySelector(".wr-face > svg");
+    const vb = svg?.getAttribute("viewBox")?.split(" ").map(Number), all = rack ? rackUnits(rack.model) : 0;
+    // Up to 24U the whole rack shows; a taller rack zooms to the width target, or less so its equipment span stays in view.
+    if (!svg || !el || !vb || !rack || back || all <= 24) return;
+    const fitH = Math.min(el.clientHeight - CHROME, tall * 34 + 80), mine = rackItems(game, rack.id);
+    const lo = Math.min(...mine.map((it) => it.slot)), hi = Math.max(...mine.map((it) => it.slot + heightIn(game, rack.id, it.model.id) - 1));
+    const spanPx = mine.length ? ((hi - lo + 1) * FRONT_U * fitH) / vb[3] : 0;
+    const z = clampZoom(Math.min((0.6 * el.clientWidth * vb[3]) / (fitH * vb[2]), spanPx ? (el.clientHeight - 56) / spanPx : 4));
+    if (z < 1.05) return;
+    framed.current = z; framing.current = z; zoomRef.current = z; setZoom(z);
+  }, []);
+  const fitToggle = () => {
+    if (zoomRef.current > 1.001) { zoomTo(1); return; }
+    framing.current = framed.current; zoomRef.current = framed.current; setZoom(framed.current);
+  };
+  zoomFns.current.fit = fitToggle;
+  useLayoutEffect(() => {
+    const el = stage.current, a = anchorAt.current;
+    sync();
+    if (el && framing.current === zoom) {
+      framing.current = 0;
+      const o = el.getBoundingClientRect(), devs = [...el.querySelectorAll(".wr-face:not(.out) .rack-dev")].map((d) => d.getBoundingClientRect());
+      const top = Math.min(...devs.map((d) => d.top)) - o.top + el.scrollTop, bottom = Math.max(...devs.map((d) => d.bottom)) - o.top + el.scrollTop;
+      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+      el.scrollTop = !devs.length || bottom - top > el.clientHeight - 24 ? el.scrollHeight : (top + bottom - el.clientHeight) / 2;
+      return;
+    }
+    if (!el || !a || a.z !== zoom) return;
+    el.scrollLeft = a.fx * zoom - a.px; el.scrollTop = a.fy * zoom - a.py;
+    anchorAt.current = null;
+  }, [zoom]);
+  // The wheel zooms around the pointer; a native listener, since React's wheel handler is passive.
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
-    const wheel = (e: WheelEvent) => { e.preventDefault(); setZoom((z) => Math.min(2, Math.max(1, z - e.deltaY * 0.002))); };
+    const wheel = (e: WheelEvent) => { if ((e.target as Element).closest?.(".wr-tag")) return; e.preventDefault(); zoomFns.current.zoomTo(wheelZoom(zoomRef.current, e), { x: e.clientX, y: e.clientY }); };
     el.addEventListener("wheel", wheel, { passive: false });
     return () => el.removeEventListener("wheel", wheel);
   }, [gone]);
+  // Keys: R turns the rack, + and - zoom, 0 fits.
+  const backRef = useRef(back);
+  backRef.current = back;
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target instanceof Element ? e.target : null;
+      if (el?.closest("input,textarea,select,[contenteditable]")) return;
+      const z = zoomRef.current, f = zoomFns.current;
+      if (e.key === "r" || e.key === "R") { e.preventDefault(); f.turn(!backRef.current); }
+      else if (e.key === "+" || e.key === "=") f.zoomTo(stepZoom(z, 1));
+      else if (e.key === "-" || e.key === "_") f.zoomTo(stepZoom(z, -1));
+      else if (e.key === "0") f.fit();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, []);
+  // A drag on empty rack, floor or backdrop pans the zoomed scene; a drag that moved swallows its click.
+  const pan = useRef<{ x: number; y: number; l: number; t: number; moved: boolean } | null>(null);
+  const SKIP = ".wr-mini,button,[role=button],input,select,textarea,a,.wr-tag,.rack-dev,.rack-free,.rack-port,.rack-seated,.rack-pull,.rack-remote,[data-end],[data-jack],.wr-jack";
+  const panDown = (e: React.PointerEvent) => {
+    const el = stage.current;
+    if (e.button !== 0 || zoomRef.current <= 1 || !el || (e.target as Element).closest(SKIP)) return;
+    pan.current = { x: e.clientX, y: e.clientY, l: el.scrollLeft, t: el.scrollTop, moved: false };
+  };
+  const panMove = (e: React.PointerEvent) => {
+    const p = pan.current, el = stage.current;
+    if (!p || !el) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    if (!p.moved && Math.hypot(dx, dy) < 4) return;
+    if (!p.moved) { p.moved = true; el.classList.add("panning"); el.setPointerCapture?.(e.pointerId); }
+    el.scrollLeft = p.l - dx; el.scrollTop = p.t - dy;
+  };
+  const panUp = () => {
+    const p = pan.current;
+    pan.current = null;
+    stage.current?.classList.remove("panning");
+    if (p?.moved) {
+      const eat = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); };
+      window.addEventListener("click", eat, { capture: true, once: true });
+      setTimeout(() => window.removeEventListener("click", eat, true), 0);
+    }
+  };
 
   const dev = rack && game.devices.find((d) => d.id === sel && d.rackId === rack.id);
   const portDev = port && game.devices.find((d) => d.id === port.device);
@@ -92,12 +198,18 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const pp = rack && rack.model !== "shelf" ? panelOf(game, rack.id) : undefined;
   const anchor = back && jack !== null && !hand ? `[data-jack="${jack}"]` : back && hand ? `[data-end="${key(hand)}"]` : back && port ? `[data-end="${key(port)}"]` : dev ? `.rack-dev[aria-pressed="true"]` : free !== null ? `.rack-free[aria-label="${t("art.rackFree", { n: free })}"]` : null;
   // The tag hangs level with what it names, pushed up so it stays above the floor; its string runs from that unit's right edge.
-  useLayoutEffect(() => {
-    const at = anchor && scene.current?.querySelector(`.wr-face:not(.out) ${anchor}, .wr-pp ${anchor}`);
-    if (!at || !scene.current) { setPin(null); return; }
-    const s = scene.current.getBoundingClientRect(), r = at.getBoundingClientRect(), y = r.top + r.height / 2 - s.top;
-    setPin({ x: r.right - s.left, y, top: Math.max(Math.min(-HOLE, y - HOLE), Math.min(y - HOLE, s.height + 40 - (tagEl.current?.offsetHeight ?? 0))) });
-  }, [anchor, sel, back, zoom, game, turning, jack]);
+  // The tag stays inside the visible stage: a zoomed rack wider than the screen slides it over the rack's edge.
+  const repin = () => {
+    const at = anchor && scene.current?.querySelector(`.wr-face:not(.out) ${anchor}, .wr-pp ${anchor}`), sc = scene.current, st = stage.current;
+    if (!at || !sc || !st) { setPin(null); return; }
+    const s = sc.getBoundingClientRect(), r = at.getBoundingClientRect(), y = r.top + r.height / 2 - s.top;
+    const base = sc.offsetLeft - (TAG_W + TAG_GAP) / 2;
+    const left = st.clientWidth ? tagLeft(sc.offsetWidth + TAG_GAP, base, st.scrollLeft, st.clientWidth, TAG_W) : sc.offsetWidth + TAG_GAP;
+    setPin({ x: r.right - s.left, y, left, top: Math.max(Math.min(-HOLE, y - HOLE), Math.min(y - HOLE, s.height + 40 - (tagEl.current?.offsetHeight ?? 0))) });
+  };
+  useLayoutEffect(repin, [anchor, sel, back, zoom, game, turning, jack]);
+  // A tag opened at high zoom is brought into view.
+  useEffect(() => { tagEl.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" }); }, [sel, free, port, jack, back]);
   if (!rack) return null;
 
   const units = rackUnits(rack.model), items = rackItems(game, rack.id).map((it) => withFault(game, it));
@@ -153,7 +265,15 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
 
   return (
     <Slab title={rack.name} onClose={onClose} onBack={() => (hand ? (onHand(null), true) : cart ? (setCart(null), true) : lid ? (setLid(null), true) : false)} data={{ "rack-panel": rack.id }}>
-      <div ref={stage} className={`wr-stage${back && pp ? " pp" : ""}`} style={{ ["--z" as string]: zoom, ["--units" as string]: tall }}>
+      <div ref={stage} className={`wr-stage${back && pp ? " pp" : ""}`} style={{ ["--z" as string]: zoom, ["--units" as string]: tall }}
+        onScroll={() => { sync(); if (pin) repin(); }} onPointerDown={panDown} onPointerMove={panMove} onPointerUp={panUp} onPointerCancel={panUp} onLostPointerCapture={panUp} onDoubleClick={(e) => { if (!(e.target as Element).closest(SKIP)) fitToggle(); }}>
+        {view && (
+          <div className="wr-mini"><div className="wr-mini-bar" role="scrollbar" aria-orientation="vertical" aria-controls="" aria-valuenow={Math.round(view.t * 100)} onPointerDown={(e) => { e.stopPropagation(); e.currentTarget.setPointerCapture?.(e.pointerId); jump(e); }} onPointerMove={jump}>
+            {view.marks.map(([t0, h0], i) => <i key={i} className="wr-mini-mark" style={{ top: `${t0 * 100}%`, height: `${Math.max(h0 * 100, 1)}%` }} />)}
+            <b className="wr-mini-view" style={{ top: `${view.t * 100}%`, height: `${view.h * 100}%` }} />
+          </div></div>
+        )}
+        <Keys back={back} zoom={zoom} onTurn={() => turn(!back)} onZoom={(z) => zoomTo(z)} onFit={fitToggle} />
         <div className={`wr-room${lid ? " lidded" : ""}`}>
           <div ref={scene} className={`wr-scene${tag || floor ? " tagged" : ""}`}>
             <div className={`wr-cab${shelf ? " shelf" : ""}`}>
@@ -162,18 +282,19 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
               <div className="wr-plate" data-plate=""><b>{rack.name}</b><span>{shelf ? `${used} / ${units}` : `${used} / ${units} U`}</span></div>
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
               <div className={`wr-face${turning !== null ? " in" : ""}`}>{face(back)}</div>
+              <button className="wr-flank" aria-hidden="true" onClick={() => turn(!back)} tabIndex={-1} />
             </div>
-            <Turntable back={back} onTurn={() => turn(!back)} />
+            <div className="wr-rail" />
             {tag && (
-              <div ref={tagEl} className={`wr-tag${unit ? " unit" : ""}${back && pp && jack !== null && !hand ? " far" : ""}`} style={pin ? { top: pin.top } : undefined}>{tag}</div>
+              <div ref={tagEl} className={`wr-tag${unit ? " unit" : ""}${back && pp && jack !== null && !hand ? " far" : ""}`} style={pin ? { top: pin.top, left: pin.left } : undefined}>{tag}</div>
             )}
             {floor && <div className="wr-floor-units">{floor}</div>}
             {tag && pin && (
-              <svg className="wr-string" aria-hidden="true"><line x1={pin.x} y1={pin.y} x2={(tagEl.current?.offsetLeft ?? scene.current!.offsetWidth + TAG_GAP) + HOLE} y2={pin.top + HOLE} /></svg>
+              <svg className="wr-string" aria-hidden="true"><line x1={pin.x} y1={pin.y} x2={pin.left + HOLE} y2={pin.top + HOLE} /></svg>
             )}
           </div>
           <div className="wr-floor">
-            {back && <div className="wr-away" data-away="" role="button" tabIndex={0} aria-label={t("world.toRack")} onClick={() => hand && onClose()}><span>{t("world.toRack")}</span></div>}
+            {back && <div className="wr-away" data-away="" role="button" tabIndex={0} aria-label={t("world.toRack")} onClick={() => hand && onClose()}><span className="wr-k" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" /><path d="M11 9h3q3 0 3 3t3 3M17 15l3 0M20 15l-2-2M20 15l-2 2" /></svg></span><span>{t("world.toRack")}</span></div>}
           </div>
         </div>
         {lid && dev && <LidScene key={lid} deviceId={lid} onClose={() => setLid(null)} />}
@@ -208,18 +329,22 @@ function CrashCart({ deviceId, onClose }: { deviceId: string; onClose: () => voi
   );
 }
 
-// The disc the rack stands on: a click turns it, the side facing the room is the brighter word on its near edge.
-function Turntable({ back, onTurn }: { back: boolean; onTurn: () => void }) {
+// One rail of square keys over the scene: the side facing you, turn, a separator, zoom out, zoom in, fit.
+function Keys({ back, zoom, onTurn, onZoom, onFit }: { back: boolean; zoom: number; onTurn: () => void; onZoom: (z: number) => void; onFit: () => void }) {
+  const key = (label: string, onClick: () => void, icon: ReactNode, disabled = false) => (
+    <button className="wr-k" aria-label={label} title={label} data-tip={label} disabled={disabled} onClick={onClick}><svg viewBox="0 0 24 24">{icon}</svg></button>
+  );
   return (
-    <svg className="wr-table" viewBox="0 0 400 44" role="button" tabIndex={0} aria-label={t(back ? "locations-2.front" : "locations-2.back")} aria-pressed={back}
-      onClick={onTurn} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onTurn(); } }}>
-      <ellipse className="wr-table-rim" cx="200" cy="24" rx="196" ry="14" />
-      <rect className="wr-table-rim" x="4" y="18" width="392" height="6" />
-      <ellipse className="wr-table-top" cx="200" cy="18" rx="196" ry="14" />
-      <path className="wr-table-mark" d="M290 30.6Q340 27.5 366 22.5M366 22.5l-7.5-1M366 22.5l-5.5 4.6" />
-      <text className={`wr-table-word${back ? "" : " on"}`} x="165" y="30" textAnchor="end">{t("locations-2.front")}</text>
-      <text className={`wr-table-word${back ? " on" : ""}`} x="235" y="30">{t("locations-2.back")}</text>
-    </svg>
+    <div className="wr-keys"><div>
+      {key(t("world.turn"), onTurn, <><path d="M5 12a7 7 0 0 1 12-4.9M19 12a7 7 0 0 1-12 4.9" /><path d="M18 3v4.5h-4.5M6 21v-4.5h4.5" /></>)}
+      <span className="wr-face-ind" role="img" aria-label={t(back ? "locations-2.back" : "locations-2.front")} title={t(back ? "locations-2.back" : "locations-2.front")} data-tip={t(back ? "locations-2.back" : "locations-2.front")}>
+        <svg viewBox="0 0 24 24">{back ? <><rect x="3" y="3" width="18" height="18" /><rect x="6" y="6.5" width="5" height="4" /><rect x="13" y="6.5" width="5" height="4" /><path d="M8.5 14h7l1.2 4.5H7.3z" /></> : <><rect className="post" x="4" y="2.5" width="3" height="19" /><rect className="post" x="17" y="2.5" width="3" height="19" /><path d="M9 6.5h6M9 9.5h6M9 12.5h6" /><circle cx="12" cy="17.5" r="1.3" /></>}</svg>
+      </span>
+      <i className="wr-sep" />
+      {key(t("world.zoomOut"), () => onZoom(stepZoom(zoom, -1)), <path d="M6 12h12" />, zoom <= 1)}
+      {key(t("world.zoomIn"), () => onZoom(stepZoom(zoom, 1)), <path d="M6 12h12M12 6v12" />, zoom >= 4)}
+      {key(t("world.zoomFit"), onFit, <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" />)}
+    </div></div>
   );
 }
 

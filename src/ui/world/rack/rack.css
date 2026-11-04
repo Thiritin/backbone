@@ -28,41 +28,60 @@
 .wr-x:hover .wr-x-plate { fill: oklch(0.8 0.01 250); }
 
 /* The close-up scene: the rack stands centred on a floor strip; the wheel zooms it up to twice its fitted height. */
-.wr-stage { position: relative; --depth: 22px; --tag-w: 260px; --tag-gap: 56px; flex: 1; min-height: 0; overflow: auto; container-type: size; background: oklch(0.22 0.018 255); }
-.wr-room { min-width: 100%; min-height: 100%; width: max-content; display: flex; flex-direction: column; align-items: center; padding: calc(var(--depth) + 24px) 48px 0; box-sizing: border-box; }
+.wr-stage { position: relative; --depth: 22px; --tag-w: 260px; --tag-gap: 56px; flex: 1; min-height: 0; overflow: auto; container-type: size; background: oklch(0.2 0.018 255); }
+.wr-room { min-width: 100%; min-height: 100%; width: max-content; display: flex; flex-direction: column; align-items: center; padding: calc(var(--depth) + 10px) 48px 0; box-sizing: border-box; }
 .wr-scene { position: relative; z-index: 1; transition: transform 220ms ease-out; }
 .wr-scene.tagged { transform: translateX(calc(-0.5 * (var(--tag-w) + var(--tag-gap)))); }
 .wr-cab { position: relative; z-index: 1; background: var(--rack); }
 /* The rack's lit top and its darker right side, drawn as faces around the front art. */
-.wr-cab::before, .wr-cab::after { content: ""; position: absolute; pointer-events: none; }
+.wr-cab::before { content: ""; position: absolute; pointer-events: none; }
 .wr-cab::before { left: 0; bottom: 100%; width: 100%; height: var(--depth); background: oklch(0.46 0.01 255); box-shadow: inset 0 -1px 0 oklch(0.3 0.008 255); transform: skewX(-45deg); transform-origin: bottom left; }
-.wr-cab::after { left: 100%; top: 0; width: var(--depth); height: 100%; background: oklch(0.2 0.008 255); box-shadow: inset 1px 0 0 oklch(0.14 0.006 255); transform: skewY(-45deg); transform-origin: top left; }
+/* The rack's right side, a face that turns the rack when grabbed. */
+.wr-flank { position: absolute; left: 100%; top: 0; width: var(--depth); height: 100%; padding: 0; border: 0; background: oklch(0.2 0.008 255); box-shadow: inset 1px 0 0 oklch(0.14 0.006 255); transform: skewY(-45deg); transform-origin: top left; cursor: grab; }
+.wr-flank:hover, .wr-flank:focus-visible { background: oklch(0.3 0.02 255); outline: none; }
+.wr-cab.shelf .wr-flank { background: oklch(0.6 0.008 80); box-shadow: inset 1px 0 0 oklch(0.5 0.01 80); }
+/* The base rail the rack stands on. */
+.wr-rail { position: relative; z-index: 1; height: 10px; margin: 0 -14px; background: oklch(0.58 0.012 255); box-shadow: inset 0 1px 0 oklch(0.7 0.012 255), 0 3px 0 oklch(0.26 0.014 255); }
+/* Square keys over the scene: side indicator, turn, zoom out, zoom in, fit. */
+.wr-keys { position: sticky; top: 0; left: 0; z-index: 6; width: 100cqw; height: 0; pointer-events: none; }
+.wr-keys > div { position: absolute; top: 8px; right: 48px; display: flex; align-items: center; gap: 2px; padding: 3px; background: oklch(0.27 0.012 255); border: 1px solid oklch(0.42 0.012 255); pointer-events: auto; }
+.wr-sep { align-self: stretch; width: 1px; margin: 4px 4px; background: oklch(0.45 0.012 255); }
+.wr-k { min-width: 0; min-height: 0; position: relative; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; background: none; color: oklch(0.92 0.01 255); cursor: pointer; }
+.wr-k svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.wr-k:hover:not(:disabled) { background: oklch(0.38 0.02 255); }
+.wr-k:focus-visible { outline: 2px solid oklch(0.88 0.12 250); outline-offset: 2px; }
+.wr-k:disabled { opacity: 0.35; cursor: default; }
+.wr-face-ind { position: relative; display: grid; place-items: center; width: 36px; height: 32px; margin: 0 4px; background: oklch(0.15 0.012 255); border: 1px solid oklch(0.4 0.012 255); color: oklch(0.82 0.1 215); }
+.wr-face-ind svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.wr-face-ind circle, .wr-face-ind .post { fill: currentColor; }
+.wr-face-ind:hover::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: 0; padding: 4px 8px; background: oklch(0.93 0.025 85); color: oklch(0.28 0.02 60); font: 12px var(--font-ui); white-space: nowrap; pointer-events: none; z-index: 2; }
+.wr-k[data-tip]:hover::after, .wr-k[data-tip]:focus-visible::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: 0; padding: 4px 8px; background: oklch(0.93 0.025 85); color: oklch(0.28 0.02 60); font: 12px var(--font-ui); white-space: nowrap; pointer-events: none; z-index: 2; }
+.wr-stage.panning, .wr-stage.panning * { cursor: grabbing !important; }
 .wr-face { display: flex; justify-content: center; }
 /* A shelf is open light metal: its top board and the side of its uprights. */
 .wr-cab.shelf { background: none; }
 .wr-cab.shelf::before { background: oklch(0.8 0.008 80); box-shadow: inset 0 -1px 0 oklch(0.62 0.01 80); }
-.wr-cab.shelf::after { background: oklch(0.6 0.008 80); box-shadow: inset 1px 0 0 oklch(0.5 0.01 80); }
-/* A tall rack keeps 20px per unit so every unit number stays readable; the stage scrolls. */
-.wr-face > svg { display: block; width: auto; height: max(min(calc((100cqh - var(--depth) - 72px - var(--pp, 0px)) * var(--z)), calc(var(--units) * 34px * var(--z) + 80px)), calc(var(--units) * 20px * var(--z))); }
+/* The rack fits the stage at zoom 1; zooming scales its height and the stage scrolls. */
+.wr-face > svg { display: block; width: auto; height: calc(min(100cqh - var(--depth) - 62px - var(--pp, 0px), var(--units) * 34px + 80px) * var(--z)); }
 .wr-face.out { position: absolute; inset: 0; z-index: 1; pointer-events: none; animation: wr-turn-out 150ms ease-in forwards; }
 .wr-face.in { animation: wr-turn-in 150ms ease-out 150ms backwards; }
 @keyframes wr-turn-out { to { transform: scaleX(0); } }
 @keyframes wr-turn-in { from { transform: scaleX(0); } }
 .wr-room::before { content: ""; flex: 1; }
-.wr-floor { position: relative; align-self: stretch; flex: 1; min-height: 56px; margin: -6px -48px 0; background: oklch(0.3 0.012 255); border-top: 1px solid oklch(0.36 0.012 255); }
+.wr-floor { position: relative; align-self: stretch; flex: 1; min-height: 44px; margin: -10px -48px 0; background: oklch(0.4 0.014 255); border-top: 3px solid oklch(0.62 0.014 255); }
 /* A floor hatch with the cable run out of the rack, where a cable leaves for another rack. */
 .wr-away { position: absolute; left: 24px; bottom: 2px; display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; color: oklch(0.85 0.01 255); font-size: 13px; cursor: pointer; }
-.wr-away::before { content: ""; width: 44px; height: 22px; background: oklch(0.15 0.006 255); box-shadow: inset 0 0 0 3px var(--metal-2), inset 0 0 0 4px var(--metal-line); }
-.wr-away:hover::before, .wr-stage:has(.dragging) .wr-away::before { box-shadow: inset 0 0 0 3px var(--accent), inset 0 0 0 4px var(--metal-line); }
+.wr-away .wr-k { width: 40px; height: 40px; background: oklch(0.27 0.012 255); border: 1px solid oklch(0.45 0.012 255); }
+.wr-away:hover .wr-k, .wr-stage:has(.dragging) .wr-away .wr-k { border-color: var(--accent); background: oklch(0.34 0.02 255); }
 @media (prefers-reduced-motion: reduce) { .wr-scene { transition: none; } .wr-face.out { display: none; } .wr-face.in { animation: none; } }
 
 /* The paper tag tied to the picked unit by a string. */
-.wr-tag { position: absolute; left: calc(100% + var(--tag-gap)); top: 0; width: var(--tag-w); padding: 12px 14px 12px 30px; box-sizing: border-box;
+.wr-tag { z-index: 3; position: absolute; left: calc(100% + var(--tag-gap)); top: 0; width: var(--tag-w); padding: 12px 14px 12px 30px; box-sizing: border-box;
   background: oklch(0.93 0.025 85); color: oklch(0.28 0.02 60); clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
   --text: oklch(0.28 0.02 60); --text-2: oklch(0.4 0.02 60); --text-3: oklch(0.5 0.02 60); --line: oklch(0.82 0.03 80); --field: oklch(0.96 0.02 85); --hover: oklch(0.88 0.03 85); color-scheme: light;
   animation: wr-tag-in 220ms ease-out; overflow: visible; }
 .wr-tag::before { content: ""; position: absolute; left: 12px; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: oklch(0.22 0.018 255); box-shadow: 0 0 0 2px oklch(0.8 0.04 80); }
-.wr-string { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+.wr-string { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 4; }
 .wr-string line { stroke: oklch(0.85 0.03 80); stroke-width: 1.5; }
 @keyframes wr-tag-in { from { opacity: 0; transform: translateX(16px); } }
 .wr-tag-h { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
@@ -136,16 +155,6 @@
 .wr-plate span { font-size: 10px; font-weight: 400; color: oklch(0.72 0.01 255); white-space: nowrap; }
 .wr-cab.shelf .wr-plate { background: oklch(0.7 0.008 80); box-shadow: inset 0 1px 0 oklch(0.6 0.01 80), inset 0 -1px 0 oklch(0.86 0.008 80); color: oklch(0.3 0.01 80); }
 .wr-cab.shelf .wr-plate span { color: oklch(0.4 0.01 80); }
-/* The turntable under the rack: its top tone lifts on hover, the facing side's word is engraved darker. */
-.wr-table { position: absolute; z-index: 0; left: -6%; width: 116%; top: 100%; transform: translateY(-45%); overflow: visible; pointer-events: none; cursor: pointer; outline: none; }
-.wr-table ellipse, .wr-table rect, .wr-table text { pointer-events: auto; }
-.wr-table-rim { fill: oklch(0.36 0.01 255); }
-.wr-table-top { fill: oklch(0.44 0.01 255); stroke: oklch(0.38 0.01 255); stroke-width: 1; }
-.wr-table:hover .wr-table-top, .wr-table:focus-visible .wr-table-top { fill: oklch(0.5 0.01 255); }
-.wr-table:focus-visible .wr-table-top { stroke: var(--accent); stroke-width: 2; }
-.wr-table-mark { fill: none; stroke: oklch(0.34 0.01 255); stroke-width: 2; stroke-linecap: round; }
-.wr-table-word { font-family: var(--font-ui); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; fill: oklch(0.74 0.01 255); user-select: none; }
-.wr-table-word.on { fill: oklch(0.98 0.005 255); }
 .wr-floor-units .wp-label b { overflow: visible; white-space: normal; }
 .wr-floor-units .wp-label { max-width: 120px; }
 .wr-floor-units { padding-bottom: 12px; }
@@ -182,7 +191,7 @@
 
 /* The provider panel's provider side drawn large above the rack back. */
 .wr-stage.pp { --pp: 190px; }
-.wr-stage.pp .wr-room { padding-top: calc(var(--depth) + 24px + var(--pp)); }
+.wr-stage.pp .wr-room { padding-top: calc(var(--depth) + 10px + var(--pp)); }
 .wr-pp { position: absolute; z-index: 2; left: 50%; bottom: calc(100% + var(--depth) + 12px); width: 460px; transform: translateX(-50%); overflow: visible; font-family: "JetBrains Mono", monospace; }
 .pp-face { fill: oklch(0.24 0.006 255); stroke: var(--metal-line); stroke-width: 1; }
 .pp-ear { fill: var(--metal-2); }
@@ -278,3 +287,9 @@
 @media (prefers-reduced-motion: reduce) { .wr-cab .rack-seat, .wr-cab .rack-need, .wr-cab .rack-ok { animation: none; } }
 
 .wk-label-pw { margin-top: 4px; font: 700 16px var(--mono, monospace); letter-spacing: 0.04em; color: oklch(0.25 0.02 60); user-select: all; }
+
+/* A strip on the stage's right edge: the rack's equipment and the part of the rack in view; a click or drag moves the view. */
+.wr-mini { position: sticky; top: 0; left: 0; z-index: 5; width: 100cqw; height: 0; pointer-events: none; }
+.wr-mini-bar { position: absolute; right: 12px; top: 96px; width: 16px; height: calc(100cqh - 96px - 72px); background: oklch(0.15 0.012 255); border: 1px solid oklch(0.4 0.012 255); pointer-events: auto; cursor: pointer; touch-action: none; }
+.wr-mini-mark { position: absolute; left: 3px; right: 3px; background: oklch(0.6 0.04 255); }
+.wr-mini-view { position: absolute; left: -1px; right: -1px; border: 2px solid oklch(0.88 0.12 250); background: oklch(0.88 0.12 250 / 0.18); box-sizing: border-box; pointer-events: none; }

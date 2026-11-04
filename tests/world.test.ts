@@ -172,7 +172,7 @@ describe("world", () => {
       fireEvent.click(container.querySelector(`[data-rack="${rack.id}"]`)!);
       act(() => { vi.advanceTimersByTime(20_000); });
       const panel = screen.getByRole("dialog", { name: rack.name });
-      fireEvent.click(screen.getByRole("button", { name: t("locations-2.back") }));
+      fireEvent.click(screen.getByRole("button", { name: t("world.turn") }));
       const end = (el: Element): End => { const [device, port] = el.getAttribute("data-end")!.split(":"); return { device, port: Number(port) }; };
       const g = () => useStore.getState().game;
       const free = [...panel.querySelectorAll(".rack-port[data-end]")].filter((el) => { const e = end(el); return s.devices.find((d) => d.id === e.device)?.rackId === rack.id && !portPeers(g(), e.device)[e.port]; });
@@ -211,7 +211,7 @@ describe("world", () => {
       fireEvent.click(container.querySelector(`[data-rack="${rack.id}"]`)!);
       act(() => { vi.advanceTimersByTime(20_000); });
       const panel = screen.getByRole("dialog", { name: rack.name });
-      fireEvent.click(screen.getByRole("button", { name: t("locations-2.back") }));
+      fireEvent.click(screen.getByRole("button", { name: t("world.turn") }));
       act(() => { vi.advanceTimersByTime(1000); });
       const end = (el: Element): End => { const [device, port] = el.getAttribute("data-end")!.split(":"); return { device, port: Number(port) }; };
       const g = () => useStore.getState().game;
