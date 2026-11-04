@@ -64,6 +64,18 @@
 .w-reveal { fill: oklch(0.78 0.012 252); }
 .w-sill { fill: oklch(0.86 0.008 250); stroke: oklch(0.74 0.01 250); stroke-width: 0.5; }
 .w-glass { fill: oklch(0.86 0.05 230); }
+.w-glass-grey { fill: oklch(0.74 0.02 245); }
+.w-sky-grey { fill: oklch(0.74 0.02 245); }
+.w-rain { fill: none; stroke: oklch(0.5 0.05 245); stroke-width: 0.6; stroke-linecap: round; }
+.w-rain-night { stroke: oklch(0.7 0.04 250); }
+.w-snow { fill: oklch(1 0 0); }
+.w-snow-fill { fill: oklch(0.98 0.005 240); }
+.w-set-a { animation: w-set 0.6s steps(1) infinite; }
+.w-set-b { animation: w-set 0.6s steps(1) infinite 0.3s; opacity: 0; }
+.w-precip-slow .w-set-a, .w-precip-slow .w-set-b { animation-duration: 1.6s; }
+.w-precip-slow .w-set-b { animation-delay: 0.8s; }
+@keyframes w-set { 0% { opacity: 1; } 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .w-set-a, .w-set-b { animation: none; opacity: 1; } }
 .w-glass-night { fill: oklch(0.32 0.04 260); }
 .w-glint { fill: none; stroke: oklch(1 0 0 / 0.75); stroke-width: 0.8; stroke-linecap: round; }
 .w-fan-box { fill: oklch(0.88 0.006 250); stroke: oklch(0.72 0.01 250); stroke-width: 0.5; }

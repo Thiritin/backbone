@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Rain now runs down the basement and office windows on wet days, and snow settles on the sill when it is cold outside.
 - An owned building can be fitted as a datacenter hall with rows you lay out, your own cooling, power and carriers, and spare positions sold to colocation customers.
 - The datacenter tubes no longer cast a glow over the racks.
 - Mounting a server now plugs in its power cords, doing a job yourself from the computer starts the drive there, every delivery goes straight into storage with fresh parcels drawn by the basement door for a day, and devices carry the same model name as in the Shop.

@@ -1,6 +1,7 @@
 // The office room's fixtures, drawn to docs/design/world-art.md.
 import { SECTION_W, type Fixture } from "../../sim/20-world/layout";
-import { at3, Corkboard, Desk, DeskLamp, Monitor, onX, onY, Prism, pts, Tower, WALL } from "./draw";
+import type { Sky } from "../../sim/20-world/weather";
+import { at3, Corkboard, Desk, DeskLamp, Monitor, onX, onY, Precip, Prism, pts, Tower, WALL } from "./draw";
 import { iso } from "./grid";
 import "./office.css";
 
@@ -63,19 +64,21 @@ export function OfficeChair({ cx, cy, facing }: { cx: number; cy: number; facing
 export const chairAt = (f: Fixture, facing: "s" | "n") => ({ cx: f.x + 1, cy: f.y + (facing === "s" ? 0.55 : 0.45) });
 
 // An office window of two tiles in the far wall: frame, mullion, sill and the city outside, dark after sunset.
-export function OfficeWindow({ f, night }: { f: Fixture; night: boolean }) {
+export function OfficeWindow({ f, night, sky }: { f: Fixture; night: boolean; sky: Sky }) {
   const len = (f.w ?? 2) * 32, top = 72, H = 44;
   const towers = [[6, 18], [13, 30], [21, 12], [28, 24], [36, 34], [44, 16], [51, 26]];
   return (
-    <g transform={onY(f.x, 0, top)}>
+    <g transform={onY(f.x, 0, top)} data-sky={sky}>
       <rect className="w-reveal" x="3" y="-1" width={len - 6} height={H + 1} />
-      <rect className={night ? "w-sky-night" : "w-sky"} x="6" y="2" width={len - 12} height={H - 4} />
+      <rect className={night ? "w-sky-night" : sky === "sun" || sky === "partly" ? "w-sky" : "w-sky-grey"} x="6" y="2" width={len - 12} height={H - 4} />
       {towers.filter(([x]) => x < len - 12).map(([x, h], i) => (
         <g key={x}>
           <rect className={night ? "w-city-night" : "w-city"} x={6 + x} y={H - 2 - h} width="6" height={h} />
           {[0, 1, 2].map((r) => r * 6 + 4 < h && <rect key={r} className={night && (i + r) % 2 ? "w-city-lit" : "w-city-win"} x={7.5 + x} y={H - h + r * 6} width="1.5" height="2" />)}
+          {sky === "snow" && <rect className="w-snow-fill" x={6 + x} y={H - 2 - h} width="6" height="1.5" />}
         </g>
       ))}
+      <Precip sky={sky} night={night} x={6} y={2} w={len - 12} h={H - 4} />
       <rect className="w-frame-in" x="4" y="0" width={len - 8} height="2" />
       <rect className="w-frame-in" x="4" y={H - 2} width={len - 8} height="2" />
       <rect className="w-frame-in" x="4" y="0" width="2" height={H} />

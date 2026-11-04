@@ -3,7 +3,7 @@ import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { cage, fixtures, neighbourRacks, officeFloors, officePlan, rackTiles, roomSize, shareMates, type Fixture } from "../../sim/20-world/layout";
 import { rackUnits } from "../../sim/20-world/datacenters";
-import { temperature } from "../../sim/20-world/weather";
+import { sky, temperature } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
 import { atDesk, boxAt } from "../../sim/40-support/letters";
 import { fetchPost } from "../../sim/90-actions/post";
@@ -288,8 +288,8 @@ export function World() {
     pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x} on={lights} />}</>,
     noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} y={f.y} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} y={f.y} />)}</>,
     shelf: (f) => <Shelf at={f} count={stored} />,
-    fan: (f) => <CellarWindow f={f} fan spin={!loc.tripped && fanRuns(game, loc)} night={night} />,
-    window: (f) => <CellarWindow f={f} night={night} />,
+    fan: (f) => <CellarWindow f={f} fan spin={!loc.tripped && fanRuns(game, loc)} night={night} sky={sky(loc.city, game.hour)} />,
+    window: (f) => <CellarWindow f={f} night={night} sky={sky(loc.city, game.hour)} />,
     hygrometer: (f) => <Hygrometer f={f} inside={`${n(roomTemperature(game, loc), 1)}°`} outside={`${n(temperature(loc.city, game.hour))}°`} />,
     fusebox: (f) => <FuseBox f={f} reading={watts} turn={turn} w={w} />,
     jack: (f) => <WallJack f={f} />,
@@ -312,7 +312,7 @@ export function World() {
     dock: (f) => <Dock f={f} />,
     stairs: (f) => <><Door f={f} open={0} steel={false} /><StairsSign f={f} floor={n(plan?.floor ?? 1)} /></>,
     bossdesk: (f) => <BossDesk f={f} night={night} />,
-    owindow: (f) => <OfficeWindow f={f} night={night} />,
+    owindow: (f) => <OfficeWindow f={f} night={night} sky={sky(loc.city, game.hour)} />,
     whiteboard: (f) => <Whiteboard f={f} />,
     tray: (f) => <WallTray f={f} />,
     tube: (f) => <Tube f={f} on={lights} />,

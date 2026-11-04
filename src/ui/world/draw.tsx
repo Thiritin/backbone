@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Cage, Fixture, Tile } from "../../sim/20-world/layout";
+import type { Sky } from "../../sim/20-world/weather";
 import { RackFront, type RackItem } from "../art/RackFront";
 import { center, iso, type Pt } from "./grid";
 
@@ -180,13 +181,15 @@ export function Shelf({ at, count }: { at: Pt; count: number }) {
 
 // A cellar window high in the far wall; the fan window carries a fan in its pane, spinning while it runs. Glass dims at night.
 const WIN_Z = 84, WIN_H = 20;
-export function CellarWindow({ f, fan, spin, night }: { f: Fixture; fan?: boolean; spin?: boolean; night: boolean }) {
-  const glass = night ? "w-glass w-glass-night" : "w-glass";
+export function CellarWindow({ f, fan, spin, night, sky }: { f: Fixture; fan?: boolean; spin?: boolean; night: boolean; sky: Sky }) {
+  const glass = night ? "w-glass w-glass-night" : sky === "sun" || sky === "partly" ? "w-glass" : "w-glass-grey";
   return (
-    <g transform={wallT(f, WIN_Z)}>
+    <g transform={wallT(f, WIN_Z)} data-sky={sky}>
       <rect className="w-reveal" x="3" y="-1" width="26" height={WIN_H + 1} />
       <rect className="w-frame" x="4" y="0" width="24" height={WIN_H} />
       <rect className={glass} x="6" y="3" width="20" height={WIN_H - 6} />
+      <Precip sky={sky} night={night} x={6} y={3} w={20} h={WIN_H - 6} />
+      {sky === "snow" && <rect className="w-snow-fill" x="6" y={WIN_H - 6} width="20" height="3" />}
       {fan ? <Fan cx={16} cy={WIN_H / 2} r={6.2} spin={!!spin} /> : (
         <>
           <rect className="w-frame" x="15.2" y="3" width="1.6" height={WIN_H - 6} />
@@ -194,6 +197,28 @@ export function CellarWindow({ f, fan, spin, night }: { f: Fixture; fan?: boolea
         </>
       )}
       <rect className="w-sill" x="2" y={WIN_H} width="28" height="2.5" />
+      {sky === "snow" && <rect className="w-snow-fill" x="2" y={WIN_H - 0.8} width="28" height="1.6" />}
+    </g>
+  );
+}
+
+// Rain streaks or flakes over a pane: fixed positions in two sets that alternate by opacity, so they move without moving geometry.
+const DROPS = [[0.1, 0.05], [0.32, 0.4], [0.55, 0.1], [0.78, 0.45], [0.2, 0.7], [0.66, 0.75]];
+const FLAKES = [[0.12, 0.1], [0.4, 0.3], [0.7, 0.15], [0.88, 0.5], [0.25, 0.6], [0.55, 0.75], [0.8, 0.85], [0.05, 0.9]];
+export function Precip({ sky, night, x, y, w, h }: { sky: Sky; night: boolean; x: number; y: number; w: number; h: number }) {
+  if (sky !== "rain" && sky !== "snow") return null;
+  const rain = sky === "rain";
+  const cls = rain ? `w-rain${night ? " w-rain-night" : ""}` : "w-snow";
+  const mark = ([u, v]: number[], i: number) => rain
+    ? <path key={i} className={cls} d={`M${x + u * w},${y + v * h} l-1.2,${h * 0.22}`} />
+    : <circle key={i} className={cls} cx={x + u * w} cy={y + v * h} r="0.9" />;
+  // The second set is offset so the two never coincide.
+  const shift = (a: number[][]) => a.map(([u, v]) => [(u + 0.5) % 1, (v + 0.5) % 1]);
+  const set = rain ? DROPS : FLAKES;
+  return (
+    <g className={rain ? "w-precip" : "w-precip w-precip-slow"}>
+      <g className="w-set-a">{set.map(mark)}</g>
+      <g className="w-set-b">{shift(set).map(mark)}</g>
     </g>
   );
 }
