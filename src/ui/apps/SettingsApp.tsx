@@ -8,7 +8,6 @@ import { t } from "../../i18n/en";
 import { APPS, appFor, appTitle } from "./registry";
 import { CompanyFields } from "./company";
 import { addressLine, desks, officeAddress } from "../../sim/60-infra/properties";
-import { LeaderboardSettings } from "./LeaderboardSettings";
 import { NOTIFY_TYPES } from "../notify-types";
 import { prefOf, useFocus, useStore, type Theme } from "../store";
 import { playSound } from "../sounds";
@@ -185,7 +184,6 @@ export function SettingsApp() {
           </div>
         ))}
       </div>
-      <LeaderboardSettings />
     </div>
   );
 }

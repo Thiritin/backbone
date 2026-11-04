@@ -11,35 +11,13 @@ You need Node and a Rust toolchain.
 
 The update offer never appears in `desktop:dev`.
 
-## Release flow
+## Releases
 
-1. A push to main that adds CHANGELOG.md bullets runs `release.yml`, which creates or edits the day's GitHub release (tag `2026.11.04`).
-2. `release.yml` then starts `desktop.yml`. A release published by hand starts it too.
-3. `desktop.yml` builds macOS (arm64 and x64), Windows and Linux installers, signs the update bundles, and attaches the installers, signatures and `latest.json` to the release.
-4. The app checks `https://github.com/Thiritin/raid0/releases/latest/download/latest.json` on launch. It shows the existing update sheet with the release bullets, and accepting downloads, installs and restarts the app.
+Installers, the updater manifest and the update offer come from the Release workflow. Cutting a release, the secrets it needs and fixing a failed run are described in [release.md](release.md).
 
-The tag has leading zeros, so the build converts it to semver (`2026.11.4`) and writes it into `tauri.conf.json` and `Cargo.toml` at build time. The committed files keep version `0.1.0`.
+Installed apps check `https://github.com/Thiritin/raid0/releases/latest/download/latest.json` on launch and show the update sheet with the release notes. Accepting downloads, installs and restarts the app.
 
-A second release on the same day keeps the same app version, so installed apps pick it up the next day.
-
-## Secrets
-
-Add these in the repository settings under Secrets and variables, Actions.
-
-| Secret | Purpose |
-| --- | --- |
-| `TAURI_SIGNING_PRIVATE_KEY` | Signs update bundles. The public half is in `tauri.conf.json`. |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Password of that key (empty if the key has none). |
-| `APPLE_CERTIFICATE` | Base64 of the Developer ID Application certificate (`.p12`). |
-| `APPLE_CERTIFICATE_PASSWORD` | Password of the `.p12`. |
-| `APPLE_SIGNING_IDENTITY` | Certificate name, for example `Developer ID Application: Name (TEAMID)`. |
-| `APPLE_ID` | Apple ID used for notarization. |
-| `APPLE_PASSWORD` | App-specific password of that Apple ID. |
-| `APPLE_TEAM_ID` | Apple developer team id. |
-
-Windows and Linux installers are unsigned.
-
-If the updater key is lost, installed apps cannot update to builds signed with a new key.
+The committed `tauri.conf.json` and `Cargo.toml` keep version `0.1.0`; the build writes the release version into them.
 
 ## Saves
 

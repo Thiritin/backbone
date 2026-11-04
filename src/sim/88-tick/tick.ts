@@ -89,7 +89,6 @@ import { deskItem, KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/
 import { deskById } from "../10-catalog/desks";
 import { ALL_DATACENTERS, capacityAt, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR, PROVIDERS } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry, Location, PowerUse } from "../50-state";
-import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
 import { rivalsTick } from "../30-market/rivals-tick";
@@ -491,7 +490,6 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...salesTick(state));
   events.push(...usedTick(state));
   syncTicketMail(state);
-  scoreTick(state);
   trendTick(state);
   return events;
 }

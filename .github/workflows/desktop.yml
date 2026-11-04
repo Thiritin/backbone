@@ -1,12 +1,19 @@
 name: Desktop
 
-# Builds the installers for a GitHub release and attaches them with the updater manifest (latest.json).
-# release.yml starts it after it creates or edits the day's release, because releases made with the workflow token
-# do not fire the release event; a release published by hand starts it directly.
+# Builds the installers for a release and attaches them with the updater manifest (latest.json). release.yml calls it
+# for the release it runs on; run it by hand to rebuild the installers of an existing release:
+# gh workflow run desktop.yml -f tag=vX.Y.Z
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v1.0.0
+        required: true
 
 concurrency:
   group: desktop
@@ -27,6 +34,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -43,24 +52,31 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: npm ci
-      # The tag is the release tag, or the newest CHANGELOG.md day (2026-11-04 becomes 2026.11.04). The app version
-      # drops the leading zeros (2026.11.4) because semver forbids them.
+      # The app version is the tag without its v (v1.2.3 becomes 1.2.3). The committed files keep their own version.
       - name: Set version
-        id: v
         shell: bash
         run: |
-          tag="${{ github.event.release.tag_name }}"
-          [ -n "$tag" ] || tag=$(sed -n 's/^## \([0-9-]*\)$/\1/p' CHANGELOG.md | head -1 | tr - .)
-          version=$(node -e 'console.log(process.argv[1].split(".").map(Number).join("."))' "$tag")
           node -e '
             const fs = require("fs");
+            const v = process.argv[1].slice(1);
             const c = JSON.parse(fs.readFileSync("src-tauri/tauri.conf.json", "utf8"));
-            c.version = process.argv[1];
+            c.version = v;
             fs.writeFileSync("src-tauri/tauri.conf.json", JSON.stringify(c, null, 2));
-            const t = fs.readFileSync("src-tauri/Cargo.toml", "utf8").replace(/^version = ".*"$/m, `version = "${process.argv[1]}"`);
+            const t = fs.readFileSync("src-tauri/Cargo.toml", "utf8").replace(/^version = ".*"$/m, `version = "${v}"`);
             fs.writeFileSync("src-tauri/Cargo.toml", t);
-          ' "$version"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          ' "${{ inputs.tag }}"
+      # The updater manifest carries the release body as the notes shown in the update sheet.
+      - name: Read release notes
+        id: notes
+        shell: bash
+        run: |
+          {
+            echo 'body<<NOTES_EOF'
+            gh release view "${{ inputs.tag }}" --json body --jq .body
+            echo 'NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -73,8 +89,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ steps.v.outputs.tag }}
-          releaseName: ${{ steps.v.outputs.tag }}
+          tagName: ${{ inputs.tag }}
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

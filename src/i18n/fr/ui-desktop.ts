@@ -35,8 +35,6 @@ export default {
   "desktop.os.wait": () => "N'éteins pas ton ordinateur.",
 
   "desktop.widgets": () => "Widgets",
-  "desktop.widget.leader": () => "Leader du défi",
-  "desktop.widget.leaderText": (p) => `À cette date, le leader avait ${p.customers} clients et ${p.cash}.`,
   "desktop.widget.tickets": () => "Tickets ouverts",
   "desktop.widget.cash": () => "Trésorerie",
   "desktop.widget.revenue": () => "Chiffre d'affaires mensuel",

@@ -465,8 +465,6 @@ export interface GameState {
   log: LogEntry[];
   // The weekly challenge this game was started for (10-catalog/challenges.ts), null for a free game.
   challenge: string | null;
-  // Leaderboard scores (80-business/scores.ts): net worth at the end of 2007, the hour level 3 was reached and the summed hourly mean happiness.
-  score: Score;
   // A daily reading of customer count and mean happiness, oldest first (80-business/trend.ts).
   trend: TrendPoint[];
   // The trade office registration (80-business/office.ts); null until the player registers, which installs the starter apps.
@@ -501,7 +499,6 @@ export interface GameState {
 }
 
 export interface LogEntry { hour: number; minute?: number; name: string; args: unknown[] }
-export interface Score { netWorth: number | null; level3: number | null; happySum: number; happyHours: number }
 
 // Fields every new device starts with: fresh components installed at hour `at` (the model's parts unless partList says otherwise), powered on, RAID 1 with two or more drives.
 export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[]) {
@@ -591,7 +588,7 @@ export const newGame = (seed: number): GameState => ({
   shareLog: [],
   nextNode: 1, nextVm: 1, nextHostNo: firstHostNo(seed),
   used: [], usedRep: 0,
-  log: [], challenge: null, registration: null, arrived: [], score: { netWorth: null, level3: null, happySum: 0, happyHours: 0 }, trend: [],
+  log: [], challenge: null, registration: null, arrived: [], trend: [],
   bank: null,
   payables: [],
   letters: [],

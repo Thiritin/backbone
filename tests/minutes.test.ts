@@ -67,7 +67,7 @@ describe("game minutes", () => {
     expect(r.ok).toBe(true);
     expect(s.log.at(-1)).toMatchObject({ hour: 0, minute: 30, name: "setCompany" });
     const seen: number[] = [];
-    const back = replay(runFile(s, "test"), (x) => seen.push(nowMinutes(x)), 2);
+    const back = replay(runFile(s, "test"), 2, (x) => seen.push(nowMinutes(x)));
     expect(back.company.name).toBe("Minute Hosting");
     expect(seen).toEqual([60, 120]);
   });
