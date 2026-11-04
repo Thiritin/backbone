@@ -10,6 +10,7 @@ const dry = args.includes('--dry');
 const webhook = process.env.DISCORD_CHANGELOG_WEBHOOK;
 if (!webhook && !dry) throw new Error('DISCORD_CHANGELOG_WEBHOOK missing');
 const LIMIT = 2000;
+const SITE = 'https://raid0.dev';
 
 function parse(text) {
   const days = [];
@@ -46,7 +47,7 @@ const version = (day) => day.date.replaceAll('-', '.');
 
 function chunks(day) {
   const out = [];
-  let cur = announced.has(day.date) ? '' : `## Version ${version(day)}`;
+  let cur = announced.has(day.date) ? '' : `## [RAID0 ${version(day)}](${SITE})`;
   for (const b of day.bullets) {
     if (cur.length + b.length + 1 > LIMIT) { out.push(cur); cur = ''; }
     cur += (cur ? '\n' : '') + b;
@@ -57,10 +58,10 @@ function chunks(day) {
 // One release per day: created with the day's first bullets, its notes rewritten as more land.
 function release(day) {
   const tag = version(day);
-  const notes = all.find((d) => d.date === day.date).bullets.join('\n');
+  const notes = `${all.find((d) => d.date === day.date).bullets.join('\n')}\n\n${SITE}`;
   let exists = true;
   try { execFileSync('gh', ['release', 'view', tag], { stdio: 'ignore' }); } catch { exists = false; }
-  const cmd = exists ? ['edit', tag] : ['create', tag, '--target', until ?? process.env.GITHUB_SHA ?? 'main', '--title', tag];
+  const cmd = exists ? ['edit', tag, '--title', `RAID0 ${tag}`] : ['create', tag, '--target', until ?? process.env.GITHUB_SHA ?? 'main', '--title', `RAID0 ${tag}`];
   execFileSync('gh', ['release', ...cmd, '--notes', notes], { stdio: 'inherit' });
 }
 
@@ -69,7 +70,7 @@ async function post(content) {
     const res = await fetch(`${webhook}?wait=true`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      body: JSON.stringify({ content, username: 'RAID0', allowed_mentions: { parse: [] } }),
     });
     if (res.status === 429) {
       const { retry_after } = await res.json();

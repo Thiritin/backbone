@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 
 const API = 'https://discord.com/api/v10';
-const GAME_URL = 'https://thiritin.github.io/backbone/';
+const GAME_URL = 'https://raid0.dev';
 const token = process.env.DISCORD_TOKEN;
 if (!token) throw new Error('DISCORD_TOKEN missing');
 
