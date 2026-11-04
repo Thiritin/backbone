@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The main menu has a button that opens the raid0 Discord server.
 - The game is now called raid0.
 - The game has a new red and black logo with a command prompt mark.
 - Backbone can be installed as a desktop app for macOS, Windows and Linux that offers new versions on launch and installs them with one click.

@@ -103,6 +103,7 @@ export default {
   "desktop.menu.mainMenu": () => "Menu principale",
   "desktop.start.news": () => "Novità",
   "desktop.start.settings": () => "Impostazioni",
+  "desktop.start.discord": () => "Unisciti al Discord",
   "desktop.start.back": () => "Indietro",
   "desktop.start.new": () => "Nuovo",
   "desktop.start.vms": () => "Macchine virtuali",
