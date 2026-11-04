@@ -141,3 +141,10 @@ export const sectionIds = (l: Listing): { id: string; floor: number }[] =>
 // Sections other tenants hold, fixed by the seed.
 export const takenSections = (seed: number, l: Listing): Set<string> =>
   new Set(sectionIds(l).filter((_, i) => rand(hashRng(seed, LISTINGS.indexOf(l), i)) < l.taken).map((x) => x.id));
+
+// Seats of a NOC desk; the desk every hall starts with (price 0) has three.
+export const nocSeatCount = (price: number): number => (price === 0 ? 3 : HALL.items.nocdesk.seats!);
+
+// Every NOC desk seat of an own hall, in item order.
+export const nocSeats = (p: Property): { propertyId: string; sectionId: string; index: number }[] =>
+  (p.hall?.items ?? []).filter((i) => i.kind === "nocdesk").flatMap((i) => Array.from({ length: nocSeatCount(i.price) }, (_, index) => ({ propertyId: p.id, sectionId: `noc:${i.id}`, index })));

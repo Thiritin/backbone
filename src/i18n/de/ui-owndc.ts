@@ -57,4 +57,7 @@ export default {
   "ledger.hallItem": (p) => `Teil, ${p.location}: ${p.item}`,
   "ledger.hallRefund": (p) => `Erstattung, ${p.location}: ${p.item}`,
   "ledger.nocRoom": (p) => `NOC-Raum, ${p.location}`,
+  "event.hallBreakerReset.title": () => "Sicherung zurückgesetzt",
+  "event.hallBreakerReset.text": (p) => `Dein Techniker hat die Hauptsicherung bei ${p.location} zurückgesetzt.`,
+  "error.queueFull": () => "Warteschlange voll.",
 } satisfies Dict;

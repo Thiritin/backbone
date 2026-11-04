@@ -57,4 +57,7 @@ export default {
   "ledger.hallItem": (p) => `Élément, ${p.location}: ${p.item}`,
   "ledger.hallRefund": (p) => `Remboursement, ${p.location}: ${p.item}`,
   "ledger.nocRoom": (p) => `Salle NOC, ${p.location}`,
+  "event.hallBreakerReset.title": () => "Disjoncteur réarmé",
+  "event.hallBreakerReset.text": (p) => `Ton technicien a réarmé le disjoncteur principal de ${p.location}.`,
+  "error.queueFull": () => "File d'attente pleine.",
 } satisfies Dict;

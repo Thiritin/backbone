@@ -54,6 +54,8 @@ Other tenants hold a share of each building's sections (25 to 70%), fixed by the
 | NOC desk | Hall or NOC room | 2 × 1 | €3,000 | none | Two seats, one placed free by the refit |
 | Wall screen | NOC room | 2 wide | €6,000 | none | At most four |
 
+A NOC desk seats two (three for the starting desk). A tripped breaker is reset by an on-shift hall technician after 30 minutes (`HALL.noc.resetMin`), or 10 minutes with a wall screen (`resetMinScreens`).
+
 The NOC room costs €30,000 once and is built instantly below the hall. A cage fence costs €2,000 per position and the meet-me fence €5,000; both refund half.
 
 | Item | One-time | Monthly | What it does |

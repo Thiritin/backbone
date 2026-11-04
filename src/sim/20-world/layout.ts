@@ -1,7 +1,7 @@
 import type { AreaId, GameState, Hall as OwnHall, HallItem, HallItemKind, Location, Rack, Section, SpaceKind } from "../50-state";
 import { datacenterById } from "./datacenters";
 import { exchangeById } from "../10-catalog/network";
-import { customerSpots, HALL, hallCapacity, holdsDesks, isHalle, stepTile, zoneSpots } from "./properties";
+import { customerSpots, HALL, hallCapacity, holdsDesks, isHalle, nocSeatCount, stepTile, zoneSpots } from "./properties";
 
 export type Facing = "n" | "e" | "s" | "w";
 // floor is set only in an office with more than one floor of server rooms; it counts from 1.
@@ -35,7 +35,7 @@ const HALLS: Record<Rented, Hall> = {
   share: {
     size: { w: 12, h: 8 },
     fixtures: {
-      shelf: { x: 0, y: 1 }, extinguisher: { x: 0, y: 3 }, door: { x: 0, y: 7 },
+      shelf: { x: 0, y: 1 }, extinguisher: { x: 0, y: 3 }, door: { x: 0, y: 7 }, terminal: { x: 0, y: 5, kind: "noc" },
       cooling: { x: 3, y: 0, w: 2 }, cooling2: { x: 7, y: 0, w: 2, kind: "cooling" }, pdu: { x: 11, y: 6 }, cart: { x: 11, y: 4 },
     },
     rows: [[2, "s"], [4, "n"], [6, "s"]], x0: 2, x1: 10,
@@ -44,7 +44,7 @@ const HALLS: Record<Rented, Hall> = {
   cage: {
     size: { w: 14, h: 11 },
     fixtures: {
-      shelf: { x: 0, y: 1 }, extinguisher: { x: 0, y: 3 }, door: { x: 0, y: 5 },
+      shelf: { x: 0, y: 1 }, extinguisher: { x: 0, y: 3 }, door: { x: 0, y: 5 }, terminal: { x: 0, y: 7, kind: "noc" },
       cooling: { x: 4, y: 0, w: 2 }, cooling2: { x: 9, y: 0, w: 2, kind: "cooling" }, pdu: { x: 13, y: 6 }, cart: { x: 13, y: 10 },
     },
     rows: [[2, "s"], [4, "n"], [6, "s"], [8, "n"]], x0: 2, x1: 12,
@@ -371,4 +371,26 @@ export function customerTiles(loc: Location, plan?: OfficePlan): { id: string; n
 export function zoneTiles(loc: Location, plan?: OfficePlan): { id: string; kind: "colo" | "cage" | "meetme"; tiles: Tile[] }[] {
   if (loc.space !== "hall" || !plan?.hall) return [];
   return plan.hall.zones.map((z) => ({ id: z.id, kind: z.kind, tiles: zoneSpots(z) }));
+}
+
+export interface LocSeat { propertyId: string | null; sectionId: string; index: number; area: AreaId | null; x: number; y: number; facing: Facing }
+
+// The seats of a location, the player's first: the basement chair, office desks in plan order, the terminal desk of a rented share or cage, the suite's NOC desk, and the NOC desks of an own hall (tile in the item's area).
+export function seatsAt(s: GameState, loc: Location): LocSeat[] {
+  const p = s.properties.find((q) => q.locationId === loc.id || q.hall?.locationId === loc.id), at = (f: Fixture, sectionId: string, facing: Facing): LocSeat => ({ propertyId: p?.id ?? null, sectionId, index: 0, area: null, x: f.x, y: f.y, facing });
+  if (loc.space === "basement") return [at(FIXTURES.basement.chair, "desk", "n")];
+  if (loc.space === "share" || loc.space === "cage") return [at(FIXTURES[loc.space].terminal, "terminal", "e")];
+  if (loc.space === "suite") return [at(FIXTURES.suite.noc, "noc", "n")];
+  if (loc.space === "office") {
+    const plan = officePlan(s, loc);
+    return plan ? officeSeats(plan).map((q) => ({ ...q, propertyId: p?.id ?? null, area: null })) : [];
+  }
+  if (!p?.hall) return [];
+  return p.hall.items.filter((i) => i.kind === "nocdesk").flatMap((i) => {
+    const pts = footprint(i.kind, i, isHalle(p.buildingId));
+    return Array.from({ length: nocSeatCount(i.price) }, (_, index) => {
+      const q = pts[index % pts.length], d = stepTile(q, i.facing, 1);
+      return { propertyId: p.id, sectionId: `noc:${i.id}`, index, area: i.area, x: d.x, y: d.y, facing: i.facing };
+    });
+  });
 }

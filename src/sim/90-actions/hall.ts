@@ -324,6 +324,7 @@ export function editHallError(s: GameState, locationId: string, edit: HallEdit):
   const desks = (items: HallItem[]) => items.filter((i) => i.kind === "nocdesk").length;
   if (desks(prev.items) > 0 && desks(next.items) === 0) return fail2("error.lastDesk");
   // 11. What is in use stays.
+  for (const ref of edit.remove ?? []) if (ref.startsWith("item:") && s.staff.some((e) => e.desk?.sectionId === `noc:${ref.slice(5)}`)) return fail2("error.locked");
   for (const ref of [...plan.moved, ...(edit.remove ?? [])]) {
     const [kind, id] = ref.split(":"), rack = kind === "rack" ? s.racks.find((r) => r.id === id) : undefined;
     if (rack?.arriveAt != null && plan.moved.includes(ref)) return fail2("error.rackMoving");

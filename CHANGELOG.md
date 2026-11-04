@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Your own hall can have a NOC with seats for technicians, and a technician on shift resets a tripped breaker after 30 minutes, or 10 with a wall screen.
 - All maps are now light and colourful, with rivers, lakes, parks, country borders and named countries, and the street maps show water, parks, motorways and rail.
 - In edit mode you now place, turn, select, move, copy and sell racks, vents, cooling units and power equipment anywhere in your hall and its power rooms.
 - The cooling in your own hall now works as a trade-off: room cooling covers everything at lower efficiency, floor vents and contained aisles improve it, and the power bill and outage backup follow what you build.

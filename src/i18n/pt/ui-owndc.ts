@@ -57,4 +57,7 @@ export default {
   "ledger.hallItem": (p) => `Item, ${p.location}: ${p.item}`,
   "ledger.hallRefund": (p) => `Reembolso, ${p.location}: ${p.item}`,
   "ledger.nocRoom": (p) => `Sala NOC, ${p.location}`,
+  "event.hallBreakerReset.title": () => "Disjuntor rearmado",
+  "event.hallBreakerReset.text": (p) => `O teu técnico rearmou o disjuntor principal de ${p.location}.`,
+  "error.queueFull": () => "Fila cheia.",
 } satisfies Dict;

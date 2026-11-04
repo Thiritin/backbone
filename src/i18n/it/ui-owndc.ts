@@ -57,4 +57,7 @@ export default {
   "ledger.hallItem": (p) => `Elemento, ${p.location}: ${p.item}`,
   "ledger.hallRefund": (p) => `Rimborso, ${p.location}: ${p.item}`,
   "ledger.nocRoom": (p) => `Sala NOC, ${p.location}`,
+  "event.hallBreakerReset.title": () => "Interruttore ripristinato",
+  "event.hallBreakerReset.text": (p) => `Il tuo tecnico ha ripristinato l'interruttore principale di ${p.location}.`,
+  "error.queueFull": () => "Coda piena.",
 } satisfies Dict;

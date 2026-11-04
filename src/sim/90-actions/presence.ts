@@ -3,6 +3,7 @@
 import { datacenterById } from "../20-world/datacenters";
 // A cycle with hardware.ts, which calls viaHands; neither uses the other while loading.
 import type { GameState } from "../50-state";
+import { shiftTechs } from "../60-infra/properties";
 import { playerAt, present, type How } from "../60-infra/handwork";
 import {
   connect, disconnect, installPart, mountDevice, mountStack, moveInRack, removePart, replaceComponent, setPlugged, unmountDevice, type ActionResult,
@@ -13,6 +14,7 @@ export type Hands = "own" | "remote" | "none";
 
 export function hands(s: GameState, locationId: string): Hands {
   if (present(s, locationId)) return "own";
+  if (s.properties.some((p) => p.hall?.locationId === locationId)) return shiftTechs(s, locationId).length ? "remote" : "none";
   return s.locations.find((l) => l.id === locationId)?.dc ? "remote" : "none";
 }
 
@@ -48,6 +50,8 @@ export function viaHands(s: GameState, action: HandsAction, args: unknown[], loc
   const h = hands(s, locationId);
   if (h === "own") return "self";
   const self = how === "self";
+  // The hall's own technicians take work orders once S4 builds them; until then the queue is full.
+  if (h === "remote" && !self && s.properties.some((p) => p.hall?.locationId === locationId)) return { ok: false, error: "error.queueFull" };
   if (h === "none" && !self) return { ok: false, error: "error.notThere" };
   // ponytail: validates on a full copy of the game; a per-action check function if this gets slow.
   const trial = run(structuredClone(s), action, args);

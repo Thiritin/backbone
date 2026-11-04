@@ -4,6 +4,8 @@ import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
 import { CONTINUOUS, datacenterById } from "../20-world/datacenters";
 import type { Device, GameState, Location, MachineState } from "../50-state";
+import { HALL } from "../20-world/properties";
+import { shiftTechs } from "./properties";
 import { pushLog } from "./syslog";
 import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
@@ -172,6 +174,15 @@ export function breakerTick(s: GameState): SimEvent[] {
   const over = readOnlySweep(s, () => new Set(s.locations.filter((l) => !l.tripped && roomPower(s, l).over).map((l) => l.id)));
   for (const loc of s.locations) {
     if (loc.tripped) {
+      const own = s.properties.find((q) => q.hall?.locationId === loc.id);
+      if (own?.hall) {
+        // An on-shift technician of the hall resets it; wall screens make it faster.
+        const wait = (own.hall.items.some((i) => i.kind === "screen") ? HALL.noc.resetMinScreens : HALL.noc.resetMin) / 60;
+        if (!shiftTechs(s, loc.id).length || now < (loc.trippedAt ?? now) + wait) continue;
+        closeBreaker(s, loc);
+        events.push({ app: "Locations", key: "event.hallBreakerReset", params: { location: loc.name } });
+        continue;
+      }
       if (!loc.dc) continue;
       const hands = datacenterById(loc.dc).remoteHands;
       if (now < (loc.trippedAt ?? now) + hands.responseHours) continue;

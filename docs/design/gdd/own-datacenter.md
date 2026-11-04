@@ -24,6 +24,13 @@ An office building the company owns can have a floor fitted as a hall (refit `ha
 - **Security.** A badge reader at the door, cameras, and from 2015 the cage zones.
 - **Colocation customers.** A hall lists its colocation zones in the Sales app as rack space at a price the player sets against the city's going rate; a customer's rack is drawn as a neighbour rack with a lock and stands on the first free tile of the lowest zone. Each customer draws 2 to 5 kW per position (a cage per position), which counts toward the transformer limit, warms the hall and is paid for with the hall's power bill. A month in which the breaker tripped makes every customer likelier to leave. A cage customer pays the open rate times the cage length with a markup.
 
+## The NOC room
+
+- **Seats.** Each NOC desk gives seats to the company's desk pool, three at the desk every hall starts with and two at a bought one. Hiring fills office desks first and then hall seats. A technician assigned to the hall takes a free seat there, and the assignment fails when none is free, which is the hiring limit for a hall. A desk with a seated technician cannot be sold.
+- **Breaker response.** A technician of the hall who is on shift resets a tripped main breaker after 30 minutes, or after 10 with at least one wall screen. With nobody on shift the breaker stays tripped.
+- **Hands.** An own hall with an on-shift technician counts as remote hands for the player's hands-on actions. Work orders for them come with the work order system; until then the queue answers "Queue full."
+- **Terminal.** Every rented share and cage room has a terminal desk by the entry with one seat. The player takes the first seat of a location and staff fill the rest.
+
 ## In the room
 
 The hall is drawn like a suite from the same floor: raised floor, the racks and zones the player placed, cooling units, the meet-me room door, the loading dock, the main distribution board in the transformer room, the NOC desk, fluorescent tubes. A tripped floor goes dark.

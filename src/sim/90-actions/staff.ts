@@ -144,6 +144,13 @@ export function setTechLocation(s: GameState, id: string, locationId: string): A
   if (!e) return fail("error.unknownEmployee");
   if (e.role !== "technician") return fail("error.notTechnician");
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
+  const hall = s.properties.find((p) => p.hall?.locationId === locationId);
+  // A technician at an own hall sits at one of its NOC seats.
+  if (hall && e.desk?.propertyId !== hall.id) {
+    const desk = freeDesk(s, hall.id);
+    if (!desk) return fail("error.noFreeDesk");
+    e.desk = desk;
+  }
   e.location = locationId;
   return { ok: true };
 }

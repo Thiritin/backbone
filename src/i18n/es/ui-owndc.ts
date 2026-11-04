@@ -57,4 +57,7 @@ export default {
   "ledger.hallItem": (p) => `Elemento, ${p.location}: ${p.item}`,
   "ledger.hallRefund": (p) => `Reembolso, ${p.location}: ${p.item}`,
   "ledger.nocRoom": (p) => `Sala NOC, ${p.location}`,
+  "event.hallBreakerReset.title": () => "Interruptor restablecido",
+  "event.hallBreakerReset.text": (p) => `Tu técnico restableció el interruptor principal de ${p.location}.`,
+  "error.queueFull": () => "Cola llena.",
 } satisfies Dict;

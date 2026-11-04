@@ -57,4 +57,7 @@ export default {
   "ledger.hallItem": (p) => `Item, ${p.location}: ${p.item}`,
   "ledger.hallRefund": (p) => `Refund, ${p.location}: ${p.item}`,
   "ledger.nocRoom": (p) => `NOC room, ${p.location}`,
+  "event.hallBreakerReset.title": () => "Breaker reset",
+  "event.hallBreakerReset.text": (p) => `Your technician reset the main breaker at ${p.location}.`,
+  "error.queueFull": () => "Queue full.",
 } satisfies Dict;
