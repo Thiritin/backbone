@@ -36,6 +36,8 @@ export const ART: Record<string, FixtureArt> = {
   cooling: { label: "world.obj.cooling" },
   pdu: { label: "world.obj.pdu", use: "power" },
   noc: { label: "world.obj.noc", use: "desktop" },
+  // The rented rooms' terminal desk and the own hall's NOC desks open the desktop; a wall screen is only drawn.
+  terminal: { label: "world.obj.terminal", use: "desktop" }, nocdesk: { label: "world.obj.nocdesk", use: "desktop" }, screen: { label: "world.obj.screen" },
   dock: { label: "world.obj.dock", wall: true },
   // The office room. The stairwell door switches floors; the partition and its code door sort with the room, one piece per row.
   stairs: { label: "world.obj.stairs", use: "stairs", wall: true }, bossdesk: { label: "world.obj.pc", use: "desktop" }, owindow: { wall: true }, whiteboard: { wall: true },
@@ -46,4 +48,4 @@ export const ART: Record<string, FixtureArt> = {
   meetmedoor: { label: "hall.room.meetme", use: "meetme", wall: true }, camera: { wall: true }, mainboard: { label: "hall.obj.mainboard", use: "mainboard", wall: true }, planboard: { label: "hall.room.plan", use: "edit", wall: true },
 };
 
-export const artOf = (id: string, f: Fixture): FixtureArt => ART[f.kind ?? id];
+export const artOf = (id: string, f: Fixture): FixtureArt => ART[id === "terminal" ? id : f.kind ?? id];

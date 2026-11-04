@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Build and furnish a NOC room in your own hall, and use the terminal desk in rented datacenter rooms to reach your desktop on site; the main distribution board is now drawn as a real switchgear panel.
 - Work in your own hall now takes game time: your technicians walk to the rack, do the job in minutes, and customers in your hall can book remote hands at a rate you set.
 - The datacenter floor shows how air flows around your racks, the main distribution board and the meet-me room open as close-ups, and the hall plan shows every room.
 - Your own hall can have a NOC with seats for technicians, and a technician on shift resets a tripped breaker after 30 minutes, or 10 with a wall screen.

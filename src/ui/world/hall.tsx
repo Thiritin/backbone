@@ -83,7 +83,7 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
     mainboard: (f: Fixture) => <MainBoard x={f.x} y={f.y} axis="y" />,
     // Cooling units and NOC desks are items of the layout, drawn with the rest of the placed things.
     cooling: () => null,
-    noc: (f: Fixture) => <polygon points={pts(iso(f.x, f.y), iso(f.x + (f.w ?? 1), f.y), iso(f.x + (f.w ?? 1), f.y + 1), iso(f.x, f.y + 1))} fill="rgba(0,0,0,0)" />,
+    noc: () => null,
   });
   annexScene(game, loc, plan, tiles, (depth, node) => things.push({ depth, node }));
   // Air tones are floor paint: a rack's intake and exhaust tiles in the tone of the air they get.

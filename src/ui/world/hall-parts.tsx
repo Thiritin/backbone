@@ -12,12 +12,12 @@ import { hallAt } from "../../sim/90-actions/hall";
 import { useStore } from "../store";
 import { pts, rackHeight, RackBox } from "./draw";
 import { iso } from "./grid";
-import { Battery, Containment, Crac, CratedRack, Generator, Switchgear, Transformer, Ups, Vent } from "./hall-art";
+import { AreaFloor, Battery, Containment, Crac, CratedRack, Generator, NocDesk, StubWall, Switchgear, Transformer, Ups, Vent, WallScreen } from "./hall-art";
 import { entryOf, useEdit, type Spec, type Tab } from "./hall-edit";
 
-const TABS: Tab[] = ["racks", "cooling", "areas", "power", "delivered"];
+const TABS: Tab[] = ["racks", "cooling", "areas", "rooms", "power", "delivered"];
 // Space above the footprint the art needs in the small view.
-const TOP: Partial<Record<HallItemKind, number>> = { vent: 6, containment: 76, crac: 62, battery: 70, ups: 72 };
+const TOP: Partial<Record<HallItemKind, number>> = { screen: 70, vent: 6, containment: 76, crac: 62, battery: 70, ups: 72 };
 
 interface Part { id: string; spec: Spec; label: string; price: number | null; art: ReactNode; box: string }
 
@@ -37,6 +37,8 @@ function ItemArt({ kind, halle }: { kind: HallItemKind; halle: boolean }) {
     case "generator": return <Generator {...p} />;
     case "ups": return <Ups {...p} running={false} />;
     case "battery": return <Battery {...p} />;
+    case "nocdesk": return <NocDesk {...p} seats={HALL.items.nocdesk.seats ?? 2} occupied={[]} />;
+    case "screen": return <WallScreen state="ok" />;
     default: return null;
   }
 }
@@ -46,7 +48,7 @@ export const STRIP_H = 150;
 const ART_H = 52;
 // The parts strip along the bottom edge of the room: parts to hold, the hall's meters, and the way out of edit mode.
 export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }) {
-  const game = useStore((s) => s.game), { hold, onStrip, tab } = useEdit();
+  const game = useStore((s) => s.game), { hold, onStrip, tab, room: roomHeld } = useEdit();
   const h = hallAt(game, loc.id);
   if (!h) return null;
   const halle = isHalle(h.p.buildingId), year = yearOf(game.hour);
@@ -66,6 +68,10 @@ export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }
     id: z, spec: { kind: "zone", zone: z }, label: t(`hall.edit.${z}`), price: z === "colo" ? null : z === "cage" ? HALL.zones.cage.perPosition : HALL.zones.meetme.price, box: "-40 -2 140 66",
     art: <>{[0, 1, 2].map((i) => <polygon key={i} className={`w-zone-${z}`} points={pts(iso(i, 0.2), iso(i + 1, 0.2), iso(i + 1, 1.2), iso(i, 1.2))} />)}<polygon className={`w-zone-edge w-zone-edge-${z}`} points={pts(iso(0, 0.2), iso(3, 0.2), iso(3, 1.2), iso(0, 1.2))} /></>,
   });
+  const room: Part = {
+    id: "noc", spec: { kind: "nocdesk" }, label: t("hall.room.noc"), price: HALL.noc.price, box: "-60 -50 150 100",
+    art: <><AreaFloor x={0} y={0} w={3} h={2} kind="carpet" /><StubWall x0={0} y0={2} x1={3} y1={2} /></>,
+  };
   const rack = (m: { id: string; units: number; price: number }): Part => ({
     id: m.id, spec: { kind: "rack", model: m.id, units: m.units }, label: t("hall.edit.rack", { u: m.units }), price: m.price, box: rackBox,
     art: <RackBox tile={{ x: 0, y: 0, facing: "s" }} units={m.units} items={[]} leds={[]} zoomed={false} />,
@@ -74,12 +80,14 @@ export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }
     racks: RACK_MODELS.filter((m) => m.id !== "shelf").map(rack),
     cooling: [item("crac"), item("vent"), ...(year >= (HALL.items.containment.from ?? 0) ? [item("containment")] : [])],
     areas: (["colo", "cage", "meetme"] as const).filter((z) => z !== "cage" || year >= HALL.zones.cage.from).map(zone),
+    rooms: [...(h.hall.noc ? [] : [room]), item("nocdesk"), ...(h.hall.noc ? [item("screen")] : [])],
     power: (["transformer", "switchgear", "generator", "ups", "battery"] as const).map(item),
     delivered: delivered.map((r) => ({ id: r.id, spec: { kind: "rack" as const, model: r.model, units: 42, rackId: r.id }, label: r.name, price: null, box: itemBox("vent", 1, 1).replace(/-?\d+ \d+ (\d+) \d+$/, "-34 -80 68 96"), art: <CratedRack x={0} y={0} /> })),
   };
   const pick = (p: Part) => (e: React.PointerEvent) => {
     if (e.button) return;
     e.preventDefault();
+    if (p.id === "noc") { const was = useEdit.getState().room; useEdit.getState().open(loc.id, null); useEdit.setState({ room: !was }); return; }
     const same = hold && !hold.moving && JSON.stringify(hold.entries[0].spec) === JSON.stringify(p.spec);
     useEdit.getState().open(loc.id, same ? null : { entries: [entryOf(p.spec, "s", halle)], anchor: { x: 0, y: 0 }, moving: false });
   };
@@ -90,7 +98,7 @@ export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }
       </div>
       <div className="w-parts-row">
         {parts[active].map((p) => (
-          <div key={p.id} className={`w-parts-item${hold && !hold.moving && JSON.stringify(hold.entries[0].spec) === JSON.stringify(p.spec) ? " w-parts-on" : ""}`} onPointerDown={pick(p)} role="button" aria-label={p.label}>
+          <div key={p.id} className={`w-parts-item${(p.id === "noc" ? roomHeld : hold && !hold.moving && JSON.stringify(hold.entries[0].spec) === JSON.stringify(p.spec)) ? " w-parts-on" : ""}`} onPointerDown={pick(p)} role="button" aria-label={p.label}>
             <svg className="w-parts-art" height={ART_H} viewBox={p.box} aria-hidden>{p.art}</svg>
             <span>{p.label}</span>{p.price !== null && <b className="num">{euro(p.price)}</b>}
           </div>

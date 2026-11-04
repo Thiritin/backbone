@@ -13,7 +13,7 @@ import { editHall, editHallError, hallAt, type HallEdit, type HallPlace, type La
 import { useStore } from "../store";
 import { onX, pts, rackHeight, RackBox } from "./draw";
 import { iso, type Pt } from "./grid";
-import { Battery, Containment, Crac, CratedRack, Generator, NocDesk, Switchgear, Transformer, Ups, Vent, WallScreen } from "./hall-art";
+import { Battery, Containment, Crac, CratedRack, Generator, NocDesk, NocLettering, Switchgear, Transformer, Ups, Vent, WallScreen } from "./hall-art";
 import { dragLine, frontOf, key, tilesOf, turnParts, walkPath, type Part } from "./hall-edit-geom";
 import { corner, itemTiles } from "./hall-annex";
 
@@ -23,7 +23,7 @@ export type Spec = { kind: "rack"; model: string; units: number; rackId?: string
 export interface Entry extends Part { spec: Spec; ref?: string; length?: number }
 // What the pointer carries: parts fixed to the grabbed tile.
 export interface Hold { entries: Entry[]; anchor: Pt; moving: boolean }
-export type Tab = "racks" | "cooling" | "areas" | "power" | "delivered";
+export type Tab = "racks" | "cooling" | "areas" | "rooms" | "power" | "delivered";
 
 interface Edit {
   loc: string;
@@ -36,6 +36,8 @@ interface Edit {
   msg: { text: string; at: Pt; n: number } | null;
   clip: Entry[];
   tab: Tab;
+  // The NOC room outline is held on the floor, waiting for the click that builds it.
+  room: boolean;
   open: (loc: string, hold: Hold | null) => void;
   escape: () => boolean;
 }
@@ -43,11 +45,12 @@ interface Edit {
 const MSG_MS = 2000, ZONE_LEN: Record<HallZone["kind"], number> = { colo: 4, cage: 4, meetme: 3 };
 let seq = 0;
 export const useEdit = create<Edit>((set, get) => ({
-  loc: "", hold: null, sel: [], at: null, onStrip: false, line: null, box: null, msg: null, clip: [], tab: "racks",
-  open: (loc, hold) => set({ loc, hold, line: null, msg: null }),
+  loc: "", hold: null, sel: [], at: null, onStrip: false, line: null, box: null, msg: null, clip: [], tab: "racks", room: false,
+  open: (loc, hold) => set({ loc, hold, line: null, msg: null, room: false }),
   // Escape drops the hold first, then the selection; false when there was nothing to drop.
   escape: () => {
     const s = get();
+    if (s.room) { set({ room: false }); return true; }
     if (s.hold) { set({ hold: null, line: null }); return true; }
     if (s.sel.length) { set({ sel: [] }); return true; }
     return false;
@@ -409,7 +412,7 @@ function EditFloor({ game, loc, plan }: { game: GameState; loc: Location; plan: 
 }
 
 function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: OfficePlan }) {
-  const { msg } = useEdit();
+  const { msg, room } = useEdit();
   useEffect(() => {
     useEdit.setState({ loc: loc.id });
     const menu = (e: Event) => { if (document.querySelector(".world-svg")?.contains(e.target as Node) || useEdit.getState().hold) { e.preventDefault(); turnHold(); } };
@@ -423,7 +426,7 @@ function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: 
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("contextmenu", menu);
       gesture = null;
-      useEdit.setState({ hold: null, sel: [], line: null, box: null, at: null, onStrip: false, msg: null });
+      useEdit.setState({ hold: null, sel: [], line: null, box: null, at: null, onStrip: false, msg: null, room: false });
     };
   }, [loc.id]);
 
@@ -448,6 +451,15 @@ function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: 
 
   const { v, bad } = useView(c, objs);
   const bounds = c.areas.map((a) => a.rect);
+  const hallRect = c.areas.find((a) => a.id === "hall")?.rect, ghost = room && hallRect && !c.areas.some((a) => a.id === "noc") ? { x: 0, y: hallRect.h, w: HALL.noc.w, h: HALL.noc.d } : null;
+  const build = (e: React.PointerEvent) => {
+    if (e.button) return;
+    e.stopPropagation(); e.preventDefault();
+    const at = { x: 3, y: hallRect!.h };
+    const r = useStore.getState().attempt(editHall, c.loc.id, { place: [{ kind: "noc", x: 0, y: 0, facing: "s" }] });
+    if (r.ok) useEdit.setState({ room: false, tab: "rooms" });
+    else shout(t(r.error ?? "error.occupied"), at);
+  };
 
   return (
     <g>
@@ -456,6 +468,10 @@ function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: 
         {/* Units on the far wall stand taller than the floor, so a press on their upper body lands on the wall. */}
         {r.y === 0 && <polygon points={pts(iso(r.x, 0), iso(r.x + r.w, 0), { x: iso(r.x + r.w, 0).x, y: iso(r.x + r.w, 0).y - 100 }, { x: iso(r.x, 0).x, y: iso(r.x, 0).y - 100 })} fill="rgba(0,0,0,0)" onPointerDown={press} />}
       </g>)}
+      {ghost && <g role="button" aria-label={t("hall.room.noc")} className="w-edit-room" onPointerDown={build}>
+        <polygon points={pts(iso(ghost.x, ghost.y), iso(ghost.x + ghost.w, ghost.y), iso(ghost.x + ghost.w, ghost.y + ghost.h), iso(ghost.x, ghost.y + ghost.h))} />
+        <NocLettering y={ghost.y} len={ghost.h} ghost />
+      </g>}
       {v && <>
         <g className="w-edit-ghost" pointerEvents="none">
           {[...v.entries].sort((a, b) => a.x + a.y - b.x - b.y).map((e, i) => <g key={i}><GhostArt e={e} halle={c.halle} ok={!bad} /></g>)}

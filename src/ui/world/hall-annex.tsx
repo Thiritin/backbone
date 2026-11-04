@@ -5,8 +5,11 @@ import { t } from "../../i18n/en";
 import { areaAt, footprint, intake, siteAreas, type Area, type OfficePlan, type Tile } from "../../sim/20-world/layout";
 import { HALL, isHalle, zoneSpots } from "../../sim/20-world/properties";
 import type { GameState, HallItem, Location } from "../../sim/50-state";
+import { rackAlarms } from "../../sim/60-infra/alarms";
 import { hallAt } from "../../sim/90-actions/hall";
+import { useStore } from "../store";
 import { Prism, WALL } from "./draw";
+import { ART } from "./rooms";
 import { aisleTiles, key, runsOf, wallPieces, type Pt } from "./hall-edit-geom";
 import { AreaFloor, Battery, Containment, CratedRack, Crac, Doorway, Generator, Hatch, NocDesk, NocLettering, StubWall, Switchgear, Transformer, Ups, Vent, WallScreen } from "./hall-art";
 
@@ -47,7 +50,7 @@ function partitions(areas: Area[], color: string): { depth: number; node: ReactN
 }
 
 // One item of the layout in its own art. Holding the pointer over it names it.
-function ItemArt({ i, areas, halle, tripped, hall }: { i: HallItem; areas: Area[]; halle: boolean; tripped: boolean; hall: GameState["properties"][number]["hall"] }) {
+function ItemArt({ i, areas, halle, tripped, alarm, hall }: { i: HallItem; areas: Area[]; halle: boolean; tripped: boolean; alarm: boolean; hall: GameState["properties"][number]["hall"] }) {
   const pts = itemTiles(i, areas, halle), c = corner(pts), p = { x: c.x, y: c.y, facing: i.facing };
   switch (i.kind) {
     case "crac": return <Crac {...p} />;
@@ -59,7 +62,7 @@ function ItemArt({ i, areas, halle, tripped, hall }: { i: HallItem; areas: Area[
     case "ups": return <Ups {...p} running={!tripped} />;
     case "battery": return <Battery {...p} />;
     case "nocdesk": return <NocDesk {...p} seats={HALL.items.nocdesk.seats ?? 2} occupied={[]} />;
-    case "screen": return <WallScreen y={c.y} state={tripped ? "trip" : "ok"} />;
+    case "screen": return <WallScreen y={c.y} state={tripped ? "trip" : alarm ? "alarm" : "ok"} />;
   }
 }
 
@@ -92,6 +95,7 @@ export function annexScene(game: GameState, loc: Location, plan: OfficePlan, til
   const noc = areas.find((a) => a.id === "noc");
   if (noc) push(-40, <g key="noclabel" pointerEvents="none"><NocLettering y={noc.rect.y} len={noc.rect.h} company={game.company} /></g>);
 
+  const alarm = game.racks.some((r) => r.locationId === loc.id && rackAlarms(game, r.id).length > 0);
   const bodies = new Set<string>();
   for (const t of Object.values(tiles)) bodies.add(key(t));
   const owners = hall.customers.flatMap((c) => (c.zoneId ? [] : c.tile ? [c.tile] : []));
@@ -105,7 +109,10 @@ export function annexScene(game: GameState, loc: Location, plan: OfficePlan, til
     const pts = itemTiles(i, areas, halle), ex = extent(pts), c = corner(pts), body = HALL.items[i.kind].layer === "body";
     if (i.kind === "transformer" || i.kind === "generator") push(-30, <g key={`h${i.id}`} pointerEvents="none"><Hatch x={c.x} y={c.y} w={ex.w} h={ex.h} /></g>);
     const depth = body ? c.x + ex.w - 1 + c.y + ex.h - 1 + 0.5 : i.kind === "screen" ? -39 : c.x + c.y - 1.9;
-    push(depth, <g key={`i${i.id}`} role="img" aria-label={t(`hall.item.${i.kind}`)} pointerEvents="none"><title>{t(`hall.item.${i.kind}`)}</title><ItemArt i={i} areas={areas} halle={halle} tripped={loc.tripped} hall={hall} /></g>);
+    const art = <ItemArt i={i} areas={areas} halle={halle} tripped={loc.tripped} alarm={alarm} hall={hall} />;
+    // A NOC desk is a PC of the company: pressing it opens the desktop.
+    if (i.kind === "nocdesk") push(depth, <g key={`i${i.id}`} className="w-obj" role="button" aria-label={t(ART.nocdesk.label!)} onClick={(e) => { e.stopPropagation(); useStore.getState().setSurface("desktop"); }}>{art}</g>);
+    else push(depth, <g key={`i${i.id}`} role="img" aria-label={t(`hall.item.${i.kind}`)} pointerEvents="none"><title>{t(`hall.item.${i.kind}`)}</title>{art}</g>);
   }
 
   // Delivered racks stand crated by the entry until they are placed.

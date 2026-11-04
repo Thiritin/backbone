@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode }
 import { floodedDevice } from "../../sim/60-infra/network";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
+import { HALL } from "../../sim/20-world/properties";
 import { cage, fixtures, neighbourRacks, officeFloors, officePlan, rackTiles, roomSize, shareMates, siteAreas, type Fixture } from "../../sim/20-world/layout";
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { sky, temperature } from "../../sim/20-world/weather";
@@ -106,7 +107,10 @@ export function World() {
     setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setLights(looked[loc.id]?.lights ?? false); setFloor(null); setRackOpen(null); setPanel(null); setCable(null); setPair(null); setFrom(null); setEditing(false);
   }, [loc]);
   useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org, lights }; }, [loc.id, zoomSet, org, lights]);
-  const box = { x: iso(0, h).x - 8, y: -WALL - 12, w: (w + h) * 32 + 16, h: (w + h) * 16 + WALL + 12 };
+  // An own hall is fitted with its annex rooms and the NOC room's place below it.
+  const rects = loc.space === "hall" ? [...siteAreas(game, loc).map((a) => a.rect), { x: 0, y: h, w: HALL.noc.w, h: HALL.noc.d }] : [{ x: 0, y: 0, w, h }];
+  const left = Math.min(...rects.map((r) => iso(r.x, r.y + r.h).x)), right = Math.max(...rects.map((r) => iso(r.x + r.w, r.y).x)), low = Math.max(...rects.map((r) => iso(r.x + r.w, r.y + r.h).y));
+  const box = { x: left - 8, y: -WALL - 12, w: right - left + 16, h: low + WALL + 12 };
   // The parts strip covers the bottom of the room in edit mode; the room is fitted and centred above it.
   const room = size.h - (editing ? STRIP_H : 0);
   const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, room * 0.94 / box.h);
@@ -351,7 +355,7 @@ export function World() {
   for (const [id, f] of Object.entries(fx)) {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
     if (loc.tripped && (["fan", "window", "owindow"].includes(f.kind ?? id) || (lights && ["lamp", "tube"].includes(f.kind ?? id)))) bright.push(<g key={`b${id}`} pointerEvents="none" aria-hidden>{art}</g>);
-    const node = a.use && a.label
+    const node = a.use && a.label && art
       ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}${hint === id ? " w-glow" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use])}>{art}</g>
       : <g key={id} aria-label={a.label && t(a.label)} aria-hidden={!a.label || undefined} pointerEvents="none">{art}</g>;
     if (a.wall) back.push(node);

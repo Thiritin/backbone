@@ -11,6 +11,7 @@ import type { Location } from "../../sim/50-state";
 import { resetBreaker } from "../../sim/90-actions/hardware";
 import { buildCarrier, cityCarriers, hallAt, unmaintained } from "../../sim/90-actions/hall";
 import { useStore } from "../store";
+import { MainBoardFace } from "./hall-board";
 import { Slab } from "./panel/Slab";
 import "./hall.css";
 
@@ -94,36 +95,17 @@ export function MainBoardRoom({ loc, title, onClose }: { loc: Location; title: s
   const { hall, p } = h, halle = isHalle(p.buildingId), cut = new Set(unmaintained(game, loc.id).map((r) => r.slice(5)));
   const per = HALL.items.transformer.kw as { office: number; halle: number }, load = airflow(game, loc).load;
   const xfmr = hall.items.filter((i) => i.kind === "transformer").map((i) => ({ id: i.id, max: per[halle ? "halle" : "office"] * (cut.has(i.id) ? HALL.service.derate : 1) }));
-  const total = xfmr.reduce((n, x) => n + x.max, 0), n = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  const total = xfmr.reduce((n, x) => n + x.max, 0);
   const feedB = hall.items.some((i) => i.kind === "switchgear");
   const genKw = hall.items.filter((i) => i.kind === "generator").length * Number(HALL.items.generator.kw);
   const ready = genKw >= load && genKw > 0;
   const minutes = Math.round(hallBackupMinutes(game, hall, load));
   const reset = () => { const r = attempt(resetBreaker, loc.id); setRefused(r.ok ? null : r.error ?? "error.noCash"); };
-  const Lamp = ({ on }: { on: boolean }) => <span className={`hd-lamp${on ? " hd-lamp-on" : ""}`} aria-hidden />;
+  const bays = xfmr.map((x) => ({ id: x.id, max: x.max, used: total ? load * x.max / total : 0 }));
   return (
     <Slab title={title} onClose={onClose} data={{ "door-panel": "mainboard" }}>
       <div className="wp-scene hd-room">
-        <div className="hd-board" data-mainboard="">
-          {xfmr.map((x, i) => {
-            const used = total ? load * x.max / total : 0;
-            return (
-              <div key={x.id} className="hd-brow">
-                <Lamp on={!loc.tripped} /><b>{t("hall.board.xfmr", { n: i + 1 })}</b>
-                <span className="hd-meter"><span className="hd-meter-fill" style={{ width: `${Math.min(100, x.max ? used / x.max * 100 : 0)}%` }} /></span>
-                <span className="num">{t("hall.board.load", { used: n(used), max: n(x.max) })}</span>
-              </div>
-            );
-          })}
-          {feedB && <div className="hd-brow"><Lamp on /><b>{t("hall.board.feedB")}</b></div>}
-          <div className="hd-brow"><Lamp on={minutes > 0} /><b>{t("hall.board.runtime", { min: minutes })}</b></div>
-          <div className="hd-brow"><Lamp on={ready} /><b>{t("hall.board.generator")}</b><span>{ready ? t("hall.board.ready") : t("hall.board.none")}</span></div>
-          <div className="hd-brow hd-main">
-            <Lamp on={!loc.tripped} /><b>{t("hall.board.main")}</b><span>{loc.tripped ? t("hall.board.tripped") : t("hall.board.on")}</span>
-            {loc.tripped && <button className="wr-line" data-reset-breaker="" onClick={reset}>{t("hall.board.reset")}</button>}
-          </div>
-          {refused && <div className="wr-model hd-refused" role="alert">{t(refused)}</div>}
-        </div>
+        <MainBoardFace bays={bays} feedB={feedB} minutes={minutes} ready={ready} tripped={loc.tripped} refused={refused} onReset={reset} />
       </div>
     </Slab>
   );
