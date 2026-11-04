@@ -112,7 +112,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <span className="mb-sep" />
       <SpeedControl speed={speed} setSpeed={setSpeed} />
       <span className="mb-sep" />
-      <button className="mb-item num" onClick={() => openApp("Calendar")}>{formatClock(game.hour, game.minute)}</button>
+      <button className={`mb-item num${speed === 0 ? " paused" : ""}`} onClick={() => openApp("Calendar")}>{formatClock(game.hour, game.minute)}</button>
       <span className="mb-sep" />
       <button className="mb-item mb-cash num" onClick={() => openApp("Books")}>{euro(game.cash)}</button>
       <button className="mb-item mb-badge" aria-label={unseen ? t("desktop.notif.unseen", { n: unseen }) : t("desktop.notif.title")} onClick={onBell}>

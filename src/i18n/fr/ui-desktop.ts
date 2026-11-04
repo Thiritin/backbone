@@ -119,7 +119,6 @@ export default {
   "desktop.menu.speed": () => "Vitesse du jeu",
   "desktop.menu.skip": () => "Passer au prochain événement",
   "desktop.menu.pause": () => "Pause",
-  "desktop.paused": () => "En pause",
   "desktop.menu.speedN": (p) => `Vitesse ×${p.n}`,
   "desktop.menu.language": () => "Langue",
   "desktop.menu.darkMode": () => "Basculer le mode sombre",

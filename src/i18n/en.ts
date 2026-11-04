@@ -79,8 +79,6 @@ export const en: Record<string, (p: Params) => string> = {
   "event.contractEnded.text": (p) => `${p.location} has been handed back to the provider.`,
   "event.contractRolled.title": () => "Contract extended",
   "event.contractRolled.text": (p) => `${p.location} still holds hardware, so the contract runs one more month.`,
-  "save.loaded.title": () => "Game loaded",
-  "save.loaded.text": () => "You are back where you left off.",
   "save.failed.title": () => "Saving failed",
   "save.failed.text": () => "The browser refused to store the save.",
   "save.imported.title": () => "Save imported",

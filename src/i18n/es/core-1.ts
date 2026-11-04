@@ -15,8 +15,6 @@ export default {
   "event.contractEnded.text": (p) => `${p.location} se ha devuelto al proveedor.`,
   "event.contractRolled.title": () => "Contrato prolongado",
   "event.contractRolled.text": (p) => `${p.location} aún contiene hardware, así que el contrato sigue un mes más.`,
-  "save.loaded.title": () => "Partida cargada",
-  "save.loaded.text": () => "Estás de vuelta donde lo dejaste.",
   "save.failed.title": () => "Error al guardar",
   "save.failed.text": () => "El navegador se negó a guardar la partida.",
   "save.imported.title": () => "Partida importada",

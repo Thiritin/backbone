@@ -15,8 +15,6 @@ export default {
   "event.contractEnded.text": (p) => `${p.location} wurde an den Anbieter zurückgegeben.`,
   "event.contractRolled.title": () => "Vertrag verlängert",
   "event.contractRolled.text": (p) => `In ${p.location} steht noch Hardware, der Vertrag läuft einen Monat weiter.`,
-  "save.loaded.title": () => "Spiel geladen",
-  "save.loaded.text": () => "Du bist wieder da, wo du aufgehört hast.",
   "save.failed.title": () => "Speichern fehlgeschlagen",
   "save.failed.text": () => "Der Browser hat das Speichern verweigert.",
   "save.imported.title": () => "Spielstand importiert",

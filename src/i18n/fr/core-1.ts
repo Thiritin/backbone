@@ -15,8 +15,6 @@ export default {
   "event.contractEnded.text": (p) => `${p.location} a été rendu au fournisseur.`,
   "event.contractRolled.title": () => "Contrat prolongé",
   "event.contractRolled.text": (p) => `${p.location} contient encore du matériel, le contrat continue un mois de plus.`,
-  "save.loaded.title": () => "Partie chargée",
-  "save.loaded.text": () => "Tu reprends là où tu t'étais arrêté.",
   "save.failed.title": () => "Échec de la sauvegarde",
   "save.failed.text": () => "Le navigateur a refusé d'enregistrer la sauvegarde.",
   "save.imported.title": () => "Sauvegarde importée",

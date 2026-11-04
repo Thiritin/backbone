@@ -351,7 +351,7 @@ export const useStore = create<Store>((set, get) => ({
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
-    const x = 96 + n * 32, y = 64 + n * 28;
+    const x = 136 + n * 32, y = 64 + n * 28;
     // Leaves room for the dock on small screens.
     const w = Math.min(size.w, (globalThis.innerWidth ?? Infinity) - x - 16), h = Math.min(size.h, (globalThis.innerHeight ?? Infinity) - y - 110);
     uiSound("open");

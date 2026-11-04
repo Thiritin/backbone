@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatClock, MS_PER_HOUR, SPEEDS } from "../../sim/00-core/time";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { t } from "../../i18n/en";
-import { clockCarry, loadedFromSave, useStore } from "../store";
+import { clockCarry, useStore } from "../store";
 import { AppWindow } from "./AppWindow";
 import { Banners, NotificationCenter } from "./Banners";
 import { DesktopIcons } from "./DesktopIcons";
@@ -30,7 +30,6 @@ import { useTrip } from "../travel/route";
 import type { ChangelogDay } from "../changelog";
 
 const AUTOSAVE_MS = 15_000;
-let greeted = false;
 
 const dark = matchMedia("(prefers-color-scheme: dark)");
 
@@ -67,7 +66,7 @@ export function Desktop() {
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
-  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, news, explain, setExplain, alert } = useStore();
+  const { windows, speed, setSpeed, advance, save, clearUnseen, news, explain, setExplain, alert } = useStore();
   const gameOver = useStore((s) => s.game.gameOver), surface = useStore((s) => s.surface), desk = surface === "desktop";
   const [update, setUpdate] = useState<ChangelogDay[] | null>(null);
   const dismissed = useRef<number | null>(null);
@@ -75,12 +74,6 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   useEffect(() => watchUpdates((changes) => setUpdate(changes), () => dismissed.current), []);
   const [center, setCenter] = useState(false);
   const carry = clockCarry;
-
-  useEffect(() => {
-    if (!loadedFromSave || greeted) return;
-    greeted = true;
-    notify("Settings", t("save.loaded.title"), t("save.loaded.text"));
-  }, [notify]);
 
   // Clock: whole game minutes from real time × speed; leftovers carry into the next frame.
   useEffect(() => {
@@ -125,14 +118,11 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
         <>
           <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
           <ConfirmHost />
-          <div className="live-only" inert={speed === 0}>
-            <DesktopIcons />
-            <Widgets />
-            <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
-            {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
-            <Dock />
-          </div>
-          {speed === 0 && <div className="paused-veil">{t("desktop.paused")}</div>}
+          <DesktopIcons />
+          <Widgets />
+          <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
+          {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
+          <Dock />
         </>
       )}
       {desk && <EarlyAccess />}
