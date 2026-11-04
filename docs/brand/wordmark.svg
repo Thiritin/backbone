@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 280" width="950" height="280"><defs>
+<linearGradient id="f" gradientUnits="userSpaceOnUse" x1="0" y1="88" x2="0" y2="196"><stop offset="0" stop-color="#F0625C"/><stop offset="1" stop-color="#B0261E"/></linearGradient>
+<linearGradient id="w" gradientUnits="userSpaceOnUse" x1="0" y1="87" x2="0" y2="197"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#DCE1EC"/></linearGradient>
+<filter id="g" x="-80%" y="-40%" width="260%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
+<mask id="m"><rect width="950" height="280" fill="#fff"/><rect x="510" y="112.0" width="80" height="6" fill="#000"/><rect x="510" y="139.0" width="80" height="6" fill="#000"/><rect x="510" y="166.0" width="80" height="6" fill="#000"/></mask></defs>
+<rect width="950" height="280" rx="40" fill="#0B0C10"/>
+<polygon points="60.0,87.0 94.0,87.0 156.0,142.0 94.0,197.0 60.0,197.0 122.0,142.0" fill="url(#w)"/>
+<text x="200" y="190" font-family="Menlo, Monaco, monospace" font-weight="700" font-size="130" fill="#fff">raid</text>
+<path d="M550.0 88 a30.0 30.0 0 0 1 30.0 30.0 V166.0 a30.0 30.0 0 0 1 -60 0 V118.0 a30.0 30.0 0 0 1 30.0 -30.0 Z M550.0 108 a10.0 10.0 0 0 1 10.0 10.0 V166.0 a10.0 10.0 0 0 1 -20 0 V118.0 a10.0 10.0 0 0 1 10.0 -10.0 Z" fill="#FF1E2D" opacity=".4" filter="url(#g)" fill-rule="evenodd"/>
+<path d="M550.0 88 a30.0 30.0 0 0 1 30.0 30.0 V166.0 a30.0 30.0 0 0 1 -60 0 V118.0 a30.0 30.0 0 0 1 30.0 -30.0 Z M550.0 108 a10.0 10.0 0 0 1 10.0 10.0 V166.0 a10.0 10.0 0 0 1 -20 0 V118.0 a10.0 10.0 0 0 1 10.0 -10.0 Z" fill="url(#f)" fill-rule="evenodd" mask="url(#m)"/>
+<text x="588" y="190" font-family="Menlo, Monaco, monospace" font-weight="700" font-size="130" fill="#6B7280">.dev</text></svg>
