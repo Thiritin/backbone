@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { type GameState } from "../src/sim/50-state";
-import { addLocation } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, moveServer } from "../src/sim/90-actions/hardware";
+import { useStore } from "../src/ui/store";
+import { useTrip } from "../src/ui/travel/route";
 import { drive, flight, FLIGHT, greatCircleKm, travelTo } from "../src/sim/90-actions/travel";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { newGame } from "./fixtures";
+import { newGame, withServer } from "./fixtures";
 import { COUNTRY, DATACENTERS, listed } from "../src/sim/20-world/datacenters";
 import { CITIES } from "../src/ui/map/world-data";
 import { BASEMENT_PLACE, PLACES } from "../src/sim/20-world/places";
@@ -43,6 +45,21 @@ describe("travel", () => {
     expect(driveMs(5000)).toBe(12000);
     const p = along([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 3 }], 0.5);
     expect(p).toEqual({ x: 1, y: 1, deg: 90, i: 1 });
+  });
+
+  it("plays a job done in person from the desktop as the trip instead of skipping the clock", () => {
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
+    const dc = (addLocation(s, "interaction-fra", "cage", 4) as { id: string }).id;
+    for (const l of s.locations) l.readyAt = 0;
+    buyRack(s, dc, "rack-42", 1);
+    for (const r of s.racks) r.arriveAt = null;
+    useStore.setState({ game: s, surface: "desktop", speed: 1 });
+    const hour = s.hour;
+    expect(useStore.getState().act(moveServer, ["dev3"], dc, "self").ok).toBe(true);
+    const st = useStore.getState();
+    expect(useTrip.getState()).toMatchObject({ stage: "leave", trip: { from: { id: "loc1" }, to: { id: dc }, resume: 1, by: "drive" } });
+    expect(st).toMatchObject({ surface: "world", speed: 0 });
+    expect(st.game.hour).toBe(hour);
   });
 
   it("goes door, map, leave, road, arrive, room", () => {

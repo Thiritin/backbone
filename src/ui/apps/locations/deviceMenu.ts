@@ -51,7 +51,7 @@ function serverPower(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
     ...options.map((o) => ({ label: via && o.op !== "bmc" ? t("locations-1.viaLabel", { label: o.label, via }) : o.label, disabled: o.disabled, run: () => ui.op(o.op) })),
     { label: handsLabel(game, d), items: [
       ...frontOptions(game, d).map((o) => ({ label: o.label, disabled: o.disabled, run: () => ui.front(o.op) })),
-      ...(psus > 1 ? [null, ...psuEntries(game, d, ui)] : []),
+      ...(psus ? [null, ...psuEntries(game, d, ui)] : []),
     ] },
     techItem(game, d.id, d.on ? "off" : "on"),
     d.hung && techItem(game, d.id, "reset"),

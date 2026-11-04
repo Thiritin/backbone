@@ -41,7 +41,6 @@ export function travelTo(s: GameState, locationId: string): ActionResult {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return fail("error.noLocation");
   if (s.player.until > s.hour) return fail("error.away");
-  if (s.player.carrying) return fail("error.carrying");
   if (playerAt(s).id === loc.id) return fail("error.alreadyThere");
   const d = drive(s, loc.id);
   if (!d) return fail("error.tooFar");

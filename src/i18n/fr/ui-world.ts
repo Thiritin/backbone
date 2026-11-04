@@ -26,8 +26,6 @@ export default {
   "world.obj.noc": () => "Poste NOC",
   "world.obj.dock": () => "Quai de chargement",
   "world.obj.stairs": () => "Cage d’escalier",
-  "world.inHands": () => "Dans tes mains",
-  "world.pickUp": () => "Prendre",
   "world.obj.parcels": (p) => `${p.n} colis`,
   "world.cableInHand": () => "Câble en main",
   "world.toRack": () => "Vers une autre baie",

@@ -2,22 +2,18 @@
 .wp-scene { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; overflow: auto; padding: 48px 24px 24px; box-sizing: border-box; }
 .wp-art { display: block; max-width: 100%; max-height: 100%; }
 
-/* Paper labels on units, parcels and the rack. */
+/* Paper labels on units and the rack. */
 .wp-label { display: grid; gap: 1px; padding: 3px 6px; background: oklch(0.96 0.02 90); color: oklch(0.3 0.02 60); font-size: 11px; line-height: 1.2; text-align: left; max-width: 140px; }
 .wp-label b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* The storage shelf: light metal uprights and four boards; parcels stand on the floor beside it. */
+/* The storage shelf: light metal uprights and four boards. */
+.wp-unit, .wp-unit button { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.wp-unit button { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.wp-unit button:hover .wp-label, .wp-unit button:focus-visible .wp-label { outline: 2px solid var(--accent); }
 .wp-shelf-row { display: flex; align-items: flex-end; gap: 48px; margin-top: auto; }
 .wp-shelf { display: flex; flex-direction: column; min-width: 420px; max-width: min(820px, 70vw); border-left: 14px solid oklch(0.78 0.01 250); border-right: 14px solid oklch(0.7 0.012 250); background: oklch(0.5 0.01 250); }
 .wp-board { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; min-height: 84px; padding: 14px 12px 0; border-bottom: 10px solid oklch(0.86 0.008 250); box-shadow: 0 1px 0 oklch(0.62 0.012 250); }
 .wp-board:first-child { border-top: 10px solid oklch(0.86 0.008 250); }
-.wp-unit button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
-.wp-unit button:disabled { cursor: default; }
-.wp-unit button:not(:disabled):hover .wp-label, .wp-unit button:focus-visible .wp-label { outline: 2px solid var(--accent); }
-.wp-door { display: flex; flex-direction: column-reverse; align-items: center; gap: 0; }
-.wp-parcel { position: relative; width: 120px; height: 80px; justify-content: center; background: oklch(0.66 0.08 65) !important; border-top: 8px solid oklch(0.74 0.075 70) !important; border-right: 10px solid oklch(0.58 0.075 60) !important; }
-.wp-parcel-tape { position: absolute; left: 0; right: 0; top: 26px; height: 8px; background: oklch(0.82 0.05 80); }
-.wp-parcel .wp-label { position: relative; max-width: 100px; }
 
 /* The letters on the desk: the current DIN A4 sheet, the stacks either side and the drawn scan key. */
 .wp-papers { display: flex; align-items: center; gap: 40px; }

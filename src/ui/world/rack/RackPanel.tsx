@@ -1,10 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
-import { modelById } from "../../../sim/10-catalog/hardware";
+import { modelById, modelName } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { deviceHealth, freeSlots, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
-import { installCarried, installFromDoor } from "../../../sim/90-actions/carry";
+import { deviceHealth, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { Isometric } from "../../art/Isometric";
 import { RackFront, shelfPitch, type RackItem } from "../../art/RackFront";
@@ -51,7 +50,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const [turning, setTurning] = useState<boolean | null>(null);
   const [port, setPort] = useState<End | null>(startPort);
   // A carried unit opens the panel on the lowest free unit it fits.
-  const [free, setFree] = useState<number | null>(() => carriedFit(game, rackId)[0] ?? null);
+  const [free, setFree] = useState<number | null>(null);
   const [lid, setLid] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -115,12 +114,13 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
   else if (dev && !lid) tag = <DeviceTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) && !back ? () => turn(true) : undefined} />;
   // A picked free unit sets what fits there on the floor beside the rack.
-  const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} onPick={pick} /> : null;
+  const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} /> : null;
 
   const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
   const face = (side: boolean) => side ? (
     <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U} duct
       selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title}
+      onPlug={(id, k) => { const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k]; if (d && psu) menus.plug(d, psu.id); }}
       onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => entries(d))(e); }} />
   ) : (
     <RackFrame units={tall} bare={shelf}>
@@ -216,7 +216,7 @@ function DeviceTag({ deviceId, renaming, onRenaming, entries, onPorts }: { devic
         <span className={`wr-led ${lamps.state}`} role="img" aria-label={t(d.on ? "locations-1.stOn" : "locations-1.stOff")} />
         <LabelEdit device={d} editing={renaming} onEditing={onRenaming} />
       </div>
-      <div className="wr-model">{m.kind === "server" ? `${d.brand} ${m.name}` : m.name}</div>
+      <div className="wr-model">{m.kind === "server" ? `${d.brand} ${modelName(m, d.brand)}` : m.name}</div>
       <div className="wr-lines">
         {onPorts && <button className="wr-line" onClick={onPorts}>{t("locations-1.ports")}</button>}
         {items.map((e, i) => (e === null ? <hr key={i} /> : <Act key={i} e={e} />))}
@@ -256,59 +256,28 @@ function HandTag({ name, onAway, onDrop }: { name: string; onAway: () => void; o
   );
 }
 
-// What fits the picked free unit, standing on the floor: the unit in the hands, parcels from the door and stored stock; a click mounts one.
-function FloorUnits({ rack, unit, onMount, onPick }: { rack: Rack; unit: number; onMount: (task: HandTask) => void; onPick: (id: string) => void }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
-  const held = carriedFit(game, rack.id).includes(unit) ? game.devices.find((x) => x.id === game.player.carrying) : undefined;
-  const hand = [...(held ? [held] : []), ...doorFit(game, rack, unit)], ways = handsWays(game, rack.locationId, "mountDevice");
-  const box = (k: string, model: string, brand: string, label: string, run: () => void, off = false, data: Record<string, string> = {}) => {
+// What fits the picked free unit from stored stock, standing on the floor; a click mounts one.
+function FloorUnits({ rack, unit, onMount }: { rack: Rack; unit: number; onMount: (task: HandTask) => void }) {
+  const game = useStore((s) => s.game), ways = handsWays(game, rack.locationId, "mountDevice");
+  const box = (k: string, model: string, brand: string, label: string, run: () => void) => {
     const m = modelById(model);
     return (
-      <div key={k} className="wp-unit" {...data}>
-        <button disabled={off} aria-label={`${t("locations-2.mount")}: ${m.kind === "server" ? `${brand} ` : ""}${m.name}`} onClick={run}>
+      <div key={k} className="wp-unit">
+        <button aria-label={`${t("locations-2.mount")}: ${m.kind === "server" ? `${brand} ` : ""}${modelName(m, brand)}`} onClick={run}>
           <Isometric model={m} brand={brand} w={84} />
-          <span className="wp-label"><b>{m.kind === "server" ? `${brand} ${m.name}` : m.name}</b>{label}</span>
+          <span className="wp-label"><b>{m.kind === "server" ? `${brand} ${modelName(m, brand)}` : m.name}</b>{label}</span>
         </button>
       </div>
     );
   };
   return (
     <div data-free={unit}>
-      {hand.map((d) => {
-        const carried = d.id === game.player.carrying, from = mountFrom(game, rack.id, heightIn(game, rack.id, d.model), 1, unit)!;
-        const mount = () => { if ((carried ? act(installCarried, rack.id, from) : act(installFromDoor, d.id, rack.id, from)).ok) onPick(d.id); };
-        return box(d.id, d.model, d.brand, t(carried ? "world.inHands" : "locations-2.atDoor"), mount, false, carried ? { "data-carried": d.id } : { "data-door": d.id });
-      })}
       {mountable(game, rack, unit).map((st) => {
         const from = mountFrom(game, rack.id, heightIn(game, rack.id, st.model), 1, unit) ?? unit;
         return ways.map((w) => box(`${st.model}|${st.brand}|${w.how}`, st.model, st.brand, wayLabel(t("locations-2.nInStorage", { n: st.ids.length }), w), () => onMount({ ...mountTask(st, rack.id, 1, from), how: w.how })));
       })}
     </div>
   );
-}
-
-// Free units a unit in the player's hands could go into, one per start slot and every unit of its run.
-function fitOf(game: GameState, rack: Rack, d: Device | undefined): number[] {
-  if (!d || rack.locationId !== game.player.at) return [];
-  const h = heightIn(game, rack.id, d.model);
-  if (modelById(d.model).kind === "part" || !h) return [];
-  return freeSlots(game, rack.id, 1).filter((u) => mountFrom(game, rack.id, h, 1, u) !== undefined);
-}
-
-function carriedFit(game: GameState, rackId: string): number[] {
-  const rack = game.racks.find((r) => r.id === rackId);
-  return rack ? fitOf(game, rack, game.devices.find((x) => x.id === game.player.carrying)) : [];
-}
-
-// Parcels at this room's door that fit at unit, one per model and brand.
-function doorFit(game: GameState, rack: Rack, unit: number): Device[] {
-  const seen = new Set<string>();
-  return game.devices.filter((d) => {
-    const k = `${d.model}|${d.brand}`;
-    if (d.door?.at !== rack.locationId || d.chassisId || seen.has(k) || !fitOf(game, rack, d).includes(unit)) return false;
-    seen.add(k);
-    return true;
-  });
 }
 
 // A managed switch port bundles with the other ports cabled to the same device, or leaves its group.

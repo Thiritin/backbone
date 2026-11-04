@@ -32,7 +32,7 @@ describe("device menu", () => {
     g.devices.find((d) => d.id === "dev3")!.bmcHung = true;
     expect(labels(g, "dev3").slice(0, 4)).toEqual(["Shut down", "Reboot", "Reset iDRAQ", "At the server"]);
     const front = deviceMenu(g, g.devices.find((d) => d.id === "dev3")!, ui).find((e) => e && e.label === "At the server");
-    expect(front && front.items?.map((e) => e && e.label)).toEqual(["Press power button"]);
+    expect(front && front.items?.map((e) => e && e.label)).toEqual(["Press power button", null, "Unplug power supply"]);
   });
 
   it("offers power and sale only for a device in storage", () => {

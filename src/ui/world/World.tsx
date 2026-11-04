@@ -7,7 +7,6 @@ import { temperature } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
 import { atDesk, boxAt } from "../../sim/40-support/letters";
 import { fetchPost } from "../../sim/90-actions/post";
-import { pickUp, putDown } from "../../sim/90-actions/carry";
 import { powerByLocation } from "../../sim/88-tick/tick";
 import { fanRuns, roomTemperature } from "../../sim/60-infra/sensors";
 import { rackPower } from "../../sim/60-infra/status";
@@ -84,7 +83,6 @@ export function World() {
   const [linkAt, setLinkAt] = useState<Pt | null>(null);
   // The panel open over the room: storage, the post or the power of a fixture.
   const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board"; title: string; id?: string; call?: Call | null } | null>(null);
-  const [hand, setHand] = useState<Pt | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
 
@@ -134,9 +132,9 @@ export function World() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Escape puts a carried unit down; open panels close themselves.
+  // Escape drops a cable in progress; open panels close themselves.
   const escape = useRef(() => {});
-  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (game.player.carrying) act(putDown); };
+  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); };
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
@@ -176,12 +174,11 @@ export function World() {
     return () => el.removeEventListener("wheel", wheel);
   }, []);
 
-  // Drag pans; a press that moved is no click. A carried unit follows the pointer.
+  // Drag pans; a press that moved is no click.
   const drag = useRef<{ x: number; y: number; o: Pt } | null>(null), dragged = useRef(false);
   const down = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY, o }; dragged.current = false; };
   const move = (e: React.PointerEvent) => {
     const r = svg.current!.getBoundingClientRect(), p = { x: o.x + (e.clientX - r.left) / zoom, y: o.y + (e.clientY - r.top) / zoom };
-    if (game.player.carrying) setHand(p);
     if (link.current) { setLinkAt(p); return; }
     const d = drag.current;
     if (!d) return;
@@ -212,8 +209,8 @@ export function World() {
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const waiting = boxAt(game, loc.id).length;
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
-  const parcels = game.devices.filter((d) => d.door?.at === loc.id && !d.chassisId);
-  const carried = game.devices.find((d) => d.id === game.player.carrying);
+  // A unit that landed in storage within the last day stands by the door as a parcel until it is mounted.
+  const parcels = game.devices.filter((d) => d.store === loc.id && !d.chassisId && d.arrivedAt !== null && d.arrivedAt > game.hour - 24);
   // The phone rings for every open call while this room with a phone is on screen.
   const ringing = game.calls.find((c) => c.answeredAt === null), cordless = dateOf(game.hour).getUTCFullYear() >= CORDLESS_YEAR;
   const rings = !!ringing && !!fx.phone;
@@ -250,13 +247,12 @@ export function World() {
   for (const tile of others)
     things.push({ depth: tile.x + tile.y, node: <g key={`n${tile.x},${tile.y}`} pointerEvents="none" aria-hidden><RackBox tile={tile} units={42} items={[]} leds={[]} zoomed={false} mesh neighbour /></g> });
   if (fence) things.push(...cageFence(fence));
-  // Parcels stack on the floor tile beside the door, clear of its swing, the newest on top.
+  // Parcels stack on the floor tile beside the door, clear of its swing, the newest on top; a picture only.
   if (parcels.length && fx.door) {
-    const p = { x: fx.door.x + 1, y: fx.door.y - 1 }, top = parcels[parcels.length - 1], shown = parcels.slice(-PARCEL_STACK);
+    const p = { x: fx.door.x + 1, y: fx.door.y - 1 }, shown = parcels.slice(-PARCEL_STACK);
     const label = iso(p.x + 0.5, p.y + 0.5);
     things.push({ depth: p.x + p.y, node: (
-      <g key="parcels" className={`w-obj${lit === "parcels" ? " w-lit" : ""}`} role="button" data-parcels={parcels.length} aria-label={t("world.obj.parcels", { n: parcels.length })}
-        onClick={use("parcels", () => { if (act(pickUp, top.id).ok) setHand(null); })}>
+      <g key="parcels" data-parcels={parcels.length} role="img" aria-label={t("world.obj.parcels", { n: parcels.length })}>
         {shown.map((d, i) => <Parcel key={d.id} cx={p.x + 0.5} cy={p.y + 0.5} z={i * PARCEL_H} brand={d.brand} />)}
         {parcels.length > 1 && <text className="w-num w-num-tag" x={label.x} y={label.y - shown.length * PARCEL_H - 10}>{n(parcels.length)}</text>}
       </g>
@@ -264,7 +260,7 @@ export function World() {
   }
   const run = (label: string, id = ""): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
-    storage: () => (carried ? act(putDown) : setPanel({ kind: "storage", title: "" })),
+    storage: () => setPanel({ kind: "storage", title: "" }),
     power: () => setPanel({ kind: "power", title: t(label), id }),
     door: () => openDoor(),
     post: () => { if (waiting) act(fetchPost); if (atDesk(useStore.getState().game).length) setPanel({ kind: "post", title: t(label) }); },
@@ -358,7 +354,7 @@ export function World() {
   };
 
   return (
-    <div className={`world${carried ? " w-carrying" : ""}`} aria-label={loc.name}>
+    <div className="world" aria-label={loc.name}>
       <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`} viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
         <Defs />
@@ -377,9 +373,6 @@ export function World() {
           const tl = tiles[link.current], top = at3(tl.x + 0.5, tl.y + 0.5, rackHeight(rackUnits(game.racks.find((r) => r.id === link.current)!.model)));
           return <path className="w-link" d={`M${top.x} ${top.y}L${linkAt.x} ${linkAt.y}`} pointerEvents="none" />;
         })()}
-        {carried && hand && (
-          <g className="w-hand" data-carried={carried.id} transform={`translate(${hand.x} ${hand.y}) scale(${1.6 / zoom}) translate(14 24)`} pointerEvents="none"><Parcel cx={0} cy={0} z={-4} brand={carried.brand} /></g>
-        )}
       </svg>
       <div className="w-clock">
         <SpeedControl speed={speed} setSpeed={setSpeed} />

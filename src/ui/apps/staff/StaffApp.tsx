@@ -23,7 +23,7 @@ import { runwayLabel } from "../books/Reports";
 import { booksOffline, seated } from "../../../sim/80-business/bookkeeping";
 import { Facts, Sheet } from "../locations/ui";
 import { TechPanel } from "./TechPanel";
-import { Shifts } from "./Shifts";
+import { Shifts, teamName } from "./Shifts";
 import { formatDay } from "../billing/format";
 import { initials } from "../support/labels";
 import "../shop/shop.css";
@@ -118,7 +118,7 @@ function staffMenu(game: GameState, e: Employee, onLeave: (e: Employee) => void)
     e.raise && { label: t("misc.acceptRaise"), run: () => act(answerRaise, e.id, true) },
     e.raise && { label: t("misc.refuseRaise"), run: () => act(answerRaise, e.id, false) },
     null,
-    { label: t("misc.team"), items: game.teams.map((tm) => ({ label: tm.name, checked: e.team === tm.id, run: () => act(setTeam, e.id, tm.id) })) },
+    { label: t("misc.team"), items: game.teams.map((tm) => ({ label: teamName(tm), checked: e.team === tm.id, run: () => act(setTeam, e.id, tm.id) })) },
     { label: t("misc.assignment"), items: (["queue", "trainer", "forum"] as const).map((a) => ({ label: ASSIGN[a], checked: e.assignment === a, run: () => act(assign, e.id, a) })) },
     tech && { label: t("misc.location"), items: game.locations.map((l) => ({ label: l.name, checked: e.location === l.id, run: () => act(setTechLocation, e.id, l.id) })) },
     tech && { label: t("misc.onCall"), checked: onCall, run: () => act(setOnCall, e.id, !onCall) },
@@ -153,7 +153,7 @@ function Team({ game, sel, setSel, onMarket }: { game: GameState; sel: string | 
               <span className="logo">{initials(e.name)}</span>
               <span className="who">
                 <span className="name">{e.name}</span>
-                <span className="sub">{ROLE[e.role].one} · {teamOf(game, e)?.name} · <span className="num">{euro(payOf(game, e))}</span></span>
+                <span className="sub">{ROLE[e.role].one} · {teamOf(game, e) && teamName(teamOf(game, e)!)} · <span className="num">{euro(payOf(game, e))}</span></span>
               </span>
               <span className="side">
                 <span className="num st-skill">{Math.round(e.skill)}</span>
@@ -295,7 +295,7 @@ function Detail({ game, e, menu }: { game: GameState; e: Employee; menu: () => M
         </div>
         <h3>{t("misc.team")}</h3>
         <div className="seg" role="group" aria-label={t("misc.team")}>
-          {game.teams.map((tm) => <button key={tm.id} aria-pressed={e.team === tm.id} onClick={() => act(setTeam, e.id, tm.id)}>{tm.name} · {weekHours(tm)} h</button>)}
+          {game.teams.map((tm) => <button key={tm.id} aria-pressed={e.team === tm.id} onClick={() => act(setTeam, e.id, tm.id)}>{teamName(tm)} · {weekHours(tm)} h</button>)}
         </div>
         {e.role === "technician" && <TechPanel game={game} e={e} />}
         <div className="st-train-h">
@@ -344,7 +344,7 @@ function Market({ game, role, setRole, onHired }: { game: GameState; role: Role;
       </div>
       <div className="shop-grid">
         {list.map((c) => <CandidateCard key={c.id} c={c} onHire={() => setHiring(c)} />)}
-        {!list.length && <div className="shop-none">{t("misc.noneLooking", { role: ROLE[role].many.toLowerCase() })}</div>}
+        {!list.length && <div className="shop-none">{t("misc.noneLooking", { role: ROLE[role].many })}</div>}
       </div>
       {hiring && <HireSheet game={game} c={hiring} onClose={() => setHiring(null)} onHire={(team) => {
         setHiring(null);
@@ -364,7 +364,7 @@ function HireSheet({ game, c, onClose, onHire }: { game: GameState; c: Candidate
     <Sheet title={t("misc.hireNamed", { name: c.name })} onClose={onClose}>
       <div className="loc-form">
         <div className="seg" role="group" aria-label={t("misc.team")}>
-          {game.teams.map((tm) => <button key={tm.id} aria-pressed={team === tm.id} onClick={() => setTeam(tm.id)}>{t("misc.teamHoursWeek", { name: tm.name, hours: weekHours(tm) })}</button>)}
+          {game.teams.map((tm) => <button key={tm.id} aria-pressed={team === tm.id} onClick={() => setTeam(tm.id)}>{t("misc.teamHoursWeek", { name: teamName(tm), hours: weekHours(tm) })}</button>)}
         </div>
         <Facts rows={[
           [t("misc.monthlyCost"), <span className="num">{euro(pay)}</span>],
@@ -386,7 +386,7 @@ function CandidateCard({ c, onHire }: { c: Candidate; onHire: () => void }) {
     <div className="shop-card">
       <div className="st-cand">
         <span className="logo">{initials(c.name)}</span>
-        <div className="shop-name"><strong>{c.name}</strong><span>{t("misc.levelRole", { level, role: ROLE[c.role].one.toLowerCase() })}</span></div>
+        <div className="shop-name"><strong>{c.name}</strong><span>{t("misc.levelRole", { level, role: ROLE[c.role].one })}</span></div>
       </div>
       <dl className="shop-specs">
         <div><dt>{t("misc.skill")}</dt><dd><span className="num">{c.skill}</span><SkillBar value={c.skill} /></dd></div>

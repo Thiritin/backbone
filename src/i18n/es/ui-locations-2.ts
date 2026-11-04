@@ -348,8 +348,6 @@ export default {
   "locations-2.start": () => "Iniciar",
   "locations-2.stop": () => "Detener",
   "locations-2.openCustomer": () => "Abrir cliente",
-  "locations-2.atDoor": () => "En la puerta",
-  "locations-2.arrived": (p) => `Llegó el ${p.day}`,
   "locations-2.handsOwn": () => "En persona",
   "locations-2.handsRemote": (p) => `Manos remotas ${p.cost} · ${p.time}`,
   "locations-2.selfOnArrival": () => "En persona · al llegar",

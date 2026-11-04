@@ -139,7 +139,7 @@ describe("world", () => {
     }
   });
 
-  it("takes a parcel from the door into the hand and puts it on the shelf", () => {
+  it("draws a fresh delivery as a parcel by the door for a day, stored on the shelf", () => {
     const s = readyGame(7), here = roomOf(s);
     s.cash = 1_000_000;
     buyDevice(s, "g1-compute", "Dwell", 1, here.id);
@@ -147,24 +147,18 @@ describe("world", () => {
     if (!r.ok) throw new Error(r.error);
     while (s.devices.find((d) => d.id === r.id)!.arriveAt !== null) tick(s);
     useStore.setState({ game: s, speed: 0, surface: "world" });
-    const { container } = render(createElement(World));
+    const { container, unmount } = render(createElement(World));
     const parcels = container.querySelector("[data-parcels]")!;
-    const id = s.devices.filter((d) => d.door?.at === here.id).pop()!.id;
-    fireEvent.click(parcels);
-    expect(useStore.getState().game.player.carrying).toBe(id);
-    fireEvent.pointerMove(container.querySelector("svg")!, { clientX: 40, clientY: 40 });
-    expect(container.querySelector(`.w-hand[data-carried="${id}"]`)).not.toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: t("world.obj.shelf") }));
-    const g = useStore.getState().game;
-    expect(g.player.carrying).toBeNull();
-    expect(g.devices.find((d) => d.id === id)!.store).toBe(here.id);
-    expect(container.querySelector(".w-hand")).toBeNull();
-    // With empty hands the shelf opens the storage panel in the room, where a stored unit can be taken again.
+    expect(parcels.getAttribute("role")).toBe("img");
+    expect(s.devices.find((d) => d.id === r.id)!.store).toBe(here.id);
     fireEvent.click(screen.getByRole("button", { name: t("world.obj.shelf") }));
     const panel = screen.getByRole("dialog", { name: t("world.obj.shelf") });
-    fireEvent.click(panel.querySelector(`[data-unit="${id}"] button`)!);
-    expect(useStore.getState().game.player.carrying).toBe(id);
-    expect(useStore.getState().windows.length).toBe(0);
+    expect(panel.querySelector(`[data-unit="${r.id}"]`)).not.toBeNull();
+    expect(panel.querySelector(`[data-unit="${r.id}"] button`)).toBeNull();
+    unmount();
+    for (let h = 0; h < 24; h++) tick(s);
+    useStore.setState({ game: { ...s } });
+    expect(render(createElement(World)).container.querySelector("[data-parcels]")).toBeNull();
   });
 
   it("plugs two ports on the rack back by hand and Escape drops the cable in hand", () => {

@@ -106,7 +106,7 @@ describe("buyDevice and storage", () => {
     const first = ok(buyDevice(s, "g1-compute", "Dwell", 3, "loc1"));
     expect(first).toBe("dev8");
     expect(s.cash).toBe(2500);
-    expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "Balanced 1U G1", qty: 3 }, amount: -7500 }]);
+    expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "PowerEdgy 1850", qty: 3 }, amount: -7500 }]);
     expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "Dwell", name: "fra1-srv-02", price: 2500, boughtAt: s.hour });
     ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(storageStacks(s, "loc1")).toEqual([
@@ -332,7 +332,7 @@ describe("delivery wait", () => {
   it("falls from 72 hours in 2005 to 24 in 2015 and stays there", () => {
     expect([2005, 2010, 2015, 2024].map(deliveryHours)).toEqual([72, 48, 24, 24]);
   });
-  it("lands the purchases of a company without a server at once", () => {
+  it("lands the purchases of a company without a server at once, in storage", () => {
     const s = { ...newGame(1), cash: 100_000 };
     const first = ok(buyReal(s, "g1-compute", "Dwell", 2, "loc1"));
     expect(dev(s, first)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
@@ -348,7 +348,7 @@ describe("delivery wait", () => {
       expect(err(mountDevice(s, id, "rack2", 5))).toBe("error.inTransit");
       const events = tick(s);
       expect(events).toContainEqual(expect.objectContaining({ key: "event.stockArrived", params: { count: 1, location: "Basement" } }));
-      expect(dev(s, id)).toMatchObject({ door: { at: "loc1", since: s.hour }, store: null, transitTo: null, arriveAt: null });
+      expect(dev(s, id)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
     }
   });
   it("delays a cart on cash or lease alike", () => {

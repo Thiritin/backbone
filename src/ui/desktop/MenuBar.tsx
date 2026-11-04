@@ -6,11 +6,12 @@ import { Confirm } from "./Confirm";
 import { Intro, PearMark } from "./Intro";
 import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
-import { formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core/time";
+import { dateOf, formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { sky } from "../../sim/20-world/weather";
 import { SkyIcon } from "../apps/weather/SkyIcon";
+import { daylight } from "../world/draw";
 import { degrees } from "../apps/weather/WeatherApp";
 import { roomOf } from "../world/World";
 import { DISCORD_URL, uiSound, useStore, type Win } from "../store";
@@ -104,7 +105,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       {panel("window", t("desktop.menu.window"), windowList)}
       <span className="mb-spacer" />
       <button className="mb-item mb-place" onClick={() => openApp("Weather")}>
-        <SkyIcon kind={sky(here.city, game.hour)} />{degrees(here.city, game.hour)} {here.name}
+        <SkyIcon kind={sky(here.city, game.hour)} night={daylight(dateOf(game.hour).getUTCHours() + game.minute / 60, dateOf(game.hour).getUTCMonth()) < 0.5} />{degrees(here.city, game.hour)} {here.name}
       </button>
       <span className="mb-sep" />
       <button className="mb-item" onClick={() => setSurface("world")}>{roomOf(game).name}</button>

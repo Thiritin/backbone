@@ -1,6 +1,6 @@
-import { ArrowDownToLine, Package, Router, Truck } from "lucide-react";
+import { ArrowDownToLine, Router, Truck } from "lucide-react";
 import { useState } from "react";
-import { isOfficeRouter, modelById } from "../../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById, modelName } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
 import { deviceValue, freeSlots, heightIn, mountFrom, mountMax, parcelCost, storageStacks } from "../../../sim/60-infra/status";
@@ -89,7 +89,7 @@ function MountSheet({ game, stack, onClose, onMount, onMounted }: { game: GameSt
     onMount({ ...mountTask(stack, rack.id, k, from), onDone: () => onMounted?.(rack.id, id) });
   };
   return (
-    <Sheet title={t("locations-2.mountName", { name: `${stack.brand} ${m.name}` })} onClose={onClose}>
+    <Sheet title={t("locations-2.mountName", { name: `${stack.brand} ${modelName(m, stack.brand)}` })} onClose={onClose}>
       <div className="loc-mount">
         <div className="picks" role="group" aria-label={t("locations-2.rack")}>
           {racks.map((r) => {
@@ -126,24 +126,16 @@ export function Storage({ game, loc, onMounted }: { game: GameState; loc: Locati
     const k = `${d.model}|${d.brand}|${d.transitTo}|${d.arriveAt}`;
     transit.set(k, [...(transit.get(k) ?? []), d]);
   }
-  const door = game.devices.filter((x) => x.door?.at === loc.id && !x.chassisId);
   return (
     <div className="loc-card">
       <div className="loc-card-h"><h3>{t("locations-2.storage")}</h3><Zone loc={loc} /><span className="grow" /><span className="num loc-muted">{stacks.reduce((n, s) => n + s.ids.length, 0)}</span></div>
       {stacks.length ? <div className="loc-stack-grid">{stacks.map((s) => <StackRow key={`${s.model}|${s.brand}`} game={game} stack={s} onMounted={onMounted} />)}</div> : <div className="loc-row loc-muted">{t("locations-2.empty")}</div>}
-      {door.length > 0 && <div className="loc-card-h loc-sub" data-door={door.length}><h3><Package />{t("locations-2.atDoor")}</h3></div>}
-      {door.map((d) => (
-        <div key={d.id} className="loc-row loc-transit">
-          <span>{d.brand} {modelById(d.model).name}</span><span className="grow" />
-          <span className="num loc-muted">{t("locations-2.arrived", { day: day(d.door!.since) })}</span>
-        </div>
-      ))}
       {transit.size > 0 && <div className="loc-card-h loc-sub"><h3><Truck />{t("locations-2.inTransit")}</h3></div>}
       {[...transit].map(([k, ds]) => {
         const m = modelById(ds[0].model), to = game.locations.find((l) => l.id === ds[0].transitTo)!;
         return (
           <div key={k} className="loc-row loc-transit">
-            <span className="num">{ds.length} ×</span><span>{ds[0].brand} {m.name}</span><span className="grow" />
+            <span className="num">{ds.length} ×</span><span>{ds[0].brand} {modelName(m, ds[0].brand)}</span><span className="grow" />
             <LocName loc={to} /><span className="num loc-muted">{t("locations-2.arrives", { day: day(ds[0].arriveAt!) })}</span>
           </div>
         );
@@ -174,14 +166,14 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
       <div className="loc-stack-main">
         <Isometric model={m} brand={stack.brand} w={96} count={stack.ids.length} />
         <div className="loc-stack-name">
-          <strong>{stack.brand} {m.name}</strong>
+          <strong>{stack.brand} {modelName(m, stack.brand)}</strong>
           <span className="num loc-muted">{height(m)} · {t("locations-2.nInStorage", { n: stack.ids.length })}</span>
         </div>
         <div className="loc-stack-acts">
           {rackable && <button className="btn" onClick={() => setMounting(true)}><ArrowDownToLine />{t("locations-2.mount")}</button>}
           {office && <button className="btn" onClick={install}><Router />{t("locations-2.install")}</button>}
           {game.locations.length > 1 && <button className="btn" aria-pressed={shipping} onClick={() => setShipping(!shipping)}><Truck />{t("locations-2.ship")}</button>}
-          <More label={`${stack.brand} ${m.name}`} entries={entries} />
+          <More label={`${stack.brand} ${modelName(m, stack.brand)}`} entries={entries} />
         </div>
       </div>
       {mounting && <MountSheet game={game} stack={stack} onClose={() => setMounting(false)} onMount={(task) => hand.start(game, task)} onMounted={onMounted} />}

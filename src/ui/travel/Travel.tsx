@@ -63,17 +63,13 @@ function TravelMap() {
     if (raw.startsWith("city:")) return setFocus(raw.slice(5));
     const id = raw.replace(/^region:/, "");
     if (id === here.id) return;
-    const s = useStore.getState(), from = playerAt(s.game), start = nowHours(s.game);
+    const s = useStore.getState(), from = playerAt(s.game);
     const r = s.act(travelTo, id);
     if (!r.ok) return setError(t(r.error, r.params));
-    const g = useStore.getState().game;
-    const trip: Trip = { from, to: playerAt(g), start, until: g.player.until, resume: s.speed, by: g.player.by };
-    s.setSpeed(0);
     void loadRoutes();
     void loadRoads();
     void loadStreets(from.city);
-    void loadStreets(trip.to.city);
-    send("pick", trip);
+    void loadStreets(playerAt(useStore.getState().game).city);
   };
 
   return (

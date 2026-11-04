@@ -141,7 +141,7 @@ describe("shipStock", () => {
     ok(shipStock(s, [id], fr5, true));
     expect(s.cash).toBe(cash - fare.fee);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.drive", amount: -fare.fee });
-    expect(s.player).toEqual({ at: fr5, until: fare.hours, doing: "travel", carrying: null });
+    expect(s.player).toEqual({ at: fr5, until: fare.hours, doing: "travel", by: "drive" });
     expect(dev(s, id).arriveAt).toBe(fare.hours);
     const other = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(err(shipStock(s, [other], fr5, true))).toBe("error.notThere");

@@ -36,31 +36,31 @@ describe("power plugs", () => {
     expect(linkStatus(s, "dev3").online).toBe(true);
   });
 
-  it("mounts devices unplugged, without power, draw or link", () => {
+  it("mounts devices plugged in and powered at once", () => {
     const s = rich();
     const id = fresh(s, "g1-compute");
-    expect(psus(s, id).every((c) => c.plugged === false)).toBe(true);
-    expect(powered(s, id)).toBe(false);
-    expect(working(s, id)).toBe(false);
-    expect(linkStatus(s, id).online).toBe(false);
-    expect(deviceHealth(s, id).state).toBe("nopower");
+    expect(psus(s, id).every((c) => c.plugged === true)).toBe(true);
+    expect(powered(s, id)).toBe(true);
     const before = rackPower(s, "rack2").watts;
-    ok(setPlugged(s, id, psus(s, id)[0].id, true));
-    expect(rackPower(s, "rack2").watts).toBeGreaterThan(before);
+    ok(setPlugged(s, id, psus(s, id)[0].id, false));
+    expect(powered(s, id)).toBe(false);
+    expect(deviceHealth(s, id).state).toBe("nopower");
+    expect(rackPower(s, "rack2").watts).toBeLessThan(before);
   });
 
-  it("mounts every unit of a stack unplugged", () => {
+  it("mounts every unit of a stack plugged in", () => {
     const s = rich();
     ok(buyDevice(s, "g1-compute", "Dwell", 2, "loc1"));
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 2));
     const mounted = s.devices.filter((d) => d.rackId === "rack2" && d.model === "g1-compute" && d.id !== "dev3");
     expect(mounted).toHaveLength(2);
-    for (const d of mounted) expect(powered(s, d.id)).toBe(false);
+    for (const d of mounted) expect(powered(s, d.id)).toBe(true);
   });
 
   it("boots a device once it gets its first live supply", () => {
     const s = rich();
     const id = fresh(s, "g1-compute");
+    ok(setPlugged(s, id, psus(s, id)[0].id, false));
     ok(setPlugged(s, id, psus(s, id)[0].id, true));
     expect(powered(s, id)).toBe(true);
     expect(deviceHealth(s, id).state).toBe("booting");

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { modelById } from "../../../sim/10-catalog/hardware";
+import { modelById, modelName } from "../../../sim/10-catalog/hardware";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { releaseOf } from "../../../sim/60-infra/fs";
 import type { GameState } from "../../../sim/50-state";
@@ -83,7 +83,7 @@ export function useLunix(game: GameState, m: Machine, version: string, loggedIn:
   if (dcui) {
     const view = (
       <div className="dcui">
-        <div className="dcui-top"><b>VMwhere ESXi {dcui.cluster?.version ?? ""}</b><span>{isDevice(m) ? `${m.brand} ${modelById(m.model).name}` : host}</span></div>
+        <div className="dcui-top"><b>VMwhere ESXi {dcui.cluster?.version ?? ""}</b><span>{isDevice(m) ? `${m.brand} ${modelName(modelById(m.model), m.brand)}` : host}</span></div>
         <div className="dcui-mid">Download tools to manage this host from: https://{host}/</div>
         <div className="dcui-f"><span>&lt;F2&gt; Customize System/View Logs</span><span>&lt;F12&gt; Shut Down/Restart</span></div>
       </div>

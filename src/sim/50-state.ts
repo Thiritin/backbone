@@ -129,7 +129,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   hung: boolean; bmcHung: boolean; log: DeviceLog[]; inletSev?: LogSev; cpuThrottled?: true;
   // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.
   chassisId: string | null;
-  door: { at: string; since: number } | null;
+  // The hour a delivery landed in storage, null for units that never shipped.
+  arrivedAt: number | null;
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
   hands?: { kind: FrontOp | "bmcreset" | "continue" | "recover" | "stick"; doneAt: number } | null;
   // Remote access (60-infra/oob.ts): a server waiting at the firmware prompt (latent while off), a switch or router that locked
@@ -305,7 +306,7 @@ export interface GameState {
   // Favours asked of friends for datacenter hand work in a calendar year.
   friendFavours: { year: number; used: number };
   // Where the player is, and until which hour the drive there or the hand work on site keeps the computer locked.
-  player: { at: string; until: number; doing: "travel" | "work"; by: "drive" | "fly"; carrying: string | null };
+  player: { at: string; until: number; doing: "travel" | "work"; by: "drive" | "fly" };
   downSince: Record<string, number>;
   // Hours in a row each cluster node has run below the timeout performance.
   lowPerf: Record<string, number>;
@@ -470,7 +471,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
   return {
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
-    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null, door: null as Device["door"],
+    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null, arrivedAt: null as number | null,
     hung: false, bmcHung: false, log: [] as DeviceLog[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
     ...(isOfficeRouter(modelById(modelId)) ? { lan: homeLan() } : {}),
@@ -528,7 +529,7 @@ export const newGame = (seed: number): GameState => ({
   daemons: {},
   gameTitles: {},
   gameLost: {},
-  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work", by: "drive", carrying: null }, downSince: {}, lowPerf: {},
+  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work", by: "drive" }, downSince: {}, lowPerf: {},
   company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING, address: null },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,

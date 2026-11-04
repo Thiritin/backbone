@@ -1,10 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
-import { modelById } from "../../../sim/10-catalog/hardware";
+import { modelById, modelName } from "../../../sim/10-catalog/hardware";
 import { atDesk } from "../../../sim/40-support/letters";
 import type { Device, Location } from "../../../sim/50-state";
-import { pickUp } from "../../../sim/90-actions/carry";
 import { resetBreaker, setPower } from "../../../sim/90-actions/hardware";
 import { readLetter } from "../../../sim/90-actions/paperwork";
 import { scanLetter } from "../../../sim/90-actions/post";
@@ -23,20 +22,16 @@ const num = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 0 }
 const STACK_MAX = 12;
 const SCANNER_BRAND = "Epsilon";
 
-// The shelf drawn large: stored units stand on its boards, parcels from the door on the floor beside it; a click takes one into the hands.
+// The shelf drawn large: stored units stand on its boards.
 export function StoragePanel({ loc, onClose }: Props) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
-  const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId), door = game.devices.filter((d) => d.door?.at === loc.id && !d.chassisId);
-  const full = !!game.player.carrying;
-  const take = (d: Device) => { if (act(pickUp, d.id).ok) onClose(); };
+  const game = useStore((s) => s.game);
+  const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId);
   const unit = (d: Device) => {
     const m = modelById(d.model);
     return (
       <div key={d.id} className="wp-unit" data-unit={d.id}>
-        <button disabled={full} aria-label={`${t("world.pickUp")}: ${devName(d)}`} onClick={() => take(d)}>
-          <Isometric model={m} brand={d.brand} w={m.kind === "part" ? 56 : 92} />
-          <span className="wp-label"><b>{devName(d)}</b>{m.kind === "server" ? `${d.brand} ${m.name}` : m.name}</span>
-        </button>
+        <Isometric model={m} brand={d.brand} w={m.kind === "part" ? 56 : 92} />
+        <span className="wp-label"><b>{devName(d)}</b>{m.kind === "server" ? `${d.brand} ${modelName(m, d.brand)}` : m.name}</span>
       </div>
     );
   };
@@ -49,18 +44,6 @@ export function StoragePanel({ loc, onClose }: Props) {
           <div className="wp-shelf">
             {boards.map((b, i) => <div key={i} className="wp-board">{b.map(unit)}</div>)}
           </div>
-          {door.length > 0 && (
-            <div className="wp-door" aria-label={t("locations-2.atDoor")}>
-              {door.map((d) => (
-                <div key={d.id} className="wp-unit" data-unit={d.id}>
-                  <button className="wp-parcel" disabled={full} aria-label={`${t("world.pickUp")}: ${devName(d)}`} onClick={() => take(d)}>
-                    <span className="wp-parcel-tape" />
-                    <span className="wp-label"><b>{d.brand}</b>{modelById(d.model).name}</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </Slab>
@@ -226,7 +209,7 @@ function PduFace({ watts, limit, lit, tripped }: { watts: number; limit: number;
       <rect className="w-lcd" x="14" y="18" width={W - 28} height="30" />
       <text className={`wp-lcd-num${tripped ? " bad" : ""}`} x={W - 20} y="39">{`${(watts / 1000).toLocaleString(LOCALE, { maximumFractionDigits: 1, minimumFractionDigits: 1 })} kW`}</text>
       <rect className="wp-plate" x="14" y="56" width={W - 28} height="14" />
-      <text className="wp-plate-txt" x="18" y="66">{`max ${num(limit)} W`}</text>
+      <text className="wp-plate-txt" x="18" y="66">{`max ${(limit / 1000).toLocaleString(LOCALE, { maximumFractionDigits: 1 })} kW`}</text>
       {Array.from({ length: OUTLETS }, (_, k) => {
         const y = 92 + k * 38;
         return (

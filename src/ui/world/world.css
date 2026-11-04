@@ -22,7 +22,6 @@
 .w-raised { fill: oklch(0.85 0.008 245); }
 .w-raised-line { fill: none; stroke: oklch(0.77 0.01 245); stroke-width: 0.45; }
 .w-tile { fill: none; stroke: var(--w-grid); stroke-width: 0.5; pointer-events: none; }
-.w-carrying .world-svg { cursor: grabbing; }
 
 .w-walls polygon { stroke: var(--w-wall-edge); stroke-width: 0.6; stroke-linejoin: round; }
 .w-wall-l { fill: var(--w-wall-l); }

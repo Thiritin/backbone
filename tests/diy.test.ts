@@ -76,14 +76,14 @@ describe("driving there", () => {
     ok(travelTo(s, loc));
     expect(s.cash).toBe(cash - 90);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.drive", amount: -90 });
-    expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", by: "drive", carrying: null });
+    expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", by: "drive" });
     expect(err(travelTo(s, "loc1"))).toBe("error.away");
     s.hour = hour + 4;
     expect(handWork(s, loc)!.here).toBe(true);
     ok(installPart(s, id, part, undefined, "self"));
     expect(s.cash).toBe(cash - 90);
     expect(dev(s, id).maintenance!.doneAt).toBe(s.hour + 0.5);
-    expect(s.player).toEqual({ at: loc, until: s.hour + 0.5, doing: "work", by: "drive", carrying: null });
+    expect(s.player).toEqual({ at: loc, until: s.hour + 0.5, doing: "work", by: "drive" });
   });
 
   it("pulls a plug on site without a fee and refuses a drive without cash", () => {
@@ -121,7 +121,7 @@ describe("driving there", () => {
   it("starts an old save at home", () => {
     const old = JSON.parse(serialize(newGame(1)));
     delete old.player;
-    expect(deserialize(JSON.stringify(old)).player).toEqual({ at: "loc1", until: 0, doing: "work", by: "drive", carrying: null });
+    expect(deserialize(JSON.stringify(old)).player).toEqual({ at: "loc1", until: 0, doing: "work", by: "drive" });
   });
 });
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { t } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { bayTakes, COMPONENTS, fits, modelById, partOffers, samePart, type ComponentKind, type PartSpec } from "../../../sim/10-catalog/hardware";
+import { bayTakes, COMPONENTS, fits, modelById, partOffers, samePart, type ComponentKind, type PartSpec, modelName } from "../../../sim/10-catalog/hardware";
 import { partPrice } from "../../../sim/10-catalog/parts";
 import type { Component, Device } from "../../../sim/50-state";
 import { energized, hotKind, hotSwappable, locationOf } from "../../../sim/60-infra/status";
@@ -58,7 +58,7 @@ export function LidScene({ deviceId, onClose }: { deviceId: string; onClose: () 
         <div className="wl-rail bottom" aria-hidden="true" />
         <TopDown model={model} brand={device.brand} name={devName(device)} parts={device.components} wear={wear} open={open} ms={lidMs} sel={sel} onPick={(id) => open && setSel(id)} />
         <div className="wl-spec" data-spec="">
-          <b>{device.brand} {model.name}</b>
+          <b>{device.brand} {modelName(model, device.brand)}</b>
           <dl>
             {COUNTED.map((g) => (
               <div key={g}><dt>{GROUP_NAME[g]}</dt><dd>{t("locations-1.nOfM", { n: slots.filter((s) => s.group === g && s.part).length, m: slots.filter((s) => s.group === g).length })}</dd></div>

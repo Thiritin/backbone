@@ -97,6 +97,13 @@ export function deserialize(raw: string): GameState {
       ...(defaults.saved && !d.saved ? { saved: { groups: d.groups ?? [], vlans: d.vlans ?? {} } } : {}),
     };
   });
+  // Builds with carrying kept units at the door or in the player's hands; both go into storage there.
+  const held = (data.player as { carrying?: string | null } | undefined)?.carrying, heldAt = data.player?.at ?? locations[0].id;
+  for (const d of devices as (Device & { door?: { at: string; since: number } | null })[]) {
+    if (d.door) Object.assign(d, { store: d.door.at, arrivedAt: d.door.since });
+    else if (held && (d.id === held || d.chassisId === held)) d.store = heldAt;
+    delete d.door;
+  }
   const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false, feedB: r.feedB ?? false, highDensity: r.highDensity ?? false, extraKw: r.extraKw ?? 0, extraKwAt: r.extraKwAt ?? null, flatKw: r.flatKw ?? 0, flatKwAt: r.flatKwAt ?? null, overSince: r.overSince ?? { a: null, b: null } }));
   const cables = (data.cables ?? base.cables).map((c) => ({ ...c, color: c.color ?? null }));
   // Competitors fill datacenters the save has not seen yet as if the game had started this year. A datacenter far below
@@ -131,7 +138,7 @@ export function deserialize(raw: string): GameState {
     network: { ...base.network, ...data.network },
     ops: { ...base.ops, ...data.ops },
     friendFavours: { ...base.friendFavours, ...data.friendFavours },
-    player: { ...base.player, at: locations[0].id, ...data.player },
+    player: (({ carrying: _, ...p }) => p)({ ...base.player, at: locations[0].id, ...data.player } as GameState["player"] & { carrying?: string | null }),
     security: { ...base.security, ...data.security },
     sites: { ...base.sites, ...data.sites },
     // Saves from before paid lines had the free DSL line from the start.

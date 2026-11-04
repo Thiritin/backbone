@@ -5,8 +5,21 @@ import { readSession } from "../src/ui/session";
 import { serialize } from "../src/sim/91-save/save";
 import { readyGame, newGame } from "./fixtures";
 import { metrics } from "../src/sim/metrics";
+import { travelTo } from "../src/sim/90-actions/travel";
 
 describe("notification settings", () => {
+  it("shows a failed action as coming from the front window's app, or from the room", () => {
+    const s = useStore.getState;
+    useStore.setState({ game: newGame(1), surface: "desktop", windows: [], banners: [] });
+    s().openApp("Staff");
+    s().act(travelTo, "nope");
+    expect(s().banners.at(-1)).toMatchObject({ app: "Staff", from: undefined });
+    useStore.setState({ surface: "world" });
+    s().act(travelTo, "nope");
+    expect(s().banners.at(-1)).toMatchObject({ app: "Locations", from: s().game.locations[0].name });
+    useStore.setState({ surface: "desktop", windows: [], banners: [], history: [], unseen: 0 });
+  });
+
   it("drops muted apps and shows allowed ones as banners and in the history", () => {
     const s = useStore.getState;
     s().setNotifyPref("Books", { allow: false });

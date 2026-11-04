@@ -19,10 +19,10 @@ How every game system meets the rooms, close-ups and desktop is decided in `docs
 | Thing | World | Desktop |
 | --- | --- | --- |
 | Rack placement, moving racks | Place a rack on a floor tile, turn it, push it | Locations app lists racks and their tiles |
-| Installing and removing devices | A rack opens as a close-up with its name and units in use on a label plate: pick a free unit and what fits stands on the floor beside the rack, the unit in your hands, parcels from the door and stored stock, and a click on one mounts it; pick a device to power it, open its lid or unmount it back to storage | Remote hands job at a datacenter, read-only in the basement |
+| Installing and removing devices | A rack opens as a close-up with its name and units in use on a label plate: pick a free unit and what fits from that location's storage stands on the floor beside the rack, and a click on one mounts it; pick a device to power it, open its lid or unmount it back to storage | Remote hands job at a datacenter, read-only in the basement |
 | Server internals | Lid slides off at the rack, parts go in by hand | Remote hands job at a datacenter, read-only in the basement |
 | Cabling | Rack back in the room, cables run along the trays. The turn arrow at the rack's corner shows its back, where a click on a free port takes the cable in hand and a click on a second port plugs it in, also on another rack or the carrier panel shown on every rack's back; the technician PC on a port comes later | Remote hands job at a datacenter, read-only in the basement |
-| Deliveries | Parcels arrive at the door of the player's own place; pick one up and carry it to the shelf or straight into a rack. The shelf opens drawn large, with stored units standing on its boards and the parcels from the door on the floor beside it, each with a paper label; a click on one picks it up. At a datacenter the receiving desk shelves them | Shop buys, tracking in Storage, an "At the door" group |
+| Deliveries | Every delivery, instant or shipped, lands in the location's storage. A unit that arrived within the last 24 hours and is not mounted is drawn as a parcel by the basement door, as a picture only. The shelf opens drawn large with stored units standing on its boards, each with a paper label | Shop buys, tracking in Storage |
 | Post | Letters land in the letterbox of the basement and stay there, with their deadlines running, until the player clicks the letterbox and fetches them; the letterbox shows how many wait, and fetching lays the letters out as paper: the current letter as a DIN A4 sheet, the others stacked beside it to browse by click or the arrow keys, a scan corner on each sheet and a Scan all key below | The Post app lists waiting letters greyed under "In the letterbox"; fetched letters are read, paid and scanned there |
 | Scanner | On the desk; it opens with its lid up and the next unscanned letter on the glass, and the button on its front scans it and slides the copy out | The scanned letter appears in DocuWhere, which holds only scanned letters |
 | Travel | Walk out the door, pick a destination on the map, watch the drive ([Travel](travel.md)) | Locations app shows where you are and when you arrive |
@@ -43,7 +43,7 @@ The first room is the basement of the player's parents' house in Frankfurt, avai
 - **Desk with the PC.** One wooden desk along the right wall carries the scanner at its left end and the flat screen with its keyboard and a desk lamp at its right end; the beige tower and a crate of beer stand under it, and an office chair stands pushed back in front of it. Using the PC opens the desktop fullscreen. The world keeps running underneath and resumes at the same view. Using the scanner opens the scanner panel with the fetched letters.
 - **Door.** A wooden door in the left wall that swings into the room when used. The only exit. Using it opens the map, and picking a destination starts the trip described in [Travel](travel.md). Parcels stack on the floor beside it.
 - **Letterbox.** A brass box on the left wall next to the door. Waiting letters stick out of its slot, with their count beside it. Using it moves every letter to the desk and opens the post panel, where each fetched letter can be read and scanned.
-- **Storage shelf.** Against the left wall, four boards high, one crate per stored device up to four. Using it opens the storage panel, or puts down a carried unit.
+- **Storage shelf.** Against the left wall, four boards high, one crate per stored device up to four. Using it opens the storage panel.
 - **Shelf and rack tiles.** The metal shelf the company starts with stands on its own tile against the far wall, right of the desk. Two more tiles beside it along the far wall take the two racks the basement holds at most. A rack loaded from a save on a tile that is no longer a rack tile moves to the next free one.
 - **Power.** The fuse box on the left wall stands open, with rows of breakers and a meter whose counter shows the power draw and whose disc turns faster as the draw grows. A conduit runs from it up the wall and along the right wall to the racks. A wall socket below it holds the phone line jack, where the line cable from the racks ends.
 - **Windows and climate.** Two cellar windows sit high in the right wall, one with a window fan in its pane. A thermometer on the wall shows the room temperature over the outside one.
@@ -81,7 +81,7 @@ The room is played like a tycoon game. There is no figure to walk around: the pl
 
 Presence stays a sim rule: the room on screen is the one the player is at, the door starts the trip, and arriving shows the destination room.
 
-Parcels are carried with the hand cursor. Clicking a parcel at the door picks it up, and it follows the pointer as a small box. Clicking the shelf puts it in storage, and clicking a rack opens the rack panel with the carried unit offered for the free units it fits. Escape with a parcel in hand puts it on the shelf. A parcel does not have to be picked up first: a free unit in the rack panel also lists the parcels at that room's door that fit, and installs one in one click.
+Deliveries go straight into storage, and a free unit in the rack panel offers every stored unit at that location that fits.
 
 Every click calls an existing action. Only the desk PC and the NOC desk open the desktop; every other object opens a slide-up panel in the room.
 
@@ -107,7 +107,7 @@ A technician who takes an operation stands in front of the rack of its device fo
 ## Switching between surfaces
 
 - The world is the first screen. A new game and a loaded game both open in the room where the player is.
-- In the world, clicking the desk PC or the NOC PC opens the desktop. Escape in the world closes an open panel or puts down a carried parcel and stays in the room.
+- In the world, clicking the desk PC or the NOC PC opens the desktop. Escape in the world closes an open panel and stays in the room.
 - A clock in the top left corner of the world shows the game date and time and holds the same speed buttons as the menu bar, so the player can pause and resume from the first second.
 - The desktop shows the room the player is in as a button in the menu bar next to the time controls and as a desktop icon in the top right; both return to the world. **Stand up** in the logo menu and a world button in the Locations app do the same.
 - Sheets that greet the player on the desktop (Early Access, what's new, system and game updates) wait until the desktop opens.
@@ -120,9 +120,8 @@ Each is its own feature with a seeded test and lands before the world depends on
 
 - **Rack tiles.** Every rack in a location has a tile and a facing. New racks take the next free wall tile. An action moves a rack. Old saves get tiles assigned on load.
 - **Presence rules.** Hands-on work (mounting, unmounting and moving a unit in its rack, adding, removing and swapping parts, plugging cables and power cords) needs hands at the location. When the player stands there, the player's own hands do it at once. From afar every hands-on action shows its ways as separate buttons: "<Action> · Selbst" queues the work for the player's own hands, starts the drive there and does it on arrival at no fee, waiting if the player leaves first; at a datacenter a second button "<Action> · Remote Hands <fee> · <wait>" queues a remote hands job, billed at the datacenter's hourly rate for 30 minutes to mount, 15 minutes to cable and an hour for parts when it is done after the response time. Both jobs are cancellable until they run, and the unit shows a queued own job with the badge "Selbst · bei Ankunft". The basement has no remote hands, so from afar it offers only the own hands button. Carrying is always the player's own hands.
-- **Parcels at the door.** Arrived deliveries wait at the door (`door` on the unit) until carried to the shelf or into a rack, or installed from the rack panel. A door item is outside storage, so the desktop cannot mount, sell or ship it. A datacenter location shelves arrivals itself so remote hands keep working.
+- **Deliveries.** Arrivals land in the location's storage and keep their arrival hour (`arrivedAt` on the unit, null for old saves). The room draws units that arrived within the last 24 hours and are not mounted as parcels by the door. Old saves move units at the door or in the player's hands into storage.
 - **Post in the box.** Each letter knows whether it waits in a letterbox or lies at the desk, and whether it is scanned. Delivery puts it in the basement letterbox; fetching needs the player there and takes all of them. A letter in the letterbox cannot be read, and its bill is due all the same. Scanning a desk letter once files it in DocuWhere. Old saves keep their letters at the desk and filed.
-- **Carrying.** `player.carrying` holds one unit, which is then in no store. `pickUp`, `putDown` and `installCarried` (90-actions/carry.ts) need the player in the unit's room; picking up and putting down cost no time, and the player cannot travel while carrying.
 
 ## Multiplayer, later
 
@@ -130,4 +129,4 @@ Friends running their own companies in the same market is a later layer, and it 
 
 ## Demo scope
 
-The first demo is the basement played by direct clicks, the PC that opens the desktop, racks on their tiles that open a close-up of the rack inside the room, where devices are mounted, removed and opened, parcels at the door that go into the hand, a shelf, letterbox and scanner that open their panels in the room, a door that swings open and opens the map, and cabling by hand at the rack back with cables between racks drawn along the trays. The sim change is rack tiles. The rest of the table above comes feature by feature.
+The first demo is the basement played by direct clicks, the PC that opens the desktop, racks on their tiles that open a close-up of the rack inside the room, where devices are mounted, removed and opened, parcels drawn by the door for a fresh delivery, a shelf, letterbox and scanner that open their panels in the room, a door that swings open and opens the map, and cabling by hand at the rack back with cables between racks drawn along the trays. The sim change is rack tiles. The rest of the table above comes feature by feature.

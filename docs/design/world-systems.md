@@ -6,7 +6,7 @@ How every game system meets the 2D plane. Decided 2026-11-03. The desktop stays 
 | --- | --- | --- | --- |
 | Racks and hardware | Racks and the shelf on their tiles, device LEDs blinking, failed parts with a red LED, heat haze above an overloaded rack | Rack scene with front and back, lid scene with the chassis pulled out, parts on paper tags | Rack view, inspector, remote hands from afar |
 | Cabling | Cables along the trays between racks and to the wall socket | Rack back with drag cabling, provider panel drawn large, side-by-side backs for cross-rack runs, order slips | Port inspector, port groups |
-| Deliveries | Parcels at the basement door, crates on the shelf | Shelf with units on boards and parcels on the floor | Shop, storage tab |
+| Deliveries | Parcels drawn by the basement door for a day after arrival, crates on the shelf | Shelf with stored units on its boards | Shop, storage tab |
 | Post | Letters in the letterbox, a count on the flap | A4 sheet with a paper stack, Scan all, the scanner with its lid up | Post app, document app |
 | Power and cooling | The fuse box meter disc turning with the draw, the thermometer on the wall, the window fan spinning when the room is warm, cooling units with LEDs in a hall | The fuse box with breakers: an overload trips the main breaker and every device in the room goes dark until the breaker is reset by hand with less load; the PDU with its outlets | Power card, upgrades |
 | Failures and maintenance | A failed part's device shows a red LED on its front; a technician figure stands at the rack while a job runs there; a provider technician in the provider's colours for remote hands jobs | The lid scene marks the failed part and offers the swap from stored parts | Maintenance planning, burn-in, remote hands jobs |
@@ -28,5 +28,5 @@ How every game system meets the 2D plane. Decided 2026-11-03. The desktop stays 
 
 - The room never hides a sim rule: what fails, trips, rings or arrives is drawn where it happens.
 - Everything drawn has a sim source; nothing is cosmetic state. The only UI state is zoom, pan, lights and open close-ups.
-- A thing that takes time shows its time: a figure stays until the job ends, a parcel waits until carried, a breaker stays down until reset.
+- A thing that takes time shows its time: a figure stays until the job ends, a breaker stays down until reset.
 - One drawing per object, reused everywhere it appears: the shelf in the room is the shelf in the close-up at another scale.

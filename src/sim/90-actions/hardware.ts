@@ -8,7 +8,7 @@ import { TRANSFER_HOURS } from "../10-catalog/banks";
 import { hourOf, dateOf, monthIndexOf, yearOf } from "../00-core/time";
 import { freeJack, isProviderPanel } from "../60-infra/panels";
 import { syncProviderPanels } from "./connectivity";
-import { boardVendor, manufacturerByName, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
+import { boardVendor, modelName, manufacturerByName, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
 import type { Vendor } from "../10-catalog/cpus";
 import { leaseOffers, lessorName } from "../10-catalog/leasing";
 import { greySurcharge, workFactor } from "../10-catalog/lifecycle";
@@ -118,7 +118,7 @@ function closeError(s: GameState, locationId: string): string | null {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return "error.unknownLocation";
   if (loc.space === "basement") return "error.cannotClose";
-  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId || d.door?.at === locationId)) return "error.storageNotEmpty";
+  if (s.devices.some((d) => d.store === locationId || d.transitTo === locationId)) return "error.storageNotEmpty";
   const racks = s.racks.filter((r) => r.locationId === locationId);
   if (racks.some((r) => !r.provided || s.devices.some((d) => d.rackId === r.id && !isProviderPanel(d)))) return "error.locationNotEmpty";
   return null;
@@ -338,6 +338,12 @@ export function stock(s: GameState, line: CartLine, lease: string | null, store:
   });
 }
 
+// An order that lands at once arrives now; a shipped one gets its hour on arrival.
+const landed = (s: GameState, ids: string[]): string[] => {
+  for (const d of s.devices) if (d.store && (ids.includes(d.id) || ids.includes(d.chassisId ?? ""))) d.arrivedAt = s.hour;
+  return ids;
+};
+
 export const PREPAY_HOURS = 24;
 const lineTotal = (s: GameState, line: CartLine) => unitPrice(line, yearOf(s.hour)) * line.qty;
 const families = (line: CartLine): string[] => { const m = modelById(line.model); return m.kind === "part" ? [m.id.slice(5)] : [m.kind, ...lineParts(line).map((p) => p.kind)]; };
@@ -347,8 +353,8 @@ export const deliveryWait = (s: GameState, lines: CartLine[]): number => (s.devi
 
 // A card purchase books nothing yet: the card bill at the month start charges it. An invoiced one books when it is paid.
 function buyLine(s: GameState, line: CartLine, locationId: string, wait: number, pay: "now" | "card" | "later" = "now"): { id: string; entry: LedgerEntry } {
-  const ids = stock(s, line, null, locationId, wait);
-  const entry = { hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: modelById(line.model).name, qty: line.qty }, amount: -lineTotal(s, line) };
+  const ids = landed(s, stock(s, line, null, locationId, wait));
+  const entry = { hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: modelName(modelById(line.model), line.brand), qty: line.qty }, amount: -lineTotal(s, line) };
   if (pay === "card") s.bank = { ...s.bank!, card: { ...s.bank!.card!, spent: [...s.bank!.card!.spent, entry] } };
   else if (pay === "now") book(s, entry.category, entry.key, entry.params, entry.amount);
   return { id: ids[0], entry };
@@ -408,7 +414,7 @@ export function buyCart(s: GameState, lines: CartLine[], payment: Payment, locat
   if (!offer) return fail("error.offerExpired");
   const wait = deliveryWait(s, lines);
   const lease = { id: newId(s, "lease"), lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: s.hour, paid: 0, devices: [] as string[] };
-  lease.devices = lines.flatMap((l) => stock(s, l, lease.id, locationId, wait));
+  lease.devices = lines.flatMap((l) => landed(s, stock(s, l, lease.id, locationId, wait)));
   s.leases = [...s.leases, lease];
   return { ok: true, id: lease.devices[0] };
 }
@@ -426,7 +432,7 @@ export function buyOutLease(s: GameState, leaseId: string): ActionResult {
 
 // A chassis's nodes stand, travel and wait where the chassis does.
 export function carry(s: GameState, chassis: Device) {
-  for (const n of nodesOf(s, chassis.id)) Object.assign(n, { rackId: chassis.rackId, slot: chassis.slot, store: chassis.store, transitTo: chassis.transitTo, arriveAt: chassis.arriveAt, door: chassis.door });
+  for (const n of nodesOf(s, chassis.id)) Object.assign(n, { rackId: chassis.rackId, slot: chassis.slot, store: chassis.store, transitTo: chassis.transitTo, arriveAt: chassis.arriveAt, arrivedAt: chassis.arrivedAt });
 }
 const withNodes = (s: GameState, d: Device): Device[] => [d, ...nodesOf(s, d.id)];
 
@@ -454,12 +460,12 @@ export function mountError(s: GameState, d: Device, rackId: string, slot: number
   return null;
 }
 
-// A device takes a name from its new location unless it already has one there.
+// A device takes a name from its new location unless it already has one there; its power cords go into the shelf strip or the rack PDU.
 function mount(s: GameState, d: Device, rackId: string, slot: number) {
   const base = prefix(s, spotOf(s, rackId)!.locationId);
   if (!d.name.startsWith(`${base}-`)) d.name = nextName(`${base}-${roleOf(d.model)}`, s.devices.map((x) => x.name));
   Object.assign(d, { rackId, slot, store: null });
-  for (const c of d.components) if (c.kind === "psu") c.plugged = false;
+  for (const c of d.components) if (c.kind === "psu") c.plugged = true;
   carry(s, d);
   for (const n of nodesOf(s, d.id)) if (!n.name.startsWith(`${base}-`)) n.name = nextName(`${base}-${roleOf(n.model)}`, s.devices.map((x) => x.name));
 }
@@ -580,7 +586,6 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   if (self) {
     if (!present(s, from)) return fail("error.notThere");
     if (s.player.until > s.hour) return fail("error.away");
-    if (s.player.carrying) return fail("error.carrying");
     const fare = driveTo(s, to.id);
     if (!fare) return fail("error.tooFar");
     trip = { price: fare.fee, hours: fare.hours };
@@ -639,7 +644,6 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
   if (how === "self") {
     if (!present(s, from.id)) return fail("error.notThere");
     if (s.player.until > s.hour) return fail("error.away");
-    if (s.player.carrying) return fail("error.carrying");
     const fare = driveTo(s, to.id);
     if (!fare) return fail("error.tooFar");
     job = { cost: fare.fee, wait: fare.hours + work, commit: () => {
@@ -669,7 +673,6 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
     const spot = spotFor(d);
     if (!spot) return fail("error.noRoom");
     mount(s, d, spot.rack.id, spot.slot);
-    for (const c of d.components) if (c.kind === "psu") c.plugged = true;
     Object.assign(d, { bootUntil: s.hour + hours, maintenance: { componentId: "", partId: "", doneAt: s.hour + hours } });
   }
   // Cables between moving servers go along; the hands patch the rest to the same kind of device at the target, in the server's rack first.
@@ -701,7 +704,6 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   if (d.lease) return fail("error.leased");
   if (d.chassisId) return fail("error.inChassis");
   if (d.transitTo) return fail("error.inTransit");
-  if (d.door || s.player.carrying === d.id) return fail("error.notInStorage");
   const gone = new Set(withNodes(s, d).map((x) => x.id));
   if ([...gone].some((id) => serverTaken(s, id))) return fail("error.serverInUse");
   unplug(s, gone);

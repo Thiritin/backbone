@@ -14,7 +14,9 @@ import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
 import { deserialize, serialize } from "../sim/91-save/save";
 import { actionName, runAction } from "../sim/90-actions/index";
-import { SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
+import { nowHours, SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
+import { playerAt } from "../sim/60-infra/handwork";
+import { useTrip, type Trip } from "./travel/route";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
@@ -30,7 +32,8 @@ export const SAVE_KEY = "backbone.save";
 // inner: the focus a page opened at this url applies, as Books inside a browser program.
 export interface Focus { kind: string; id: string; n: number; inner?: Omit<Focus, "n"> }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; draft?: string; focus?: Focus }
-export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; focus?: Omit<Focus, "n"> }
+// from names the source when it is not the app, like the room an action failed in.
+export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; focus?: Omit<Focus, "n">; from?: string }
 
 // An order ticket that is a quote request sent through the active shop.
 const shopAsk = (s: GameState, ticketId: string): boolean => shopActive(s) && s.sales.requests.some((r) => r.ticketId === ticketId && r.viaShop);
@@ -105,7 +108,7 @@ export interface Store {
   toggleZoom: (id: string) => void;
   place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
   // key is the sim event key that picks the sound.
-  notify: (app: string, title: string, text: string, key?: string, focus?: Omit<Focus, "n">) => void;
+  notify: (app: string, title: string, text: string, key?: string, focus?: Omit<Focus, "n">, from?: string) => void;
   dismiss: (id: number) => void;
   forget: (id: number | null) => void;
   started: boolean;
@@ -298,7 +301,10 @@ export const useStore = create<Store>((set, get) => ({
     const r = get().attempt(fn, ...args);
     if (!r.ok) {
       lastBanner = Date.now();
-      get().notify("Settings", t("action.failed.title"), t(r.error, r.params));
+      // The failure belongs to the front window's app, or in the room to the room.
+      const { surface, windows, game } = get(), top = windows.filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
+      if (surface === "world") get().notify("Locations", t("action.failed.title"), t(r.error, r.params), undefined, undefined, playerAt(game).name);
+      else get().notify(top?.app ?? "Settings", t("action.failed.title"), t(r.error, r.params));
     }
     return r;
   },
@@ -310,7 +316,13 @@ export const useStore = create<Store>((set, get) => ({
     if (r.ok) {
       if (booted(get().game, game)) setTimeout(() => uiSound("post"), 1200);
       if (game.media.stick.in !== get().game.media.stick.in) uiSound(game.media.stick.in ? "plug" : "unplug");
-      set({ game });
+      const was = get().game.player, now = game.player;
+      // A drive any action starts, from the map or a job done in person, plays as the trip in the room.
+      if (now.doing === "travel" && now.until > game.hour && now.at !== was.at && ["room", "map"].includes(useTrip.getState().stage)) {
+        const trip: Trip = { from: playerAt(get().game), to: playerAt(game), start: nowHours(game), until: now.until, resume: get().speed, by: now.by };
+        set({ game, speed: 0, surface: "world" });
+        useTrip.setState({ stage: "leave", trip });
+      } else set({ game });
     } else uiSound("error");
     return r;
   },
@@ -392,7 +404,7 @@ export const useStore = create<Store>((set, get) => ({
     set({ sound });
     savePrefs(get().notifyPrefs, sound);
   },
-  notify: (app, title, text, key, focus) => {
+  notify: (app, title, text, key, focus, from) => {
     const pref = prefOf(get().notifyPrefs, app);
     // Alerts show whatever the preferences say.
     if (!(key && isAlert(key)) && (!pref.allow || (key && pref.types?.[typeOf(app, key)] === false))) return;
@@ -410,7 +422,7 @@ export const useStore = create<Store>((set, get) => ({
       lastBanner = Date.now();
       uiSound("banner");
     }
-    const b = { id: ++bannerId, app, title, text, hour: get().game.hour, key, focus };
+    const b = { id: ++bannerId, app, title, text, hour: get().game.hour, key, focus, from };
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     setTimeout(() => get().dismiss(b.id), 6000);
   },

@@ -2,7 +2,7 @@ import { Gauge, Plug, Truck, Zap } from "lucide-react";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
+import { modelById, type DeviceKind, modelName } from "../../../sim/10-catalog/hardware";
 import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
@@ -418,7 +418,7 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
 
 // Mounting as hand work: a unit or a whole stack goes in one job.
 export const mountTask = (st: { ids: string[]; model: string; brand: string }, rackId: string, n: number, from: number): HandTask => ({
-  title: t("locations-2.mountName", { name: `${st.brand} ${modelById(st.model).name}` }),
+  title: t("locations-2.mountName", { name: `${st.brand} ${modelName(modelById(st.model), st.brand)}` }),
   deviceId: st.ids[0],
   ...(n === 1
     ? { action: mountDevice, args: [st.ids[0], rackId, from], tech: { kind: "mount" as const, componentId: rackId, slot: from } }

@@ -27,8 +27,6 @@ export default {
   "world.obj.noc": () => "NOC desk",
   "world.obj.dock": () => "Loading dock",
   "world.obj.stairs": () => "Stairwell",
-  "world.inHands": () => "In your hands",
-  "world.pickUp": () => "Pick up",
   "world.obj.parcels": (p) => `${p.n} parcels`,
   "world.cableInHand": () => "Cable in hand",
   "world.toRack": () => "To another rack",

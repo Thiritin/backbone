@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { nowHours, yearOf } from "../../../sim/00-core/time";
-import { modelById } from "../../../sim/10-catalog/hardware";
+import { modelById, modelName } from "../../../sim/10-catalog/hardware";
 import { imageParts, serverOsById, type OsImage } from "../../../sim/10-catalog/server-os";
 import type { Device, GameState } from "../../../sim/50-state";
 import { machineScreen, stickOs, type MachineScreen } from "../../../sim/60-infra/oob";
@@ -33,7 +33,7 @@ function Post({ game, d }: { game: GameState; d: Device }) {
   const m = modelById(d.model), drives = drivesOf(d);
   return (
     <pre>
-{`${d.brand.toUpperCase()} ${m.name}
+{`${d.brand.toUpperCase()} ${modelName(m, d.brand)}
 BIOS Revision ${yearOf(game.hour)}.1
 
 Memory Test: ${(m.server?.ramGb ?? 0) * 1024} MB OK
