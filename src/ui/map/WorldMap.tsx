@@ -310,7 +310,7 @@ export function WorldGeo() {
       <path className="wm-border" d={lines(g.BORDERS)} />
       <g className="wm-countries">
         {g.COUNTRIES.map(([iso, lon, lat, rank]) => (
-          <g key={iso} className={`wm-r${rank}`} transform={`translate(${X(lon)} ${Y(lat)})`}><g className="wm-s"><text className="wm-country">{names.of(iso)}</text></g></g>
+          <g key={`${iso}${lon}`} className={`wm-r${rank}`} transform={`translate(${X(lon)} ${Y(lat)})`}><g className="wm-s"><text className="wm-country">{names.of(iso)}</text></g></g>
         ))}
       </g>
     </>

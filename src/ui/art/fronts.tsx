@@ -467,16 +467,22 @@ export function Pdu({ w, h, name, model, state }: FrontProps) {
 // A front USB port with its centre at (cx, cy): a light bezel on a dark plate so it reads on any face, the USB trident
 // beside it on faces of two units or more, and the stick in it when it is plugged in. Every face places its own.
 export function UsbPort({ cx, cy, h, stick, onUsb }: { cx: number; cy: number; h: number; stick?: boolean; onUsb?: () => void }) {
-  const x = cx - 4.5, y = cy - 2, label = stick ? t("art.unplugUsb") : t("art.plugInUsb"), glyph = h >= 28;
+  const x = cx - 10, y = cy - 4, label = stick ? t("art.unplugUsb") : t("art.plugInUsb"), glyph = h >= 28;
   return (
     <>
-      <rect x={x - 1.5} y={y - 1.5} width={glyph ? 17 : 12} height="7" rx="0.8" fill="oklch(0.12 0.004 255)" aria-hidden="true" />
-      <rect x={x} y={y} width="9" height="4" rx="0.5" fill="oklch(0.08 0.004 255)" stroke="oklch(0.72 0.01 255)" strokeWidth="0.6" aria-label={t("art.usbPort")} />
-      <rect x={x + 1.5} y={y + 1} width="6" height="1.2" fill="oklch(0.6 0.14 250)" aria-hidden="true" />
-      {glyph && <path d={`M${x + 11.5} ${cy + 1.6}V${cy - 1.8}M${x + 11.5} ${cy - 0.6}l1.6-1M${x + 11.5} ${cy + 0.6}l-1.6-1`} fill="none" stroke="oklch(0.72 0.01 255)" strokeWidth="0.5" strokeLinecap="round" aria-hidden="true" />}
-      {stick && <><rect x={x - 1} y={y - 1.5} width="11" height="7" rx="0.9" fill="oklch(0.42 0.13 150)" stroke="oklch(0.25 0.05 150)" strokeWidth="0.4" /><circle cx={x + 8.4} cy={y + 2} r="0.7" fill={LED.act} /></>}
+      <rect x={x - 2} y={y - 2} width={glyph ? 38 : 24} height="12" rx="1" fill="oklch(0.12 0.004 255)" aria-hidden="true" />
+      <rect x={x} y={y} width="20" height="8" rx="0.8" fill="oklch(0.08 0.004 255)" stroke="oklch(0.78 0.01 255)" strokeWidth="1" aria-label={t("art.usbPort")} />
+      <rect x={x + 3} y={y + 2.5} width="14" height="2.5" fill="oklch(0.6 0.14 250)" aria-hidden="true" />
+      {glyph && <path d={`M${x + 28} ${cy + 3.5}V${cy - 3.5}M${x + 28} ${cy - 1}l3-1.8M${x + 28} ${cy + 1.2}l-3-1.8`} fill="none" stroke="oklch(0.78 0.01 255)" strokeWidth="1" strokeLinecap="round" aria-hidden="true" />}
+      {stick && (
+        <g aria-hidden="true">
+          <rect x={x - 1} y={y - 1} width="22" height="10" rx="1" fill="oklch(0.7 0.17 55)" stroke="oklch(0.38 0.09 50)" strokeWidth="0.8" />
+          <rect x={x + 18} y={y - 3} width="8" height="14" rx="1" fill="oklch(0.5 0.15 50)" stroke="oklch(0.28 0.07 50)" strokeWidth="0.8" />
+          <circle cx={x + 22} cy={y + 4} r="1.3" fill={LED.act} />
+        </g>
+      )}
       {onUsb && (
-        <rect className="svg-hit" x={x - 3} y={y - 3} width="15" height="10" fill="transparent" role="button" tabIndex={0} aria-label={label}
+        <rect className="svg-hit usb-hit" x={x - 6} y={y - 6} width="40" height="20" fill="transparent" role="button" tabIndex={0} aria-label={label}
           onClick={(e) => { e.stopPropagation(); onUsb(); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onUsb(); } }}><title>{label}</title></rect>
       )}
     </>

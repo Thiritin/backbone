@@ -4,7 +4,10 @@ import { modelById, modelName } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
 import { deviceHealth, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
+import { present } from "../../../sim/60-infra/handwork";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
+import { plugStick, unplugStick } from "../../../sim/90-actions/media";
+import { Screen } from "../../apps/console/Screen";
 import { Isometric } from "../../art/Isometric";
 import { RackFront, shelfPitch, type RackItem } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
@@ -52,6 +55,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   // A carried unit opens the panel on the lowest free unit it fits.
   const [free, setFree] = useState<number | null>(null);
   const [lid, setLid] = useState<string | null>(null);
+  const [cart, setCart] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pin, setPin] = useState<{ x: number; y: number; top: number } | null>(null);
@@ -112,7 +116,8 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   if (back && pp && jack !== null && !hand) tag = <JackTag game={game} panel={pp} jack={jack} />;
   else if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
-  else if (dev && !lid) tag = <DeviceTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) && !back ? () => turn(true) : undefined} />;
+  else if (dev && !lid) tag = <DeviceTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) && !back ? () => turn(true) : undefined}
+    onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => setCart(dev.id) : undefined} />;
   // A picked free unit sets what fits there on the floor beside the rack.
   const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} /> : null;
 
@@ -126,13 +131,14 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
     <RackFrame units={tall} bare={shelf}>
       {(w, u) => (
         <RackFront units={units} shelf={shelf} items={items} w={w} u={u} selected={dev?.id ?? null}
-          onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => entries(d))(e); }} />
+          onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => entries(d))(e); }}
+          onUsb={(id) => (game.media.stick.in === id ? act(unplugStick) : act(plugStick, id))} />
       )}
     </RackFrame>
   );
 
   return (
-    <Slab title={rack.name} onClose={onClose} onBack={() => (hand ? (onHand(null), true) : lid ? (setLid(null), true) : false)} data={{ "rack-panel": rack.id }}>
+    <Slab title={rack.name} onClose={onClose} onBack={() => (hand ? (onHand(null), true) : cart ? (setCart(null), true) : lid ? (setLid(null), true) : false)} data={{ "rack-panel": rack.id }}>
       <div ref={stage} className={`wr-stage${back && pp ? " pp" : ""}`} style={{ ["--z" as string]: zoom, ["--units" as string]: tall }}>
         <div className={`wr-room${lid ? " lidded" : ""}`}>
           <div ref={scene} className={`wr-scene${tag || floor ? " tagged" : ""}`}>
@@ -159,8 +165,32 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
         {lid && dev && <LidScene key={lid} deviceId={lid} onClose={() => setLid(null)} />}
       </div>
       {menus.dialog}
+      {cart && game.devices.some((x) => x.id === cart) && <CrashCart deviceId={cart} onClose={() => setCart(null)} />}
       {work.dialog}
     </Slab>
+  );
+}
+
+// The crash cart: a monitor and keyboard on a trolley, drawn large in front of the rack; the keyboard types into the machine's own console.
+function CrashCart({ deviceId, onClose }: { deviceId: string; onClose: () => void }) {
+  const game = useStore((s) => s.game);
+  const d = game.devices.find((x) => x.id === deviceId)!;
+  return (
+    <div className="wr-cart" data-cart-panel={deviceId}>
+      <div className="wr-cart-monitor">
+        <Screen game={game} device={d} via="monitor" />
+      </div>
+      <svg className="wr-cart-frame" viewBox="0 -20 640 270" aria-hidden="true">
+        <rect className="wr-cart-post" x="48" y="30" width="10" height="190" />
+        <rect className="wr-cart-post" x="582" y="30" width="10" height="190" />
+        <rect className="wr-cart-shelf" x="30" y="150" width="580" height="10" />
+        <rect className="wr-cart-tray" x="20" y="14" width="600" height="20" />
+        <rect className="wr-kb" x="110" y="-18" width="420" height="32" rx="3" />
+        {[0, 1, 2, 3].map((r) => Array.from({ length: r === 3 ? 9 : 19 }, (_, c) => <rect key={`${r}${c}`} className="wr-key" x={r === 3 ? 190 + c * 26 : 118 + c * 21.2} y={-14 + r * 7} width={r === 3 ? 22 : 18} height="5" />))}
+        {[48, 582].map((x) => <g key={x}><rect className="wr-cart-post" x={x - 6} y="220" width="22" height="8" /><circle className="wr-wheel" cx={x + 5} cy="238" r="10" /><circle className="wr-hub" cx={x + 5} cy="238" r="3" /></g>)}
+      </svg>
+      <button className="wr-cart-back" aria-label={t("world.toRack")} onClick={onClose} />
+    </div>
   );
 }
 
@@ -204,7 +234,7 @@ function withFault(g: GameState, it: RackItem): RackItem {
 }
 
 // The paper tag tied to a unit: its name and model, its LED, and its actions as lines written on the tag.
-function DeviceTag({ deviceId, renaming, onRenaming, entries, onPorts }: { deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; entries: () => ReturnType<ReturnType<typeof useDeviceMenu>["entries"]>; onPorts?: () => void }) {
+function DeviceTag({ deviceId, renaming, onRenaming, entries, onPorts, onCart }: { deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; entries: () => ReturnType<ReturnType<typeof useDeviceMenu>["entries"]>; onPorts?: () => void; onCart?: () => void }) {
   const game = useStore((s) => s.game);
   const d = game.devices.find((x) => x.id === deviceId)!;
   const m = modelById(d.model), lamps = deviceLamps(game, d.id, m);
@@ -219,6 +249,7 @@ function DeviceTag({ deviceId, renaming, onRenaming, entries, onPorts }: { devic
       <div className="wr-model">{m.kind === "server" ? `${d.brand} ${modelName(m, d.brand)}` : m.name}</div>
       <div className="wr-lines">
         {onPorts && <button className="wr-line" onClick={onPorts}>{t("locations-1.ports")}</button>}
+        {onCart && <button className="wr-line" data-cart="" onClick={onCart}>{t("world.console")}</button>}
         {items.map((e, i) => (e === null ? <hr key={i} /> : <Act key={i} e={e} />))}
       </div>
     </div>

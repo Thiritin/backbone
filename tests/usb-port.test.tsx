@@ -27,7 +27,7 @@ describe("front USB port", () => {
   });
 
   it("draws the trident on faces of two units or more only", () => {
-    const glyph = (svg: string) => svg.includes("l1.6-1");
+    const glyph = (svg: string) => svg.includes("l3-1.8");
     expect(glyph(face("g1-compute"))).toBe(false);
     expect(glyph(face("g1-memory"))).toBe(true);
     expect(glyph(face("g2-backup", "SuperMacro"))).toBe(true);

@@ -206,3 +206,16 @@
 /* Two rack backs side by side, and the provider's order slip between them. */
 .wr-pair { display: flex; align-items: flex-end; gap: 300px; }
 .wr-slip { left: 50%; top: auto; bottom: 96px; margin-left: calc(var(--tag-w) / -2); z-index: 3; }
+
+.wr-cart { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; background: oklch(0.22 0.018 255); }
+.wr-cart-monitor { width: min(560px, 92%); display: flex; flex-direction: column; flex: 0 0 auto; padding: 20px 20px 24px; border-radius: 10px; background: oklch(0.82 0.015 85); box-shadow: inset 0 0 0 2px oklch(0.7 0.02 85), 0 6px 0 oklch(0.15 0.01 255); }
+.wr-cart-frame { width: min(640px, 80%); margin-top: -6px; }
+.wr-cart-post { fill: oklch(0.45 0.015 255); }
+.wr-cart-shelf, .wr-cart-tray { fill: oklch(0.34 0.014 255); stroke: oklch(0.5 0.015 255); stroke-width: 2; }
+.wr-kb { fill: oklch(0.8 0.012 85); stroke: oklch(0.6 0.015 85); stroke-width: 1; }
+.wr-key { fill: oklch(0.96 0.008 85); }
+.wr-wheel { fill: oklch(0.16 0.008 255); stroke: oklch(0.5 0.015 255); stroke-width: 2; }
+.wr-hub { fill: oklch(0.6 0.015 255); }
+.wr-cart-back { position: absolute; top: 60px; left: 12px; width: 34px; height: 34px; border: 0; border-radius: 6px; background: oklch(0.3 0.012 255); color: oklch(0.9 0.01 255); cursor: pointer; }
+.wr-cart-back::before { content: "\2190"; font-size: 18px; }
+.wr-cart-back:hover { background: oklch(0.4 0.02 262); }

@@ -29,6 +29,7 @@ export default {
   "world.obj.parcels": (p) => `${p.n} encomendas`,
   "world.cableInHand": () => "Cabo na mão",
   "world.toRack": () => "Para outro rack",
+  "world.console": () => "Console",
   "world.dropCable": () => "Largar cabo",
   "world.newConnection": () => "Nova ligação daqui",
   "world.bookUplink": () => "Contratar uplink",

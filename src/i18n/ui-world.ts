@@ -30,6 +30,7 @@ export default {
   "world.obj.parcels": (p) => `${p.n} parcels`,
   "world.cableInHand": () => "Cable in hand",
   "world.toRack": () => "To another rack",
+  "world.console": () => "Console",
   "world.dropCable": () => "Drop cable",
   "world.newConnection": () => "New connection from here",
   "world.bookUplink": () => "Book uplink",
