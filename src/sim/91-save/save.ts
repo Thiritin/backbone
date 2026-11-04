@@ -13,7 +13,7 @@ import { legacyLicences } from "../60-infra/licence";
 import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
-import { BASEMENT, capacityAt, DATACENTERS, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
 import { mergeWebPanel } from "../60-infra/webpanel";
 import { fillBackups } from "../60-infra/backups";
@@ -118,7 +118,7 @@ export function deserialize(raw: string): GameState {
   // last year's capacity can't come from play (competitors refill every month), so it is reseeded for this year too.
   const year = yearOf(data.hour ?? 0);
   const seeded = seedDcs(data.seed, year);
-  const dcs = Object.fromEntries(DATACENTERS.map((dc) => {
+  const dcs = Object.fromEntries(Object.keys(seeded).map(datacenterById).map((dc) => {
     const kept = data.dcs?.[dc.id];
     return [dc.id, kept && kept.others >= REPAIR_FLOOR * capacityAt(dc, year - 1) ? kept : seeded[dc.id]];
   }));
@@ -135,7 +135,7 @@ export function deserialize(raw: string): GameState {
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
     // Saves from before contracts get one per rented location at today's price.
     contracts: data.contracts?.map((c: Contract) => ({ ...c, retainedAt: c.retainedAt ?? null })) ?? locations.filter((l) => l.dc).map((l, i) => {
-      const dc = DATACENTERS.find((d) => d.id === l.dc)!;
+      const dc = datacenterById(l.dc!);
       const space = l.space as "share" | "cage" | "suite";
       const size = space === "share" ? SHARE_RACKS.find((m) => m.id === racks.find((r) => r.locationId === l.id && r.provided)?.model)?.size ?? 1 : l.positions;
       return { id: `contract-old-${i}`, provider: dc.provider, dc: dc.id, locationId: l.id, space, positions: size, since: l.readyAt - 24 * LEAD_DAYS[space], monthly: spacePrice(dc, space, size), endsAt: null, retainedAt: null };

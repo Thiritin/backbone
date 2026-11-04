@@ -126,7 +126,7 @@ const POS: Record<string, [number, number]> = {
   "corespite-la1": [34.0485, -118.256], "equinox-la1": [34.053, -118.24],
 };
 
-export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages, power, aisles]) => ({
+export const ALL_DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages, power, aisles]) => ({
   id, name, provider, city, carriers, exchange: ex ? { name: ex, onSite } : null, feeds: ab ? "ab" : "single", backup, green,
   kwPerPosition: kw, positionPrice: price, powerFactor: factor, crossConnect: cross, remoteHands: { perHour, responseHours }, certified, cages, power, aisles,
   size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city), lat: POS[id][0], lon: POS[id][1],
@@ -134,7 +134,7 @@ export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, ca
 
 export const dcProvider = (id: string): Provider => PROVIDERS.find((p) => p.id === id)!;
 export const datacenterById = (id: string): Datacenter => {
-  const dc = DATACENTERS.find((d) => d.id === id);
+  const dc = ALL_DATACENTERS.find((d) => d.id === id);
   if (!dc) throw new Error(`unknown datacenter ${id}`);
   return dc;
 };
@@ -170,6 +170,8 @@ export const inUs = (city: string): boolean => REGIONS.some((r) => r.city === ci
 // The part of the world on offer; "all" brings the North American sites back to the map and the datacenter list.
 export const WORLD = "eu" as "eu" | "all";
 export const listed = (city: string): boolean => WORLD === "all" || !inUs(city);
+// Only the datacenters on offer; datacenterById still resolves the rest so an old save keeps loading.
+export const DATACENTERS: Datacenter[] = ALL_DATACENTERS.filter((d) => listed(d.city));
 // The region code plus the next free number in that region: fra1, fra2, ams1.
 export function nextAz(locations: { city: string; az?: string }[], city: string): string {
   const code = regionOf({ city }).id;
@@ -189,7 +191,7 @@ export function capacityAt(dc: Datacenter, year: number): number {
 }
 export const COMPETITOR_START = { min: 0.85, max: 0.97 } as const;
 // Competitors' positions per datacenter, drawn from the seed without touching the game's rng.
-export const seedDcs = (seed: number, year: number): Record<string, { others: number }> => Object.fromEntries(DATACENTERS.map((dc, i) => {
+export const seedDcs = (seed: number, year: number): Record<string, { others: number }> => Object.fromEntries(ALL_DATACENTERS.map((dc, i) => {
   const share = COMPETITOR_START.min + rand(hashRng(seed, i, 0xdc)) * (COMPETITOR_START.max - COMPETITOR_START.min);
   return [dc.id, { others: Math.round(capacityAt(dc, year) * share) }];
 }));

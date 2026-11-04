@@ -1,6 +1,6 @@
 import { newGame, type GameState } from "../50-state";
 import { challengeById } from "../10-catalog/challenges";
-import { capacityAt, DATACENTERS } from "../20-world/datacenters";
+import { capacityAt, datacenterById } from "../20-world/datacenters";
 import { EARLY_HOURS } from "../10-catalog/used";
 import { monthListings } from "../80-business/used";
 
@@ -25,6 +25,6 @@ export function startChallenge(id: string): GameState {
   s.challenge = c.id;
   const t = c.twist;
   if (t.kind === "line") s.homeLine = { id: t.line, next: null };
-  if (t.kind === "dc") s.dcs = Object.fromEntries(DATACENTERS.map((dc) => [dc.id, dc.id === t.dc ? s.dcs[dc.id] : { others: capacityAt(dc, 2005) }]));
+  if (t.kind === "dc") s.dcs = Object.fromEntries(Object.keys(s.dcs).map(datacenterById).map((dc) => [dc.id, dc.id === t.dc ? s.dcs[dc.id] : { others: capacityAt(dc, 2005) }]));
   return s;
 }

@@ -185,6 +185,9 @@ button.loc-node:hover { background: var(--hover); }
 .loc-node .k { font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
 .loc-node strong { font-weight: 600; white-space: nowrap; }
 .loc-node.here { border-color: var(--accent); }
+.loc-node .k { color: var(--text-2); }
+.loc-card-h .pill.ok { color: var(--text); background: color-mix(in oklch, var(--ok) 38%, transparent); }
+.loc-card-h .btn.danger { color: var(--text); border-color: var(--bad-text); }
 .loc-wire { flex: 1; min-width: 70px; position: relative; height: 3px; border-radius: 2px; background: oklch(0.62 0.14 250); }
 .loc-wire.fiber { background: oklch(0.72 0.12 195); }
 .loc-wire.dac { background: oklch(0.6 0.02 255); }

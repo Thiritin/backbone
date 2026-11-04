@@ -5,7 +5,7 @@ import { registrarById, registrarHost, REGISTRARS } from "../10-catalog/registra
 import { storeItem } from "../10-catalog/store";
 import { deliverMail } from "../42-mail/sources";
 import type { GameState, LedgerEntry } from "../50-state";
-import { COUNTRY, DATACENTERS, datacenterById } from "../20-world/datacenters";
+import { ALL_DATACENTERS as DATACENTERS, COUNTRY, datacenterById } from "../20-world/datacenters";
 import { cardReady, cardSpent, groupIban, iban, ibanEra } from "./bank";
 
 export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software";

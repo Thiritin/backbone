@@ -218,6 +218,7 @@ export default {
   "browser-sites-1.of.construction": () => "Im Aufbau",
   "browser-sites-1.of.constructionText": () => "Diese Seite befindet sich derzeit im Aufbau. Bitte besuchen Sie uns bald wieder.",
   "browser-sites-1.of.serviceClosed": () => "Der Online-Dienst ist geschlossen.",
+  "browser-sites-1.of.reopens": (p) => `Öffnet wieder am ${p.date}, um ${p.time} Uhr.`,
   "browser-sites-1.of.serverTime": (p) => `Serverzeit: ${p.time}`,
   "browser-sites-1.of.title": () => "Gewerbeamt Online",
   "browser-sites-1.of.subtitle": () => "Das offizielle eGovernment-Portal des Gewerbeamts",

@@ -43,7 +43,8 @@ describe("colocation provider sites", () => {
     const s = newGame(7);
     skipTo(s, year);
     for (const p of PROVIDERS) {
-      const dc = DATACENTERS.find((d) => d.provider === p.id)!;
+      const dc = DATACENTERS.find((d) => d.provider === p.id);
+      if (!dc) continue;
       for (const path of ["/", "/sites", `/sites/${dc.id}`, `/order?dc=${dc.id}&space=share&size=2`, "/account"]) {
         const html = renderToString(<ProviderSite game={s} id={p.id} path={path} go={() => {}} />);
         expect(html).toContain(path === "/" ? "ps ps-" : path === "/account" ? "password" : dc.name);

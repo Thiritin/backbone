@@ -24,6 +24,7 @@ describe("the router in the rack", () => {
     expect(err(connect(s, { device: "dev4", port: 6 }, { device: "dev6", port: 0 }))).toBe("error.mediaMismatch");
     ok(connect(s, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
     expect(linkStatus(s, "dev3").online).toBe(true);
+    expect(s.cables.find((c) => c.a.device === "dev5" && c.a.port === 4)?.kind).toBe("copper");
     ok(unmountDevice(s, "dev5"));
     expect(dev(s, "dev5").store).toBe("loc1");
     expect(linkStatus(s, "dev3").online).toBe(false);

@@ -422,6 +422,7 @@ export function PortCard({ game, device, model, port, peer, onSelect }: { game: 
   if (peer) {
     const cable = game.cables.find((c) => (c.a.device === device.id && c.a.port === port) || (c.b.device === device.id && c.b.port === port))!;
     const other = game.devices.find((d) => d.id === peer.device)!, om = modelById(other.model);
+    const dsl = here.media === "dsl";
     return (
       <div className="loc-card">
         <div className="loc-card-h">
@@ -431,7 +432,7 @@ export function PortCard({ game, device, model, port, peer, onSelect }: { game: 
         </div>
         <div className="loc-path">
           <div className="loc-node here"><span className="k">{devName(device)}</span><strong>{portName(model, port)}</strong></div>
-          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span>{cable.kind !== "provider" && <><span className="num">{Math.min(here.gbit, (om.ports[peer.port] ?? here).gbit)} Gbit/s</span> </>}{CABLE_NAME[cable.kind]}</span></div>
+          <div className={`loc-wire ${cable.kind}`} style={cable.color ? { background: cable.color } : undefined}><span>{cable.kind !== "provider" && !dsl && <><span className="num">{Math.min(here.gbit, (om.ports[peer.port] ?? here).gbit)} Gbit/s</span> </>}{dsl ? t("locations-1.phoneCable") : CABLE_NAME[cable.kind]}</span></div>
           <button className="loc-node" onClick={() => onSelect(other.id)}><span className="k">{other.panel ? t("locations-1.carrierPanel") : devName(other)}</span><strong>{other.panel ? `${other.name} ${portName(om, peer.port)}` : portName(om, peer.port)}</strong></button>
         </div>
         <ColorRow cable={cable} />

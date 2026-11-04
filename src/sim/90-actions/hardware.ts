@@ -727,7 +727,7 @@ export function connect(s: GameState, a: End, b: End, how: How | boolean = false
   const h = at ? viaHands(s, "connect", [a, b], at, how) : how;
   if (typeof h === "object") return h;
   const ma = modelById(da.model), mb = modelById(db.model), serial = [oobPortOf(ma, a.port), oobPortOf(mb, b.port)].includes("serial");
-  const kind = serial ? "rollover" : (ma.ports[a.port] ?? mb.ports[b.port] ?? { media: "rj45" }).media === "rj45" ? "copper" : da.rackId === db.rackId ? "dac" : "fiber";
+  const kind = serial ? "rollover" : ["rj45", "dsl"].includes((ma.ports[a.port] ?? mb.ports[b.port] ?? { media: "rj45" }).media) ? "copper" : da.rackId === db.rackId ? "dac" : "fiber";
   const id = newId(s, "cab");
   s.cables.push({ id, a: { ...a }, b: { ...b }, kind, color: null });
   return { ok: true, id };

@@ -43,7 +43,9 @@ describe("hand work options", () => {
   });
 
   it("is not offered overseas", () => {
-    const { s, loc, id } = setup("digitalreality-ash");
+    const { s, loc, id } = setup("equinox-du1");
+    // An old save can still hold an American location.
+    Object.assign(s.locations.find((l) => l.id === loc)!, { city: "Ashburn", dc: "digitalreality-ash" });
     expect(drive(s, loc)).toBeNull();
     expect(err(travelTo(s, loc))).toBe("error.tooFar");
     expect(handWork(s, loc)!.friend).toBeNull();

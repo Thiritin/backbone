@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CITIES, START_CASH } from "../src/sim/10-catalog/economy";
-import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
+import { ALL_DATACENTERS as DATACENTERS, BASEMENT, listed, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
 import { cpuLoad, freeSlots } from "../src/sim/60-infra/status";
 import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../src/sim/60-infra/status";
@@ -280,7 +280,7 @@ describe("rack shares", () => {
       return [loc(s, id).positions, loc(s, id).readyAt, r.provided, r.position, r.price, freeSlots(s, r.id, 1).length, rackPower(s, r.id).limitWatts];
     });
     expect(rows).toEqual([[1, 48, true, 1, 0, 4, 1000], [1, 48, true, 1, 0, 9, 2000], [1, 48, true, 1, 0, 20, 4000], [1, 48, true, 1, 0, 41, 8000]]);
-    for (const dc of DATACENTERS) expect(addLocation(rich(), dc.id, "share", 8).ok).toBe(true);
+    for (const dc of DATACENTERS.filter((d) => listed(d.city))) expect(addLocation(rich(), dc.id, "share", 8).ok).toBe(true);
   });
   it("mounts hardware into the provider rack and trips at the share's limit", () => {
     const s = rich();

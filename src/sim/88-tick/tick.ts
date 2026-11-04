@@ -85,7 +85,7 @@ import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
 import { deskItem, KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
 import { deskById } from "../10-catalog/desks";
-import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR, PROVIDERS } from "../20-world/datacenters";
+import { ALL_DATACENTERS, capacityAt, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR, PROVIDERS } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry, Location, PowerUse } from "../50-state";
 import { scoreTick } from "../80-business/scores";
 import { trendTick } from "../80-business/trend";
@@ -173,14 +173,14 @@ const setOthers = (s: GameState, id: string, others: number) => {
 
 // Every competitor position cancels with a small chance each month.
 function competitorsCancel(s: GameState) {
-  for (const dc of DATACENTERS) setOthers(s, dc.id, s.dcs[dc.id].others - binomial(s.rng, s.dcs[dc.id].others, CANCEL_CHANCE));
+  for (const dc of ALL_DATACENTERS) setOthers(s, dc.id, s.dcs[dc.id].others - binomial(s.rng, s.dcs[dc.id].others, CANCEL_CHANCE));
 }
 
 // In the first 3 months of an expansion phase competitors take a sixth of the new positions a month; otherwise they fill
 // free space down to a random level between 0% and 4% of capacity. Held and player space is never taken.
 function competitorsTake(s: GameState) {
   const year = yearOf(s.hour), month = dateOf(s.hour).getUTCMonth();
-  for (const dc of DATACENTERS) {
+  for (const dc of ALL_DATACENTERS) {
     const { capacity, free } = dcAvailability(s, dc.id);
     const phase = capacity - capacityAt(dc, year - 1);
     const take = phase > 0 && month < 3 ? Math.round(phase / 6) : free - Math.floor(rand(s.rng) * FREE_TARGET * capacity);

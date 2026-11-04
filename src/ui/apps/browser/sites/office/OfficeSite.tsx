@@ -1,9 +1,10 @@
 import { addressLine, officeAddress } from "../../../../../sim/60-infra/properties";
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
+import { LOCALE } from "../../../../../i18n/lang";
 import { dateOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
-import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, officeOpen } from "../../../../../sim/80-business/office";
+import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, nextOfficeOpen, officeOpen } from "../../../../../sim/80-business/office";
 import { registerCompany } from "../../../../../sim/90-actions/company";
 import { euroCents } from "../../../../../sim/00-core/money";
 import { euro } from "../../../../../sim/00-core/money";
@@ -170,10 +171,12 @@ function Body({ game, path, go }: { game: GameState; path: string; go: (url: str
   }
   if (game.registration) return <><h1>{t("browser-sites-1.of.eservice")}</h1><Extract game={game} /></>;
   if (!officeOpen(game.hour)) {
+    const reopen = dateOf(nextOfficeOpen(game.hour));
     return (
       <>
         <h1>{t("browser-sites-1.of.eservice")}</h1>
         <p className="to-closed">{t("browser-sites-1.of.serviceClosed")}</p>
+        <p>{t("browser-sites-1.of.reopens", { date: reopen.toLocaleDateString(LOCALE, { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }), time: reopen.toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) })}</p>
         <p>{t("browser-sites-1.of.serverTime", { time: clock(game.hour, game.minute) })}</p>
         <h2>{t("browser-sites-1.of.hours")}</h2>
         <Hours />
