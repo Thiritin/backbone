@@ -40,6 +40,7 @@ import {
 } from "./office";
 import { Closet } from "./office";
 import { hallScene } from "./hall";
+import { HallStrip, useEdit } from "./hall-edit";
 import "./world.css";
 
 // How dark a tripped room is drawn, darker than a night with the lights off.
@@ -74,6 +75,8 @@ export function World() {
   const [lit, setLit] = useState<string | null>(null);
   // The object a corkboard card points at, glowing for a moment after the close-up closes.
   const [hint, setHint] = useState<string | null>(null);
+  // The own hall is being edited.
+  const [editing, setEditing] = useState(false);
   const [rackOpen, setRackOpen] = useState<{ id: string; port?: End } | null>(null);
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
@@ -98,7 +101,7 @@ export function World() {
   useEffect(() => {
     if (shown.current === loc.id) return;
     shown.current = loc.id;
-    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setLights(looked[loc.id]?.lights ?? false); setFloor(null); setRackOpen(null); setPanel(null); setCable(null); setPair(null); setFrom(null);
+    setZoom(looked[loc.id]?.zoom ?? null); setOrg(looked[loc.id]?.org ?? null); setLights(looked[loc.id]?.lights ?? false); setFloor(null); setRackOpen(null); setPanel(null); setCable(null); setPair(null); setFrom(null); setEditing(false);
   }, [loc]);
   useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org, lights }; }, [loc.id, zoomSet, org, lights]);
   const box = { x: iso(0, h).x - 8, y: -WALL - 12, w: (w + h) * 32 + 16, h: (w + h) * 16 + WALL + 12 };
@@ -136,7 +139,7 @@ export function World() {
 
   // Escape drops a cable in progress; open panels close themselves.
   const escape = useRef(() => {});
-  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); };
+  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (useEdit.getState().drag) useEdit.getState().cancel(); else setEditing(false); } };
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
@@ -270,6 +273,7 @@ export function World() {
     stairs: () => { const fs = officeFloors(plan?.sections ?? []); setFloor(fs[(fs.indexOf(plan?.floor ?? 1) + 1) % fs.length]); setRackOpen(null); },
     light: () => setLights((v) => !v),
     board: () => setPanel({ kind: "board", title: t(label) }),
+    edit: () => setEditing((v) => !v),
     phone: () => {
       const g = useStore.getState().game, c = g.calls.find((x) => x.answeredAt === null) ?? g.calls[g.calls.length - 1] ?? null;
       if (c?.answeredAt === null) act(answerCall, c.id);
@@ -334,7 +338,7 @@ export function World() {
     closet: (f) => <Closet f={f} />,
     corkboard: (f) => office ? <ReceptionBoard f={f} {...pinned} /> : <Corkboard f={f} {...pinned} span={2} />,
   };
-  if (loc.space === "hall") hallScene(game, loc, plan, tiles, { w, h }, things, draw);
+  if (loc.space === "hall") hallScene(game, loc, plan, tiles, { w, h }, things, draw, editing);
   // A tripped room goes dark; its windows and lit bulbs are drawn again over the dark.
   const back: ReactNode[] = [], over: ReactNode[] = [], bright: ReactNode[] = [];
   for (const [id, f] of Object.entries(fx)) {
@@ -380,6 +384,7 @@ export function World() {
         <SpeedControl speed={speed} setSpeed={setSpeed} />
         <span className="num">{formatClock(game.hour, game.minute)}</span>
       </div>
+      {editing && loc.space === "hall" && <HallStrip loc={loc} onDone={() => setEditing(false)} />}
       {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
       {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} kind={panel.id ?? ""} onClose={() => setPanel(null)} />}
       {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}

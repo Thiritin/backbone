@@ -60,4 +60,12 @@ export default {
   "event.coloLeft.text": (p) => `${p.customer} ha retirado su rack de ${p.location}.`,
   "hall.room.transformer": () => "Transformador",
   "hall.room.meetme": () => "Sala meet-me",
+  "hall.room.plan": () => "Plano de la sala",
+  "hall.edit.done": () => "Listo",
+  "hall.edit.rack": (p) => `Rack de ${p.u}U`,
+  "hall.edit.row": () => "Fila",
+  "hall.edit.cooler": () => "Unidad de refrigeración",
+  "hall.edit.kw": (p) => `kW ${p.used} / ${p.max}`,
+  "hall.edit.cooling": (p) => `Refrigeración ${p.cool} / ${p.heat} kW`,
+  "hall.edit.places": (p) => `Posiciones ${p.used} / ${p.cap}`,
 } satisfies Dict;

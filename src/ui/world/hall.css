@@ -8,3 +8,22 @@
 .w-hall-sign { fill: oklch(0.96 0.005 250); stroke: oklch(0.5 0.01 250); stroke-width: 0.4; }
 .w-hall-sign-t { font-size: 3.4px; text-anchor: middle; fill: oklch(0.28 0.01 250); font-weight: 600; }
 .w-hall-cam { fill: oklch(0.32 0.01 255); }
+
+/* Edit mode: the grid, drop tiles, hot positions, the plan board and the parts strip. */
+.w-edit-grid { fill: none; stroke: oklch(0.6 0.016 250); stroke-width: 0.7; }
+.w-edit-ok { fill: oklch(0.7 0.15 150 / 0.7); }
+.w-edit-bad { fill: oklch(0.6 0.18 25 / 0.7); }
+.w-edit-hot { fill: oklch(0.8 0.11 65 / 0.65); }
+.w-edit-ghost { opacity: 0.55; }
+.w-edit-msg { fill: oklch(0.28 0.02 250); }
+.w-edit-msg-t { fill: oklch(0.97 0.005 250); font-size: 8px; text-anchor: middle; font-weight: 600; }
+.w-plan-frame { fill: oklch(0.45 0.03 250); }
+.w-plan-paper { fill: oklch(0.94 0.02 235); }
+.w-plan-row { fill: oklch(0.55 0.05 235); }
+.w-plan-cool { fill: oklch(0.7 0.1 200); }
+.w-parts { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 14px; padding: 8px 16px; background: oklch(0.24 0.02 250); color: oklch(0.95 0.005 250); font-size: 12px; }
+.w-parts-drop { background: oklch(0.38 0.1 25); }
+.w-parts-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: grab; touch-action: none; user-select: none; }
+.w-parts-art { display: block; width: auto; }
+.w-parts-meters { display: flex; flex-direction: column; gap: 2px; margin-left: auto; }
+.w-parts-done { background: oklch(0.36 0.02 250); color: oklch(0.95 0.005 250); border: 0; border-radius: 4px; padding: 6px 14px; font: inherit; cursor: pointer; }

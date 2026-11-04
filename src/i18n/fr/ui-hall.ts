@@ -60,4 +60,12 @@ export default {
   "event.coloLeft.text": (p) => `${p.customer} a retiré sa baie de ${p.location}.`,
   "hall.room.transformer": () => "Transfo",
   "hall.room.meetme": () => "Salle meet-me",
+  "hall.room.plan": () => "Plan de la salle",
+  "hall.edit.done": () => "Terminé",
+  "hall.edit.rack": (p) => `Baie ${p.u}U`,
+  "hall.edit.row": () => "Rangée",
+  "hall.edit.cooler": () => "Unité de refroidissement",
+  "hall.edit.kw": (p) => `kW ${p.used} / ${p.max}`,
+  "hall.edit.cooling": (p) => `Refroidissement ${p.cool} / ${p.heat} kW`,
+  "hall.edit.places": (p) => `Emplacements ${p.used} / ${p.cap}`,
 } satisfies Dict;

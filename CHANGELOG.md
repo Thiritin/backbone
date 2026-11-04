@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- In your own hall you can click the floor plan on the wall to lay out rows, racks and cooling units by dragging them, and sell them by dropping them on the parts strip.
 - In your own hall you now choose which positions to rent out, larger customers rent cages from 2015, customers order cross-connects in your meet-me area, and a busy hall draws carriers and the city's exchange.
 - Ordered spare parts show when they arrive instead of being ordered twice, provider jacks carry readable labels, and uplinks are offered once you know network operations.
 - Location names in the sidebar, office section labels and the mail search field fit on one line, and the wallpaper and Weather list show city names in your language.

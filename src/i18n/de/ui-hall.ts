@@ -60,4 +60,12 @@ export default {
   "event.coloLeft.text": (p) => `${p.customer} hat sein Rack aus ${p.location} geholt.`,
   "hall.room.transformer": () => "Trafo",
   "hall.room.meetme": () => "Meet-Me-Raum",
+  "hall.room.plan": () => "Hallenplan",
+  "hall.edit.done": () => "Fertig",
+  "hall.edit.rack": (p) => `${p.u}-HE-Rack`,
+  "hall.edit.row": () => "Reihe",
+  "hall.edit.cooler": () => "Kühlgerät",
+  "hall.edit.kw": (p) => `kW ${p.used} / ${p.max}`,
+  "hall.edit.cooling": (p) => `Kühlung ${p.cool} / ${p.heat} kW`,
+  "hall.edit.places": (p) => `Plätze ${p.used} / ${p.cap}`,
 } satisfies Dict;

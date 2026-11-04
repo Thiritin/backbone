@@ -4,10 +4,9 @@
 import type { ReactNode } from "react";
 import { t } from "../../i18n/en";
 import { customerTiles, rowTiles, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
-import { HALL } from "../../sim/20-world/properties";
 import type { GameState, HallRow, Location } from "../../sim/50-state";
-import { layRow, rowInUse } from "../../sim/90-actions/hall";
-import { useStore } from "../store";
+import { coverage } from "../../sim/60-infra/thermal";
+import { editThings, Cooler, PlanBoard } from "./hall-edit";
 import { at3, Door, Night, onX, onY, pts, Prism, rackHeight, RackBox, Shimmer, Tubes, WALL } from "./draw";
 import { iso } from "./grid";
 import "./hall.css";
@@ -17,30 +16,6 @@ const STEP: Record<HallRow["facing"], [number, number]> = { n: [0, -1], e: [1, 0
 const key = (p: { x: number; y: number }) => `${p.x},${p.y}`;
 // Cable trays hang just above the rack tops, under the tubes.
 const TRAY_Z = rackHeight(42) + 2;
-
-// A row being dragged: which tile of it was grabbed. The drop lays the row so that tile lands under the pointer.
-let grabbed: { loc: string; row: HallRow; index: number } | null = null;
-
-function drop(e: PointerEvent, svg: SVGSVGElement) {
-  const g = grabbed;
-  grabbed = null;
-  const ctm = svg.getScreenCTM();
-  if (!g || !ctm) return;
-  const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
-  const x = Math.floor((p.x / 32 + p.y / 16) / 2), y = Math.floor((p.y / 16 - p.x / 32) / 2);
-  const along = g.row.facing === "n" || g.row.facing === "s";
-  const to = { x: along ? x - g.index : x, y: along ? y : y - g.index };
-  if (to.x !== g.row.x || to.y !== g.row.y) useStore.getState().act(layRow, g.loc, { ...g.row, ...to });
-}
-
-function grab(e: React.PointerEvent, loc: string, row: HallRow, index: number) {
-  if (e.button) return;
-  e.stopPropagation();
-  const svg = (e.target as SVGElement).ownerSVGElement;
-  if (!svg) return;
-  grabbed = { loc, row, index };
-  window.addEventListener("pointerup", (ev) => drop(ev, svg), { once: true });
-}
 
 const Mark = ({ tile }: { tile: Tile }) => {
   const i = 0.12;
@@ -74,13 +49,14 @@ const Camera = ({ f }: { f: Fixture }) => (
 );
 
 export function hallScene(game: GameState, loc: Location, plan: OfficePlan | undefined, tiles: Record<string, Tile>, size: { w: number; h: number },
-  things: Thing[], draw: Record<string, (f: Fixture) => ReactNode>): void {
+  things: Thing[], draw: Record<string, (f: Fixture) => ReactNode>, editing = false): void {
   const hall = plan?.hall;
   if (!hall) return;
   Object.assign(draw, {
     xfmrdoor: (f: Fixture) => <ServiceDoor f={f} label={t("hall.room.transformer")} />,
     meetmedoor: (f: Fixture) => <ServiceDoor f={f} label={t("hall.room.meetme")} />,
-    planboard: () => null,
+    planboard: (f: Fixture) => <PlanBoard f={f} />,
+    cooling: (f: Fixture) => <Cooler f={f} />,
     camera: (f: Fixture) => <Camera f={f} />,
   });
   const taken = new Set(Object.values(tiles).map(key)), customers = customerTiles(loc, plan);
@@ -93,24 +69,14 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
     const [x, y] = k.split(",").map(Number);
     things.push({ depth: -2, node: <polygon key={`aisle${k}`} className="w-hall-aisle" pointerEvents="none" points={pts(iso(x, y), iso(x + 1, y), iso(x + 1, y + 1), iso(x, y + 1))} /> });
   }
-  for (const r of hall.rows) {
-    const free = !rowInUse(game, loc.id, r.id);
-    rowTiles(r).forEach((tl, i) => {
-      if (taken.has(key(tl))) return;
-      things.push({ depth: -1, node: (
-        <g key={`mark${key(tl)}`} className={free ? "w-hall-drag" : undefined} role={free ? "button" : undefined} aria-label={free ? t("hall.row", { n: hall.rows.indexOf(r) + 1 }) : undefined}
-          aria-hidden={free ? undefined : true} onPointerDown={free ? (e) => grab(e, loc.id, r, i) : undefined}>
-          <Mark tile={tl} />
-        </g>
-      ) });
-    });
-  }
+  for (const r of hall.rows)
+    rowTiles(r).forEach((tl) => { if (!taken.has(key(tl))) things.push({ depth: -1, node: <g key={`mark${key(tl)}`} aria-hidden pointerEvents="none"><Mark tile={tl} /></g> }); });
   for (const c of customers)
     things.push({ depth: c.tile.x + c.tile.y, node: <g key={`colo${c.id}`} aria-label={c.name}><RackBox tile={c.tile} units={42} items={[]} leds={[]} zoomed={false} mesh neighbour /><Lock tile={c.tile} /></g> });
-  // Positions past the cooled count shimmer while the hall carries heat.
-  const cooled = hall.coolers.length * HALL.cooling.positions, all = hall.rows.flatMap(rowTiles);
+  // Positions no cooling unit covers shimmer while the hall carries heat.
+  const cov = coverage(game, loc), all = hall.rows.flatMap(rowTiles);
   if ((game.ops.heat[loc.id] ?? 0) > 0.5)
-    all.slice(cooled).filter((tl) => taken.has(key(tl))).forEach((tl) => things.push({ depth: tl.x + tl.y + 0.9, node: <Shimmer key={`hot${key(tl)}`} tile={tl} z={rackHeight(42)} /> }));
+    all.filter((tl, i) => cov[i] === false && taken.has(key(tl))).forEach((tl) => things.push({ depth: tl.x + tl.y + 0.9, node: <Shimmer key={`hot${key(tl)}`} tile={tl} z={rackHeight(42)} /> }));
   const trays = (
     <g key="trays" pointerEvents="none" aria-hidden>
       {hall.rows.map((r) => {
@@ -121,5 +87,6 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
     </g>
   );
   things.push({ depth: 1e6, node: trays });
+  if (editing) editThings(game, loc, plan, size, tiles, (depth, node) => things.push({ depth, node }));
   if (loc.tripped) things.push({ depth: 1e9, node: <Night key="dark" w={size.w} h={size.h} opacity={0.6} /> });
 }

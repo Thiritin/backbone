@@ -60,4 +60,12 @@ export default {
   "event.coloLeft.text": (p) => `${p.customer} has moved its rack out of ${p.location}.`,
   "hall.room.transformer": () => "Transformer",
   "hall.room.meetme": () => "Meet-me room",
+  "hall.room.plan": () => "Floor plan",
+  "hall.edit.done": () => "Done",
+  "hall.edit.rack": (p) => `${p.u}U rack`,
+  "hall.edit.row": () => "Row",
+  "hall.edit.cooler": () => "Cooling unit",
+  "hall.edit.kw": (p) => `kW ${p.used} / ${p.max}`,
+  "hall.edit.cooling": (p) => `Cooling ${p.cool} / ${p.heat} kW`,
+  "hall.edit.places": (p) => `Positions ${p.used} / ${p.cap}`,
 } satisfies Dict;
