@@ -248,6 +248,7 @@ export const en: Record<string, (p: Params) => string> = {
   "error.unknownComponent": () => "This component no longer exists.",
   "error.busy": () => "A swap is already under way on this device.",
   "error.handWork": () => "Hand work on this device is still under way.",
+  "error.noPower": () => "No power",
   "error.noPart": () => "This zone's storage has no matching spare part.",
   "error.powerOffFirst": () => "Power the device off first.",
   "error.unplugFirst": () => "Unplug the device's power cords first.",

@@ -42,15 +42,18 @@ export function RoomCables({ game, loc, tiles, fx, onOpen }: { game: GameState; 
     <g className="w-cables">
       {runs.map(({ c, a, b }, i) => {
         const lane = 0.12 + (i % 10) * 0.035;
-        const d = [[a.x, a.y, a.z], [a.x, a.y, TRAY], [a.x, lane, TRAY], [b.x, lane, TRAY], [b.x, b.y, TRAY], [b.x, b.y, b.z]]
-          .map(([x, y, z], k) => { const p = at3(x, y, z); return `${k ? "L" : "M"}${p.x} ${p.y}`; }).join("");
+        const pts = [[a.x, a.y, a.z], [a.x, a.y, TRAY], [a.x, lane, TRAY], [b.x, lane, TRAY], [b.x, b.y, TRAY], [b.x, b.y, b.z]]
+          .map(([x, y, z]) => at3(x, y, z));
+        const line = (ps: typeof pts) => ps.map((p, k) => `${k ? "L" : "M"}${p.x} ${p.y}`).join("");
+        // Only the run along the tray takes clicks; the risers over a rack leave the rack clickable.
+        const d = line(pts), hit = line(pts.slice(1, 5));
         // The nearer rack end opens.
         const [near, end] = !b.rack || (a.rack && a.x + a.y >= b.x + b.y) ? [a.rack!, c.a] : [b.rack, c.b];
         return (
           <g key={c.id} className="w-cable" data-cable={c.id} role="button" aria-label={`${endName(game, c.a)} ↔ ${endName(game, c.b)}`}
             onClick={(e) => { e.stopPropagation(); onOpen(near, end); }}>
             <title>{`${endName(game, c.a)} ↔ ${endName(game, c.b)}`}</title>
-            <path className="w-cable-hit" d={d} />
+            <path className="w-cable-hit" d={hit} />
             <path className="w-cable-line" d={d} stroke={cableColor(c)} />
           </g>
         );

@@ -183,6 +183,7 @@ export default {
   "error.unknownComponent": () => "Diese Komponente gibt es nicht mehr.",
   "error.busy": () => "An diesem Gerät läuft bereits ein Austausch.",
   "error.handWork": () => "Die Arbeit an diesem Gerät läuft noch.",
+  "error.noPower": () => "Kein Strom",
   "error.noPart": () => "Im Lager dieser Zone liegt kein passendes Ersatzteil.",
   "error.powerOffFirst": () => "Schalte das Gerät zuerst aus.",
   "error.unplugFirst": () => "Ziehe zuerst die Stromkabel des Geräts ab.",

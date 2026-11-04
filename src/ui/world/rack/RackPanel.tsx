@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
-import { modelById, modelName } from "../../../sim/10-catalog/hardware";
+import { modelById, modelName, wanPort } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { deviceHealth, heightIn, mountFrom, portPeers } from "../../../sim/60-infra/status";
+import { connectError, deviceHealth, heightIn, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
 import { present } from "../../../sim/60-infra/handwork";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
@@ -110,6 +110,19 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
     if (act(connect, hand, e).ok) { onHand(null); pick(null); setPort(e); }
   };
   const title = (e: End) => { const p = peerOf(e); return `${endName(game, e)} ↔ ${p ? endName(game, p) : t("locations-1.free")}`; };
+  // What the first cabling still lacks: the router's line, a link between router and server, and a server's power.
+  const needs: string[] = [];
+  for (const d of game.devices.filter((x) => x.rackId === rack.id)) {
+    const m = modelById(d.model), peers = portPeers(game, d.id), data = m.ports.map((p, i) => ({ p, i })).filter(({ p }) => p.media === "rj45" || p.media === "dsl");
+    if (m.kind === "gateway") {
+      const wan = wanPort(m), lan = data.find(({ i }) => i !== wan);
+      if (wan >= 0 && !peers[wan]) needs.push(`${d.id}:${wan}`);
+      if (lan && !data.some(({ i }) => i !== wan && peers[i])) needs.push(`${d.id}:${lan.i}`);
+    } else if (m.kind === "server") {
+      if (data[0] && !data.some(({ i }) => peers[i])) needs.push(`${d.id}:${data[0].i}`);
+      if (!pluggedIn(d)) d.components.filter((c) => c.kind === "psu").forEach((_, k) => needs.push(`${d.id}#psu${k}`));
+    }
+  }
   const away = (e: End) => { if (!peerOf(e)) { onHand(e); onClose(); } };
 
   const entries = (d: Device) => [...menus.entries(d), ...(onConnectFrom ? [null, { label: t("world.newConnection"), run: () => onConnectFrom(d.id) }] : [])];
@@ -125,7 +138,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
   const face = (side: boolean) => side ? (
     <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U} duct
-      selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title}
+      selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title} needs={needs} canLink={(a, b) => !connectError(game, a, b)}
       onPlug={(id, k) => { const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k]; if (d && psu) menus.plug(d, psu.id); }}
       onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }} />
   ) : (

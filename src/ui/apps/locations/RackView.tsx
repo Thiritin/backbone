@@ -7,7 +7,7 @@ import { routerPassword } from "../../../sim/60-infra/lan";
 import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
-import { EXTRA_CIRCUIT_KW, flatOffer, heightIn, freePositions, freeSlots, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
+import { EXTRA_CIRCUIT_KW, flatOffer, heightIn, freePositions, freeSlots, isPlugged, pluggedIn, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
 import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveInRack, moveRack, moveServer, sellRack, setExtraPower, setFeed, setFlatPower } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
@@ -33,7 +33,7 @@ import { HandsButtons, HandsJobs, handsWays, jobBadge, useHandWork, type HandsHo
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
     const model = modelById(d.model);
-    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), stick: g.media.stick.in === d.id, note: modelById(d.model).kind === "gateway" && isOfficeRouter(model) ? routerPassword(g, d.id) : undefined, badge: jobBadge(g, d.id), ...deviceLamps(g, d.id, model) };
+    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), stick: g.media.stick.in === d.id, note: modelById(d.model).kind === "gateway" && isOfficeRouter(model) ? routerPassword(g, d.id) : undefined, badge: jobBadge(g, d.id) ?? (model.kind === "server" && !pluggedIn(d) ? t("locations-1.stNoPower") : undefined), badgeFault: !jobBadge(g, d.id) && model.kind === "server" && !pluggedIn(d), ...deviceLamps(g, d.id, model) };
   });
 }
 

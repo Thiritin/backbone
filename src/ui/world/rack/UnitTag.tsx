@@ -5,7 +5,7 @@ import { euro } from "../../../sim/00-core/money";
 import { isOfficeRouter, modelById, modelName } from "../../../sim/10-catalog/hardware";
 import { routerPassword } from "../../../sim/60-infra/lan";
 import type { Device } from "../../../sim/50-state";
-import { deviceHealth, deviceValue } from "../../../sim/60-infra/status";
+import { deviceHealth, deviceValue, pluggedIn } from "../../../sim/60-infra/status";
 import { sellDevice } from "../../../sim/90-actions/hardware";
 import { deviceLamps, devName, partLabel } from "../../apps/hw";
 import { secondPsuPrice } from "../../apps/locations/deviceMenu";
@@ -58,7 +58,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const d = game.devices.find((x) => x.id === deviceId)!;
-  const state = POWER[deviceHealth(game, d.id).state][0], m = modelById(d.model), lamps = deviceLamps(game, d.id, m), failed = d.components.filter((c) => c.failedAt !== null);
+  const m = modelById(d.model), state = POWER[m.kind === "server" && d.rackId && !pluggedIn(d) ? "nopower" : deviceHealth(game, d.id).state][0], lamps = deviceLamps(game, d.id, m), failed = d.components.filter((c) => c.failedAt !== null);
   const [armed, setArmed] = useState(false), [flip, setFlip] = useState<number | null>(null), [slip, setSlip] = useState(false);
   useEffect(() => { setArmed(false); setFlip(null); setSlip(false); }, [deviceId]);
   // The key disarms when the server goes off by other means.
@@ -93,7 +93,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
     setArmed(false);
     if (options.some((o) => o.op === "shutdown")) menus.op(d, "shutdown"); else menus.power(d, false);
   };
-  const lampOn = d.on ? "on" : "off", pending = menus.pending;
+  const lampOn = d.on && !(rackServer && !pluggedIn(d)) ? "on" : "off", pending = menus.pending;
 
   return (
     <div className="wr-tag-body" data-device={d.id}>

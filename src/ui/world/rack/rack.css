@@ -120,7 +120,9 @@
 .wr-cab .rack-hand { fill: color-mix(in oklch, var(--accent) 50%, transparent); stroke: var(--accent); stroke-width: 1.5; }
 .wr-cab .rack-port { cursor: pointer; }
 .wr-cab .rack-port:hover { fill: color-mix(in oklch, var(--accent) 30%, transparent); }
-.wr-cab .rack-drag { stroke: oklch(0.62 0.14 245); stroke-width: 2.4; stroke-dasharray: none; stroke-linecap: round; }
+.wr-cab .rack-drag { stroke: oklch(0.7 0.15 235); stroke-width: 3; }
+.wr-cab .rack-drag.rack-edge { stroke: oklch(0.15 0.03 245); stroke-width: 5.4; }
+.wr-cab .rack-drag { stroke-width: 3; stroke-dasharray: none; stroke-linecap: round; }
 .wr-cab .rack-plug { fill: oklch(0.85 0.02 245); stroke: oklch(0.4 0.05 245); stroke-width: 0.8; }
 .wr-card .loc-card { color: var(--text); border: 0; box-shadow: none; }
 .wr-card .loc-card-h { background-image: none; }
@@ -256,4 +258,23 @@
 .wk-slip-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 10px; }
 .wk-stamp { padding: 6px 10px; border: 2px solid oklch(0.5 0.2 27); border-radius: 0; background: none; color: oklch(0.45 0.2 27); font: inherit; font-size: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; transform: rotate(-3deg); }
 .wk-stamp:hover { background: oklch(0.5 0.2 27); color: oklch(0.98 0.01 27); }
+
+/* Cabling: valid targets light up strongly, required ports carry a pulsing marker, a seated plug flashes and a pulled cord stretches then pops free. */
+.wr-cab .rack-ok { fill: color-mix(in oklch, oklch(0.82 0.16 215) 75%, transparent); stroke: oklch(0.97 0.02 215); stroke-width: 2.4; animation: rack-ok 0.9s ease-in-out infinite alternate; }
+.wr-cab .rack-no { cursor: not-allowed; }
+.wr-cab .rack-seated { cursor: grab; }
+.wr-cab .rack-seated:hover, .wr-cab .rack-seated:focus-visible { fill: color-mix(in oklch, var(--accent) 35%, transparent); stroke: var(--accent); stroke-width: 2; }
+.wr-cab .rack-need { fill: oklch(0.84 0.18 80); stroke: oklch(0.2 0.03 80); stroke-width: 2.4; stroke-linejoin: round; animation: rack-need 1.2s ease-in-out infinite alternate; }
+.wr-cab .rack-seat { animation: rack-seat 0.9s ease-out; }
+.wr-cab .rack-pull circle { fill: none; stroke: oklch(0.82 0.16 215); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.wr-cab .rack-pull path { fill: none; stroke: oklch(0.82 0.16 215); stroke-width: 3; stroke-linecap: round; }
+.wr-cab .rack-pull rect { fill: oklch(0.85 0.02 245); stroke: oklch(0.3 0.05 245); stroke-width: 1; }
+.wr-cab .rack-pull.free circle { stroke: oklch(0.7 0.2 27); stroke-dasharray: none; }
+.wr-cab .rack-pull.free path { stroke: oklch(0.7 0.2 27); stroke-dasharray: 2 5; }
+.wr-cab .rack-pull.free rect { fill: oklch(0.7 0.2 27); }
+@keyframes rack-ok { from { fill-opacity: 0.6; } to { fill-opacity: 1; } }
+@keyframes rack-need { from { opacity: 1; } to { opacity: 0.45; } }
+@keyframes rack-seat { 0%, 60% { fill: color-mix(in oklch, oklch(0.78 0.2 145) 70%, transparent); stroke: oklch(0.78 0.2 145); stroke-width: 2; } 100% { fill: transparent; stroke-width: 0; } }
+@media (prefers-reduced-motion: reduce) { .wr-cab .rack-seat, .wr-cab .rack-need, .wr-cab .rack-ok { animation: none; } }
+
 .wk-label-pw { margin-top: 4px; font: 700 16px var(--mono, monospace); letter-spacing: 0.04em; color: oklch(0.25 0.02 60); user-select: all; }

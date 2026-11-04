@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Cabling in the rack back view now shows which ports to connect, lights the valid targets while you drag a cable, needs a deliberate pull to unplug a power cord, and a server without a plugged power cord shows Kein Strom and refuses to start.
 - The first-steps guide now tells you exactly how to pay for a server, boot the installer from the USB stick and read the router password, and the quote and credit card steps explain themselves.
 - Seasons now change the world outside: blossom in spring, golden autumn leaves that fall, bare winter trees, snow that settles and melts, rain, and a receptionist and seated staff in the lobby; clicking your car in its parking bay leaves for another location.
 - Server actions in the rack close-up are now keys on a small paper tag with a power button, a console key and a ports key, and selling or switching off something that takes other gear offline asks on a paper slip with a stamp.

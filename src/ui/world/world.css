@@ -214,7 +214,8 @@
 /* Cables between racks along the tray, and the racks that take the cable in hand. */
 .w-cable { cursor: pointer; }
 .w-cable-line { fill: none; stroke-width: 1.4; stroke-linejoin: round; opacity: 0.85; pointer-events: none; }
-.w-cable-hit { fill: none; stroke: transparent; stroke-width: 8; }
+.w-cables, .w-cable { pointer-events: none; }
+.w-cable-hit { fill: none; stroke: transparent; stroke-width: 8; pointer-events: stroke; }
 .w-cable:hover .w-cable-line { stroke-width: 2.6; opacity: 1; }
 .w-glow { filter: drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 8px var(--accent)); }
 .w-link { fill: none; stroke: oklch(0.62 0.13 150); stroke-width: 2; stroke-linecap: round; }

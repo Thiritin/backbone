@@ -89,6 +89,7 @@
   display: grid; justify-items: center; gap: 12px; text-align: center;
   background: var(--win); border: var(--ar-bw, 0.5px) solid var(--line-strong); border-top: none;
   border-radius: 0 0 var(--ar-sheet, 12px) var(--ar-sheet, 12px); box-shadow: 0 10px 28px oklch(0 0 0 / 0.28);
+  max-height: calc(100% - 56px); overflow-y: auto; align-content: start;
 }
 .pm-sheet-icon { width: 56px; height: 56px; }
 .pm-sheet h2 { font-size: 15px; font-weight: 650; }
@@ -101,7 +102,7 @@
 .pm-summary dt { text-align: right; color: var(--text-2); }
 .pm-summary dd { margin: 0; overflow-wrap: anywhere; }
 .pm-error { color: var(--bad-text); font-size: 12.5px; }
-.pm-sheet-buttons { display: flex; gap: 8px; width: 100%; }
+.pm-sheet-buttons { display: flex; gap: 8px; width: 100%; position: sticky; bottom: -20px; padding: 8px 0 20px; margin-bottom: -20px; background: var(--win); }
 
 /* Panthera, as Mail 2: title bar and toolbar are one grey gradient, buttons sit in glossy capsules, the mailbox list is pale blue. */
 :root[data-os="aqua"] .window:has(.pm) .titlebar { background: linear-gradient(oklch(0.9 0 0), oklch(0.83 0 0)); border-bottom: none; }
@@ -147,7 +148,7 @@
 .pm-table tr[data-color="purple"] { --pm-tint: oklch(0.65 0.16 305); }
 .pm-table tr[data-color="gray"] { --pm-tint: oklch(0.7 0 0); }
 
-.pm-rule, .pm-prefs { width: min(640px, 92%); align-items: stretch; text-align: left; max-height: 90%; overflow: auto; }
+.pm-rule, .pm-prefs { width: min(640px, 92%); align-items: stretch; text-align: left; }
 .pm-conds { display: grid; gap: 6px; }
 .pm-cond { display: flex; gap: 6px; align-items: start; flex-wrap: wrap; }
 .pm-cond > select, .pm-cond > input { flex: 1; min-width: 0; }
@@ -191,3 +192,4 @@
 .pm-subtabs button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .pm-whatsnew { margin: 0; padding-left: 18px; text-align: left; font-size: 12.5px; }
 .pm-warn.closed { color: var(--text-3); }
+

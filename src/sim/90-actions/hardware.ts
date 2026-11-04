@@ -772,11 +772,15 @@ export function setPortGroup(s: GameState, switchId: string, ports: number[]): A
 }
 
 // A hard power-off, the pulled plug: workloads that ran may corrupt. Switching on boots the server.
+// A unit whose power supplies all have their cord out cannot start.
+const unfed = (d: Device) => psusOf(d).length > 0 && !psusOf(d).some(isPlugged);
+
 export function setPower(s: GameState, deviceId: string, on: boolean): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (!d.rackId && !d.panel) return fail("error.notMounted");
   if (on && d.maintenance?.mount) return fail("error.handWork");
+  if (on && !d.on && unfed(d)) return fail("error.noPower");
   if (on && !d.on) bootUp(s, d);
   else if (!on && d.on) pullPlug(s, d);
   return { ok: true };
@@ -881,6 +885,7 @@ export function atServer(s: GameState, deviceId: string, op: FrontOp, how: How |
   const cords = psusOf(d);
   if ((op === "hold" || op === "reset") && !d.on) return fail("error.alreadyOff");
   if (op === "power" && d.on && !takesShutdown(s, d)) return fail("error.unresponsive");
+  if (op === "power" && !d.on && unfed(d)) return fail("error.noPower");
   if (op === "pull" && !cords.some(isPlugged)) return fail("error.unplugged");
   if (op === "plug" && cords.every(isPlugged)) return fail("error.plugged");
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, 0);
