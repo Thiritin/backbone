@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Alert buttons, the basement's name and the getting-started icon are now translated, and the port tag on the rack back reads clearly.
 - Port tags on the rack back, the captions in the opened server and the place names on the travel map no longer overlap or run off, the router card on the corkboard tells you to cable the router on the shelf, and the add-location table and its button fit the dialog.
 - The street scenes before and after a drive are now drawn in the same clean style as the rooms.
 - Drawing too much power for an hour trips the breaker and the room goes dark until you reset it in the fuse box with less load, while at a datacenter the provider resets it for a remote hands fee; the room also warms with its draw and the window fan spins when it gets warm.

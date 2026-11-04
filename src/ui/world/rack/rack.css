@@ -67,6 +67,11 @@
 .wr-tag-h { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
 .wr-tag-h .loc-label button { color: inherit; font: inherit; }
 .wr-tag .wr-model { display: block; margin-top: 2px; color: oklch(0.45 0.03 60); }
+.wr-tag .loc-node { background: oklch(0.985 0.01 85); border-color: oklch(0.72 0.03 80); color: var(--text); }
+.wr-tag .loc-node .k { color: var(--text-2); }
+.wr-tag .loc-node.here { border-color: oklch(0.45 0.12 150); }
+.wr-tag .pill.ok { background: oklch(0.42 0.1 150); color: oklch(0.98 0.01 150); }
+.wr-tag .btn.danger { color: var(--text); }
 .wr-tag .wr-fault { color: oklch(0.5 0.2 27); font-weight: 600; }
 .wr-lines { display: flex; flex-direction: column; margin-top: 10px; border-top: 1px solid oklch(0.8 0.03 80); }
 .wr-lines hr { height: 0; margin: 4px 0; border: 0; border-top: 1px dashed oklch(0.78 0.03 80); }

@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { syncProviderPanels } from "../90-actions/connectivity";
 import { fillDesk } from "./desk";
 import { fillShopWebspace } from "../90-actions/shop-setup";
@@ -75,7 +76,7 @@ export function deserialize(raw: string): GameState {
   const locations: GameState["locations"] = [];
   // The basement's tower shelf is gone, and rack positions became cages.
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {
-    locations.push({ ...l, space: (l.space as string) === "positions" ? "cage" : l.space, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false, tripped: l.tripped ?? false, ...(l.space === "basement" && { positions: BASEMENT.positions }) });
+    locations.push({ ...l, space: (l.space as string) === "positions" ? "cage" : l.space, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false, tripped: l.tripped ?? false, ...(l.space === "basement" && { positions: BASEMENT.positions, name: t("location.basement") }) });
   }
   // Older saves had one stockroom; its units go to the first location.
   const stored = (d: Device) => d.store !== undefined ? d.store : !d.rackId && !d.panel ? locations[0].id : null;

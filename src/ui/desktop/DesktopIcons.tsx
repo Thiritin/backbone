@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
 import type { Doc } from "../../sim/50-state";
 import { addNote, editNote, moveDoc, removeDoc } from "../../sim/90-actions/docs";
-import { APPS, appFor } from "../apps/registry";
+import { APPS, appFor, appTitle } from "../apps/registry";
 import { useStore } from "../store";
 import { Confirm } from "./Confirm";
 import { menuOn, openMenu } from "./ContextMenu";
@@ -127,7 +127,7 @@ export function DesktopIcons() {
                 }}
                 onBlur={(e) => rename(d, e.currentTarget.value)}
               />
-            ) : <span className="di-label">{app?.name ?? d.title}</span>}
+            ) : <span className="di-label">{d.kind === "guide" ? t("doc.guide") : app ? appTitle(app) : d.title}</span>}
           </div>
         );
       })}
