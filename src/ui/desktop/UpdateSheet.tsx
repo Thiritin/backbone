@@ -5,12 +5,12 @@ import { createPortal } from "react-dom";
 import type { ChangelogDay } from "../changelog";
 import { ChangeList } from "./ChangeList";
 
-interface Props { changes: ChangelogDay[]; onLater: () => void }
+interface Props { changes: ChangelogDay[]; install?: () => Promise<void>; onLater: () => void }
 
 const MAX_ITEMS = 12;
 
 // The sheet shown when a newer build is deployed, with what changed since this one; windows and the game survive the reload.
-export function UpdateSheet({ changes, onLater }: Props) {
+export function UpdateSheet({ changes, install, onLater }: Props) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => e.key === "Escape" && onLater();
     window.addEventListener("keydown", key);
@@ -22,11 +22,11 @@ export function UpdateSheet({ changes, onLater }: Props) {
       <div className="alert" role="alertdialog" aria-modal="true" aria-labelledby="update-title" aria-describedby="update-text">
         <span className="alert-icon"><RefreshCw /></span>
         <h2 id="update-title">{t("desktop.update.title")}</h2>
-        <p id="update-text">{t("desktop.update.text")}</p>
+        <p id="update-text">{t(install ? "desktop.update.appText" : "desktop.update.text")}</p>
         <ChangeList changes={changes} max={MAX_ITEMS} />
         <div className="alert-actions">
           <button className="btn" onClick={onLater}>{t("desktop.later")}</button>
-          <button className="btn primary" autoFocus onClick={() => window.location.reload()}>{t("desktop.update.reload")}</button>
+          <button className="btn primary" autoFocus onClick={() => (install ? void install().catch(onLater) : window.location.reload())}>{t(install ? "desktop.update.install" : "desktop.update.reload")}</button>
         </div>
       </div>
     </div>,

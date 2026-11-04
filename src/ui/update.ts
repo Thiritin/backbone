@@ -1,5 +1,6 @@
 // Offers a reload when the deployed build changes: the page polls version.json (written by the build) and compares its id.
 import { newEntries, type ChangelogDay } from "./changelog";
+import { checkAppUpdate, isDesktopApp } from "./desktop-app";
 import { EMBEDDED } from "./embedded";
 
 declare const __BUILD_ID__: string;
@@ -25,12 +26,22 @@ async function servedVersion(): Promise<Served | null> {
 }
 
 // Polls every five minutes and when the tab regains focus; the dev server never offers. Returns a stop function.
-export function watchUpdates(onUpdate: (changes: ChangelogDay[]) => void, dismissedAt: () => number | null): () => void {
+// The desktop app asks the updater for a signed release instead; accepting installs it and relaunches.
+export function watchUpdates(onUpdate: (changes: ChangelogDay[], install?: () => Promise<void>) => void, dismissedAt: () => number | null): () => void {
   if (import.meta.env.DEV) return () => {};
+  const app = isDesktopApp();
   const check = async () => {
+    if (app) {
+      const d = dismissedAt();
+      if (d !== null && Date.now() - d < SNOOZE_MS) return;
+      const u = await checkAppUpdate().catch(() => null);
+      if (u) onUpdate(u.changes, u.install);
+      return;
+    }
     const served = await servedVersion();
     if (shouldOffer(__BUILD_ID__, served?.build ?? null, dismissedAt(), Date.now())) onUpdate(newEntries(EMBEDDED, served!.changelog));
   };
+  if (app) void check();
   const timer = window.setInterval(check, POLL_MS);
   const focus = () => void check();
   window.addEventListener("focus", focus);
