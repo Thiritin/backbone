@@ -47,6 +47,8 @@ import { hallScene } from "./hall";
 import { useEdit } from "./hall-edit";
 import { HallStrip, STRIP_H } from "./hall-parts";
 import { MainBoardRoom, MeetMeRoom } from "./hall-doors";
+import { GroundRect, SiteBack, SiteFront, SiteNight } from "./site/Site";
+import { siteOf } from "./site/layout";
 import "./world.css";
 
 // How dark a tripped room is drawn, darker than a night with the lights off.
@@ -122,7 +124,11 @@ export function World() {
   const zoom = zoomSet ?? fit;
   const o = org ?? { x: box.x + box.w / 2 - size.w / 2 / zoom, y: box.y + box.h / 2 - room / 2 / zoom };
   const view = useRef({ zoom, o, fit });
-  view.current = { zoom, o, fit };
+  // The player may zoom out to fit the whole site around the room.
+  const site = useMemo(() => siteOf(game, loc, w, h), [loc.id, game.properties, w, h]);
+  const fitSite = Math.min(size.w * 0.98 / site.box.w, size.h * 0.98 / site.box.h);
+  view.current = { zoom, o, fit: Math.min(fit, fitSite) };
+  const port = { x: o.x, y: o.y, w: size.w / zoom, h: size.h / zoom };
   const zoomed = zoom >= 2;
   const hallRect = loc.space === "hall" ? siteAreas(game, loc).find((a) => a.id === "hall")?.rect : undefined;
 
@@ -391,13 +397,17 @@ export function World() {
       <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`}
         viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
+        <GroundRect view={port} kind={site.kind} />
         <Defs />
+        <SiteBack s={site} name={game.company.name} band={game.company.color} />
         <Walls w={w} h={h} dc={!home && !office} color={game.company.color} />
         {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></>
           : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={hallRect?.w ?? w} h={hallRect?.h ?? h} />}
         {back}
         {things.map((x) => x.node)}
+        <SiteFront s={site} name={game.company.name} band={game.company.color} />
         {(home || office) && <Night w={w} h={h} opacity={loc.tripped ? TRIPPED_DARK : darkness(hd, month, lights)} />}
+        <SiteNight s={site} view={port} opacity={darkness(hd, month)} />
         {bright}
         {!home && !office && loc.space !== "hall" && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />

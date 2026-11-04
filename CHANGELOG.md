@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The basement and your own hall now stand in a drawn world: a street with houses on their own driveways, parking, a lobby building, a fenced compound with a gate, trees, fields and moving cars.
 - Everyone who sits down in your hall, NOC room or office now sits on a chair at a desk, and you and a technician no longer take the same seat.
 - Controls in the world no longer have rounded borders, and the hall's edit strip shows a clear hover and focus state.
 - The speed buttons and the order list stay usable while a close-up is open, the NOC wall screens no longer cover the lettering, and the start screen changelog lists each day once.

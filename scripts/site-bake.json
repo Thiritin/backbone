@@ -1,0 +1,281 @@
+{
+ "kits": {
+  "car-kit": {
+   "rules": [
+    {
+     "m": "paint",
+     "cell": [
+      "13.1",
+      "7.1",
+      "15.1",
+      "5.1",
+      "9.1",
+      "1.1",
+      "3.1"
+     ]
+    },
+    {
+     "m": "glass",
+     "cell": [
+      "13.2",
+      "1.3"
+     ]
+    },
+    {
+     "m": "tyre",
+     "cell": [
+      "5.2"
+     ]
+    },
+    {
+     "m": "rim",
+     "cell": [
+      "7.2"
+     ]
+    },
+    {
+     "m": "lamp",
+     "cell": [
+      "3.3",
+      "5.3"
+     ]
+    },
+    {
+     "m": "trim"
+    }
+   ]
+  },
+  "nature-kit": {
+   "rules": [
+    {
+     "m": "leaf",
+     "name": "leafsGreen"
+    },
+    {
+     "m": "needle",
+     "name": "leafsDark"
+    },
+    {
+     "m": "trunk"
+    }
+   ]
+  },
+  "city-kit-suburban": {
+   "rules": [
+    {
+     "m": "roof",
+     "cell": [
+      "1.1"
+     ]
+    },
+    {
+     "m": "leaf",
+     "cell": [
+      "3.3"
+     ]
+    },
+    {
+     "m": "wall",
+     "cell": [
+      "7.2"
+     ]
+    },
+    {
+     "m": "window",
+     "cell": [
+      "11.1"
+     ]
+    },
+    {
+     "m": "door",
+     "cell": [
+      "3.2"
+     ]
+    },
+    {
+     "m": "brick",
+     "cell": [
+      "9.2"
+     ]
+    },
+    {
+     "m": "frame"
+    }
+   ]
+  },
+  "city-kit-industrial": {
+   "rules": [
+    {
+     "m": "concrete",
+     "cell": [
+      "9.2"
+     ]
+    },
+    {
+     "m": "wall",
+     "cell": [
+      "15.2"
+     ]
+    },
+    {
+     "m": "metal",
+     "cell": [
+      "11.2"
+     ]
+    },
+    {
+     "m": "door",
+     "cell": [
+      "11.1"
+     ]
+    },
+    {
+     "m": "window",
+     "cell": [
+      "9.3"
+     ]
+    },
+    {
+     "m": "frame"
+    }
+   ]
+  },
+  "city-kit-roads": {
+   "rules": [
+    {
+     "m": "metal",
+     "cell": [
+      "5.3",
+      "7.2"
+     ]
+    },
+    {
+     "m": "trunk",
+     "cell": [
+      "11.2"
+     ]
+    },
+    {
+     "m": "metal"
+    }
+   ]
+  }
+ },
+ "models": [
+  {
+   "id": "sedan",
+   "kit": "car-kit",
+   "src": "car-kit/sedan.glb",
+   "yaw": 90,
+   "size": [
+    4.5,
+    1.8,
+    1.45
+   ],
+   "dirs": [
+    "x",
+    "y"
+   ]
+  },
+  {
+   "id": "hatchback",
+   "kit": "car-kit",
+   "src": "car-kit/hatchback-sports.glb",
+   "yaw": 90,
+   "size": [
+    4.0,
+    1.75,
+    1.45
+   ],
+   "dirs": [
+    "x",
+    "y"
+   ]
+  },
+  {
+   "id": "van",
+   "kit": "car-kit",
+   "src": "car-kit/van.glb",
+   "yaw": 90,
+   "size": [
+    4.9,
+    1.95,
+    2.0
+   ],
+   "dirs": [
+    "x",
+    "y"
+   ]
+  },
+  {
+   "id": "oak",
+   "kit": "nature-kit",
+   "src": "nature-kit/tree_oak.glb",
+   "yaw": 0,
+   "size": [
+    4.6,
+    4.6,
+    7.5
+   ],
+   "dirs": [
+    "x"
+   ]
+  },
+  {
+   "id": "pine",
+   "kit": "nature-kit",
+   "src": "nature-kit/tree_pineTallA.glb",
+   "yaw": 0,
+   "size": [
+    3.6,
+    3.6,
+    10
+   ],
+   "dirs": [
+    "x"
+   ]
+  },
+  {
+   "id": "house",
+   "kit": "city-kit-suburban",
+   "src": "city-kit-suburban/building-type-a.glb",
+   "yaw": 0,
+   "size": [
+    9,
+    7,
+    7
+   ],
+   "dirs": [
+    "x"
+   ]
+  },
+  {
+   "id": "warehouse",
+   "kit": "city-kit-industrial",
+   "src": "city-kit-industrial/building-s.glb",
+   "yaw": 0,
+   "size": [
+    22,
+    10,
+    7
+   ],
+   "dirs": [
+    "x"
+   ]
+  },
+  {
+   "id": "pole",
+   "kit": "city-kit-roads",
+   "src": "city-kit-roads/electricity-pole.glb",
+   "yaw": 0,
+   "size": [
+    2.4,
+    0.5,
+    10
+   ],
+   "dirs": [
+    "x"
+   ]
+  }
+ ]
+}

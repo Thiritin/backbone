@@ -1,0 +1,60 @@
+/* The site around a room: flat fills in two or three tones, the same upper left light as the room. */
+.w-site, .w-site * { pointer-events: none; }
+.w-f-apron { fill: oklch(0.78 0.03 85); }
+.w-f-neutral { fill: oklch(0.5 0.012 150); }
+.w-f-soil { fill: oklch(0.38 0.05 55); }
+.w-f-soil-l { fill: oklch(0.46 0.06 58); stroke: oklch(0.34 0.05 55); stroke-width: 0.6; }
+.w-f-lawn { fill: oklch(0.74 0.14 140); }
+.w-f-lawn-far { fill: oklch(0.64 0.11 140); }
+.w-f-slab-l { fill: oklch(0.7 0.01 250); stroke: oklch(0.58 0.012 250); stroke-width: 0.6; }
+.w-f-slab-r { fill: oklch(0.6 0.012 250); stroke: oklch(0.5 0.012 250); stroke-width: 0.6; }
+.w-f-beyond { fill: oklch(0.6 0.025 85); }
+.w-f-field-a { fill: oklch(0.74 0.09 95); stroke: oklch(0.52 0.12 140); stroke-width: 3; }
+.w-f-field-b { fill: oklch(0.68 0.15 135); stroke: oklch(0.52 0.12 140); stroke-width: 3; }
+.w-f-furrow-a { fill: none; stroke: oklch(0.64 0.09 90); stroke-width: 1.2; }
+.w-f-furrow-b { fill: none; stroke: oklch(0.58 0.14 135); stroke-width: 1.2; }
+.w-f-gravel-lite { fill: oklch(0.82 0.03 85); }
+.w-f-yard { fill: oklch(0.7 0.02 90); }
+.w-f-asphalt { fill: oklch(0.42 0.01 255); }
+.w-f-line { fill: oklch(0.82 0.01 90); }
+.w-f-paving { fill: oklch(0.86 0.02 80); stroke: oklch(0.74 0.02 80); stroke-width: 0.5; }
+.w-f-drive { fill: oklch(0.8 0.01 250); stroke: oklch(0.7 0.012 250); stroke-width: 0.5; }
+.w-f-paving-line { fill: none; stroke: oklch(0.74 0.02 80); stroke-width: 0.5; }
+.w-f-lobby { fill: oklch(0.88 0.014 80); }
+.w-f-threshold { fill: oklch(0.72 0.012 250); }
+.w-f-lobby-line { fill: none; stroke: oklch(0.8 0.016 80); stroke-width: 0.5; }
+.w-tone-glass { --top: oklch(0.78 0.04 235); --left: oklch(0.7 0.045 235); --right: oklch(0.6 0.05 235); --edge: oklch(0.5 0.05 235); }
+.w-tone-door { --top: oklch(0.52 0.06 50); --left: oklch(0.46 0.065 50); --right: oklch(0.38 0.06 50); --edge: oklch(0.3 0.05 50); }
+
+.w-tone-kerb { --top: oklch(0.86 0.005 250); --left: oklch(0.78 0.006 250); --right: oklch(0.68 0.008 250); --edge: oklch(0.6 0.01 250); }
+.w-tone-concrete { --top: oklch(0.8 0.008 250); --left: oklch(0.72 0.01 250); --right: oklch(0.62 0.012 250); --edge: oklch(0.55 0.012 250); }
+.w-tone-fence { --top: oklch(0.6 0.012 252); --left: oklch(0.52 0.012 252); --right: oklch(0.44 0.012 252); --edge: oklch(0.36 0.012 252); }
+.w-tone-xfmr { --top: oklch(0.7 0.035 175); --left: oklch(0.62 0.04 175); --right: oklch(0.52 0.04 175); --edge: oklch(0.42 0.04 175); }
+.w-tone-cond { --top: oklch(0.9 0.006 240); --left: oklch(0.83 0.008 240); --right: oklch(0.72 0.01 240); --edge: oklch(0.62 0.012 240); }
+.w-tone-porcelain { --top: oklch(0.62 0.07 55); --left: oklch(0.54 0.08 50); --right: oklch(0.45 0.075 48); --edge: oklch(0.38 0.06 48); }
+.w-tone-box { --top: oklch(0.8 0.02 235); --left: oklch(0.72 0.035 235); --right: oklch(0.62 0.04 235); --edge: oklch(0.52 0.04 235); }
+.w-tone-roofslab { --top: oklch(0.86 0.01 250); --left: oklch(0.78 0.012 250); --right: oklch(0.68 0.014 250); --edge: oklch(0.6 0.014 250); }
+.w-tone-bin { --top: oklch(0.5 0.07 150); --left: oklch(0.42 0.07 150); --right: oklch(0.35 0.065 150); --edge: oklch(0.29 0.06 150); }
+.w-tone-binlid { --top: oklch(0.42 0.06 150); --left: oklch(0.36 0.06 150); --right: oklch(0.3 0.055 150); --edge: oklch(0.25 0.05 150); }
+.w-tone-sign { --top: oklch(0.96 0.01 250); --left: oklch(0.92 0.012 250); --right: oklch(0.8 0.015 250); --edge: oklch(0.65 0.02 250); }
+
+.w-door { fill: oklch(0.45 0.05 50); }
+.w-roof-l { fill: oklch(0.58 0.12 35); stroke: oklch(0.45 0.1 35); stroke-width: 0.6; }
+.w-roof-r { fill: oklch(0.48 0.11 33); stroke: oklch(0.4 0.1 33); stroke-width: 0.6; }
+.w-mesh-panel { stroke: none; }
+.w-rail { fill: none; stroke: oklch(0.4 0.012 252); stroke-width: 1.2; }
+.w-fpost { fill: oklch(0.5 0.012 252); stroke: oklch(0.38 0.012 252); stroke-width: 0.5; }
+.w-fan { fill: oklch(0.3 0.01 250); stroke: oklch(0.6 0.012 240); stroke-width: 1.4; }
+.w-fan-blade { fill: none; stroke: oklch(0.6 0.01 250); stroke-width: 1.2; }
+.w-sign-text { font: 700 5.2px/1 var(--font-sans, system-ui), sans-serif; fill: oklch(0.3 0.02 250); }
+
+
+.w-car-pass { animation: w-car-pass 18s linear infinite; }
+@keyframes w-car-pass { from { transform: translate(0, 0); } to { transform: translate(var(--dx), var(--dy)); } }
+@media (prefers-reduced-motion: reduce) { .w-car-pass { animation: none; } }
+
+.w-tone-barrier { --top: oklch(0.94 0.02 90); --left: oklch(0.86 0.1 35); --right: oklch(0.76 0.1 33); --edge: oklch(0.6 0.1 33); }
+.w-mesh { fill: url(#sp-mesh); }
+.w-mesh-line { stroke: oklch(0.5 0.012 252); stroke-width: 0.5; fill: none; }
+.w-coil { fill: none; stroke: oklch(0.52 0.012 252); stroke-width: 1.1; }
+.w-glass-fill { fill: oklch(0.4 0.035 245); }

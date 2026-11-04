@@ -1,0 +1,42 @@
+/* Baked model materials: three tones per material, top then -0.08 L then -0.17 L, no outline. A model instance may set --<mat>-t/-l/-r to recolour. */
+.m-paint { --t: var(--paint-t, oklch(0.62 0.16 28)); --l: var(--paint-l, oklch(0.54 0.16 28)); --r: var(--paint-r, oklch(0.45 0.16 28)); }
+.m-glass { --t: var(--glass-t, oklch(0.44 0.035 245)); --l: var(--glass-l, oklch(0.36 0.035 245)); --r: var(--glass-r, oklch(0.27 0.035 245)); }
+.m-tyre { --t: var(--tyre-t, oklch(0.30 0.01 255)); --l: var(--tyre-l, oklch(0.22 0.01 255)); --r: var(--tyre-r, oklch(0.13 0.01 255)); }
+.m-rim { --t: var(--rim-t, oklch(0.72 0.01 250)); --l: var(--rim-l, oklch(0.64 0.01 250)); --r: var(--rim-r, oklch(0.55 0.01 250)); }
+.m-trim { --t: var(--trim-t, oklch(0.60 0.015 255)); --l: var(--trim-l, oklch(0.52 0.015 255)); --r: var(--trim-r, oklch(0.43 0.015 255)); }
+.m-lamp { --t: var(--lamp-t, oklch(0.82 0.09 90)); --l: var(--lamp-l, oklch(0.74 0.09 90)); --r: var(--lamp-r, oklch(0.65 0.09 90)); }
+.m-leaf { --t: var(--leaf-t, oklch(0.76 0.16 140)); --l: var(--leaf-l, oklch(0.67 0.16 140)); --r: var(--leaf-r, oklch(0.57 0.16 140)); }
+.m-needle { --t: var(--needle-t, oklch(0.52 0.12 150)); --l: var(--needle-l, oklch(0.44 0.12 150)); --r: var(--needle-r, oklch(0.36 0.12 150)); }
+.m-trunk { --t: var(--trunk-t, oklch(0.56 0.05 55)); --l: var(--trunk-l, oklch(0.48 0.05 55)); --r: var(--trunk-r, oklch(0.39 0.05 55)); }
+.m-wall { --t: var(--wall-t, oklch(0.93 0.015 85)); --l: var(--wall-l, oklch(0.85 0.015 85)); --r: var(--wall-r, oklch(0.76 0.015 85)); }
+.m-roof { --t: var(--roof-t, oklch(0.62 0.15 35)); --l: var(--roof-l, oklch(0.54 0.15 35)); --r: var(--roof-r, oklch(0.45 0.15 35)); }
+.m-window { --t: var(--window-t, oklch(0.58 0.04 240)); --l: var(--window-l, oklch(0.50 0.04 240)); --r: var(--window-r, oklch(0.41 0.04 240)); }
+.m-door { --t: var(--door-t, oklch(0.50 0.05 50)); --l: var(--door-l, oklch(0.42 0.05 50)); --r: var(--door-r, oklch(0.33 0.05 50)); }
+.m-frame { --t: var(--frame-t, oklch(0.76 0.01 250)); --l: var(--frame-l, oklch(0.68 0.01 250)); --r: var(--frame-r, oklch(0.59 0.01 250)); }
+.m-metal { --t: var(--metal-t, oklch(0.66 0.012 252)); --l: var(--metal-l, oklch(0.58 0.012 252)); --r: var(--metal-r, oklch(0.49 0.012 252)); }
+.m-concrete { --t: var(--concrete-t, oklch(0.80 0.008 250)); --l: var(--concrete-l, oklch(0.72 0.008 250)); --r: var(--concrete-r, oklch(0.63 0.008 250)); }
+.m-brick { --t: var(--brick-t, oklch(0.62 0.11 45)); --l: var(--brick-l, oklch(0.54 0.11 45)); --r: var(--brick-r, oklch(0.45 0.11 45)); }
+.m-solar { --t: var(--solar-t, oklch(0.36 0.04 255)); --l: var(--solar-l, oklch(0.28 0.04 255)); --r: var(--solar-r, oklch(0.19 0.04 255)); }
+.sm path { stroke-width: 0.3; stroke-linejoin: round; }
+.f-t { fill: var(--t); stroke: var(--t); }
+.f-l { fill: var(--l); stroke: var(--l); }
+.f-r { fill: var(--r); stroke: var(--r); }
+.f-c { fill: color-mix(in oklch, var(--t) 55%, var(--l)); stroke: none; }
+/* Snow: top faces of roofs, paint, leaves, needles, metal and concrete turn white. Set as variables because a baked model is a shadow tree and takes inherited values only. */
+.w-snow { --roof-t: oklch(0.97 0.006 240); --paint-t: oklch(0.97 0.006 240); --leaf-t: oklch(0.97 0.006 240); --needle-t: oklch(0.97 0.006 240); --metal-t: oklch(0.97 0.006 240); --concrete-t: oklch(0.97 0.006 240); }
+.w-snow .f-c { fill: var(--t); }
+.w-snow .w-f-lawn, .w-snow .w-f-apron { fill: oklch(0.95 0.008 240); }
+.w-snow .w-f-lawn-far { fill: oklch(0.9 0.01 240); }
+.w-tone-car-1 { --paint-t: oklch(0.62 0.18 28); --paint-l: oklch(0.54 0.18 28); --paint-r: oklch(0.45 0.18 28); }
+.w-tone-car-2 { --paint-t: oklch(0.6 0.15 245); --paint-l: oklch(0.52 0.15 245); --paint-r: oklch(0.43 0.15 245); }
+.w-tone-car-3 { --paint-t: oklch(0.92 0.005 250); --paint-l: oklch(0.84 0.005 250); --paint-r: oklch(0.75 0.005 250); }
+.w-tone-car-4 { --paint-t: oklch(0.44 0.01 255); --paint-l: oklch(0.36 0.01 255); --paint-r: oklch(0.27 0.01 255); }
+.w-tone-car-5 { --paint-t: oklch(0.78 0.16 95); --paint-l: oklch(0.70 0.16 95); --paint-r: oklch(0.61 0.16 95); }
+.w-tone-car-6 { --paint-t: oklch(0.56 0.13 150); --paint-l: oklch(0.48 0.13 150); --paint-r: oklch(0.39 0.13 150); }
+.w-tone-plaster-a { --top: oklch(0.95 0.02 85); --left: oklch(0.9 0.035 85); --right: oklch(0.8 0.04 80); --edge: oklch(0.7 0.04 80); --wall-t: oklch(0.95 0.02 85); --wall-l: oklch(0.9 0.03 85); --wall-r: oklch(0.8 0.035 85); }
+.w-tone-plaster-b { --wall-t: oklch(0.93 0.03 30); --wall-l: oklch(0.88 0.04 30); --wall-r: oklch(0.78 0.045 30); }
+.w-pine-cap { display: none; }
+.w-snow .w-pine-cap { display: inline; }
+.w-pine-cap-l polygon { fill: oklch(0.97 0.006 240); }
+.w-pine-cap-r polygon { fill: oklch(0.88 0.01 240); }
+.w-tone-plaster-c { --top: oklch(0.93 0.03 215); --left: oklch(0.88 0.04 215); --right: oklch(0.78 0.045 215); --edge: oklch(0.68 0.045 215); --wall-t: oklch(0.93 0.03 215); --wall-l: oklch(0.88 0.04 215); --wall-r: oklch(0.78 0.045 215); }
