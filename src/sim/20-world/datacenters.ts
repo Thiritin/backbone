@@ -248,7 +248,7 @@ export const NO_LINE: HomeLine = { id: "", isp: "", get name() { return t("sim.l
 export const MOMS_DSL: HomeLine = { id: "moms-dsl", isp: "Deutsche Telekomm", name: "Mom's DSL", down: 6, up: 0.5, monthly: 0, from: 2005, installDays: 0, staticIp: false };
 export const homeLineById = (id: string): HomeLine => (id === MOMS_DSL.id ? MOMS_DSL : HOME_LINES.find((l) => l.id === id) ?? NO_LINE);
 
-type RentedSpace = Exclude<SpaceKind, "basement" | "office">;
+type RentedSpace = Exclude<SpaceKind, "basement" | "office" | "hall">;
 export const SPACE_SIZES: Record<RentedSpace, number[]> = { share: [8, 4, 2, 1], cage: [4, 8, 16], suite: [20, 40] };
 export const LEAD_DAYS: Record<RentedSpace, number> = { share: 2, cage: 30, suite: 90 };
 // Months of notice to the end of a month before a rented space is handed back.

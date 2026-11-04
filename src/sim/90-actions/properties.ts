@@ -1,12 +1,14 @@
 // GDD, Properties: renting sections of an office building, buying one, refits, notice, and the monthly rent and upkeep.
+import { t } from "../../i18n/en";
 import { yearOf } from "../00-core/time";
 import { nextAz } from "../20-world/datacenters";
 import {
-  DEPOSIT_MONTHS, FIT_POSITIONS, holdsDesks, listingById, NOTICE_MONTHS, officeLineIn, priceFor, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
+  DEPOSIT_MONTHS, FIT_POSITIONS, HALL_ROW, hallCapacity, holdsDesks, isHalle, listingById, NOTICE_MONTHS, officeLineIn, priceFor, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
 } from "../20-world/properties";
 import { cents } from "../45-billing/billing";
 import { device, type GameState, type LedgerEntry, type Property, type SectionFit } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { hallMonthly } from "./hall";
 import { closeLocation, noticeEnd, type ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -25,6 +27,8 @@ const placeOffice = (s: GameState, p: Property, readyAt: number) => {
 };
 
 const ownedIn = (s: GameState, buildingId: string) => s.properties.find((p) => p.buildingId === buildingId);
+// A Halle holds no office, so it never counts against the one office.
+const hasOffice = (s: GameState) => s.properties.some((x) => x.kind !== "basement" && !isHalle(x.buildingId));
 
 // Section ids of a building nobody holds: neither another tenant nor the company.
 export const freeSections = (s: GameState, l: Listing): string[] => {
@@ -36,10 +40,11 @@ export const freeSections = (s: GameState, l: Listing): string[] => {
 export function rentSection(s: GameState, buildingId: string, sectionId: string): ActionResult {
   const l = listingById(buildingId), year = yearOf(s.hour);
   if (!l || l.from > year) return fail("error.unknownBuilding");
+  if (l.kind === "halle") return fail("error.buyOnly");
   const section = sectionIds(l).find((x) => x.id === sectionId);
   if (!section || !freeSections(s, l).includes(sectionId)) return fail("error.sectionTaken");
   let p = ownedIn(s, l.id);
-  if (!p && s.properties.some((x) => x.kind !== "basement")) return fail("error.oneOffice");
+  if (!p && hasOffice(s)) return fail("error.oneOffice");
   if (p?.noticeAt != null) return fail("error.noticeGiven");
   const rent = p?.kind === "own" ? 0 : rentFor(l, year), deposit = rent * DEPOSIT_MONTHS;
   if (s.cash < deposit) return fail("error.noCash");
@@ -70,7 +75,7 @@ export function buyBuilding(s: GameState, buildingId: string): ActionResult {
   if (price == null) return fail("error.buildingNotForSale");
   let p = ownedIn(s, l.id);
   if (p?.kind === "own") return fail("error.buildingOwned");
-  if (!p && s.properties.some((x) => x.kind !== "basement")) return fail("error.oneOffice");
+  if (!p && l.kind !== "halle" && hasOffice(s)) return fail("error.oneOffice");
   const back = p?.deposit ?? 0;
   if (s.cash + back < price) return fail("error.noCash");
   if (!p) {
@@ -79,7 +84,7 @@ export function buyBuilding(s: GameState, buildingId: string): ActionResult {
   }
   const fresh = freeSections(s, l).map((id) => ({ id, floor: sectionIds(l).find((x) => x.id === id)!.floor, fit: null, since: s.hour, refitUntil: s.hour, rent: 0 }));
   Object.assign(p, { kind: "own", noticeAt: null, boughtFor: price, deposit: 0, sections: [...p.sections.map((x) => ({ ...x, rent: 0 })), ...fresh] });
-  placeOffice(s, p, s.hour);
+  if (l.kind !== "halle") placeOffice(s, p, s.hour);
   if (back) book(s, "rent", "ledger.officeDepositBack", { building: l.name }, back);
   book(s, "other", "ledger.buildingBought", { building: l.name }, -price);
   return { ok: true, id: p.id };
@@ -90,6 +95,8 @@ export function refitSection(s: GameState, propertyId: string, sectionId: string
   const p = s.properties.find((x) => x.id === propertyId), x = p?.sections.find((k) => k.id === sectionId);
   if (!p || !x) return fail("error.unknownProperty");
   if (!(fit in REFIT)) return fail("error.unknownFit");
+  if (fit === "hall" || x.fit === "hall") return fit === "hall" ? refitHall(s, p, x.floor) : fail("error.hallFloor");
+  if (isHalle(p.buildingId)) return fail("error.hallOnly");
   if (x.fit === fit) return fail("error.sameFit");
   if (x.refitUntil > s.hour) return fail("error.refitting");
   if (p.noticeAt !== null) return fail("error.noticeGiven");
@@ -107,6 +114,39 @@ export function refitSection(s: GameState, propertyId: string, sectionId: string
     s.locations.find((l) => l.id === p.locationId)!.positions += FIT_POSITIONS[fit];
   }
   return { ok: true };
+}
+
+// GDD, Own datacenter: a whole floor of an owned building becomes part of the property's hall, a location of its own with no
+// provider. The floor's positions arrive as default rows the player may lay out anew.
+function refitHall(s: GameState, p: Property, floor: number): ActionResult {
+  const l = listingById(p.buildingId ?? "");
+  if (p.kind !== "own" || !l) return fail("error.hallOwnOnly");
+  const onFloor = p.sections.filter((x) => x.floor === floor);
+  if (onFloor.length < l.perFloor) return fail("error.floorTaken");
+  if (onFloor.some((x) => x.fit === "hall")) return fail("error.sameFit");
+  if (onFloor.some((x) => x.refitUntil > s.hour)) return fail("error.refitting");
+  if (onFloor.some((x) => holdsDesks(x.fit)) && s.staff.some((e) => e.desk?.propertyId === p.id && onFloor.some((x) => x.id === e.desk!.sectionId))) return fail("error.desksInUse");
+  const office = s.locations.find((k) => k.id === p.locationId), gone = onFloor.reduce((n, x) => n + (x.fit ? FIT_POSITIONS[x.fit] : 0), 0);
+  if (gone && office && s.racks.some((r) => r.locationId === office.id)) return fail("error.racksInRoom");
+  const { cost, days } = REFIT.hall;
+  if (s.cash < cost) return fail("error.noCash");
+  book(s, "other", "ledger.refit", { building: p.building.name }, -cost);
+  if (office) office.positions -= gone;
+  const until = s.hour + 24 * days;
+  for (const x of onFloor) Object.assign(x, { fit: "hall", refitUntil: until });
+  if (!p.hall) {
+    const city = s.locations[0]?.city ?? "Frankfurt", id = `loc${s.nextId++}`;
+    s.locations = [...s.locations, { id, dc: null, city, az: nextAz(s.locations, city), name: t("location.hall", { building: p.building.name }), space: "hall", positions: 0, readyAt: until, extraCircuit: false, tripped: false }];
+    p.hall = { locationId: id, rows: [], cooling: 0, feedB: false, ups: false, generator: false, carriers: [], rate: null, customers: [] };
+  }
+  const hall = p.hall, loc = s.locations.find((k) => k.id === hall.locationId)!;
+  // ponytail: a floor added to an open hall is usable at once; per-row ready hours if the wait should show.
+  if (loc.readyAt > s.hour) loc.readyAt = until;
+  const want = hallCapacity(p) - hall.rows.reduce((n, r) => n + r.length, 0);
+  for (let k = hall.rows.length, left = want; left > 0; k++, left -= HALL_ROW)
+    hall.rows = [...hall.rows, { id: `row${s.nextId++}`, x: 3, y: 2 + 2 * k, length: Math.min(HALL_ROW, left), facing: k % 2 ? "n" : "s" }];
+  loc.positions = hall.rows.reduce((n, r) => n + r.length, 0);
+  return { ok: true, id: hall.locationId };
 }
 
 // Books the year's business line into an office with rack positions, or upgrades an older one. The line ends at the wall socket
@@ -128,7 +168,8 @@ export const propertyBills = (s: GameState): LedgerEntry[] =>
   s.properties.flatMap((p): LedgerEntry[] =>
     p.kind === "office" ? [{ hour: s.hour, category: "rent", key: "ledger.officeRent", params: { building: p.building.name, n: p.sections.length }, amount: -p.sections.reduce((n, x) => n + x.rent, 0) }]
     : p.kind === "own" ? [{ hour: s.hour, category: "rent", key: "ledger.upkeep", params: { building: p.building.name, n: p.sections.length }, amount: -UPKEEP_PER_SECTION * p.sections.length }]
-    : []).concat(s.locations.flatMap((l): LedgerEntry[] => (l.line ? [{ hour: s.hour, category: "rent", key: "ledger.officeLine", params: { location: l.name, line: l.line.name, mbit: l.line.mbit }, amount: -l.line.monthly }] : [])))
+    : []).concat(s.properties.flatMap((p): LedgerEntry[] => (p.hall ? [{ hour: s.hour, category: "rent", key: "ledger.hallUpkeep", params: { location: s.locations.find((l) => l.id === p.hall!.locationId)?.name ?? p.building.name }, amount: -hallMonthly(p.hall) }] : [])))
+    .concat(s.locations.flatMap((l): LedgerEntry[] => (l.line ? [{ hour: s.hour, category: "rent", key: "ledger.officeLine", params: { location: l.name, line: l.line.name, mbit: l.line.mbit }, amount: -l.line.monthly }] : [])))
     .filter((b) => b.amount !== 0);
 
 // At the month start the notice period ends: the deposit returns, desks there clear and the server rooms close. Racks still standing roll one more month.

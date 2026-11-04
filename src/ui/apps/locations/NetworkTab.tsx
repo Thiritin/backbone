@@ -7,6 +7,7 @@ import {
 } from "../../../sim/10-catalog/network";
 import { uplinkOffers, uplinkPrice } from "../../../sim/10-catalog/uplinks";
 import { datacenterById, homeLineById, inUs } from "../../../sim/20-world/datacenters";
+import { hallOf } from "../../../sim/20-world/properties";
 import { officeLineIn } from "../../../sim/20-world/properties";
 import { bookOfficeLine } from "../../../sim/90-actions/properties";
 import type { GameState, Location } from "../../../sim/50-state";
@@ -160,6 +161,18 @@ function Uplinks({ game, loc, routing }: { game: GameState; loc: Location; routi
   const uplinks = game.network.uplinks.filter((u) => u.locationId === loc.id);
   const year = yearOf(game.hour);
   if (loc.space === "office") return <OfficeLine game={game} loc={loc} used={used.home ?? 0} />;
+  // An own hall carries only the transit of the carriers built into its meet-me room.
+  if (loc.space === "hall") return (
+    <>
+      <div className="shop-grid mkt-flat">{uplinks.map((u) => <UplinkCard key={u.id} game={game} u={u} carried={used[u.id] ?? 0} />)}</div>
+      {game.unlocks.includes("network") && <>
+        <h3 className="mkt-h">{t("locations-2.transit")}</h3>
+        <div className="shop-grid mkt-flat">
+          {(hallOf(game, loc.id)?.carriers ?? []).map((c) => <TransitOrder key={c} game={game} loc={loc} carrier={c} />)}
+        </div>
+      </>}
+    </>
+  );
   if (!loc.dc) {
     const line = homeLineById(game.homeLine.id);
     return (

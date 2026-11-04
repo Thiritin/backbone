@@ -19,7 +19,7 @@ export const PLACES: Place[] = [
 export function placeOf(s: GameState, id: string): Place | null {
   const loc = s.locations.find((l) => l.id === id);
   if (loc?.dc) return PLACES.find((p) => p.id === loc.dc) ?? null;
-  const prop = s.properties.find((p) => p.id === id || (loc && p.locationId === loc.id));
+  const prop = s.properties.find((p) => p.id === id || (loc && (p.locationId === loc.id || p.hall?.locationId === loc.id)));
   if (loc?.space === "basement" || prop?.kind === "basement") return BASEMENT_PLACE;
   const listing = prop?.buildingId ? listingById(prop.buildingId) : undefined;
   return listing ? PLACES.find((p) => p.id === listing.id)! : null;

@@ -65,17 +65,29 @@ export const SAVE_VERSION = 5;
 export type BondMode = "none" | "failover" | "balance";
 export type CableKind = "copper" | "dac" | "fiber" | "rollover" | "provider";
 
-export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office";
+export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office" | "hall";
 // Where the company lives (GDD, Properties). building is the postal address; buildingId the listing it was rented or bought from.
 // A section's rent is the monthly price agreed when it was rented (0 once bought); fit is null for a bought section never fitted.
 // refitUntil is the hour a refit is done. locationId is the zone the property's server rooms (or the basement's racks) form.
 export type PropertyKind = "basement" | "office" | "own";
-export type SectionFit = "desks" | "servers" | "closet";
+export type SectionFit = "desks" | "servers" | "closet" | "hall";
 export interface Building { name: string; street: string; zip: string; city: string }
 export interface Section { id: string; floor: number; fit: SectionFit | null; since: number; refitUntil: number; rent: number }
 export interface Property {
   id: string; kind: PropertyKind; buildingId: string | null; building: Building; sections: Section[];
   deposit: number; noticeAt: number | null; boughtFor: number | null; locationId: string | null;
+  // The datacenter hall its floors fitted as `hall` form (GDD, Own datacenter); absent until the first hall refit.
+  hall?: Hall;
+}
+// A rack row on the hall floor: length positions from (x, y), along x when it faces n or s, along y when it faces e or w.
+export interface HallRow { id: string; x: number; y: number; length: number; facing: "n" | "e" | "s" | "w" }
+// A colocation customer's rack on one of the hall's positions, paying monthly from since.
+export interface ColoCustomer { id: string; name: string; position: number; monthly: number; since: number }
+// cooling counts the cooling units on the walls; carriers the ids of carriers built into the meet-me room; rate the monthly
+// price per position offered to colocation customers, null while no position is listed.
+export interface Hall {
+  locationId: string; rows: HallRow[]; cooling: number; feedB: boolean; ups: boolean; generator: boolean;
+  carriers: string[]; rate: number | null; customers: ColoCustomer[];
 }
 // One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.
 export type LogSev = "info" | "warn" | "crit";

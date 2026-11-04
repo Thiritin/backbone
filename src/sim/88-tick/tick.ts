@@ -24,6 +24,7 @@ import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
 import { closeLocation, noticeEnd } from "../90-actions/hardware";
 import { propertiesEnd, propertyBills } from "../90-actions/properties";
+import { coloTick } from "../90-actions/hall";
 import { endService } from "../90-actions/holds";
 import { officeOpen } from "../80-business/office";
 import { fairsTick } from "../80-business/fairs";
@@ -357,6 +358,7 @@ export function tick(state: GameState): SimEvent[] {
   if (state.waitlist.length) updateHolds(state, events);
   contractsEnd(state, events);
   if (monthStart) propertiesEnd(state, events);
+  if (monthStart) events.push(...coloTick(state));
   for (const v of state.services) if (v.endedAt === null && v.endsAt !== undefined && v.endsAt <= state.hour) endService(state, v.id);
   if (monthStart) competitorsTake(state);
   if (monthStart) events.push(...rivalsTick(state));

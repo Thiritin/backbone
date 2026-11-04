@@ -19,6 +19,7 @@ The city of the first property is always Frankfurt and the first address is neve
 | Server closet | A desk section with a lockable metal cupboard in its far corner; the four desks stay | 4 per section | 1 rack on the section's own 2 kW circuit, no cooling unit |
 | Office building | Several sections on one or more floors of one building; the company expands section by section | 4 per section | A section fitted as a server room holds 4 racks with proper power and cooling |
 | Own building | Bought outright; sections are free to fit out, no rent, upkeep instead | as above | as above |
+| Own hall | A whole floor of an owned building fitted as a datacenter hall, or a bought Halle; a location of its own with no provider ([Own datacenter](own-datacenter.md)) | None | 20 positions per floor, 60 in a Halle, laid out as rows |
 
 A section is about 40 square metres. Each section is fitted as desks (four desks, a meeting corner, a kitchenette on the first one) or as a server room (racks, a small cooling unit, a PDU, a fire extinguisher, a door with a code lock). Refitting a section costs money and takes days.
 

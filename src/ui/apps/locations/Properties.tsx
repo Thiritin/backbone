@@ -10,6 +10,7 @@ import { noticeEnd } from "../../../sim/90-actions/hardware";
 import { buyBuilding, freeSections, giveNotice, refitSection, rentSection } from "../../../sim/90-actions/properties";
 import { useStore } from "../../store";
 import { day } from "../hw";
+import { HallPlan } from "./HallPlan";
 import { Facts } from "./ui";
 
 export function Properties({ game }: { game: GameState }) {
@@ -69,13 +70,14 @@ function BuildingCard({ game, l, year }: { game: GameState; l: Listing; year: nu
           </div>
         ))}
       </div>
+      {mine?.hall && <HallPlan game={game} p={mine} />}
       <div className="loc-row prop-actions">
         {canRent && (
           <button className="btn primary" onClick={() => act(rentSection, l.id, sel!).ok && setSel(null)}>
             {t(mine ? "properties.expand" : "properties.rent", { cost: euro(rent * DEPOSIT_MONTHS) })}
           </button>
         )}
-        {refit("desks")}{refit("closet")}{refit("servers")}
+        {l.kind !== "halle" && <>{refit("desks")}{refit("closet")}{refit("servers")}</>}{mine?.kind === "own" && refit("hall")}
         <span className="grow" />
         {mine?.kind === "office" && mine.noticeAt === null && <button className="btn" onClick={() => act(giveNotice, mine.id)}>{t("properties.notice")}</button>}
         {price !== null && mine?.kind !== "own" && <button className="btn" onClick={() => act(buyBuilding, l.id)}>{t("properties.buy", { cost: euro(price) })}</button>}

@@ -8,7 +8,7 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, PARCEL, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
-import { CLOSET_KW } from "../20-world/properties";
+import { CLOSET_KW, HALL, hallKw, hallOf } from "../20-world/properties";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
@@ -193,8 +193,8 @@ function toEdge(s: GameState, id: string, loc: Location, live: boolean, exempt?:
   const ids = cabled(s, id, (x) => kindOf(s, x) === "gateway", live, exempt);
   if (!ids) return null;
   const hops = ids.map((x) => hopOf(s, x));
-  if (!loc.dc) return [...hops, { kind: "line", name: (loc.space === "office" ? loc.line?.name : homeLineById(s.homeLine.id).isp) || "line", location: loc.id }];
-  const uplink: Hop = { kind: "uplink", name: datacenterById(loc.dc).name, location: loc.id };
+  if (!loc.dc && loc.space !== "hall") return [...hops, { kind: "line", name: (loc.space === "office" ? loc.line?.name : homeLineById(s.homeLine.id).isp) || "line", location: loc.id }];
+  const uplink: Hop = { kind: "uplink", name: loc.dc ? datacenterById(loc.dc).name : loc.name, location: loc.id };
   if (hops[hops.length - 1].kind === "uplink") hops[hops.length - 1] = { ...hops[hops.length - 1], ...uplink };
   else hops.push(uplink);
   return hops;
@@ -336,7 +336,7 @@ function computeRackPower(s: GameState, rackId: string, demand = false): RackPow
   }
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
-  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc);
+  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : loc.space === "hall" ? HALL.kwPerPosition : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc);
   // A flat-rate contract's kW replaces the position's limit.
   const limitWatts = rack.flatKw ? Math.round(1000 * rack.flatKw) : Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
   return { watts: a + b, a, b, limitWatts, over: a > limitWatts || b > limitWatts };
@@ -349,7 +349,8 @@ export function roomPower(s: GameState, loc: Location, demand = false): { watts:
   const watts = racks.reduce((n, p) => n + p.watts, 0);
   const over = racks.some((p) => p.over);
   if (loc.dc) return { watts, limitWatts: racks.reduce((n, p) => n + p.limitWatts, 0), over };
-  const limitWatts = 1000 * (loc.space === "office" ? officeKw(s, loc) : circuitKw(loc));
+  const hall = loc.space === "hall" && s.properties.find((p) => p.hall?.locationId === loc.id);
+  const limitWatts = 1000 * (hall ? hallKw(hall) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc));
   return { watts, limitWatts, over: over || watts > limitWatts };
 }
 
@@ -573,7 +574,7 @@ export const energized = (d: Device): boolean => d.on && (!psusOf(d).length || p
 export function freePositions(s: GameState, locationId: string): number[] {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return [];
-  const taken = new Set(s.racks.filter((r) => r.locationId === locationId).map((r) => r.position));
+  const taken = new Set([...s.racks.filter((r) => r.locationId === locationId).map((r) => r.position), ...(hallOf(s, locationId)?.customers.map((c) => c.position) ?? [])]);
   return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p));
 }
 
@@ -649,7 +650,7 @@ export function locationRent(s: GameState, loc: Location): number {
   const dc = datacenterById(loc.dc);
   const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
   const contract = s.contracts.find((c) => c.locationId === loc.id);
-  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement" | "office">, rentedSize(s, loc))) + extra;
+  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement" | "office" | "hall">, rentedSize(s, loc))) + extra;
 }
 
 // How a rack in this location can bill power: flat-rate contracts are offered on own racks in cages and suites.
@@ -659,17 +660,17 @@ export function flatOffer(s: GameState, locationId: string): Datacenter["power"]
 }
 
 // Floor space in eighths of a position, so a 1/8 share is 1 and a position is 8.
-export const eighthsOf = (space: Exclude<SpaceKind, "basement" | "office">, size: number): number => (space === "share" ? 8 / size : 8 * size);
+export const eighthsOf = (space: Exclude<SpaceKind, "basement" | "office" | "hall">, size: number): number => (space === "share" ? 8 / size : 8 * size);
 
 // Positions in a datacenter: competitors', the player's, those held for the waitlist, and what is free.
 export function dcAvailability(s: GameState, dcId: string): { capacity: number; others: number; mine: number; held: number; free: number; freeEighths: number } {
   const capacity = capacityAt(datacenterById(dcId), yearOf(s.hour));
   const others = s.dcs[dcId]?.others ?? 0;
-  const mineEighths = s.locations.filter((l) => l.dc === dcId).reduce((sum, l) => sum + eighthsOf(l.space as Exclude<SpaceKind, "basement" | "office">, rentedSize(s, l)), 0);
+  const mineEighths = s.locations.filter((l) => l.dc === dcId).reduce((sum, l) => sum + eighthsOf(l.space as Exclude<SpaceKind, "basement" | "office" | "hall">, rentedSize(s, l)), 0);
   const heldEighths = s.waitlist.filter((w) => w.dc === dcId && w.heldUntil !== null).reduce((sum, w) => sum + eighthsOf(w.space, w.size), 0);
   const freeEighths = Math.max(0, capacity * 8 - others * 8 - mineEighths - heldEighths);
   return { capacity, others, mine: mineEighths / 8, held: heldEighths / 8, free: Math.floor(freeEighths / 8), freeEighths };
 }
 
-export const fits = (s: GameState, dcId: string, space: Exclude<SpaceKind, "basement" | "office">, size: number): boolean =>
+export const fits = (s: GameState, dcId: string, space: Exclude<SpaceKind, "basement" | "office" | "hall">, size: number): boolean =>
   dcAvailability(s, dcId).freeEighths >= eighthsOf(space, size);

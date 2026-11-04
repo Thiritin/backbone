@@ -6,6 +6,7 @@ import {
   ZONE_LINK_LEAD_HOURS, type Protection, type ZoneLinkKind,
 } from "../10-catalog/network";
 import { datacenterById } from "../20-world/datacenters";
+import { hallOf } from "../20-world/properties";
 import type { GameState, Location } from "../50-state";
 import { acceptChance, activeExchanges, coolingDown, type Network, type Uplink } from "../60-infra/network";
 import { locationOf, peerOf } from "../60-infra/status";
@@ -26,7 +27,7 @@ function zone(s: GameState, locationId: string): Location | string {
   if (!s.unlocks.includes("network")) return "error.needsNetwork";
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return "error.unknownLocation";
-  if (!loc.dc) return "error.basementUplink";
+  if (!loc.dc && loc.space !== "hall") return "error.basementUplink";
   return loc;
 }
 
@@ -85,7 +86,8 @@ export function orderTransit(s: GameState, where: string, carrierId: string, gbi
   const { locationId, rackId } = placeOf(s, where);
   const loc = zone(s, locationId);
   if (typeof loc === "string") return fail(loc);
-  if (!carriersAt(datacenterById(loc.dc!)).some((c) => c.id === carrierId)) return fail("error.carrierAbsent");
+  // An own hall books only the carriers built into its meet-me room.
+  if (!(loc.dc ? carriersAt(datacenterById(loc.dc)).map((c) => c.id) : hallOf(s, loc.id)?.carriers ?? []).includes(carrierId)) return fail(loc.dc ? "error.carrierAbsent" : "error.carrierNotBuilt");
   if (!COMMITS.some((c) => c.share === commit)) return fail("error.unknownCommit");
   const u: Uplink = { id: `up${s.nextId++}`, locationId, kind: "transit", partner: carrierId, commit, links: [], samples: [] };
   return addLink(s, u, gbit, rackId, jack);
@@ -96,7 +98,7 @@ export function orderExchangePort(s: GameState, where: string, gbit: number, jac
   const { locationId, rackId } = placeOf(s, where);
   const loc = zone(s, locationId);
   if (typeof loc === "string") return fail(loc);
-  const x = exchangeAt(datacenterById(loc.dc!));
+  const x = loc.dc ? exchangeAt(datacenterById(loc.dc)) : null;
   if (!x) return fail("error.noExchange");
   if (!s.network.memberships.includes(x.id)) return fail("error.notMember");
   const u = s.network.uplinks.find((v) => v.kind === "exchange" && v.partner === x.id && v.locationId === locationId)

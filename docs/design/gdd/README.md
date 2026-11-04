@@ -11,6 +11,7 @@ Read only the section you need.
 - [The world](the-world.md)
 - [Multiplayer](multiplayer.md)
 - [Properties](properties.md)
+- [Own datacenter](own-datacenter.md)
 - [Travel](travel.md)
 - [Racks, hardware and cabling](racks-hardware-and-cabling.md)
 - [Clusters and products](clusters-and-products.md)

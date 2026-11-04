@@ -38,6 +38,7 @@ import {
   WallTray, Whiteboard,
 } from "./office";
 import { Closet } from "./office";
+import { hallScene } from "./hall";
 import "./world.css";
 
 // How dark a tripped room is drawn, darker than a night with the lights off.
@@ -332,6 +333,7 @@ export function World() {
     closet: (f) => <Closet f={f} />,
     corkboard: (f) => office ? <ReceptionBoard f={f} {...pinned} /> : <Corkboard f={f} {...pinned} span={2} />,
   };
+  if (loc.space === "hall") hallScene(game, loc, plan, tiles, { w, h }, things, draw);
   // A tripped room goes dark; its windows and lit bulbs are drawn again over the dark.
   const back: ReactNode[] = [], over: ReactNode[] = [], bright: ReactNode[] = [];
   for (const [id, f] of Object.entries(fx)) {

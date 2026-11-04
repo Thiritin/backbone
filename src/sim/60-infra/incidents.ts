@@ -1,4 +1,5 @@
 // economy/README.md, Power outages and Legal requests: grid outages per location, server seizures and the incident log.
+import { hallBackup, hallOf } from "../20-world/properties";
 import { holdsCopy } from "./backups";
 import { noticeChance, segmentOf } from "../10-catalog/attention";
 import { hashRng, rand, type Rng } from "../00-core/rng";
@@ -110,7 +111,7 @@ const normal = (r: Rng) => Math.sqrt(-2 * Math.log(1 - rand(r))) * Math.cos(2 * 
 
 // One grid outage at a location: the site and the location's UPS carry what they can, the rest goes dark.
 export function gridOutage(s: GameState, loc: Location, minutes: number, r: Rng, events: SimEvent[]): Incident {
-  const site = loc.dc ? datacenterById(loc.dc).backup : "none";
+  const hall = hallOf(s, loc.id), site = loc.dc ? datacenterById(loc.dc).backup : hall ? hallBackup(hall) : "none";
   const generatorFails = site === "ups+generator" && rand(r) < GRID.generatorFails;
   const bridged = upsMinutes(s, loc.id) + (site === "none" ? 0 : GRID.siteUpsMinutes);
   const dark = site === "ups+generator" && !generatorFails ? 0 : Math.max(0, Math.round(minutes - bridged));

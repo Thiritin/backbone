@@ -493,3 +493,10 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .prop-sec.mine { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 14%, var(--field)); }
 .prop-sec[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
 .prop-actions { flex-wrap: wrap; border-top: var(--ar-bw) solid var(--line); }
+.hall-plan { display: grid; gap: 6px; padding: 0 14px 12px; }
+.hall-grid { display: grid; gap: 2px; max-width: 480px; }
+.hall-tile { aspect-ratio: 1; min-width: 0; padding: 0; border-radius: 2px; border: var(--ar-bw) solid var(--line); background: var(--field); font-size: 10px; line-height: 1; color: var(--accent-ink, var(--text)); }
+.hall-tile:disabled { cursor: default; }
+.hall-tile.row { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 22%, var(--field)); }
+.hall-tile.row.filled { background: color-mix(in oklch, var(--accent) 55%, var(--field)); }
+.hall-tile[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 0; }

@@ -11,7 +11,7 @@ import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { positionsLabel, shareLabel, shareUnits, Sheet } from "./ui";
 
-type Rented = Exclude<SpaceKind, "basement" | "office">;
+type Rented = Exclude<SpaceKind, "basement" | "office" | "hall">;
 const CITIES = [...new Set(DATACENTERS.map((d) => d.city))].filter(listed);
 type Area = "eu" | "us";
 const AREAS = ([["eu", t("locations-1.europe"), { west: -1, south: 45, east: 17, north: 53 }], ["us", t("locations-1.northAmerica"), { west: -122, south: 28, east: -72, north: 46 }]] as [Area, string, Bounds][]).filter(([id]) => id === "eu" || WORLD === "all");

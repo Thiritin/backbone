@@ -1,4 +1,5 @@
 import { t } from "../../i18n/en";
+import { hallOf } from "../20-world/properties";
 import { rand } from "../00-core/rng";
 import { freeRackTiles, officePlan, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
@@ -1036,7 +1037,8 @@ export function setFeed(s: GameState, rackId: string, feed: "b" | "highDensity",
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return fail("error.unknownRack");
   if (rack.provided) return fail("error.providedRack");
-  if (!s.locations.find((l) => l.id === rack.locationId)!.dc) return fail("error.noFeeds");
+  // An own hall offers feed B once its second feed is built.
+  if (!s.locations.find((l) => l.id === rack.locationId)!.dc && !(feed === "b" && hallOf(s, rack.locationId)?.feedB)) return fail("error.noFeeds");
   if (feed === "b") rack.feedB = on;
   else if (feed === "highDensity") rack.highDensity = on;
   else return fail("error.unknownFeed");

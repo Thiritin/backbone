@@ -75,6 +75,10 @@ A rented or bought office is a location from its first section on, a destination
 
 Fluorescent tubes hang over every block and are lit during office hours, weekdays 9 to 18; outside them the room is one flat step darker. The staff assigned to desks in the office sit at their desks during office hours, facing their screens, with a small idle head tilt and typing hands. Each arrives in the first half hour at a time of their own, appearing at the door and walking the grid to the desk, and leaves in the last half hour the same way back. The figures cannot be clicked; pointing at one shows a name card on the desk. Arriving by car shows the office building with the company's plate beside its glass door.
 
+## Own datacenter
+
+A floor of an owned building fitted as a hall, or a bought Halle, is its own location and room, drawn from the rows the player laid out ([Own datacenter](own-datacenter.md)). The room is a raised floor wide enough for one cooling unit per 8 positions along the far wall and two tiles deeper for every ten positions. The left wall holds the entrance with its badge reader, the transformer room door, the meet-me room door and an extinguisher; a camera hangs in the far corner; a Halle has its loading dock on the far wall beside the cooling units. The NOC desk with three screens stands on the near row. Each row's positions show as dashed floor marks until a rack stands there; the floor between two rows facing each other is tinted as the cold aisle; cable trays run just above the rack tops along every row, with the tubes above them. Colocation customers' racks stand on their positions as closed neighbour racks with a padlock. While the hall carries heat, the racks past the cooled positions shimmer, and a tripped hall goes dark. Dragging an empty row's floor mark moves the row.
+
 ## Movement and interaction
 
 The room is played like a tycoon game. There is no figure to walk around: the player looks at the room and clicks objects directly, and a click acts at once. The arrow keys and WASD pan the view, the wheel zooms and a drag pans. Keys do nothing while a dialog or menu is open.

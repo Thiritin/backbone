@@ -136,7 +136,7 @@ interface Exit { id: string; tier: number; cap: number; used: number; share: num
 
 export function exitsOf(s: GameState, loc: Location): Exit[] {
   if (loc.space === "office") return [{ id: "home", tier: 2, cap: Math.min(loc.line?.mbit ?? 0, routerMbps(s, loc)), used: 0, share: 1 }];
-  if (!loc.dc) return [{ id: "home", tier: 2, cap: Math.min(homeLineById(s.homeLine.id).up * lineFactor(s), routerMbps(s, loc)), used: 0, share: 1 }];
+  if (!loc.dc && loc.space !== "hall") return [{ id: "home", tier: 2, cap: Math.min(homeLineById(s.homeLine.id).up * lineFactor(s), routerMbps(s, loc)), used: 0, share: 1 }];
   const exits: Exit[] = [];
   const seen = new Set<string>();
   for (const u of s.network.uplinks.filter((x) => x.locationId === loc.id)) {
@@ -149,7 +149,7 @@ export function exitsOf(s: GameState, loc: Location): Exit[] {
     }
     exits.push({ id: u.id, tier: u.kind === "exchange" ? 0 : 1, cap: uplinkMbps(s, u), used: 0, share });
   }
-  exits.push({ id: `dc:${loc.id}`, tier: 2, cap: DC_BANDWIDTH.mbps, used: 0, share: 1 });
+  if (loc.dc) exits.push({ id: `dc:${loc.id}`, tier: 2, cap: DC_BANDWIDTH.mbps, used: 0, share: 1 });
   return exits;
 }
 

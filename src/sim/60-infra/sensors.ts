@@ -28,7 +28,7 @@ const stillC = (s: GameState, loc: Location) => {
 export const fanRuns = (s: GameState, loc: Location): boolean => !loc.dc && stillC(s, loc).fan;
 export function roomTemperature(s: GameState, loc: Location): number {
   const heat = s.ops.heat[loc.id] ?? 0;
-  if (loc.dc) return ROOM.hallC + heat;
+  if (loc.dc || loc.space === "hall") return ROOM.hallC + heat;
   const { base, kw, fan } = stillC(s, loc);
   return base + (fan ? ROOM.fanPerKw : ROOM.perKw) * kw + heat;
 }

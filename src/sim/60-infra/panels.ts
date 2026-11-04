@@ -7,7 +7,11 @@ export type JackRole = "free" | "uplink" | "xconnect" | "provider-cable";
 export const isProviderPanel = (d: { model: string }): boolean => d.model === PROVIDER_PANEL;
 // A rack stands on a provider's floor when its location is in a datacenter; the office and basement are the player's own.
 export const rentedFloor = (s: GameState, r: Rack): boolean => !!s.locations.find((l) => l.id === r.locationId)?.dc;
-export const panelOf = (s: GameState, rackId: string): Device | undefined => s.devices.find((d) => d.rackId === rackId && isProviderPanel(d));
+// An own hall has no provider panel: the carriers land on a fiber patch panel the player mounts in the rack.
+export const MEETME_PANELS = ["patch-24f", "patch-48f"];
+const inHall = (s: GameState, rackId: string) => s.locations.find((l) => l.id === s.racks.find((r) => r.id === rackId)?.locationId)?.space === "hall";
+export const panelOf = (s: GameState, rackId: string): Device | undefined =>
+  s.devices.find((d) => d.rackId === rackId && isProviderPanel(d)) ?? (inHall(s, rackId) ? s.devices.find((d) => d.rackId === rackId && MEETME_PANELS.includes(d.model)) : undefined);
 
 // Each jack's role, read from the uplink links, cross-connects, provider cables and pending cable orders bound to it.
 export function jackRoles(s: GameState, panelId: string): JackRole[] {
