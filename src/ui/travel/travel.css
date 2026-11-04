@@ -4,11 +4,11 @@
   --map-label: oklch(0.72 0.01 250);
   background: var(--map-bg);
 }
-.travel-map .wm { position: absolute; inset: 0; border: 0; border-radius: 0; --wm-land: oklch(0.31 0.012 250); --wm-coast: oklch(0.4 0.012 250); --text: oklch(0.97 0 0); --win: oklch(0.2 0.015 250); }
+.travel-map .wm { position: absolute; inset: 0; border: 0; border-radius: 0; }
 .travel-map .wm-cables { display: none; }
 .travel-close {
-  position: absolute; top: 16px; right: 16px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid oklch(1 0 0 / 0.2);
-  background: oklch(0.18 0.01 250 / 0.85); color: white; font: 600 13px Inter, sans-serif; cursor: pointer;
+  position: absolute; top: 16px; right: 16px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid oklch(0 0 0 / 0.2);
+  background: oklch(0.99 0.01 92 / 0.92); color: oklch(0.22 0.02 258); font: 600 13px Inter, sans-serif; cursor: pointer;
 }
 .travel-error {
   position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 8px 14px; border-radius: 8px;
@@ -16,12 +16,12 @@
 }
 
 .travel-road svg, .travel-scene svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.tr-land { fill: oklch(0.31 0.012 250); stroke: oklch(0.4 0.012 250); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
-.tr-roads { fill: none; stroke: oklch(0.48 0.006 250); stroke-width: 0.8; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.tr-land { fill: var(--wm-land); stroke: var(--wm-coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+.tr-roads { fill: none; stroke: oklch(0.78 0.1 70); stroke-width: 1.2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .tr-route { fill: none; stroke: var(--accent); stroke-linejoin: round; stroke-linecap: round; }
 .tr-trail { fill: none; stroke: color-mix(in oklch, var(--accent) 60%, white); stroke-linejoin: round; }
 .tr-end { fill: oklch(0.18 0.01 250); stroke: var(--accent); stroke-width: 2; }
-.tr-name { font: 600 11px Inter, sans-serif; fill: oklch(0.95 0 0); stroke: oklch(0.2 0.02 250); stroke-width: 3px; paint-order: stroke; }
+.tr-name { font: 600 11px Inter, sans-serif; fill: oklch(0.22 0.02 258); stroke: var(--wm-halo); stroke-width: 3px; paint-order: stroke; }
 .tr-car { fill: oklch(0.97 0.02 95); }
 .tr-plate { font: 700 7px "JetBrains Mono", ui-monospace, monospace; fill: oklch(0.25 0.02 260); }
 .travel-clock {
@@ -30,8 +30,10 @@
 }
 .travel-clock strong { color: var(--accent-soft); font-weight: 650; }
 .travel-fade { position: absolute; inset: 0; background: black; pointer-events: none; }
-.tr-streets { fill: none; stroke: oklch(0.43 0.008 250); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.tr-streets-case { fill: none; stroke: oklch(0.8 0.015 80); stroke-width: 2.6px; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.tr-streets { fill: none; stroke: oklch(1 0 0); stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.travel-map, .travel-road { --map-bg: oklch(0.85 0.06 232); }
 .travel-osm {
   position: absolute; right: 8px; bottom: 6px; padding: 2px 6px; border-radius: 4px;
-  background: oklch(0.16 0.01 250 / 0.7); color: oklch(0.75 0.01 250); font: 500 10px Inter, sans-serif; pointer-events: none;
+  background: oklch(0.99 0.01 92 / 0.85); color: oklch(0.34 0.03 250); font: 500 10px Inter, sans-serif; pointer-events: none;
 }

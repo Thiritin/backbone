@@ -52,6 +52,17 @@ export const loadStreets = (city: string): Promise<LL[][]> => {
   return streets.get(city)!;
 };
 
+// Water, green, built-up areas, major roads and rail of a city, one chunk per city.
+export type Geo = Record<"water" | "waterway" | "green" | "built" | "major" | "second" | "rail", LL[][]>;
+const geoFiles = import.meta.glob<{ GEO: Geo }>("../map/geo/*.ts");
+const geos = new Map<string, Promise<Geo | null>>();
+export const loadGeo = (city: string): Promise<Geo | null> => {
+  const load = geoFiles[`../map/geo/${codeOf(city)?.code}.ts`];
+  if (!load) return Promise.resolve(null);
+  if (!geos.has(city)) geos.set(city, load().then((m) => m.GEO, () => null));
+  return geos.get(city)!;
+};
+
 // The driven polyline between two game cities by name, a great-circle arc when no road route is stored.
 export function routeOf(from: string, to: string, routes: Record<string, LL[]>): LL[] {
   const a = codeOf(from), b = codeOf(to);

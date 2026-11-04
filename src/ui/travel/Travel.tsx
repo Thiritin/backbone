@@ -7,10 +7,11 @@ import { formatClock, MS_PER_HOUR, nowHours } from "../../sim/00-core/time";
 import { COUNTRY, datacenterById, listed } from "../../sim/20-world/datacenters";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
-import { cityNamed, LAND, WorldMap, X, XF, Y, type Marker } from "../map/WorldMap";
+import { GeoLayer, geoPaths } from "../map/GeoLayer";
+import { cityNamed, LAND, WorldGeo, WorldMap, X, XF, Y, type Marker } from "../map/WorldMap";
 import { useStore } from "../store";
 import { placeOf } from "../../sim/20-world/places";
-import { along, arc, driveMs, driveOf, km, loadRoutes, loadStreets, useTrip, type LL, type RouteData, type Trip } from "./route";
+import { along, arc, driveMs, driveOf, km, loadRoutes, loadGeo, loadStreets, useTrip, type LL, type RouteData, type Trip } from "./route";
 import { readyIn } from "../apps/hw";
 import { Scene, useSkip } from "./Scene";
 import { engineRun, jetRun } from "./sounds";
@@ -33,7 +34,12 @@ function TravelMap() {
   const here = playerAt(game);
   const [focus, setFocus] = useState<string | null>(null);
   const [streets, setStreets] = useState("");
-  useEffect(() => { let on = true; void loadStreets(focus ?? here.city).then((l) => on && setStreets(toPath(l))); return () => { on = false; }; }, [focus]);
+  const [geo, setGeo] = useState<ReturnType<typeof geoPaths>>(null);
+  useEffect(() => {
+    let on = true;
+    void Promise.all([loadStreets(focus ?? here.city), loadGeo(focus ?? here.city)]).then(([l, g]) => { if (on) { setStreets(toPath(l)); setGeo(geoPaths([g])); } });
+    return () => { on = false; };
+  }, [focus]);
   // Every reachable place as a pin at street zoom; above it, one pin per city with the count.
   const spots = useMemo(() => game.locations.flatMap((l) => {
     const c = cityNamed(l.city), p = placeOf(game, l.id) ?? c, d = l.id === here.id ? null : drive(game, l.id);
@@ -79,7 +85,7 @@ function TravelMap() {
 
   return (
     <div ref={ref} className="travel travel-map" role="dialog" aria-label={t("travel.map")} tabIndex={-1}>
-      <WorldMap key={focus ?? ""} initial={initial} markers={markers} onMarkerClick={pick} minW={0.04} layer={streets && <path className="tr-streets" d={streets} />} />
+      <WorldMap key={focus ?? ""} className="wm-geo" initial={initial} markers={markers} onMarkerClick={pick} minW={0.04} layer={streets && <GeoLayer geo={geo} streets={streets} />} />
       {streets && <div className="travel-osm">{t("travel.osm")}</div>}
       <button className="travel-close" onClick={() => send("close")}>{t("travel.close")}</button>
       {error && <div className="travel-error" role="alert">{error}</div>}
@@ -99,15 +105,15 @@ const STREET_KM = 3, END = 0.2, STREET_W = 4, STREET_MS = 3000;
 
 // Holds the dark map until the routes, roads and both cities' streets have loaded.
 function Road({ trip }: { trip: Trip }) {
-  const [data, setData] = useState<{ rd: RouteData; roads: string; streets: string } | null>(null);
+  const [data, setData] = useState<{ rd: RouteData; roads: string; streets: string; geo: ReturnType<typeof geoPaths> } | null>(null);
   useEffect(() => {
-    void Promise.all([loadRoutes(), loadRoads(), loadStreets(trip.from.city), loadStreets(trip.to.city)])
-      .then(([rd, roads, a, b]) => setData({ rd, roads, streets: trip.by === "fly" ? "" : toPath(a === b ? a : [...a, ...b]) }));
+    void Promise.all([loadRoutes(), loadRoads(), loadStreets(trip.from.city), loadStreets(trip.to.city), loadGeo(trip.from.city), loadGeo(trip.to.city)])
+      .then(([rd, roads, a, b, ga, gb]) => setData({ rd, roads, streets: trip.by === "fly" ? "" : toPath(a === b ? a : [...a, ...b]), geo: trip.by === "fly" ? null : geoPaths(ga === gb ? [ga] : [ga, gb]) }));
   }, [trip]);
   return data ? <Drive trip={trip} {...data} /> : <div className="travel travel-road" />;
 }
 
-function Drive({ trip, rd, roads, streets }: { trip: Trip; rd: RouteData; roads: string; streets: string }) {
+function Drive({ trip, rd, roads, streets, geo }: { trip: Trip; rd: RouteData; roads: string; streets: string; geo: ReturnType<typeof geoPaths> }) {
   const game = useStore((s) => s.game), advance = useStore((s) => s.advance), send = useTrip((s) => s.send);
   const fly = trip.by === "fly";
   const route = useMemo(() => {
@@ -166,9 +172,9 @@ function Drive({ trip, rd, roads, streets }: { trip: Trip; rd: RouteData; roads:
   return (
     <div className="travel travel-road" role="dialog" aria-label={t(fly ? "travel.air" : "travel.road")}>
       <svg viewBox={`${cx - w / 2} ${cy - h / 2} ${w} ${h}`} preserveAspectRatio="xMidYMid slice">
-        <path className="tr-land" d={LAND} />
+        <path className="tr-land" d={LAND} /><WorldGeo />
         <path className="tr-roads" d={roads} style={{ opacity: z }} />
-        {streets && <path className="tr-streets" d={streets} style={{ opacity: 1 - z }} />}
+        {streets && <GeoLayer geo={geo} streets={streets} opacity={1 - z} />}
         <polyline className="tr-trail" points={line([...pts.slice(0, car.i + 1), car])} strokeWidth={2 * px} strokeDasharray={`${4 * px} ${3 * px}`} />
         <polyline className="tr-route" points={line([car, ...pts.slice(car.i + 1)])} strokeWidth={2 * px} />
         {ends.map(({ l, p }) => p && (

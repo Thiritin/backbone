@@ -1,6 +1,7 @@
 import { Minus, Plus, Warehouse } from "lucide-react";
-import { memo, useEffect, useRef, type ReactNode } from "react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../i18n/en";
+import { LOCALE } from "../../i18n/lang";
 import { hasMark, Logo } from "../art/logos";
 import { CABLES, CITIES, COAST, type City } from "./world-data";
 import "./map.css";
@@ -271,6 +272,7 @@ const Base = memo(function Base({ onCity }: { onCity: (c: City) => void }) {
     <>
       <path className="wm-grat" d={GRID} />
       <path className="wm-land" d={LAND} />
+      <WorldGeo />
       <clipPath id="wm-world"><rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} /></clipPath>
       <g className="wm-cables" clipPath="url(#wm-world)">
         {CABLE_D.map((c) => (
@@ -289,3 +291,27 @@ const Base = memo(function Base({ onCity }: { onCity: (c: City) => void }) {
     </>
   );
 }, () => true);
+
+type WorldGeoData = typeof import("./world-geo");
+export const lines = (ls: [number, number][][], close = false) => ls.map((l) => "M" + l.map(([lon, lat]) => `${X(lon)} ${Y(lat)}`).join("L") + (close ? "Z" : "")).join("");
+
+// Lakes, rivers and borders, with country names in the interface language; loaded after the first paint.
+export function WorldGeo() {
+  const [g, setG] = useState<WorldGeoData | null>(null);
+  useEffect(() => { void import("./world-geo").then(setG); }, []);
+  if (!g) return null;
+  const names = new Intl.DisplayNames(LOCALE, { type: "region" });
+  return (
+    <>
+      <path className="wm-lake" d={lines(g.LAKES, true)} />
+      <path className="wm-river" d={lines(g.RIVERS)} />
+      <path className="wm-admin" d={lines(g.REGION_LINES)} />
+      <path className="wm-border" d={lines(g.BORDERS)} />
+      <g className="wm-countries">
+        {g.COUNTRIES.map(([iso, lon, lat, rank]) => (
+          <g key={iso} className={`wm-r${rank}`} transform={`translate(${X(lon)} ${Y(lat)})`}><g className="wm-s"><text className="wm-country">{names.of(iso)}</text></g></g>
+        ))}
+      </g>
+    </>
+  );
+}
