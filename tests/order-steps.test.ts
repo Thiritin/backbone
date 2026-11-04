@@ -122,6 +122,9 @@ describe("order steps", () => {
     // A second Create quote opens the same draft.
     expect(createQuote(s, id)).toEqual({ ok: true, id: q.id });
     expect(editQuote(s, q.id, 12.5, 20).ok).toBe(true);
+    expect(editQuote(s, q.id, 3.104, 0).ok).toBe(true);
+    expect(s.quotes.find((x) => x.id === q.id)!.monthly).toBe(3.1);
+    expect(editQuote(s, q.id, 12.5, 20).ok).toBe(true);
     q = s.quotes.find((x) => x.id === made)!;
     expect(q.lines.map((l) => [l.key, l.amount])).toEqual([["invoice.line.setupFee", 20], ["invoice.line.firstMonth", 12.5], ["invoice.line.domain", DOMAIN_FEE]]);
     expect(convertQuote(s, q.id)).toEqual({ ok: false, error: "error.quoteNotAccepted" });

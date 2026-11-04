@@ -129,6 +129,8 @@ export default {
   "event.officeOpen.text": () => "Le service en ligne du greffe est ouvert jusqu'à 16:00.",
   "event.trainingDone.title": () => "Formation terminée",
   "event.trainingDone.text": (p) => `Ton entreprise a appris : ${p.skill}.`,
+  "event.cardReady.title": () => "Carte de crédit approuvée",
+  "event.cardReady.text": (p) => `${p.bank} a envoyé les données de la carte par e-mail.`,
   "event.lineReady.title": () => "Ligne internet connectée",
   "event.lineReady.text": (p) => `Le sous-sol est en ligne avec ${p.isp} ${p.line}.`,
   "ledger.homeLine": (p) => `Ligne internet ${p.isp} ${p.line}`,

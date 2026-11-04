@@ -4,7 +4,7 @@ import { authCode, domainFee, domainOf, extend } from "../30-customers/registry"
 import type { SalesRequest } from "../30-market/market";
 import type { Address } from "../30-customers/addresses";
 import { canAutomate, draftInvoice, firstLines, invoiceOf, issueInvoice, resize, shopRegisters, stepError, stepMinutes, type OrderStep } from "../30-market/manual";
-import { offerPrice, setupFee } from "../30-market/spec";
+import { setupFee } from "../30-market/spec";
 import { cyclesFor, discountOf } from "../30-market/cycles";
 import type { Cycle } from "../10-catalog/cycles";
 import { carryForward, type Quote } from "../30-market/quotes";
@@ -116,7 +116,7 @@ export function createQuote(s: GameState, ticketId: string): ActionResult {
   if (error) return fail(error);
   const open = s.quotes.find((q) => q.ticketId === ticketId && q.status === "draft");
   if (open) return { ok: true, id: open.id };
-  const monthly = r.counter ?? Math.round(offerPrice(s, r.product, r.spec, r.sla) * 100) / 100;
+  const monthly = r.counter ?? r.reference;
   const setup = r.setup ?? setupFee(s, r.product);
   const q: Quote = {
     id: `quo${s.nextId++}`, number: `${yearOf(s.hour)}-${String(s.quotes.length + 1).padStart(4, "0")}`, customerId: r.customerId, ticketId,

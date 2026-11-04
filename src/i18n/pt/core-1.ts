@@ -129,6 +129,8 @@ export default {
   "event.officeOpen.text": () => "O serviço online da conservatória está aberto até às 16:00.",
   "event.trainingDone.title": () => "Formação concluída",
   "event.trainingDone.text": (p) => `A tua empresa aprendeu: ${p.skill}.`,
+  "event.cardReady.title": () => "Cartão de crédito aprovado",
+  "event.cardReady.text": (p) => `${p.bank} enviou os dados do cartão por e-mail.`,
   "event.lineReady.title": () => "Linha de internet ligada",
   "event.lineReady.text": (p) => `O porão está online com ${p.isp} ${p.line}.`,
   "ledger.homeLine": (p) => `Linha de internet ${p.isp} ${p.line}`,

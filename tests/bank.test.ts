@@ -211,6 +211,19 @@ describe("card and overdraft", () => {
     expect(s.ledger.some((e) => e.key === "ledger.cardFee" && e.amount === -30)).toBe(true);
   });
 
+  it("announces the approved card exactly once, across ticks and save and load", () => {
+    let s = banked();
+    applyCard(s);
+    const keys: string[] = [];
+    for (let i = 0; i < 80 * 60; i++) {
+      keys.push(...tickMinute(s).map((e) => e.key));
+      // Reloads just before, at and after the approval hour.
+      if (i % 60 === 0 && [71, 72, 73].includes(i / 60)) s = deserialize(serialize(s));
+    }
+    expect(keys.filter((k) => k === "event.cardReady")).toHaveLength(1);
+    expect(s.hour).toBeGreaterThan(s.bank!.card!.readyAt);
+  });
+
   it("prints a fixed card number that passes Luhn and names it in the approval mail", () => {
     const s = banked();
     expect(cardDetails(s)).toBeNull();

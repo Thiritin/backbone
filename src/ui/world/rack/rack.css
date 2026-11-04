@@ -256,3 +256,4 @@
 .wk-slip-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 10px; }
 .wk-stamp { padding: 6px 10px; border: 2px solid oklch(0.5 0.2 27); border-radius: 0; background: none; color: oklch(0.45 0.2 27); font: inherit; font-size: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; transform: rotate(-3deg); }
 .wk-stamp:hover { background: oklch(0.5 0.2 27); color: oklch(0.98 0.01 27); }
+.wk-label-pw { margin-top: 4px; font: 700 16px var(--mono, monospace); letter-spacing: 0.04em; color: oklch(0.25 0.02 60); user-select: all; }

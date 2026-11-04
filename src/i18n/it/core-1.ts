@@ -129,6 +129,8 @@ export default {
   "event.officeOpen.text": () => "Il servizio online della camera di commercio è aperto fino alle 16:00.",
   "event.trainingDone.title": () => "Formazione completata",
   "event.trainingDone.text": (p) => `La tua azienda ha imparato: ${p.skill}.`,
+  "event.cardReady.title": () => "Carta di credito approvata",
+  "event.cardReady.text": (p) => `${p.bank} ha inviato i dati della carta per e-mail.`,
   "event.lineReady.title": () => "Linea internet collegata",
   "event.lineReady.text": (p) => `Il seminterrato è online con ${p.isp} ${p.line}.`,
   "ledger.homeLine": (p) => `Linea internet ${p.isp} ${p.line}`,

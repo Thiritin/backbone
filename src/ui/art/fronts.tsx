@@ -133,6 +133,8 @@ export interface FrontProps {
   // A part has failed: the fault light is red.
   fault?: boolean;
   onPower?: () => void;
+  // The password printed on the sticker of a small-office router.
+  note?: string;
   // The USB stick is in this server; onUsb plugs it in or pulls it.
   stick?: boolean;
   onUsb?: () => void;
@@ -384,6 +386,13 @@ function Gateway(p: FrontProps) {
         <rect x={bx} y={by} width={bw} height={bh} rx="2.5" fill="oklch(0.78 0.008 90)" stroke="oklch(0.6 0.01 90)" strokeWidth="0.6" />
         <rect x={bx + 1.5} y={by + 1} width={bw - 3} height="1.2" rx="0.6" fill="oklch(0.86 0.006 90)" />
         <Label x={bx + 8} y={by + bh / 2 + fs * 0.9} text={name} size={fs} />
+        {p.note && (
+          <g>
+            <title>{p.note}</title>
+            <rect x={bx + bw * 0.5} y={by + 2.5} width={bw * 0.46} height={fs * 1.7} rx="0.6" fill="oklch(0.96 0.03 95)" stroke="oklch(0.7 0.02 90)" strokeWidth="0.4" />
+            <text x={bx + bw * 0.5 + 2} y={by + 2.5 + fs * 1.2} fontSize={fs * 0.95} fontFamily="var(--mono, monospace)" fill="oklch(0.25 0.01 90)">{p.note}</text>
+          </g>
+        )}
         {model.ports.map((_, i) => (
           <g key={i}>
             <rect x={px + i * 16} y={by + bh - 8} width="12" height="6" rx="0.8" fill="oklch(0.2 0.004 255)" />

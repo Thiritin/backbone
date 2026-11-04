@@ -10,7 +10,8 @@ import { ACTIONS, actionName, LOG_CAP, runAction } from "../src/sim/90-actions/i
 import { installPanel } from "../src/sim/90-actions/clusters";
 import { setPortShare } from "../src/sim/90-actions/lan";
 import { setCompany } from "../src/sim/90-actions/company";
-import { openBankAccount } from "../src/sim/90-actions/bank";
+import { openBankAccount, startTransfer as bankStartTransfer } from "../src/sim/90-actions/bank";
+import { startWebTransfer } from "../src/sim/90-actions/webpanel";
 import { savingsOf } from "../src/sim/46-finance/bank";
 import { buyDevice, connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
 import { startChallenge } from "../src/sim/90-actions/start";
@@ -94,6 +95,10 @@ describe("action log", () => {
     }
     expect(bad).toEqual([]);
     for (const fn of Object.values(POWER_ACTION)) expect(actionName(fn)).toBeDefined();
+  });
+  it("registers the bank transfer under its own name", () => {
+    expect(actionName(bankStartTransfer)).toBe("startTransfer");
+    expect(actionName(startWebTransfer)).toBe("startWebTransfer");
   });
 
   it("loads an old save with an empty log, no challenge and no scores", () => {

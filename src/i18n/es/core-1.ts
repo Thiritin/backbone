@@ -129,6 +129,8 @@ export default {
   "event.officeOpen.text": () => "El servicio en línea del registro mercantil está abierto hasta las 16:00.",
   "event.trainingDone.title": () => "Formación completada",
   "event.trainingDone.text": (p) => `Tu empresa ha aprendido: ${p.skill}.`,
+  "event.cardReady.title": () => "Tarjeta de crédito aprobada",
+  "event.cardReady.text": (p) => `${p.bank} ha enviado los datos de la tarjeta por correo electrónico.`,
   "event.lineReady.title": () => "Línea de internet conectada",
   "event.lineReady.text": (p) => `El sótano ya tiene conexión con ${p.isp} ${p.line}.`,
   "ledger.homeLine": (p) => `Línea de internet ${p.isp} ${p.line}`,

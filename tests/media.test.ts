@@ -90,6 +90,18 @@ describe("installation media", () => {
     expect(d.bootFrom).toBe("usb");
   });
 
+  it("still boots from USB from the not-found screen after POST is over", () => {
+    const s = readyGame(7);
+    downloadImage(s, isoOf(s, "lunix"));
+    writeStick(s, isoOf(s, "lunix"));
+    plugStick(s, "dev3");
+    s.hour += 1;
+    dev(s).os = null;
+    expect(machineScreen(s, "dev3").kind).toBe("notFound");
+    expect(err(bootFromUsb(s, "dev3"))).toBe("ok");
+    expect(machineScreen(s, "dev3").kind).toBe("bootMenu");
+  });
+
   it("sends remote hands with the stick to a datacenter the player is away from", () => {
     const s = readyGame(7), dc = DATACENTERS[0];
     s.locations[0].dc = dc.id;

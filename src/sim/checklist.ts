@@ -9,6 +9,11 @@ import { siteBuilt } from "./80-business/website";
 const onlineServers = (s: GameState) =>
   s.devices.filter((d) => modelById(d.model).kind === "server" && linkStatus(s, d.id).online);
 const booked = (s: GameState, key: string) => s.ledger.some((e) => e.key === key);
+// Each first-install step also counts when a later one is done, so a step never unticks.
+const installed = (s: GameState) => s.devices.some((d) => modelById(d.model).kind === "server" && !!d.os);
+const booted = (s: GameState) => installed(s) || s.devices.some((d) => d.bootFrom === "usb");
+const plugged = (s: GameState) => booted(s) || s.media.stick.in !== null;
+const written = (s: GameState) => plugged(s) || s.media.stick.os !== null;
 const rented = (s: GameState) => s.locations.filter((l) => l.dc !== null);
 
 // Checklist goals the game detects from state. Goals without an entry are ticked by hand.
@@ -28,6 +33,11 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   email: (s) => !!s.company.domain && s.mail.accounts.some((a) => a.domain === s.company.domain && a.closedAt === null),
   loan: (s) => booked(s, "ledger.loanTaken"),
   firstServer: (s) => onlineServers(s).length >= 1,
+  downloadIso: (s) => written(s) || s.media.images.length > 0,
+  writeStick: written,
+  plugStick: plugged,
+  bootUsb: booted,
+  installOs: installed,
   setup: (s) => s.clusters.some((c) => c.platform || c.panel),
   // The web host has a Web server share on the basement router, or an address of its own.
   shareWeb: (s) => s.clusters.some((c) => (c.platform || c.panel) && hasHosts(c) && clusterReachable(s, c)),
@@ -61,7 +71,7 @@ export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
 // The Getting started tutorial: each step is a checklist goal, done in this order.
-export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "setup", "findAddress", "shareWeb", "website", "domain", "email", "launch", "hosttoast", "flyers", "firstCustomer"] as const;
+export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "setup", "findAddress", "shareWeb", "website", "domain", "email", "launch", "hosttoast", "flyers", "firstCustomer"] as const;
 
 // A step that belongs to an app shows once that app is installed.
 export const GUIDE = [...TUTORIAL, "pearMail", "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;

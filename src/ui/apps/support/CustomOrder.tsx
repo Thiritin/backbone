@@ -200,7 +200,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   // Only the step the order is at: the offer until the customer accepts, then account, invoice, domain, setup, access data.
   const shown = [!done.quote ? (waiting ? "" : "quote") : !done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : !done.access ? "access" : ""];
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
-  const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : t("support.notSent");
+  const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : game.quotes.some((q) => q.ticketId === tk.id && q.status === "draft") ? t("orderSteps.status.draft") : t("support.notSent");
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (
     shown.includes(id) && (
       <li key={id} className="step now">

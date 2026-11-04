@@ -2,7 +2,8 @@ import { CalendarClock, Ellipsis, Flame, Hand, KeyRound, Pencil, PackageMinus, P
 import { useEffect, useState } from "react";
 import { t } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
-import { modelById, modelName } from "../../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById, modelName } from "../../../sim/10-catalog/hardware";
+import { routerPassword } from "../../../sim/60-infra/lan";
 import type { Device } from "../../../sim/50-state";
 import { deviceHealth, deviceValue } from "../../../sim/60-infra/status";
 import { sellDevice } from "../../../sim/90-actions/hardware";
@@ -118,6 +119,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
           <div className="wk-state">{armed ? POWER_LABEL.shutdown : state}</div>
         </div>
       )}
+      {isOfficeRouter(m) && !pending && !slip && <div className="wk-slip wk-label"><div className="wk-slip-name">{t("misc1.ipmi.password")}</div><div className="wk-label-pw">{routerPassword(game, d.id)}</div></div>}
       {pending ? (
         <Slip slip="offline" name={pending.title} text={pending.text} action={pending.action} onStamp={pending.confirm} onCancel={pending.cancel} />
       ) : slip ? (

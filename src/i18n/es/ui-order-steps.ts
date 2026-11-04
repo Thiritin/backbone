@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "books.tab.quotes": () => "Presupuestos",
-  "books.tab.unposted": () => "Facturas sin contabilizar",
+  "books.tab.unposted": () => "Presupuestos",
   "orderSteps.orderEmail": () => "Correo del pedido",
   "orderSteps.from": (p) => `De: ${p.name}`,
   "orderSteps.field.contact": () => "Contacto",

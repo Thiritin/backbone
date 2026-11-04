@@ -20,6 +20,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Browser: [
     type("Domains", "registrarTier", "domainsTransferred"),
     type("Trade office", "officeOpen"),
+    type("Bank", "cardReady"),
     type("Site", "siteDown"),
   ],
   Locations: [

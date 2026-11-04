@@ -2,7 +2,8 @@ import { Gauge, Plug, Truck, Zap } from "lucide-react";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { modelById, type DeviceKind, modelName } from "../../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById, type DeviceKind, modelName } from "../../../sim/10-catalog/hardware";
+import { routerPassword } from "../../../sim/60-infra/lan";
 import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
@@ -32,7 +33,7 @@ import { HandsButtons, HandsJobs, handsWays, jobBadge, useHandWork, type HandsHo
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
     const model = modelById(d.model);
-    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), stick: g.media.stick.in === d.id, badge: jobBadge(g, d.id), ...deviceLamps(g, d.id, model) };
+    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), stick: g.media.stick.in === d.id, note: modelById(d.model).kind === "gateway" && isOfficeRouter(model) ? routerPassword(g, d.id) : undefined, badge: jobBadge(g, d.id), ...deviceLamps(g, d.id, model) };
   });
 }
 

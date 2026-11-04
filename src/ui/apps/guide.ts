@@ -47,6 +47,16 @@ export function stepOf(s: GameState, id: StepId): Step {
     }
     case "internet":
       return { title: t("guide.step.internet"), text: t("apps.guide.step.internet"), app: "Locations", focus: { kind: "line", id: "home" } };
+    case "downloadIso":
+      return { title: t("guide.step.downloadIso"), text: t("apps.guide.step.downloadIso"), app: "Browser", focus: { kind: "url", id: HOME_URL } };
+    case "writeStick":
+      return { title: t("guide.step.writeStick"), text: t("apps.guide.step.writeStick"), app: "Applications" };
+    case "plugStick":
+      return { title: t("guide.step.plugStick"), text: t("apps.guide.step.plugStick"), app: "Locations", focus: server && { kind: "device", id: server.id } };
+    case "bootUsb":
+      return { title: t("guide.step.bootUsb"), text: t("apps.guide.step.bootUsb"), app: "Locations", focus: server && { kind: "device", id: server.id } };
+    case "installOs":
+      return { title: t("guide.step.installOs"), text: t("apps.guide.step.installOs"), app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "setup":
       return { title: t("guide.step.setup"), text: t("apps.guide.step.setup"), app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "findAddress":

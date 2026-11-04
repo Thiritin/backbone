@@ -36,6 +36,10 @@ After the company is styled, Getting started shows "Install a bookkeeping progra
 
 Each program's modules and their prices come from its vendor, sold on the vendor's site in the Browser and listed under Bookkeeping on Yahoy. Lexwear, WIZO, Saga and orgaMIN email a licence key for Register in Books; Collmix, sevDeck and lexoffize switch a module on at purchase. Lexwear's yearly update arrives as an invoice on each anniversary of the install; while it is unpaid Lexwear sells no new modules, and the program keeps working. Switching to another program in the Pear Store keeps every customer, invoice, quote, payment and supplier invoice, drops the old program's modules and stops its monthly fee. A program bought once installs again without a second licence.
 
+## The first server
+
+The corkboard and Erste Schritte name where each step happens. The credit card limit starts below the price of a server, so the cart shows the limit on the card option and the guide points to bank transfer or a lease. The router password is printed on a paper label on the router in the rack close-up. To install the first operating system the player writes the ISO to the USB stick from its Finder menu, plugs the stick into the USB port on the server's front, powers the server on and presses F11 on the startup screen to boot from the stick. The "Operating system not found" screen takes F11 as well, so the step never depends on timing. The bank announces the approved card by notification. The first customer's quote is written in the bookkeeping program under Quotes: New, Edit the price (it starts at the customer's expected price), Send.
+
 ## Apps that arrive later
 
 The registration installs Applications, Locations, Shop, Browser, Terminal, Support and Settings. Books arrives with the bookkeeping program (see below). Every other app arrives when its problem does, checked each morning at 09:00, with one email from Pear in Support and one News line:

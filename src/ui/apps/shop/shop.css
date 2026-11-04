@@ -257,3 +257,4 @@
 :root[data-os="tahoe"] .pst-tile { border-radius: 28%; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), 0 2px 6px oklch(0 0 0 / 0.2); }
 :root[data-os="tahoe"] .shop-cart { margin: 8px 8px 8px 0; border: var(--ar-bw) solid var(--line); border-radius: var(--ar-card); box-shadow: var(--ar-lift); background: color-mix(in oklch, var(--win), transparent 25%); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); }
 :root[data-os="tahoe"] .shop-offer { border-radius: var(--ar-pane); }
+.shop-pay-h { font-size: 12px; margin-top: 4px; }

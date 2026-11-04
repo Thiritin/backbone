@@ -14,7 +14,7 @@ import { opsTick } from "../40-support/notices";
 import { supportTick, workTick } from "../40-support/tick";
 import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
-import { bankTick, tanTick } from "../46-finance/bank";
+import { bankOf, bankTick, tanTick } from "../46-finance/bank";
 import { deliverPaidOrders } from "../80-business/vendor-shop";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
@@ -350,6 +350,8 @@ export function tick(state: GameState): SimEvent[] {
     events.push({ app: "Locations", key: "event.lineReady", params: { line: line.name, isp: line.isp } });
   }
   if (!state.registration && officeOpen(state.hour) && !officeOpen(state.hour - 1)) events.push({ app: "Browser", key: "event.officeOpen", params: {} });
+  const card = state.bank?.card;
+  if (card && card.readyAt === state.hour) events.push({ app: "Browser", key: "event.cardReady", params: { bank: bankOf(state)?.name ?? "" } });
   if (state.training && state.training.doneAt <= state.hour) {
     const skill = skillById(state.training.id)!;
     state.unlocks = [...state.unlocks, skill.id];

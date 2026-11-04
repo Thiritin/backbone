@@ -81,7 +81,7 @@ export function useOsScreen(game: GameState, m: Machine, active: boolean, stick:
       if (os === "windoors") return { screen, look: "win", ...windoors };
       return { screen, look: lunix.look ?? "lunix", ...lunix };
     case "hung": return { screen, look: os === "lunix" ? "lunix" : "win", view: !m.os ? <pre>{"Booting from Hard Disk ...\n\nOperating system not found\nReboot and select proper boot device"}</pre> : os === "lunix" ? <LunixLogin m={m} version={version} cursor="" /> : windoors.view, ...none };
-    case "notFound": return { screen, look: "nodisk", view: <pre>{"Booting from Hard Disk ...\n\nOperating system not found\nReboot and select proper boot device █"}</pre>, ...none };
+    case "notFound": return { screen, look: "nodisk", view: <pre>{"Booting from Hard Disk ...\n\nOperating system not found\nReboot and select proper boot device\nPress F11 for Boot Menu █"}</pre>, ...none };
     default: return { screen, look: screen.kind, view: null, ...none };
   }
 }
@@ -121,7 +121,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
   const onKey = (key: string) => {
-    if (shown === "post") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
+    if (shown === "post" || shown === "notFound") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
     else if (shown === "stuck") { if (key === "F1") act(continueBoot, d.id); else if (key === "Delete" || key === "F2") act(enterSetup, d.id); }
     else if (shown === "bios") bios.onKey(key);
     else if (shown === "menu") {
@@ -131,7 +131,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
       else if (key === "Enter" && usb && pick === 1) { act(bootFromUsb, d.id); setMenuFor(null); }
     } else if (shown !== "dark" && shown !== "hung") os.onKey(key);
   };
-  const keys = shown === "post" ? ["Delete", "F2", "F11"] : shown === "stuck" ? ["F1", "Delete"] : shown === "bios" ? ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight", "Enter", "Escape", "F10"]
+  const keys = shown === "post" || shown === "notFound" ? ["Delete", "F2", "F11"] : shown === "stuck" ? ["F1", "Delete"] : shown === "bios" ? ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight", "Enter", "Escape", "F10"]
     : shown === "menu" ? ["ArrowUp", "ArrowDown", "Enter", "Escape"] : shown === "dark" || shown === "hung" ? [] : os.keys;
   const look = shown === "bios" || shown === "menu" || shown === "dark" || shown === "post" || shown === "stuck" ? shown : os.look;
   return (

@@ -129,6 +129,8 @@ export default {
   "event.officeOpen.text": () => "Der Online-Service des Handelsregisteramts ist bis 16:00 Uhr geöffnet.",
   "event.trainingDone.title": () => "Schulung abgeschlossen",
   "event.trainingDone.text": (p) => `Deine Firma hat gelernt: ${p.skill}.`,
+  "event.cardReady.title": () => "Kreditkarte genehmigt",
+  "event.cardReady.text": (p) => `${p.bank} hat die Kartendaten per E-Mail geschickt.`,
   "event.lineReady.title": () => "Internetanschluss verbunden",
   "event.lineReady.text": (p) => `Der Keller ist jetzt mit ${p.isp} ${p.line} online.`,
   "ledger.homeLine": (p) => `Internetanschluss ${p.isp} ${p.line}`,

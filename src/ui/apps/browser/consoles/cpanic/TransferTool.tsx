@@ -4,7 +4,7 @@ import { formatClock } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
 import type { Cluster } from "../../../../../sim/60-infra/cluster";
 import { accountsOf } from "../../../../../sim/60-infra/webpanel";
-import { startTransfer } from "../../../../../sim/90-actions/webpanel";
+import { startWebTransfer } from "../../../../../sim/90-actions/webpanel";
 import { usePageAct } from "../../pageAct";
 
 // WHM > Transfers > Transfer Tool in its three steps: the remote server, the accounts, the transfer itself.
@@ -34,7 +34,7 @@ export function TransferTool({ game, c, x3 }: { game: GameState; c: Cluster; x3:
           ))}
         </tbody>
       </table>
-      <p className="cx-acts"><button className="cx-btn primary" disabled={!picked.some((id) => open.some((v) => v.id === id))} onClick={() => { for (const id of picked) act(startTransfer, c.id, id); setPicked([]); }}>{t("web.xfer.start")}</button></p>
+      <p className="cx-acts"><button className="cx-btn primary" disabled={!picked.some((id) => open.some((v) => v.id === id))} onClick={() => { for (const id of picked) act(startWebTransfer, c.id, id); setPicked([]); }}>{t("web.xfer.start")}</button></p>
       <h2>{t("web.xfer.step3")}</h2>
       <table className="cx-readout">
         <thead><tr><th>{t("web.xfer.account")}</th><th>{t("web.xfer.progress")}</th><th>{t("web.xfer.status")}</th></tr></thead>

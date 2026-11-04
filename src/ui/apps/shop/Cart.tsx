@@ -95,8 +95,9 @@ export function Cart() {
             <strong>{t("bank.shop.invoice")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
           </button>}
           <button role="radio" aria-checked={pay === "card"} className="shop-offer" disabled={!card} onClick={() => setPay("card")}>
-            <strong>{t("bank.shop.card")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
+            <strong>{t("bank.shop.card")}</strong><span className="grow" /><span className="num">{card ? euro(total) : cardReady(game) ? t("shop.cardLimit", { limit: euro(game.bank!.card!.limit) }) : t("shop.noCard")}</span>
           </button>
+          {offers.length > 0 && <strong className="shop-pay-h">{t("shop.leasing")}</strong>}
           {offers.map((o) => (
             <button key={o.id} role="radio" aria-checked={offer?.id === o.id} className="shop-offer" onClick={() => setPay(o.id)}>
               <span className="shop-offer-top">
