@@ -4,9 +4,9 @@ import { type GameState } from "../src/sim/50-state";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { tick } from "../src/sim/88-tick/tick";
 import { addLocation, buyRack, connect, disconnect, mountDevice, type ActionResult } from "../src/sim/90-actions/hardware";
-import { cancelHandsJob, hands, JOB_HOURS } from "../src/sim/90-actions/presence";
+import { cancelHandsJob, handsJobs, hands, JOB_HOURS } from "../src/sim/90-actions/presence";
 import { drive, travelTo } from "../src/sim/90-actions/travel";
-import { buyDevice, freeFloor, newGame, withServer } from "./fixtures";
+import { buyDevice, freeFloor, newGame, settle, withServer } from "./fixtures";
 
 const ok = (r: ActionResult) => {
   if (!r.ok) throw new Error(r.error);
@@ -45,12 +45,12 @@ describe("presence", () => {
     const cash = s.cash;
     const job = ok(mountDevice(s, id, rack, 10));
     expect(dev(s, id).rackId).toBeNull();
-    expect(s.handsJobs).toMatchObject([{ id: job, deviceId: id, dueAt: s.hour + rh.responseHours + JOB_HOURS.mount }]);
+    expect(handsJobs(s)).toMatchObject([{ id: job, deviceId: id, dueAt: s.hour + rh.responseHours + JOB_HOURS.mount }]);
     run(s, rh.responseHours);
     expect(dev(s, id).rackId).toBeNull();
     run(s, 1);
     expect(dev(s, id)).toMatchObject({ rackId: rack, slot: 10, maintenance: null });
-    expect(s.handsJobs).toEqual([]);
+    expect(handsJobs(s)).toEqual([]);
     const fee = JOB_HOURS.mount * rh.perHour;
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", amount: -fee });
     expect(s.ledger.filter((e) => e.key === "ledger.remoteHands")).toHaveLength(1);
@@ -62,8 +62,11 @@ describe("presence", () => {
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
     s.player = { ...s.player, at: loc };
     ok(mountDevice(s, id, rack, 10));
+    expect(dev(s, id).rackId).toBeNull();
+    expect(s.orders).toMatchObject([{ worker: "player", workMin: JOB_HOURS.mount * 60 }]);
+    settle(s);
     expect(dev(s, id).rackId).toBe(rack);
-    expect(s.handsJobs).toEqual([]);
+    expect(handsJobs(s)).toEqual([]);
   });
 
   it("queues cabling the same way", () => {
@@ -88,7 +91,7 @@ describe("presence", () => {
     const { s, loc, rack } = colo();
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
     expect(err(mountDevice(s, id, rack, 99))).toBe("error.outOfBounds");
-    expect(s.handsJobs).toEqual([]);
+    expect(handsJobs(s)).toEqual([]);
   });
 
   it("cancels a queued job before it runs", () => {
@@ -109,14 +112,14 @@ describe("presence", () => {
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
     const trip = drive(s, loc)!, cash = s.cash;
     const job = ok(mountDevice(s, id, rack, 10, "self"));
-    expect(s.handsJobs).toMatchObject([{ id: job, deviceId: id, fee: 0, self: true }]);
+    expect(handsJobs(s)).toMatchObject([{ id: job, deviceId: id, fee: 0, self: true }]);
     expect(s.player).toMatchObject({ at: loc, doing: "travel", until: s.hour + trip.hours });
     expect(cash - s.cash).toBe(trip.fee);
     run(s, trip.hours - 1);
     expect(dev(s, id).rackId).toBeNull();
     run(s, 2);
     expect(dev(s, id).rackId).toBe(rack);
-    expect(s.handsJobs).toEqual([]);
+    expect(handsJobs(s)).toEqual([]);
     expect(s.ledger.some((e) => e.key === "ledger.remoteHands")).toBe(false);
   });
 
@@ -129,7 +132,7 @@ describe("presence", () => {
     ok(mountDevice(s, b, rack, 11, "self"));
     expect(s.cash).toBe(cash);
     expect(s.player.until).toBe(until);
-    expect(s.handsJobs).toHaveLength(2);
+    expect(handsJobs(s)).toHaveLength(2);
   });
 
   it("does own hands at once when the player stands there", () => {
@@ -137,8 +140,9 @@ describe("presence", () => {
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
     s.player = { ...s.player, at: loc };
     ok(mountDevice(s, id, rack, 10, "self"));
+    settle(s);
     expect(dev(s, id).rackId).toBe(rack);
-    expect(s.handsJobs).toEqual([]);
+    expect(handsJobs(s)).toEqual([]);
   });
 
   it("cancels a queued own hands job", () => {
@@ -154,7 +158,7 @@ describe("presence", () => {
     const { s, loc, rack } = colo();
     const home = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1")), far = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
     ok(mountDevice(s, far, rack, 10, "self"));
-    run(s, drive(s, "loc1")!.hours + 24);
+    run(s, drive(s, "loc1")!.hours + 26);
     expect(dev(s, far).rackId).toBe(rack);
     ok(mountDevice(s, home, "rack2", 10, "self"));
     expect(s.player).toMatchObject({ at: "loc1", doing: "travel" });
@@ -166,15 +170,15 @@ describe("presence", () => {
     ok(travelTo(s, "loc1"));
     run(s, 48);
     expect(dev(s, home).rackId).toBe("rack2");
-    expect(s.handsJobs).toEqual([]);
+    expect(handsJobs(s)).toEqual([]);
   });
 
   it("loads an old save with no jobs and keeps queued ones", () => {
     const { s, loc, rack } = colo();
     const raw = JSON.parse(serialize(s)) as Record<string, unknown>;
-    delete raw.handsJobs;
-    expect(deserialize(JSON.stringify(raw)).handsJobs).toEqual([]);
+    delete raw.orders;
+    expect(deserialize(JSON.stringify(raw)).orders).toEqual([]);
     ok(mountDevice(s, ok(buyDevice(s, "sw-8", "Sysko", 1, loc)), rack, 10));
-    expect(deserialize(serialize(s)).handsJobs).toHaveLength(1);
+    expect(deserialize(serialize(s)).orders).toHaveLength(1);
   });
 });

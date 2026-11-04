@@ -14,6 +14,8 @@ import { freePositions, roomPower } from "../60-infra/status";
 import { t } from "../../i18n/en";
 import type { SimEvent } from "../88-tick/tick";
 import { buyRack, sellRack, type ActionResult } from "./hardware";
+import { hallDoer, JOB_HOURS } from "./presence";
+import { bumpLeave, orderWork, workMinutes } from "./work-orders";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const pay = (s: GameState, key: string, params: Record<string, string | number>, amount: number) => {
@@ -411,6 +413,49 @@ export function setColoRate(s: GameState, locationId: string, rate: number | nul
   return { ok: true };
 }
 
+// The city's going rate for an hour of remote hands: the average of its datacenters' rates.
+export const goingHandsRate = (city: string): number => {
+  const here = DATACENTERS.filter((d) => d.city === city);
+  return here.length ? Math.round(here.reduce((n, d) => n + d.remoteHands.perHour, 0) / here.length) : 0;
+};
+
+// Sets the hourly price customers pay for remote hands, or null for the going rate.
+export function setHandsRate(s: GameState, locationId: string, rate: number | null): ActionResult {
+  const h = hallAt(s, locationId);
+  if (!h) return fail("error.unknownLocation");
+  if (rate !== null && !(Number.isFinite(rate) && rate > 0)) return fail("error.badRate");
+  h.hall.handsRate = rate === null ? null : Math.round(rate);
+  return { ok: true };
+}
+
+// Each day every customer may book a remote hands job for the hall's technicians, the more likely the cheaper the rate is against the
+// going rate. Open jobs are capped per technician; a declined booking upsets the customer.
+export function handsTick(s: GameState): SimEvent[] {
+  const events: SimEvent[] = [];
+  s.properties.forEach((p, pi) => {
+    const hall = p.hall, loc = hall && s.locations.find((l) => l.id === hall.locationId);
+    if (!hall || !loc) return;
+    const techs = s.staff.filter((e) => e.role === "technician" && e.location === loc.id).length, going = goingHandsRate(loc.city);
+    if (!techs || !going) return;
+    const rate = hall.handsRate ?? going, chance = HALL.hands.chance * Math.max(0, Math.min(1.5, 2 - rate / going));
+    hall.customers.forEach((c, ci) => {
+      if (rand(hashRng(s.seed, s.hour, pi, ci, 11)) >= chance) return;
+      const draw = rand(hashRng(s.seed, s.hour, pi, ci, 12)), kinds = Object.entries(HALL.hands.kinds) as ["cable" | "mount" | "parts", number][];
+      let acc = 0;
+      const kind = kinds.find(([, w]) => (acc += w) > draw)?.[0] ?? "cable";
+      const open = s.orders.filter((o) => o.customerId && o.locationId === loc.id && !o.applied).length, doer = hallDoer(s, loc.id);
+      if (open >= HALL.hands.perTech * techs || !doer) {
+        bumpLeave(s, loc.id, c.id);
+        events.push({ app: "Locations", key: "event.handsDeclined", params: { customer: c.name, location: loc.name } });
+        return;
+      }
+      const tile = customerSpots(hall, c)[0];
+      orderWork(s, doer, loc.id, tile ? { tile } : {}, null, { kind: "hands", what: kind, workMin: workMinutes(s, doer, kind), customerId: c.id, fee: cents(JOB_HOURS[kind] * rate) });
+    });
+  });
+  return events;
+}
+
 // Fictional local firms that rent a rack in someone else's hall.
 const COLO_NAMES = ["Mainbit", "Taunusnet", "Kranich Media", "Datenwerk Süd", "Pixelhafen", "Nordlicht IT", "Brückner Systems", "Rheinhost", "Ebbelwoi Labs", "Zeilensprung"];
 
@@ -462,13 +507,13 @@ export function coloTick(s: GameState): SimEvent[] {
     }
     const outage = hall.outage;
     hall.outage = false;
-    const left = hall.customers.filter((c, i) => rand(hashRng(s.seed, s.hour, pi, i, 1)) < (outage || unhappy.has(c.id) ? HALL.colo.leavesAfterOutage : HALL.colo.leaves));
+    const left = hall.customers.filter((c, i) => rand(hashRng(s.seed, s.hour, pi, i, 1)) < (outage || unhappy.has(c.id) ? HALL.colo.leavesAfterOutage : HALL.colo.leaves) + c.leaveBump);
     for (const c of left) {
       const params = { customer: c.name, location: loc.name };
       if (outage || unhappy.has(c.id)) events.push({ app: "Locations", key: "event.coloLeftOutage", params });
       else events.push({ app: "Locations", key: "event.coloLeft", params });
     }
-    hall.customers = hall.customers.filter((c) => !left.includes(c));
+    hall.customers = hall.customers.filter((c) => !left.includes(c)).map((c) => (c.leaveBump ? { ...c, leaveBump: 0 } : c));
     hall.xconnects = hall.xconnects.filter((x) => hall.customers.some((c) => c.id === x.customerId));
     hubTick(s, hall, loc, pi, events);
     signTick(s, hall, loc, pi, events);
@@ -512,14 +557,14 @@ function signTick(s: GameState, hall: Hall, loc: Location, pi: number, events: S
     const free = freeColo()[0];
     if (free === undefined || rand(hashRng(s.seed, s.hour, pi, 2, k)) >= signChance(hall.rate, going)) continue;
     const zone = free.z, n = name(), id = `colo${s.nextId++}`;
-    hall.customers = [...hall.customers, { id, name: n, tile: free.t, monthly: hall.rate, since: s.hour, kw: kw(k), zoneId: zone.id }];
+    hall.customers = [...hall.customers, { id, name: n, tile: free.t, monthly: hall.rate, since: s.hour, kw: kw(k), zoneId: zone.id, leaveBump: 0 }];
     events.push({ app: "Locations", key: "event.coloSigned", params: { customer: n, location: loc.name, amount: euro(hall.rate) } });
   }
   if (yearOf(s.hour) < HALL.zones.cage.from) return;
   hall.zones.forEach((z, zi) => {
     if (z.kind !== "cage" || hall.customers.some((c) => c.zoneId === z.id) || rand(hashRng(s.seed, s.hour, pi, 4, zi)) >= HALL.colo.signs) return;
     const n = name(), monthly = Math.round(z.length * hall.rate! * HALL.colo.cageMarkup), id = `colo${s.nextId++}`;
-    hall.customers = [...hall.customers, { id, name: n, tile: null, monthly, since: s.hour, kw: kw(100 + zi), zoneId: z.id }];
+    hall.customers = [...hall.customers, { id, name: n, tile: null, monthly, since: s.hour, kw: kw(100 + zi), zoneId: z.id, leaveBump: 0 }];
     events.push({ app: "Locations", key: "event.cageSigned", params: { customer: n, location: loc.name, amount: euro(monthly), positions: z.length } });
   });
 }

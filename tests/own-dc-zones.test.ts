@@ -1,3 +1,4 @@
+import { settle } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { datacenterById } from "../src/sim/20-world/datacenters";
 import { customerSpots, HALL, hallSpots } from "../src/sim/20-world/properties";
@@ -81,10 +82,10 @@ describe("own datacenter: zones", () => {
     const id = ok(buyRack(s, hallId, "rack-42", freePositions(s, hallId)[0]));
     ok(edit(e, { place: [{ kind: "rack", rackId: id, ...A(0) }] }));
     s.racks.find((r) => r.id === id)!.arriveAt = null;
-    ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), id, 1));
+    ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), id, 1)); settle(s);
     const carrier = cityCarriers("Frankfurt")[0].id;
     ok(buildCarrier(s, hallId, carrier));
-    ok(mountDevice(s, ok(buyDevice(s, "patch-24f", "Pandoot", 1, hallId)), id, 3));
+    ok(mountDevice(s, ok(buyDevice(s, "patch-24f", "Pandoot", 1, hallId)), id, 3)); settle(s);
     ok(orderTransit(s, hallId, carrier, 1, 0.2));
     const old = JSON.parse(serialize(s));
     const h = old.properties.find((p: { hall?: unknown }) => p.hall).hall;
@@ -182,9 +183,9 @@ describe("own datacenter: meet-me, cross-connects and the hub", () => {
     const id = ok(buyRack(e.s, e.hallId, "rack-42", freePositions(e.s, e.hallId)[0]));
     ok(edit(e, { place: [{ kind: "rack", rackId: id, ...B(0) }] }));
     e.s.racks.find((r) => r.id === id)!.arriveAt = null;
-    ok(mountDevice(e.s, ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId)), id, 1));
+    ok(mountDevice(e.s, ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId)), id, 1)); settle(e.s);
     const panel = ok(buyDevice(e.s, model, "Pandoot", 1, e.hallId));
-    ok(mountDevice(e.s, panel, id, 3));
+    ok(mountDevice(e.s, panel, id, 3)); settle(e.s);
     const carrier = cityCarriers("Frankfurt")[0].id;
     ok(buildCarrier(e.s, e.hallId, carrier));
     return { ...e, rack: id, panel, carrier };
@@ -193,7 +194,7 @@ describe("own datacenter: meet-me, cross-connects and the hub", () => {
   it("uplinks land only on panels in the zone, and a 48-jack panel gives 48 jacks", () => {
     const m = meetMe("patch-48f");
     const outside = rack(m, 8, 2);
-    ok(mountDevice(m.s, ok(buyDevice(m.s, "patch-24f", "Pandoot", 1, m.hallId)), outside, 3));
+    ok(mountDevice(m.s, ok(buyDevice(m.s, "patch-24f", "Pandoot", 1, m.hallId)), outside, 3)); settle(m.s);
     expect(panelOf(m.s, outside)).toBeUndefined();
     expect(panelOf(m.s, m.rack)?.id).toBe(m.panel);
     expect(jackRoles(m.s, m.panel)).toHaveLength(48);

@@ -5,7 +5,7 @@ import type { Task } from "../src/sim/47-staff/staff";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { JOB_HOURS } from "../src/sim/90-actions/presence";
+import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
 import { addLocation, buyRack, mountDevice, mountHours, mountStack, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { queueOperation, setTechLocation } from "../src/sim/90-actions/staff";
 import { hire } from "./fixtures";
@@ -59,13 +59,13 @@ describe("mounting hardware", () => {
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
     const cash = s.cash, wait = hands.responseHours + JOB_HOURS.mount;
     ok(mountDevice(s, id, rack, 1));
-    expect(s.handsJobs).toHaveLength(1);
+    expect(handsJobs(s)).toHaveLength(1);
     expect(s.cash).toBe(cash);
     expect(dev(s, id).rackId).toBeNull();
     run(s, Math.ceil(wait) - 1);
     expect(dev(s, id).rackId).toBeNull();
     run(s, 1);
-    expect(s.handsJobs).toHaveLength(0);
+    expect(handsJobs(s)).toHaveLength(0);
     expect(dev(s, id)).toMatchObject({ rackId: rack, slot: 1 });
     expect(s.cash).toBe(cash - JOB_HOURS.mount * hands.perHour);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", params: { hours: JOB_HOURS.mount } });
@@ -76,7 +76,7 @@ describe("mounting hardware", () => {
     ok(buyDevice(s, "sw-8", "Sysko", 4, loc));
     const cash = s.cash;
     ok(mountStack(s, "sw-8", "Sysko", rack, 4));
-    expect(s.handsJobs).toHaveLength(1);
+    expect(handsJobs(s)).toHaveLength(1);
     run(s, Math.ceil(hands.responseHours + JOB_HOURS.mount));
     expect(s.devices.filter((d) => d.rackId === rack && d.model !== "panel-provider")).toHaveLength(4);
     expect(s.cash).toBe(cash - JOB_HOURS.mount * hands.perHour);
@@ -103,7 +103,8 @@ describe("mounting hardware", () => {
     const cash = s.cash;
     ok(mountDevice(s, id, rack, 1, "self"));
     expect(s.cash).toBe(cash);
-    expect(dev(s, id).maintenance).toMatchObject({ mount: true, doneAt: s.hour + 0.5 });
+    expect(s.orders).toMatchObject([{ worker: "player", kind: "mount", workMin: JOB_HOURS.mount * 60 }]);
+    expect(dev(s, id).rackId).toBeNull();
   });
 
   it("is a technician operation at their location, done without a fee", () => {

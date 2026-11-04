@@ -1,3 +1,4 @@
+import { settle } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { footprint, officePlan, rackTiles, siteAreas } from "../src/sim/20-world/layout";
 import { HALL, hallKw } from "../src/sim/20-world/properties";
@@ -87,7 +88,7 @@ describe("own datacenter: racks in use", () => {
     e.s.player = { ...e.s.player, at: e.hallId };
     const id = rack(e, 5, 2);
     const dev = ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId));
-    ok(mountDevice(e.s, dev, id, 1));
+    ok(mountDevice(e.s, dev, id, 1)); settle(e.s);
     expect(err(e, { remove: [`rack:${id}`] })).toBe("error.notEmpty");
     const cables = JSON.stringify(e.s.cables);
     ok(edit(e, { move: [{ ref: `rack:${id}`, x: 8, y: 2, facing: "s" }] }));
@@ -107,9 +108,9 @@ describe("own datacenter: racks in use", () => {
     const id = ok(buyRack(e.s, e.hallId, "rack-42", freePositions(e.s, e.hallId)[0]));
     ok(edit(e, { move: [{ ref: `rack:${id}`, x: 2, y: 4, facing: "n" }] }));
     e.s.racks.find((r) => r.id === id)!.arriveAt = null;
-    ok(mountDevice(e.s, ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId)), id, 1));
+    ok(mountDevice(e.s, ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId)), id, 1)); settle(e.s);
     const panel = ok(buyDevice(e.s, "patch-24f", "Pandoot", 1, e.hallId));
-    ok(mountDevice(e.s, panel, id, 3));
+    ok(mountDevice(e.s, panel, id, 3)); settle(e.s);
     const carrier = cityCarriers("Frankfurt")[0].id;
     ok(buildCarrier(e.s, e.hallId, carrier));
     ok(orderTransit(e.s, e.hallId, carrier, 1, 0.2));

@@ -8,7 +8,7 @@ import { arrayLost, deviceHealth, linkStatus, raidTolerance, raidUsable, rackPow
 import { failComponents, failureChance, rebuildHours, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyCircuit, buyRack, connect, replaceComponent, setCableColor, setFeed, setLabel, setPower, setRaid, setRebuildRate, unmountDevice } from "../src/sim/90-actions/hardware";
 import { datacenterById } from "../src/sim/20-world/datacenters";
-import { JOB_HOURS } from "../src/sim/90-actions/presence";
+import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
 import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { addCustomer } from "../src/sim/90-actions/customers";
@@ -256,13 +256,13 @@ describe("remote hands", () => {
     part(s, "fan", loc);
     const cash = s.cash, hands = datacenterById("interaction-fra").remoteHands, wait = Math.ceil(hands.responseHours + JOB_HOURS.parts);
     ok(replaceComponent(s, id, fan.id));
-    expect(s.handsJobs).toHaveLength(1);
+    expect(handsJobs(s)).toHaveLength(1);
     expect(s.cash).toBe(cash);
     expect(comp(s, id, "fan").id).toBe(fan.id);
     run(s, wait - 1);
-    expect(s.handsJobs).toHaveLength(1);
+    expect(handsJobs(s)).toHaveLength(1);
     run(s, 1);
-    expect(s.handsJobs).toHaveLength(0);
+    expect(handsJobs(s)).toHaveLength(0);
     expect(comp(s, id, "fan").id).not.toBe(fan.id);
     expect(s.cash).toBe(cash - JOB_HOURS.parts * hands.perHour);
     expect(s.ledger.at(-1)).toMatchObject({ category: "maintenance", key: "ledger.remoteHands", amount: -JOB_HOURS.parts * hands.perHour });

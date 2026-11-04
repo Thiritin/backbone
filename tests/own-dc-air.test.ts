@@ -1,3 +1,4 @@
+import { settle } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { createRng } from "../src/sim/00-core/rng";
 import { access, HALL } from "../src/sim/20-world/properties";
@@ -122,7 +123,7 @@ describe("own datacenter: airflow", () => {
     e.s.player = { ...e.s.player, at: e.hallId };
     const id = placeRack(e, 13, 3);
     const dev = ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId));
-    ok(mountDevice(e.s, dev, id, 1));
+    ok(mountDevice(e.s, dev, id, 1)); settle(e.s);
     const rack = e.s.racks.find((r) => r.id === id)!, d = e.s.devices.find((x) => x.id === dev)!;
     rack.tile = { x: 13, y: 0, facing: "s" };
     e.hall().items = e.hall().items.filter((i) => i.kind !== "crac");
@@ -137,7 +138,7 @@ describe("own datacenter: airflow", () => {
     const e = ownHall();
     e.s.player = { ...e.s.player, at: e.hallId };
     const id = placeRack(e, 2, 2), dev = ok(buyDevice(e.s, "edge-m", "Sysko", 1, e.hallId));
-    ok(mountDevice(e.s, dev, id, 1));
+    ok(mountDevice(e.s, dev, id, 1)); settle(e.s);
     e.s.devices = e.s.devices.map((x) => ({ ...x, on: true }));
     lay(e, { cracs: near, racks: [] });
     const room = powerByLocation(e.s)[e.hallId];

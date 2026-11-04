@@ -17,7 +17,7 @@ import { dateOf, hourOf } from "../src/sim/00-core/time";
 import { NIGHT } from "../src/ui/world/draw";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { panelOf } from "../src/sim/60-infra/panels";
-import { buyDevice as buyDev, freeFloor, newGame } from "./fixtures";
+import { buyDevice as buyDev, freeFloor, newGame, settle } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 afterEach(cleanup);
@@ -352,6 +352,7 @@ describe("connections between racks", () => {
       dropOn(pair.querySelector(`[data-side] .rack-port[data-end="${sws[1]}:0"]`)!);
       fireEvent.pointerDown(pair.querySelector(`[data-side] .rack-port[data-end="${sws[0]}:0"]`)!, { button: 0 });
       fireEvent.pointerUp(window);
+      settle(g());
       expect(portPeers(g(), sws[0])[0]).toEqual({ device: sws[1], port: 0 });
     } finally {
       document.elementFromPoint = at;

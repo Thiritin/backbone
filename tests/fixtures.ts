@@ -430,3 +430,8 @@ export function handDesk(s: GameState, clusterId: string, id: SelfDeskId, versio
   }
   return { ws, folder, db };
 }
+
+// Runs the game minute by minute until every open work order is done.
+export const settle = (s: GameState, limit = 24 * 60): void => {
+  for (let i = 0; i < limit && s.orders.some((o) => !o.applied); i++) tickMinute(s);
+};

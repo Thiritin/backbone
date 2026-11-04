@@ -10,7 +10,7 @@ import { locationOf } from "../../../sim/60-infra/status";
 import { queueOperation } from "../../../sim/90-actions/staff";
 import { drive } from "../../../sim/90-actions/travel";
 import { actionName } from "../../../sim/90-actions/index";
-import { cancelHandsJob, hands, jobKind, jobQuote, type HandsAction } from "../../../sim/90-actions/presence";
+import { cancelHandsJob, handsJobs, hands, jobKind, jobQuote, type HandsAction } from "../../../sim/90-actions/presence";
 import { euroPrice } from "../../../sim/00-core/money";
 import type { ActionResult } from "../../../sim/90-actions/hardware";
 import { place } from "../../desktop/menu";
@@ -63,7 +63,7 @@ export function useHandWork(remote = false) {
     // Hands-on work queues remote hands at once; its button shows the price.
     if (!t.at && handsAction(t.action)) run(t, t.how ?? "hands");
     else if (!w) { if (!remote) run(t, "hands"); }
-    else if (w.here && !t.at && !remote) run(t, "self");
+    else if (present(game, loc!.id) && !t.at && !remote) run(t, "self");
     else setTask({ t, ...pointer });
   };
   return { start, dialog: task && <HandPopover task={task.t} x={task.x} y={task.y} onClose={() => setTask(null)} /> };
@@ -135,13 +135,13 @@ export function HandsButtons({ ways, className = "btn", disabled, onRun, childre
 
 // The badge of a queued job on the unit: its due time, or that it waits for the player.
 export const jobBadge = (game: GameState, deviceId: string): string | undefined => {
-  const j = game.handsJobs.find((x) => x.deviceId === deviceId);
+  const j = handsJobs(game).find((x) => x.deviceId === deviceId);
   return j && (j.self ? tr("locations-2.selfOnArrival") : slotTime(game.hour, j.dueAt));
 };
 
 // The hands-on jobs queued at a location, own and remote, each with a Cancel.
 export function HandsJobs({ game, locationId }: { game: GameState; locationId: string }) {
-  const act = useStore((s) => s.act), jobs = game.handsJobs.filter((j) => j.locationId === locationId);
+  const act = useStore((s) => s.act), jobs = handsJobs(game).filter((j) => j.locationId === locationId);
   if (!jobs.length) return null;
   return (
     <div className="loc-card">

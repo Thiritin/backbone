@@ -138,7 +138,7 @@ function refitHall(s: GameState, p: Property, floor: number): ActionResult {
   if (!p.hall) {
     const city = s.locations[0]?.city ?? "Frankfurt", id = `loc${s.nextId++}`;
     s.locations = [...s.locations, { id, dc: null, city, az: nextAz(s.locations, city), name: t("location.hall", { building: p.building.name }), space: "hall", positions: 0, readyAt: until, extraCircuit: false, tripped: false }];
-    p.hall = { locationId: id, items: [], carriers: [], rate: null, customers: [], zones: [], xconnects: [], exchange: null, outage: false, noc: false };
+    p.hall = { locationId: id, items: [], carriers: [], rate: null, handsRate: null, customers: [], zones: [], xconnects: [], exchange: null, outage: false, noc: false };
   }
   const hall = p.hall, loc = s.locations.find((k) => k.id === hall.locationId)!;
   // ponytail: a floor added to an open hall is usable at once; per-row ready hours if the wait should show.

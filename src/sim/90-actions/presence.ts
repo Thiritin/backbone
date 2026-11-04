@@ -2,12 +2,14 @@
 // from afar, nobody's in the basement while the player is away.
 import { datacenterById } from "../20-world/datacenters";
 // A cycle with hardware.ts, which calls viaHands; neither uses the other while loading.
-import type { GameState } from "../50-state";
+import type { GameState, WorkOrder } from "../50-state";
+import { ORDERS } from "../20-world/properties";
 import { shiftTechs } from "../60-infra/properties";
 import { playerAt, present, type How } from "../60-infra/handwork";
 import {
   connect, disconnect, installPart, mountDevice, mountStack, moveInRack, removePart, replaceComponent, setPlugged, unmountDevice, type ActionResult,
 } from "./hardware";
+import { opensOf, orderWork, cancelWorkOrder, workMinutes } from "./work-orders";
 import { travelTo } from "./travel";
 
 export type Hands = "own" | "remote" | "none";
@@ -42,49 +44,62 @@ export function jobQuote(s: GameState, locationId: string, kind: JobKind): { fee
 // "job" runs a queued job: own hands at once.
 const run = (s: GameState, action: HandsAction, args: unknown[]): ActionResult =>
   (JOBS[action][0] as (g: GameState, ...a: unknown[]) => ActionResult)(s, ...args, "job");
+export const runHands = run;
 
-// Applies the presence rule to a hands-on action. Returns the way to do the work now, or the result: a refusal or a queued job.
-// A technician, a friend and a running job pass through. "self" from afar queues the job for the player's arrival and starts the drive.
+// The rack a job is worked at: the device's, or the rack an argument names.
+function jobRack(s: GameState, deviceId: string, args: unknown[]): string | undefined {
+  const d = s.devices.find((x) => x.id === deviceId);
+  return d?.rackId ?? args.find((a): a is string => typeof a === "string" && s.racks.some((r) => r.id === a));
+}
+
+// The hall technician with the fewest open orders, on shift first; null when every one has a full queue.
+export function hallDoer(s: GameState, locationId: string): string | null {
+  const techs = s.staff.filter((e) => e.role === "technician" && e.location === locationId);
+  const shift = new Set(shiftTechs(s, locationId).map((e) => e.id));
+  return [...techs].sort((a, b) => Number(shift.has(b.id)) - Number(shift.has(a.id)) || opensOf(s, a.id).length - opensOf(s, b.id).length)
+    .find((e) => opensOf(s, e.id).length < ORDERS.max)?.id ?? null;
+}
+
+// Applies the presence rule to a hands-on action. Returns the way to do the work now, or the result: a refusal or a queued order.
+// A technician, a friend and a running job pass through. The player's own work, the hall technicians' and the provider's are work orders.
 export function viaHands(s: GameState, action: HandsAction, args: unknown[], locationId: string, how: How | boolean): How | boolean | ActionResult {
   if (how === true || how === "tech" || how === "friend" || how === "job") return how;
-  const h = hands(s, locationId);
-  if (h === "own") return "self";
-  const self = how === "self";
-  // The hall's own technicians take work orders once S4 builds them; until then the queue is full.
-  if (h === "remote" && !self && s.properties.some((p) => p.hall?.locationId === locationId)) return { ok: false, error: "error.queueFull" };
+  const h = hands(s, locationId), self = how === "self" || h === "own";
+  if (h === "own" && s.locations.find((l) => l.id === locationId)?.space === "basement") return "self";
+  const hall = s.properties.some((p) => p.hall?.locationId === locationId);
   if (h === "none" && !self) return { ok: false, error: "error.notThere" };
   // ponytail: validates on a full copy of the game; a per-action check function if this gets slow.
   const trial = run(structuredClone(s), action, args);
   if (!trial.ok) return trial;
-  const q = self ? { fee: 0, wait: 0 } : jobQuote(s, locationId, jobKind(action))!;
-  if (s.cash < q.fee) return { ok: false, error: "error.noCash" };
-  if (self && playerAt(s).id !== locationId) {
+  const kind = jobKind(action), first = args[0];
+  // The unit the order is about: a cable's first end, the first unit of a stack.
+  const deviceId = action === "mountStack" ? trial.id! : typeof first === "object" ? (first as { device: string }).device : String(first);
+  const target = { rackId: jobRack(s, deviceId, args) }, act = { name: action, args: JSON.parse(JSON.stringify(args)) as unknown[] };
+  const units = action === "mountStack" ? Number(args[3]) || 1 : 1;
+  if (!self && hall) {
+    const doer = hallDoer(s, locationId);
+    if (!doer) return { ok: false, error: "error.queueFull" };
+    return orderWork(s, doer, locationId, target, act, { kind, workMin: workMinutes(s, doer, kind, units), deviceId });
+  }
+  if (!self) {
+    const q = jobQuote(s, locationId, kind)!;
+    if (s.cash < q.fee) return { ok: false, error: "error.noCash" };
+    return orderWork(s, "provider", locationId, target, act, { kind, workMin: JOB_HOURS[kind] * 60, waitMin: (q.wait - JOB_HOURS[kind]) * 60, fee: q.fee, deviceId });
+  }
+  if (opensOf(s, "player").length >= ORDERS.max) return { ok: false, error: "error.queueFull" };
+  if (playerAt(s).id !== locationId) {
     const drove = travelTo(s, locationId);
     if (!drove.ok) return drove;
   }
-  const id = `hj${s.nextId++}`, first = args[0];
-  // The unit the job is about: a cable's first end, the first unit of a stack.
-  const deviceId = action === "mountStack" ? trial.id! : typeof first === "object" ? (first as { device: string }).device : String(first);
-  // A JSON round trip so the job saves as it loads.
-  s.handsJobs.push({ id, action, args: JSON.parse(JSON.stringify(args)) as unknown[], locationId, deviceId, dueAt: s.hour + q.wait, fee: q.fee, ...(self && { self: true as const }) });
-  return { ok: true, id };
+  const arrive = s.player.doing === "travel" && s.player.until > s.hour ? s.player.until * 60 - (s.hour * 60 + s.minute) : 0;
+  return orderWork(s, "player", locationId, target, act, { kind, workMin: workMinutes(s, "player", kind, units), waitMin: arrive, deviceId });
 }
 
-export function cancelHandsJob(s: GameState, jobId: string): ActionResult {
-  if (!s.handsJobs.some((j) => j.id === jobId)) return { ok: false, error: "error.unknownOperation" };
-  s.handsJobs = s.handsJobs.filter((j) => j.id !== jobId);
-  return { ok: true };
-}
+// What the Locations app lists as queued hand jobs: the provider's and the player's own, as hours and euros.
+export interface HandsJobView { id: string; action: string; args: unknown[]; locationId: string; deviceId: string; dueAt: number; fee: number; self?: true }
+export const handsJobs = (s: GameState): HandsJobView[] =>
+  s.orders.filter((o): o is WorkOrder & { action: NonNullable<WorkOrder["action"]> } => !o.applied && !!o.action && (o.worker === "provider" || o.worker === "player") && !!o.deviceId)
+    .map((o) => ({ id: o.id, action: o.action.name, args: o.action.args, locationId: o.locationId, deviceId: o.deviceId!,
+      dueAt: ((o.startAt ?? o.queuedAt) + o.walkMin + o.workMin) / 60, fee: o.fee ?? 0, ...(o.worker === "player" && { self: true as const }) }));
 
-// Runs the jobs that are due, the player's own once they stand there, and bills the remote ones that got done.
-export function handsJobsTick(s: GameState) {
-  const due = s.handsJobs.filter((j) => j.dueAt <= s.hour && (!j.self || present(s, j.locationId)));
-  if (!due.length) return;
-  s.handsJobs = s.handsJobs.filter((j) => !due.includes(j));
-  for (const j of due) {
-    if (!run(s, j.action as HandsAction, j.args).ok || j.self) continue;
-    const d = s.devices.find((x) => x.id === j.deviceId), dc = s.locations.find((l) => l.id === j.locationId)?.dc ?? "";
-    s.cash = Math.round((s.cash - j.fee) * 100) / 100;
-    s.ledger.push({ hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device: d?.label ?? d?.name ?? "", hours: JOB_HOURS[jobKind(j.action as HandsAction)], dc, done: s.hour }, amount: -j.fee });
-  }
-}
+export const cancelHandsJob = cancelWorkOrder;

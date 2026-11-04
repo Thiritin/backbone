@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { rand } from "../src/sim/00-core/rng";
 import { DATACENTERS } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
-import { BOOKED_HOURS, FRIEND_FEE, handWork } from "../src/sim/60-infra/handwork";
+import { BOOKED_HOURS, FRIEND_FEE, handWork, present } from "../src/sim/60-infra/handwork";
 import { drive, travelTo } from "../src/sim/90-actions/travel";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, atServer, buyRack, installPart, pullPower, setPower } from "../src/sim/90-actions/hardware";
@@ -81,11 +81,11 @@ describe("driving there", () => {
     expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", by: "drive" });
     expect(err(travelTo(s, "loc1"))).toBe("error.away");
     s.hour = hour + 4;
-    expect(handWork(s, loc)!.here).toBe(true);
+    expect(present(s, loc)).toBe(true);
     ok(installPart(s, id, part, undefined, "self"));
     expect(s.cash).toBe(cash - 90);
-    expect(dev(s, id).maintenance!.doneAt).toBe(s.hour + 0.5);
-    expect(s.player).toEqual({ at: loc, until: s.hour + 0.5, doing: "work", by: "drive" });
+    expect(s.orders).toMatchObject([{ worker: "player", kind: "parts", locationId: loc }]);
+    expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", by: "drive" });
   });
 
   it("pulls a plug on site without a fee and refuses a drive without cash", () => {

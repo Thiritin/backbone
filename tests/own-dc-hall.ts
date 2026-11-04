@@ -38,5 +38,5 @@ export function item(e: OwnHall, kind: HallItemKind, area: "hall" | "xfmr" | "ba
   throw new Error(`no spot for ${kind}`);
 }
 export const customer = (e: OwnHall, n: number, tile: { x: number; y: number; facing: Facing } | null, zoneId: string | null, kw = 3) =>
-  ({ id: `c${n}`, name: `Kunde ${n}`, tile, monthly: 100, since: e.s.hour, kw, zoneId });
+  ({ id: `c${n}`, name: `Kunde ${n}`, tile, monthly: 100, since: e.s.hour, kw, zoneId, leaveBump: 0 });
 export const snapshot = (s: GameState) => JSON.stringify(s);

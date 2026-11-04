@@ -10,6 +10,7 @@ import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, Pow
 import { Hourglass } from "lucide-react";
 import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
 import { leaveWaitlist, resetBreaker } from "../../../sim/90-actions/hardware";
+import { handsJobs } from "../../../sim/90-actions/presence";
 import { orderUrl, providerUrl } from "../../../sim/80-business/browser";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -80,7 +81,7 @@ function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; o
         <PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} /></div>
       <div className="loc-row"><span className="loc-k">{t("locations-2.temperature")}</span><span className="grow" /><RoomTemp g={game} loc={loc} /></div>
       {arriving.map((r) => <div key={r.id} className="loc-row"><span className="loc-k">{t("locations-2.inTransit")}</span>{r.name}<span className="grow" /><span className="num">{day(r.arriveAt!)}</span></div>)}
-      {game.handsJobs.filter((j) => j.locationId === loc.id).map((j) => <div key={j.id} className="loc-row"><span className="loc-k">{t(`locations-2.job.${j.action}`)}</span>{game.devices.filter((d) => d.id === j.deviceId).map(devName)}<span className="grow" /><span className="num">{j.self ? t("locations-2.selfOnArrival") : slotTime(game.hour, j.dueAt)}</span></div>)}
+      {handsJobs(game).filter((j) => j.locationId === loc.id).map((j) => <div key={j.id} className="loc-row"><span className="loc-k">{t(`locations-2.job.${j.action}`)}</span>{game.devices.filter((d) => d.id === j.deviceId).map(devName)}<span className="grow" /><span className="num">{j.self ? t("locations-2.selfOnArrival") : slotTime(game.hour, j.dueAt)}</span></div>)}
     </div>
   );
 }

@@ -45,6 +45,10 @@ export const HALL = {
   // leavesAfterOutage replaces `leaves` in a month the room's breaker tripped; a cage customer pays cageMarkup times the open rate per position.
   // kw is a customer's draw per position, drawn at signing.
   colo: { signs: 0.5, leaves: 0.04, leavesAfterOutage: 0.25, cageMarkup: 1.1, kw: { min: 2, max: 5 } },
+  // Customers' remote hands: each customer books a job a day with chance `chance` times 2 minus the hourly rate over the going rate (0 to 1.5);
+  // kinds are drawn by weight; open jobs are capped at perTech per technician; a job is overdue after dueHours and fails with chance `fail` times
+  // the technician's missing skill; each late, declined or failed job adds leaveBump to the customer's leave chance, up to leaveCap.
+  hands: { chance: 0.05, kinds: { cable: 0.5, mount: 0.3, parts: 0.2 }, perTech: 2, dueHours: 4, fail: 0.1, leaveBump: 0.05, leaveCap: 0.5 },
   // The player's own hall buys power at powerFactor times the PUE its airflow gives (HALL.air), instead of the household factor.
   powerFactor: 1.0,
   // Zones: a cage needs the year `from` and 2 to 8 positions; the meet-me zone holds 1 to 4; fences cost per position (meet-me a flat price) and refund half.
@@ -148,3 +152,7 @@ export const nocSeatCount = (price: number): number => (price === 0 ? 3 : HALL.i
 // Every NOC desk seat of an own hall, in item order.
 export const nocSeats = (p: Property): { propertyId: string; sectionId: string; index: number }[] =>
   (p.hall?.items ?? []).filter((i) => i.kind === "nocdesk").flatMap((i) => Array.from({ length: nocSeatCount(i.price) }, (_, index) => ({ propertyId: p.id, sectionId: `noc:${i.id}`, index })));
+
+// Work orders: a walk of 1 minute plus 1 per 30 tiles, and at most 5 open orders per worker.
+export const WALK = { tilesPerMin: 30 };
+export const ORDERS = { max: 5 };

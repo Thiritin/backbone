@@ -28,7 +28,15 @@ An office building the company owns can have a floor fitted as a hall (refit `ha
 
 - **Seats.** Each NOC desk gives seats to the company's desk pool, three at the desk every hall starts with and two at a bought one. Hiring fills office desks first and then hall seats. A technician assigned to the hall takes a free seat there, and the assignment fails when none is free, which is the hiring limit for a hall. A desk with a seated technician cannot be sold.
 - **Breaker response.** A technician of the hall who is on shift resets a tripped main breaker after 30 minutes, or after 10 with at least one wall screen. With nobody on shift the breaker stays tripped.
-- **Hands.** An own hall with an on-shift technician counts as remote hands for the player's hands-on actions. Work orders for them come with the work order system; until then the queue answers "Queue full."
+- **Hands.** An own hall with an on-shift technician counts as remote hands for the player's hands-on actions. The work goes as an order to the hall technician with the fewest open orders, on shift first, at no fee. When every technician holds 5 open orders the action answers "Queue full.".
+
+## Customers' remote hands
+
+- **Rate.** The Sales app's hall offer sets an hourly remote hands rate. It starts at the city's going rate, the average hourly rate of the datacenters in the city.
+- **Booking.** Each day every colocation and cage customer books a job with chance 5% times 2 minus the rate over the going rate, between 0 and 1.5 times. That is about 1.5 jobs a month per customer at the going rate and none at twice the rate. The kind is cable half the time, mount 30% and parts 20%. Without a technician at the hall customers do not book.
+- **Capacity.** Open customer jobs are limited to 2 per technician. A booking beyond that is declined and the customer is upset.
+- **Doing the work.** The job is an order for a technician of the hall and targets the customer's rack. The technician walks there and works at the staff times in Work orders and figures. The fee is the billed hours (cable 0.25, mount 0.5, parts 1) times the rate, paid on completion.
+- **Quality.** A job not done 4 hours after booking is late. A job fails with chance 10% times the technician's missing skill: no fee is paid. Each late, declined or failed job adds 5% to that customer's leave chance in the month, up to 50%.
 - **Terminal.** Every rented share and cage room has a terminal desk by the entry with one seat. The player takes the first seat of a location and staff fill the rest.
 
 ## In the room

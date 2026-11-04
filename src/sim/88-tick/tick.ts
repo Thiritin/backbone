@@ -19,13 +19,13 @@ import { deliverPaidOrders } from "../80-business/vendor-shop";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
 import { phoneTick } from "../47-staff/oncall";
-import { handsJobsTick } from "../90-actions/presence";
+import { workOrdersTick } from "../90-actions/work-orders";
 import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
 import { HALL, hallCustomerKw } from "../20-world/properties";
 import { closeLocation, noticeEnd } from "../90-actions/hardware";
 import { propertiesEnd, propertyBills } from "../90-actions/properties";
-import { coloTick } from "../90-actions/hall";
+import { coloTick, handsTick } from "../90-actions/hall";
 import { endService } from "../90-actions/holds";
 import { officeOpen } from "../80-business/office";
 import { fairsTick } from "../80-business/fairs";
@@ -310,13 +310,13 @@ export function tick(state: GameState): SimEvent[] {
   }
   const minutes = 60 - state.minute;
   state.hour++;
-  handsJobsTick(state);
+  const ordered = workOrdersTick(state, state.hour * 60);
   state.minute = 0;
   tanTick(state);
   haltTick(state);
   installNetTick(state);
   panelOpsTick(state);
-  const events: SimEvent[] = [...tripTick(state), ...breakerTick(state), ...thermalTick(state, minutes)];
+  const events: SimEvent[] = [...ordered, ...tripTick(state), ...breakerTick(state), ...thermalTick(state, minutes)];
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
     state.racks = state.racks.map((r) => {
@@ -467,7 +467,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...securityTick(state));
   events.push(...appsTick(state));
   events.push(...webpanelTick(state));
-  if (state.hour % 24 === 0) resellerTick(state);
+  if (state.hour % 24 === 0) { resellerTick(state); events.push(...handsTick(state)); }
   bansTick(state);
   events.push(...supportTick(state));
   abandonTickets(state);
@@ -503,5 +503,5 @@ export function tickMinute(state: GameState): SimEvent[] {
   panelOpsTick(state);
   const tripped = [...tripTick(state), ...breakerTick(state)];
   tanTick(state);
-  return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state), ...pearMailTick(state), ...phoneTick(state)];
+  return [...tripped, ...workOrdersTick(state), ...thermalTick(state), ...workTick(state), ...deliverLicences(state), ...pearMailTick(state), ...phoneTick(state)];
 }

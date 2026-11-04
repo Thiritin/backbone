@@ -16,7 +16,7 @@ import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-bil
 import type { Ticket } from "./40-support/tickets";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
 import type { Call, OnCall } from "./47-staff/oncall";
-import type { TechJob, TechOp, TechRules } from "./47-staff/technicians";
+import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
 import type { Cluster, Workload } from "./60-infra/cluster";
@@ -85,7 +85,9 @@ export type AreaId = "hall" | "xfmr" | "battery" | "noc" | "yard";
 export interface HallItem { id: string; kind: HallItemKind; area: AreaId; x: number; y: number; facing: "n" | "e" | "s" | "w"; price: number; builtAt: number }
 // A colocation customer's rack on a tile of a colocation zone, paying monthly from since. A cage customer holds its whole
 // zone (tile null) and kw is drawn per tile.
-export interface ColoCustomer { id: string; name: string; tile: Tile | null; monthly: number; since: number; kw: number; zoneId: string | null }
+export interface ColoCustomer { id: string; name: string; tile: Tile | null; monthly: number; since: number; kw: number; zoneId: string | null;
+  // Added to the monthly leave chance by late, declined and failed remote hands jobs; cleared at each month start.
+  leaveBump: number }
 // A line of length tiles from (x, y) the player sets aside: open colocation, a fenced cage or the meet-me area. It runs along x
 // when it faces n or s, along y when it faces e or w.
 export interface HallZone { id: string; kind: "colo" | "cage" | "meetme"; x: number; y: number; length: number; facing: "n" | "e" | "s" | "w"; builtAt: number }
@@ -94,7 +96,9 @@ export interface HallXConnect { id: string; customerId: string; carrierId: strin
 // carriers are the ids of carriers built into the meet-me room; rate is the monthly price per position offered to colocation
 // customers, null while no position is listed; noc is whether the NOC room is built.
 export interface Hall {
-  locationId: string; items: HallItem[]; carriers: string[]; rate: number | null; customers: ColoCustomer[];
+  locationId: string; items: HallItem[]; carriers: string[]; rate: number | null;
+  // The hourly price offered for customers' remote hands, null for the city's going rate.
+  handsRate: number | null; customers: ColoCustomer[];
   zones: HallZone[]; xconnects: HallXConnect[]; exchange: { id: string; tile: Tile | null } | null; // tile null while the exchange waits for a free meet-me tile
   // Set when the room's breaker trips; the next month start reads and clears it.
   outage: boolean;
@@ -252,7 +256,20 @@ export interface Licence {
   mailTo?: string;  // the address chosen at checkout, where renewal, lapse and edition mail goes; absent for the owner
 }
 
-export interface HandsJob { id: string; action: string; args: unknown[]; locationId: string; deviceId: string; dueAt: number; fee: number; self?: true }
+// One piece of timed work of a worker: "player", an employee id or "provider". action runs at doneAt (null for a visit); times are game
+// minutes. startAt is the later of queuedAt and the end of the worker's previous order; arriveAt = startAt + walkMin; doneAt = arriveAt + workMin.
+export type OrderKind = "mount" | "parts" | "cable" | "op" | "hands";
+export interface WorkOrder {
+  id: string; worker: string; locationId: string;
+  target: { rackId?: string; tile?: Tile; fixture?: string };
+  kind: OrderKind;
+  action: { name: string; args: unknown[] } | null;
+  // The device the work is about, for lists; customerId and fee mark a customer's remote hands job; late is set once it is overdue.
+  deviceId?: string; customerId?: string; fee?: number; late?: true;
+  // The task a figure shows for an operation; applied is set once the action ran, while the worker walks back.
+  what?: string; applied?: true;
+  queuedAt: number; startAt: number | null; walkMin: number; workMin: number;
+}
 
 export interface GameState {
   version: number;
@@ -379,9 +396,8 @@ export interface GameState {
   // Operations queued for technicians, oldest first, and the repairs they queue by themselves.
   techOps: TechOp[];
   // The operation each technician took in the last tick, drawn at its rack for that hour.
-  techJobs: TechJob[];
   // Remote hands jobs ordered from the desktop, run with their arguments once due.
-  handsJobs: HandsJob[];
+  orders: WorkOrder[];
   techRules: TechRules;
   onCall: OnCall;
   // Pages ringing on the player's own phone, and the ones answered in the last hour.
@@ -556,7 +572,7 @@ export const newGame = (seed: number): GameState => ({
   company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING, address: null },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
-  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techJobs: [], handsJobs: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} }, calls: [],
+  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], orders: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} }, calls: [],
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),
   ops: newOps(),

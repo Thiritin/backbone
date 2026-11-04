@@ -24,10 +24,11 @@ import { legacyTax } from "../80-business/tax";
 import { legacyBank, savingsOf } from "../46-finance/bank";
 import { bankById, defaultPlan } from "../10-catalog/banks";
 import type { Employee } from "../47-staff/staff";
-import { basementProperty, device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Contract, type Device, type GameState, type Hall, type HallItem, type HallItemKind, type HallZone, type Location, type Rack, type AreaId, type ColoCustomer } from "../50-state";
+import { basementProperty, device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Contract, type Device, type GameState, type WorkOrder, type Hall, type HallItem, type HallItemKind, type HallZone, type Location, type Rack, type AreaId, type ColoCustomer } from "../50-state";
 import { footprint, hallSize, intake, type Tile } from "../20-world/layout";
 import { hallCapacity, isHalle, zoneSpots } from "../20-world/properties";
 import { packArea } from "../90-actions/hall";
+import { JOB_HOURS, jobKind, type HandsAction } from "../90-actions/presence";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
@@ -53,7 +54,7 @@ const PENDING = -1;
 const fillHall = (p: GameState["properties"][number], racks: Rack[], devices: Device[], uplinks: GameState["network"]["uplinks"]): GameState["properties"][number] => {
   const raw = p.hall as unknown as (Hall & Partial<OldHall>) | undefined;
   if (!raw) return p;
-  if (!raw.rows) return { ...p, hall: { ...raw, items: raw.items ?? [], zones: raw.zones ?? [], xconnects: raw.xconnects ?? [], exchange: raw.exchange ?? null, outage: raw.outage ?? false, noc: raw.noc ?? false } };
+  if (!raw.rows) return { ...p, hall: { ...raw, handsRate: raw.handsRate ?? null, customers: raw.customers.map((c) => ({ ...c, leaveBump: c.leaveBump ?? 0 })), items: raw.items ?? [], zones: raw.zones ?? [], xconnects: raw.xconnects ?? [], exchange: raw.exchange ?? null, outage: raw.outage ?? false, noc: raw.noc ?? false } };
   const old = raw as unknown as OldHall & Hall, at = old.rows.flatMap(rowTiles), tileOf = (position: number): Tile | null => at[position - 1] ?? null;
   const cap = hallCapacity(p), halle = isHalle(p.buildingId), size = hallSize(cap, halle), floors = new Set(p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size;
   const items: HallItem[] = [];
@@ -70,7 +71,7 @@ const fillHall = (p: GameState["properties"][number], racks: Rack[], devices: De
     if (c.zoneId === undefined || c.kw === undefined) zoneAt(`zone-${c.id}`, "colo", c.position);
     const zoneId = c.zoneId ?? `zone-${c.id}`, cage = zones.find((z) => z.id === zoneId)?.kind === "cage";
     const { position, ...rest } = c;
-    return { ...rest, kw: c.kw ?? 3, zoneId, tile: cage ? null : tileOf(position) };
+    return { ...rest, kw: c.kw ?? 3, zoneId, leaveBump: 0, tile: cage ? null : tileOf(position) };
   });
   if (!old.zones && old.carriers.length) {
     const linked = uplinks.flatMap((u) => u.links).map((l) => racks.find((r) => r.id === devices.find((d) => d.id === l.jack?.device)?.rackId)).find((r) => r?.locationId === old.locationId);
@@ -103,7 +104,7 @@ const fillHall = (p: GameState["properties"][number], racks: Rack[], devices: De
     if (v.x >= 0 && v.y >= 0 && v.x < size.w && v.y < size.h && !body.has(k) && !vent.has(k)) { vent.add(k); add("vent", "hall", v.x, v.y, "s", 0); }
   }
   const { rows: _r, coolers: _c, cooling: _g, transformers: _t, feedB: _f, ups: _u, generator: _gen, ...rest } = old as unknown as Record<string, unknown>;
-  return { ...p, hall: { ...(rest as unknown as Hall), items, customers, zones, exchange: old.exchange ? { id: old.exchange.id, tile: ex } : null, xconnects: old.xconnects ?? [], outage: old.outage ?? false, noc: false } };
+  return { ...p, hall: { ...(rest as unknown as Hall), handsRate: null, items, customers, zones, exchange: old.exchange ? { id: old.exchange.id, tile: ex } : null, xconnects: old.xconnects ?? [], outage: old.outage ?? false, noc: false } };
 };
 
 // Places the items fillHall left without a spot.
@@ -142,6 +143,21 @@ function renameHetzna(data: Partial<GameState>): void {
 
 // Old saves keep loading: every field missing from a save takes its new-game default.
 // A version 1 save (no rack in the basement, or no infrastructure at all) gets the version 2 starting infrastructure.
+// Saves from before work orders: queued hand jobs become provider (or player) orders that finish at the same minute, and a player's
+// hand work in progress becomes a visit order with no action. Technician jobs held only the current hour and are dropped.
+function oldOrders(data: Partial<GameState> & { handsJobs?: { id: string; action: string; args: unknown[]; locationId: string; deviceId: string; dueAt: number; fee: number; self?: true }[] }): WorkOrder[] {
+  const out: WorkOrder[] = (data.handsJobs ?? []).map((j) => {
+    const workMin = JOB_HOURS[jobKind(j.action as HandsAction)] * 60, startAt = j.dueAt * 60 - workMin;
+    return { id: j.id, worker: j.self ? "player" : "provider", locationId: j.locationId, target: {}, kind: jobKind(j.action as HandsAction), action: { name: j.action, args: j.args },
+      deviceId: j.deviceId, ...(!j.self && { fee: j.fee }), queuedAt: startAt, startAt, walkMin: 0, workMin };
+  });
+  const p = data.player, now = (data.hour ?? 0) * 60 + (data.minute ?? 0);
+  if (p?.doing === "work" && p.until * 60 > now) out.push({ id: "ord-visit", worker: "player", locationId: p.at, target: {}, action: null, kind: "op", queuedAt: now, startAt: now, walkMin: 0, workMin: p.until * 60 - now });
+  if (p?.doing === "work") data.player = { ...p, until: 0 };
+  delete (data as { handsJobs?: unknown }).handsJobs; delete (data as { techJobs?: unknown }).techJobs;
+  return out;
+}
+
 export function deserialize(raw: string): GameState {
   const data = JSON.parse(raw) as Partial<GameState>;
   if (typeof data.seed !== "number") throw new Error("save has no seed");
@@ -207,7 +223,7 @@ export function deserialize(raw: string): GameState {
   // Saves from before addresses get theirs.
   const fill = data.ips ? (x: GameState) => x : fillAddresses;
   const s = fillMachines(dropGone(gone, fillRegistrar(fill(fillLaunch(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
-    ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
+    ...base, ...data, orders: data.orders ?? oldOrders(data), dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
     properties: data.properties?.map((p) => fillHall(p, racks, devices, data.network?.uplinks ?? [])) ?? [basementProperty(locations.find((l) => l.space === "basement")?.id ?? null)],
     billingRules: { ...base.billingRules, ...data.billingRules },
     // Quotes from before the shop wrote its own were all written in Books.

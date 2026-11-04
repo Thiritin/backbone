@@ -1,3 +1,4 @@
+import { settle } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { customerTiles, fixtures, freeRackTiles, officePlan, rackTiles, wallTiles } from "../src/sim/20-world/layout";
 import { placeOf } from "../src/sim/20-world/places";
@@ -137,14 +138,14 @@ describe("own datacenter: carriers", () => {
     const id = ok(buyRack(s, hallId, "rack-42", freePositions(s, hallId)[0]));
     ok(edit(e, { place: [{ kind: "rack", rackId: id, x: 2, y: 2, facing: "s" }] }));
     s.racks.find((r) => r.id === id)!.arriveAt = null;
-    ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), id, 1));
+    ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), id, 1)); settle(s);
     const carrier = cityCarriers("Frankfurt")[0].id;
     expect(orderTransit(s, hallId, carrier, 1, 0.2)).toEqual({ ok: false, error: "error.carrierNotBuilt" });
     ok(buildCarrier(s, hallId, carrier));
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.carrierBuild", amount: -HALL.carrierFee });
     expect(orderTransit(s, hallId, carrier, 1, 0.2)).toEqual({ ok: false, error: "error.noRouterPort" });
     const panel = ok(buyDevice(s, "patch-24f", "Pandoot", 1, hallId));
-    ok(mountDevice(s, panel, id, 3));
+    ok(mountDevice(s, panel, id, 3)); settle(s);
     ok(orderTransit(s, hallId, carrier, 1, 0.2));
     expect(s.network.uplinks.at(-1)!.links[0].jack).toEqual({ device: panel, port: 0 });
     expect(orderExchangePort(s, hallId, 1)).toEqual({ ok: false, error: "error.noExchange" });
