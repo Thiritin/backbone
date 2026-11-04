@@ -13,9 +13,9 @@ import { RackFront, shelfPitch, type RackItem } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
-import { deviceLamps, partLabel, portLamps } from "../../apps/hw";
+import { portLamps } from "../../apps/hw";
 import { handsWays, useHandWork, wayLabel, type HandTask } from "../../apps/locations/HandSheet";
-import { LabelEdit, PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
+import { PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
 import { useStore } from "../../store";
 import { formatDay } from "../../apps/billing/format";
@@ -28,6 +28,7 @@ import { panelOf } from "../../../sim/60-infra/panels";
 import "../panel/panel.css";
 import "./rack.css";
 import { WorkTag } from "../figures";
+import { UnitTag } from "./UnitTag";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
 const CAP = 36, SIDE = 18, FOOT = 18;
@@ -63,7 +64,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const [jack, setJack] = useState<number | null>(null);
   const stage = useRef<HTMLDivElement>(null), scene = useRef<HTMLDivElement>(null), tagEl = useRef<HTMLDivElement>(null);
   const pick = (id: string | null) => { setSel(id); setFree(null); setLid(null); setRenaming(false); setPort(null); setJack(null); };
-  const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }]);
+  const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }], true);
   const work = useHandWork();
   const turn = (to: boolean) => {
     if (to === back) return;
@@ -112,12 +113,12 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const away = (e: End) => { if (!peerOf(e)) { onHand(e); onClose(); } };
 
   const entries = (d: Device) => [...menus.entries(d), ...(onConnectFrom ? [null, { label: t("world.newConnection"), run: () => onConnectFrom(d.id) }] : [])];
-  let tag: ReactNode = null;
+  let tag: ReactNode = null, unit = false;
   if (back && pp && jack !== null && !hand) tag = <JackTag game={game} panel={pp} jack={jack} />;
   else if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
-  else if (dev && !lid) tag = <DeviceTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} entries={() => entries(dev)} onPorts={CABLED.includes(modelById(dev.model).kind) && !back ? () => turn(true) : undefined}
-    onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => setCart(dev.id) : undefined} />;
+  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} back={back} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => turn(!back) : undefined}
+    onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => setCart(dev.id) : undefined} />; }
   // A picked free unit sets what fits there on the floor beside the rack.
   const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} /> : null;
 
@@ -126,12 +127,12 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
     <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U} duct
       selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title}
       onPlug={(id, k) => { const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k]; if (d && psu) menus.plug(d, psu.id); }}
-      onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => entries(d))(e); }} />
+      onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }} />
   ) : (
     <RackFrame units={tall} bare={shelf}>
       {(w, u) => (
         <RackFront units={units} shelf={shelf} items={items} w={w} u={u} selected={dev?.id ?? null}
-          onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) menuOn(() => entries(d))(e); }}
+          onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }}
           onUsb={(id) => (game.media.stick.in === id ? act(unplugStick) : act(plugStick, id))} />
       )}
     </RackFrame>
@@ -151,7 +152,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
             </div>
             <Turntable back={back} onTurn={() => turn(!back)} />
             {tag && (
-              <div ref={tagEl} className={`wr-tag${back && pp && jack !== null && !hand ? " far" : ""}`} style={pin ? { top: pin.top } : undefined}>{tag}</div>
+              <div ref={tagEl} className={`wr-tag${unit ? " unit" : ""}${back && pp && jack !== null && !hand ? " far" : ""}`} style={pin ? { top: pin.top } : undefined}>{tag}</div>
             )}
             {floor && <div className="wr-floor-units">{floor}</div>}
             {tag && pin && (
@@ -231,29 +232,6 @@ function withFault(g: GameState, it: RackItem): RackItem {
   const h = deviceHealth(g, it.id);
   if (!h.failed.length) return it;
   return h.state === "down" ? { ...it, fault: true, state: "off", blink: false, ports: portLamps(it.model, []), lights: [] } : { ...it, fault: true };
-}
-
-// The paper tag tied to a unit: its name and model, its LED, and its actions as lines written on the tag.
-function DeviceTag({ deviceId, renaming, onRenaming, entries, onPorts, onCart }: { deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; entries: () => ReturnType<ReturnType<typeof useDeviceMenu>["entries"]>; onPorts?: () => void; onCart?: () => void }) {
-  const game = useStore((s) => s.game);
-  const d = game.devices.find((x) => x.id === deviceId)!;
-  const m = modelById(d.model), lamps = deviceLamps(game, d.id, m);
-  const items = tidy(entries()), failed = d.components.filter((c) => c.failedAt !== null);
-  return (
-    <div className="wr-tag-body" data-device={d.id}>
-      {failed.length > 0 && <div className="wr-model wr-fault" data-fault="">{failed.map(partLabel).join(", ")} · {t("locations-1.failed")}</div>}
-      <div className="wr-tag-h">
-        <span className={`wr-led ${lamps.state}`} role="img" aria-label={t(d.on ? "locations-1.stOn" : "locations-1.stOff")} />
-        <LabelEdit device={d} editing={renaming} onEditing={onRenaming} />
-      </div>
-      <div className="wr-model">{m.kind === "server" ? `${d.brand} ${modelName(m, d.brand)}` : m.name}</div>
-      <div className="wr-lines">
-        {onPorts && <button className="wr-line" onClick={onPorts}>{t("locations-1.ports")}</button>}
-        {onCart && <button className="wr-line" data-cart="" onClick={onCart}>{t("world.console")}</button>}
-        {items.map((e, i) => (e === null ? <hr key={i} /> : <Act key={i} e={e} />))}
-      </div>
-    </div>
-  );
 }
 
 // A menu entry as a line on the tag; one with a submenu opens it beside the line.

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Server actions in the rack close-up are now keys on a small paper tag with a power button, a console key and a ports key, and selling or switching off something that takes other gear offline asks on a paper slip with a stamp.
 - Datacenters now sit in three kinds of surroundings, an industrial estate, open countryside with farms and fields, and a business park, each with its own fence, gate and utilities that grow with the size of the site.
 - Customers' remote-hands jobs appear as paper tickets on a board on the NOC wall, and the three providers without a datacenter have their own site pages.
 - You can plug the install stick into a server's USB port in the rack close-up and use a crash cart with a monitor and keyboard to boot and install it, right in the datacenter.

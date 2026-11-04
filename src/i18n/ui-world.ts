@@ -31,6 +31,7 @@ export default {
   "world.cableInHand": () => "Cable in hand",
   "world.toRack": () => "To another rack",
   "world.console": () => "Console",
+  "world.secondPsu": () => "2nd PSU",
   "world.dropCable": () => "Drop cable",
   "world.newConnection": () => "New connection from here",
   "world.bookUplink": () => "Book uplink",

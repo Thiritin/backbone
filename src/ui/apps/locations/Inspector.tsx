@@ -58,9 +58,9 @@ export function SellConfirm({ game, name, price, boughtAt, value = resaleValue(g
 
 // The device menu's state: the offline check, the sell sheet, and what the view does on select and rename.
 // A view that shows the lid itself passes its own lid state.
-export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => void, onRename: (id: string) => void, lidState?: [string | null, (id: string | null) => void]) {
+export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => void, onRename: (id: string) => void, lidState?: [string | null, (id: string | null) => void], inline = false) {
   const act = useStore((s) => s.act);
-  const { guarded, dialog } = useOfflineGuard(game);
+  const { guarded, dialog, pending } = useOfflineGuard(game, inline);
   const [selling, setSelling] = useState<Device | null>(null);
   const own = useState<string | null>(null);
   const [lid, setLid] = lidState ?? own;
@@ -90,6 +90,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   const cables = selling ? game.cables.filter((c) => c.a.device === selling.id || c.b.device === selling.id).length : 0;
   return {
     plan: mnt.plan,
+    pending,
     entries: (d: Device, open = false) => deviceMenu(game, d, ui(d, open)),
     power: (d: Device, on: boolean) => ui(d, false).power(on),
     op: (d: Device, op: PowerOp) => ui(d, false).op(op),
@@ -112,7 +113,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   };
 }
 
-const POWER = {
+export const POWER = {
   ok: [t("locations-1.stOn"), "ok"], booting: [t("locations-1.stBooting"), "warn"], halting: [t("locations-1.stHalting"), "warn"], setup: [t("locations-1.stSetup"), "warn"], degraded: [t("locations-1.stDegraded"), "warn"], hot: [t("locations-1.stHot"), "warn"], rebuilding: [t("locations-1.stRebuilding"), "warn"],
   maintenance: [t("locations-1.nodeMaintenance"), "warn"], down: [t("locations-1.stDown"), "bad"], hung: [t("locations-1.stHung"), "bad"], stuck: [t("locations-1.stStuck"), "bad"], locked: [t("locations-1.stLocked"), "bad"], nopower: [t("locations-1.stNoPower"), "bad"], off: [t("locations-1.stOff"), ""],
 } as const;
@@ -506,7 +507,8 @@ export function LabelEdit({ device, editing, onEditing }: { device: Device; edit
 
 
 // Runs a change at once, or asks first when it takes devices that are online now offline.
-export function useOfflineGuard(game: GameState) {
+// With inline the offline check is returned as `pending` for the view to draw instead of a dialog.
+export function useOfflineGuard(game: GameState, inline = false) {
   const act = useStore((s) => s.act);
   const [down, setDown] = useState<{ names: string[]; title: string; action: string; run: () => void } | null>(null);
   const guarded = <A extends unknown[]>(title: string, action: string, fn: (g: GameState, ...args: A) => ActionResult, ...args: A) => {
@@ -517,12 +519,13 @@ export function useOfflineGuard(game: GameState) {
     else act(fn, ...args);
   };
   const names = down?.names ?? [];
-  const dialog = down && (
+  const dialog = !inline && down && (
     <Confirm title={down.title}
       text={t("locations-1.offlineText", { names: names.slice(0, 3).join(", "), more: Math.max(0, names.length - 3), count: names.length })}
       action={down.action} onCancel={() => setDown(null)} onConfirm={() => { setDown(null); down.run(); }} />
   );
-  return { guarded, dialog };
+  const pending = down && { title: down.title, action: down.action, text: t("locations-1.offlineText", { names: names.slice(0, 3).join(", "), more: Math.max(0, names.length - 3), count: names.length }), cancel: () => setDown(null), confirm: () => { setDown(null); down.run(); } };
+  return { guarded, dialog, pending };
 }
 
 // Plugs a power supply in, or pulls its plug after the offline check.
