@@ -148,6 +148,8 @@ describe("properties", () => {
     const monday = at(2005, 1, 3);
     expect(whoIsIn(s, id, monday + 8)).toHaveLength(0);
     expect(whoIsIn(s, id, monday + 9)).toHaveLength(1);
+    expect(whoIsIn(s, id, monday + 16)).toHaveLength(1);
+    expect(whoIsIn(s, id, monday + 17)).toHaveLength(0);
     expect(whoIsIn(s, id, monday + 18)).toHaveLength(0);
     expect(whoIsIn(s, id, at(2005, 1, 8, 12))).toHaveLength(0);
   });

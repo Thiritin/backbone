@@ -1,6 +1,6 @@
 import { dateOf } from "../00-core/time";
 import { DESKS_PER_SECTION, holdsDesks } from "../20-world/properties";
-import type { Employee } from "../47-staff/staff";
+import { onShift, type Employee } from "../47-staff/staff";
 import { BASEMENT_ADDRESS, type GameState, type PostalAddress, type Property, type Section } from "../50-state";
 
 export type Desk = NonNullable<Employee["desk"]>;
@@ -38,5 +38,5 @@ export const officeOpen = (hour: number): boolean => {
 export function whoIsIn(s: GameState, propertyId: string, hour: number): Employee[] {
   if (!officeOpen(hour)) return [];
   const home = s.properties.find((p) => p.id === propertyId)?.locationId ?? null;
-  return s.staff.filter((e) => e.desk?.propertyId === propertyId && !(e.role === "technician" && e.busyUntil > hour && e.location !== home));
+  return s.staff.filter((e) => e.desk?.propertyId === propertyId && onShift(s, e, hour) && !(e.role === "technician" && e.busyUntil > hour && e.location !== home));
 }

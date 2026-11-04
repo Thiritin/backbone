@@ -26,8 +26,8 @@ const BASEMENT = {
     duct: { x: 0, y: 0 }, switch: { x: 0, y: 4 }, corkboard: { x: 0, y: 6 },
   } as Record<string, Fixture>,
   // The shelf's tile, and the tiles left for racks bought later.
-  shelf: { x: 5, y: 0, facing: "s" } as Tile,
-  racks: [{ x: 6, y: 0, facing: "s" }, { x: 7, y: 0, facing: "s" }] as Tile[],
+  shelf: { x: 6, y: 0, facing: "s" } as Tile,
+  racks: [{ x: 7, y: 0, facing: "s" }, { x: 8, y: 0, facing: "s" }] as Tile[],
 };
 
 // Fixed objects stand against or hang on a wall, row y = 0 along the far wall and column x = 0 along the left one, or at a row's end. The door is always on the left wall and opens onto a walkway; the suite's NOC desk stands in front of the rack rows so none hides it.

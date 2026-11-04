@@ -17,7 +17,7 @@ describe("shelf", () => {
     expect(s.racks).toHaveLength(1);
     expect(s.racks[0]).toMatchObject({ id: "rack2", model: "shelf", name: "Shelf", price: 0 });
     expect(s.devices.find((d) => d.id === "dev5")).toMatchObject({ rackId: "rack2", slot: 5, store: null });
-    expect(rackTiles(basement(s), s.racks).rack2).toEqual({ x: 5, y: 0, facing: "s" });
+    expect(rackTiles(basement(s), s.racks).rack2).toEqual({ x: 6, y: 0, facing: "s" });
   });
 
   it("puts a 1U and a 2U server on one board each", () => {
@@ -41,7 +41,7 @@ describe("shelf", () => {
     const s = funded(4);
     const a = ok(buyRack(s, "loc1", "rack-24", 2)), b = ok(buyRack(s, "loc1", "rack-24", 3));
     const tiles = rackTiles(basement(s), s.racks);
-    expect([tiles[a], tiles[b]]).toEqual([{ x: 6, y: 0, facing: "s" }, { x: 7, y: 0, facing: "s" }]);
+    expect([tiles[a], tiles[b]]).toEqual([{ x: 7, y: 0, facing: "s" }, { x: 8, y: 0, facing: "s" }]);
     s.locations[0] = { ...s.locations[0], positions: 4 };
     expect(err(buyRack(s, "loc1", "rack-24", 4))).toBe("error.basementRacksFull");
     expect(err(buyRack(s, "loc1", "shelf", 4))).toBe("error.shelfStands");

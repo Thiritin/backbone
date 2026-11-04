@@ -38,6 +38,11 @@ const customer = (e: Setup, n: number, position: number, zoneId: string, kw = 3)
 const month = (e: Setup, events = coloTick) => { e.s.hour += 720; return events(e.s); };
 
 describe("own datacenter: zones", () => {
+  it("loading a save renames the hall location in the current language", () => {
+    const e = setup();
+    e.s.locations.find((l) => l.id === e.hallId)!.name = "stale name";
+    expect(deserialize(serialize(e.s)).locations.find((l) => l.id === e.hallId)!.name).toBe("Gallushof hall");
+  });
   it("refuses overlap, a player rack in a colo zone, a second meet-me zone and a cage before 2015", () => {
     const e = setup();
     const zone = paint(e, "colo", e.rowA, 2, 3);

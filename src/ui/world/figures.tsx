@@ -90,8 +90,8 @@ function Walking({ l, step }: { l: Look; step: number }) {
   );
 }
 
-// Minutes of the day each person arrives and leaves, spread over the first and last half hour, and how long the walk takes.
-const WALK_MIN = 6, ARRIVE = 9 * 60, LEAVE = 17 * 60 + 30, SPREAD = 30 - WALK_MIN;
+// Minutes of the day each person arrives and leaves, spread over the first and last half hour of the 9 to 17 shift, and how long the walk takes.
+const WALK_MIN = 6, ARRIVE = 9 * 60, LEAVE = 17 * 60 - 30, SPREAD = 30 - WALK_MIN;
 
 function along(path: Pt[], t: number): Pt {
   const seg = path.slice(1).map((p, i) => Math.abs(p.x - path[i].x) + Math.abs(p.y - path[i].y)), total = seg.reduce((a, b) => a + b, 0);

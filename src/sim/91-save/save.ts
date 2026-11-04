@@ -112,6 +112,8 @@ export function deserialize(raw: string): GameState {
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {
     locations.push({ ...l, space: (l.space as string) === "positions" ? "cage" : l.space, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false, tripped: l.tripped ?? false, ...(l.space === "basement" && { positions: BASEMENT.positions, name: t("location.basement") }) });
   }
+  // A hall's name is stored in the language it was fitted in; show it in the current one.
+  for (const p of data.properties ?? []) { const l = locations.find((x) => x.id === p.hall?.locationId); if (l) l.name = t("location.hall", { building: p.building.name }); }
   // Older saves had one stockroom; its units go to the first location.
   const stored = (d: Device) => d.store !== undefined ? d.store : !d.rackId && !d.panel ? locations[0].id : null;
   const known = (d: { model: string }) => MODELS.some((m) => m.id === (RENAMED_MODELS[d.model] ?? d.model));

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The basement shelf no longer covers the desk, office staff leave when their shift ends, and the map names your hall in your language.
 - Provider websites without an open datacenter show a short notice, and a broken web page shows an error page instead of freezing the game.
 - Paint colocation, cage and meet-me areas on your own hall's floor, and buy transformers, backup power and carrier connections at the hall's service doors.
 - Clouds show in the windows on partly cloudy days, snow shows on the office sill, and your own rack stands out in a shared hall.
