@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Backbone",
+  "productName": "raid0",
   "version": "0.1.0",
-  "identifier": "com.backbone.game",
+  "identifier": "com.raid0.game",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:5173",
@@ -11,7 +11,7 @@
   },
   "app": {
     "windows": [
-      { "label": "main", "title": "Backbone", "width": 1440, "height": 900, "minWidth": 1024, "minHeight": 700 }
+      { "label": "main", "title": "raid0", "width": 1440, "height": 900, "minWidth": 1024, "minHeight": 700 }
     ],
     "security": { "csp": null }
   },
