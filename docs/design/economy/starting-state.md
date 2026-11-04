@@ -24,5 +24,3 @@ A challenge starts from the normal starting state with one twist, chosen by ISO 
 | 0 | Home line SDSL 2048 already in from hour 0 |
 | 1 | Every datacenter except Hetzler Park starts at its 2005 capacity; competitors cancel and refill as usual afterwards |
 | 2 | Savings of €2,000 arrive with the bank account |
-
-Scores count until 1 January 2008, 00:00: net worth then (rounded to the euro), the first day level 3 holds (checked once a day), and the mean of each hour's average happiness of active customers (rounded to a tenth). A replay passes when net worth is within €1, the level 3 day matches and happiness is within 0.1.

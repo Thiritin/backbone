@@ -5,7 +5,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { challengeById, challengeFor, CHALLENGES, isoWeek, weeklyChallenge } from "../src/sim/10-catalog/challenges";
 import { capacityAt, DATACENTERS } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
-import { SCORE_END, scores } from "../src/sim/80-business/scores";
 import { ACTIONS, actionName, LOG_CAP, runAction } from "../src/sim/90-actions/index";
 import { installPanel } from "../src/sim/90-actions/clusters";
 import { setPortShare } from "../src/sim/90-actions/lan";
@@ -15,7 +14,7 @@ import { savingsOf } from "../src/sim/46-finance/bank";
 import { buyDevice, connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
 import { startChallenge } from "../src/sim/90-actions/start";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buildLeaderboard, mismatches, replay, runFile, runFileName, verify, type Verified } from "../src/sim/92-run/run";
+import { replay, runFile } from "../src/sim/92-run/run";
 import { POWER_ACTION } from "../src/ui/apps/locations/power";
 import { useStore } from "../src/ui/store";
 import { metrics } from "../src/sim/metrics";
@@ -90,13 +89,14 @@ describe("action log", () => {
     for (const fn of Object.values(POWER_ACTION)) expect(actionName(fn)).toBeDefined();
   });
 
-  it("loads an old save with an empty log, no challenge and no scores", () => {
+  it("loads an old save with an empty log, no challenge, and ignores leaderboard scores", () => {
     const old = JSON.parse(serialize(newGame(5)));
-    for (const k of ["log", "challenge", "score"]) delete old[k];
+    for (const k of ["log", "challenge"]) delete old[k];
+    old.score = { netWorth: 1, level3: null, happySum: 0, happyHours: 0 };
     const s = deserialize(JSON.stringify(old));
     expect(s.log).toEqual([]);
     expect(s.challenge).toBeNull();
-    expect(s.score).toEqual(newGame(5).score);
+    expect(s).not.toHaveProperty("score");
   });
 });
 
@@ -104,37 +104,17 @@ describe("replay", () => {
   it("replays a short game from its log to the same state", () => {
     const s = short;
     expect(s.webOpenedAt).not.toBeNull();
-    // The metrics verify reads every week leave the replay unchanged.
-    const again = replay(runFile(s, "test"), (g) => void metrics(g), s.hour);
-    expect(serialize(again)).toEqual(serialize({ ...s, log: s.log.filter((e) => e.hour < SCORE_END) }));
+    // Reading metrics during the replay leaves it unchanged.
+    const again = replay(runFile(s, "test"), s.hour, (g) => void metrics(g));
+    expect(serialize(again)).toEqual(serialize(s));
     // A reload in between changes nothing either.
     expect(deserialize(serialize(s))).toEqual(s);
   });
 
-  it("verifies honest scores at the end of 2007 and fails an edited claim", () => {
+  it("throws when a run cannot have come from this game", () => {
     const run = runFile(short, "test");
-    expect(run.claimed).toEqual(scores(short));
-    expect(runFileName(short)).toBe(`kellerkind-hosting-${short.seed}.run.json`);
-    // One replay to the end: its scores are the honest claim, and the day-35 claim fails against them.
-    const { verified, errors } = verify(run);
-    expect(verified.scores.netWorth).not.toBeNull();
-    expect(errors[0]).toMatch(/^net worth null claimed/);
-    expect(mismatches(verified.scores, verified.scores)).toEqual([]);
-    expect(mismatches({ ...verified.scores, netWorth: verified.scores.netWorth! + 500 }, verified.scores)).toHaveLength(1);
-    expect(verified.company.name).toBe("Kellerkind Hosting");
-    expect(verified.ghost.length).toBeGreaterThan(100);
-    expect(() => replay({ ...run, seed: run.seed + 1 })).toThrow();
-    expect(() => replay({ ...run, actions: [{ ...run.actions[0], name: "noSuchAction" }] })).toThrow();
-  }, 120_000);
-
-  it("ranks runs per build and challenge and keeps the net worth leader's ghost", () => {
-    const run = (name: string, netWorth: number | null, level3: number | null): Verified => ({
-      version: "abc", challenge: "2026-W44", company: { name, color: "red", logo: "server" }, seed: 1, scores: { netWorth, level3, happiness: 80 }, ghost: [[0, 0, netWorth ?? 0]],
-    });
-    const board = buildLeaderboard([run("A", 100, 900), run("B", 300, null), run("C", 200, 500)]).abc["2026-W44"];
-    expect(board.netWorth.map((e) => e.company)).toEqual(["B", "C", "A"]);
-    expect(board.level3.map((e) => e.company)).toEqual(["C", "A"]);
-    expect(board.ghost).toEqual([[0, 0, 300]]);
+    expect(() => replay({ ...run, seed: run.seed + 1 }, 1)).toThrow();
+    expect(() => replay({ ...run, actions: [{ ...run.actions[0], name: "noSuchAction" }] }, 1)).toThrow();
   });
 });
 

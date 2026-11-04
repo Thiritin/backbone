@@ -1,17 +1,21 @@
 import { t } from "../../i18n/en";
 import { ChevronLeft } from "lucide-react";
 import { useRef, useState, type FocusEvent } from "react";
-import { weeklyChallenge } from "../../sim/10-catalog/challenges";
+import { euro } from "../../sim/00-core/money";
+import { weeklyChallenge, type Twist } from "../../sim/10-catalog/challenges";
+import { datacenterById, homeLineById } from "../../sim/20-world/datacenters";
 import { LANGS, lang, setLang, type Lang } from "../../i18n/lang";
 import { versionLabel } from "../changelog";
 import { EMBEDDED } from "../embedded";
-import { twistLabel } from "../leaderboard";
 import { isNew, loadSeen, markRead, saveSeen } from "../news-seen";
 import { DISCORD_URL, uiSound, useStore, type Theme } from "../store";
 import { Intro } from "./Intro";
 import { canImmerse, immerse, useImmersive } from "./immersive";
 import { MenuBackdrop } from "./MenuBackdrop";
 import "./menu.css";
+
+const twistLabel = (w: Twist): string =>
+  w.kind === "line" ? t("core.twistLine", { name: homeLineById(w.line).name }) : w.kind === "dc" ? t("core.twistDc", { name: datacenterById(w.dc).name }) : t("core.twistCash", { cash: euro(w.cash) });
 
 // Menu buttons tick when pointed at or reached by keyboard, and chime when chosen.
 const hear = {

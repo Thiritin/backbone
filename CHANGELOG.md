@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The leaderboard has been removed for now.
 - The game and the desktop app now update only when a new version is released.
 - The main menu has a button that opens the raid0 Discord server.
 - The game is now called raid0.
