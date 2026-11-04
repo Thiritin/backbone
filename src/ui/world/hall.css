@@ -34,7 +34,7 @@
 .w-parts-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: grab; touch-action: none; user-select: none; }
 .w-parts-art { display: block; width: auto; }
 .w-parts-meters { display: grid; grid-template-columns: auto auto; gap: 2px 14px; margin-left: auto; }
-.w-parts-done { background: oklch(0.36 0.02 250); color: oklch(0.95 0.005 250); border: 0; border-radius: 4px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.w-parts-done { background: oklch(0.36 0.02 250); color: oklch(0.95 0.005 250); border: 0; border-radius: 0; padding: 6px 14px; font: inherit; cursor: pointer; }
 
 /* Zones: open colocation is a grey band, the cage and the meet-me area add a fence; the meet-me area has a hatched yellow edge. */
 .w-zone-colo { fill: oklch(0.6 0.012 250 / 0.8); }
@@ -46,7 +46,7 @@
 .w-zone-edge-meetme { stroke: oklch(0.45 0.05 85); }
 .w-zone-fence { fill: none; stroke: oklch(0.4 0.02 250); stroke-width: 1.2; }
 .w-hall-plate text { font-size: 5.4px; text-anchor: middle; fill: oklch(0.99 0 0); font-weight: 600; }
-.w-parts-on { outline: 2px solid oklch(0.78 0.12 90); outline-offset: 2px; border-radius: 4px; }
+.w-parts-on { outline: 2px solid oklch(0.78 0.12 90); outline-offset: 2px; border-radius: 0; }
 .pp-jack.customer .pp-plug { fill: oklch(0.66 0.13 20); }
 .pp-jack.customer .pp-plate { fill: oklch(0.9 0.04 20); }
 
@@ -70,6 +70,7 @@
 .w-parts-tabs { display: flex; gap: 4px; width: 100%; }
 .w-parts-tab { background: transparent; color: oklch(0.8 0.01 250); border: 0; border-bottom: 2px solid transparent; padding: 3px 10px; font: inherit; cursor: pointer; }
 .w-parts-tab-on { color: oklch(0.97 0.005 250); border-bottom-color: oklch(0.78 0.12 90); }
+.world .w-parts-tab:focus-visible { outline: 0; border-bottom-color: var(--accent); }
 .w-parts-row { display: flex; align-items: center; gap: 14px; width: 100%; }
 
 /* Air tones: flat floor paint under the rack fronts and backs. */
@@ -107,3 +108,6 @@
 .hb-board .hb-bad { fill: oklch(0.5 0.17 25); }
 .hb-main { cursor: pointer; }
 .hb-main:hover .wp-brk, .hb-main:focus-visible .wp-brk { stroke: var(--accent); stroke-width: 2; }
+.w-parts-tab:hover:not(.w-parts-tab-on) { background: oklch(1 0 0 / 0.1); }
+.w-parts-item:hover { background: oklch(1 0 0 / 0.1); }
+.w-parts-done:hover { background: oklch(0.46 0.02 250); }

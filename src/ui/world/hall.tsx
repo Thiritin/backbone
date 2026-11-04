@@ -51,7 +51,7 @@ const Plate = ({ tile, name, hue }: { tile: Tile; name: string; hue: number }) =
   const c = at3(tile.x + 0.5, tile.y + 0.5, rackHeight(42) + 12);
   return (
     <g className="w-hall-plate" transform={`translate(${c.x} ${c.y})`} pointerEvents="none">
-      <rect x="-20" y="-7" width="40" height="11" rx="1.5" style={{ fill: `oklch(0.62 0.14 ${hue})` }} />
+      <rect x="-20" y="-7" width="40" height="11" style={{ fill: `oklch(0.62 0.14 ${hue})` }} />
       <text x="0" y="1" >{name}</text>
     </g>
   );
@@ -61,7 +61,7 @@ const Plate = ({ tile, name, hue }: { tile: Tile; name: string; hue: number }) =
 const ServiceDoor = ({ f, label }: { f: Fixture; label: string }) => (
   <>
     <Door f={f} open={0} steel />
-    <g transform={onX(0, f.y + 1, 90)}><rect className="w-hall-sign" x="-4" y="0" width="40" height="7" rx="1" /><text className="w-hall-sign-t" x="16" y="5">{label}</text></g>
+    <g transform={onX(0, f.y + 1, 90)}><rect className="w-hall-sign" x="-4" y="0" width="40" height="7" /><text className="w-hall-sign-t" x="16" y="5">{label}</text></g>
   </>
 );
 

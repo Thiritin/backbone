@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Controls in the world no longer have rounded borders, and the hall's edit strip shows a clear hover and focus state.
 - The speed buttons and the order list stay usable while a close-up is open, the NOC wall screens no longer cover the lettering, and the start screen changelog lists each day once.
 - The travel map fades the street detail smoothly into the regional map when you zoom out, and city names on the map follow your language.
 - You and your staff now walk to the racks you work on and show your progress over the rack, and the order list by the clock lets you cancel what is still waiting.

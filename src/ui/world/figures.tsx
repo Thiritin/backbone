@@ -98,7 +98,7 @@ function FloorTag({ at, text }: { at: Pt; text: string }) {
   const w = text.length * 2.6 + 4;
   return (
     <g pointerEvents="none" transform={`translate(${at.x} ${at.y})`}>
-      <rect className="w-tent" x={-w / 2} y="1" width={w} height="7" rx="1" />
+      <rect className="w-tent" x={-w / 2} y="1" width={w} height="7" />
       <text className="w-num w-num-sm w-tent-text" x={-w / 2 + 2} y="6">{text}</text>
     </g>
   );
@@ -108,8 +108,8 @@ function FloorTag({ at, text }: { at: Pt; text: string }) {
 function Progress({ at, f }: { at: Pt; f: number }) {
   return (
     <g pointerEvents="none" transform={`translate(${at.x} ${at.y})`} data-progress={f.toFixed(2)}>
-      <rect className="w-prog-bg" x="-13" y="-3" width="26" height="5" rx="1.5" />
-      <rect className="w-prog-fill" x="-12" y="-2" width={Math.max(0, Math.min(1, f)) * 24} height="3" rx="1" />
+      <rect className="w-prog-bg" x="-13" y="-3" width="26" height="5" />
+      <rect className="w-prog-fill" x="-12" y="-2" width={Math.max(0, Math.min(1, f)) * 24} height="3" />
     </g>
   );
 }

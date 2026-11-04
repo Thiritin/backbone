@@ -98,19 +98,19 @@
 .wr-rack .rack-free:hover rect { stroke: var(--accent); stroke-width: 1.5; fill: oklch(0.28 0.03 255); }
 .wr-side { flex: 1; min-width: 280px; max-width: 720px; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 
-.wr-card { border: 3px solid oklch(0.17 0.02 258); border-radius: 4px; background: oklch(0.29 0.022 255); box-shadow: inset 0 0 0 1px oklch(0.38 0.02 252); }
+.wr-card { border: 3px solid oklch(0.17 0.02 258); border-radius: 0; background: oklch(0.29 0.022 255); box-shadow: inset 0 0 0 1px oklch(0.38 0.02 252); }
 .wr-card-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; padding: 12px 14px; border-bottom: 2px solid oklch(0.2 0.02 258); }
 .wr-card-h h2 { margin: 0; font-size: 15px; font-weight: 600; }
 .wr-card-h .loc-label button { color: inherit; font: inherit; }
 .wr-leds { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-left: auto; }
-.wr-led { width: 8px; height: 8px; border-radius: 1px; background: oklch(0.35 0.01 255); box-shadow: 0 0 0 1px oklch(0.15 0.02 258); }
+.wr-led { width: 8px; height: 8px; border-radius: 0; background: oklch(0.35 0.01 255); box-shadow: 0 0 0 1px oklch(0.15 0.02 258); }
 .wr-led.ok { background: oklch(0.78 0.18 145); box-shadow: 0 0 4px oklch(0.78 0.18 145); }
 .wr-led.warn { background: oklch(0.82 0.16 85); box-shadow: 0 0 4px oklch(0.82 0.16 85); }
 .wr-led.bad { background: oklch(0.65 0.2 25); box-shadow: 0 0 4px oklch(0.65 0.2 25); }
 
 .wr-acts { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; }
 .wr-acts hr { flex-basis: 100%; height: 0; margin: 2px 0; border: 0; border-top: 2px solid oklch(0.22 0.02 258); }
-.wr-btn { padding: 5px 10px; border: 2px solid oklch(0.42 0.02 252); border-radius: 3px; background: oklch(0.34 0.022 255); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+.wr-btn { padding: 5px 10px; border: 2px solid oklch(0.42 0.02 252); border-radius: 0; background: oklch(0.34 0.022 255); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
 .wr-btn:hover:not(:disabled) { border-color: var(--accent); background: oklch(0.38 0.03 255); }
 .wr-btn:disabled { opacity: 0.45; cursor: default; }
 

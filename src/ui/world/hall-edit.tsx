@@ -479,7 +479,7 @@ function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: 
       </>}
       {msg && (
         <g pointerEvents="none" transform={`translate(${centre(msg.at).x} ${centre(msg.at).y - 58})`}>
-          <rect className="w-edit-msg" x={-5 - msg.text.length * 2.6} y="-10" width={10 + msg.text.length * 5.2} height="14" rx="2" />
+          <rect className="w-edit-msg" x={-5 - msg.text.length * 2.6} y="-10" width={10 + msg.text.length * 5.2} height="14" />
           <text className="w-edit-msg-t" x="0" y="0">{msg.text}</text>
         </g>
       )}

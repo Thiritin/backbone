@@ -260,3 +260,7 @@
 .w-orders li:first-child { border-left: 3px solid oklch(0.72 0.14 150); }
 .w-orders-x { border: 0; background: none; color: inherit; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
 .w-orders-x:hover { color: oklch(0.75 0.15 25); }
+
+/* World controls are square: the shared focus style rounds its corners. */
+.world button:not(.wp-go), .world :focus-visible:not(.wp-go) { border-radius: 0; }
+.world :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
