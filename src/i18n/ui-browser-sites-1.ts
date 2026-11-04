@@ -220,6 +220,7 @@ export default {
   "browser-sites-1.of.construction": () => "Under construction",
   "browser-sites-1.of.constructionText": () => "This page is currently under construction. Please visit us again soon.",
   "browser-sites-1.of.serviceClosed": () => "The online service is closed.",
+  "browser-sites-1.of.reopens": (p) => `Opens again on ${p.date} at ${p.time}.`,
   "browser-sites-1.of.serverTime": (p) => `Server time: ${p.time}`,
   "browser-sites-1.of.title": () => "Trade Office Online",
   "browser-sites-1.of.subtitle": () => "The official eGovernment portal of the trade office",

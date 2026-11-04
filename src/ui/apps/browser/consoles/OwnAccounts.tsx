@@ -5,20 +5,20 @@ import type { GameState } from "../../../../sim/50-state";
 import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { accountFor, ownWebspacesOn } from "../../../../sim/60-infra/webspace";
 import { createOwnWebspace, removeOwnWebspace } from "../../../../sim/90-actions/webspace";
-import { usePageAct } from "../pageAct";
+import { useFormAct, usePageAct } from "../pageAct";
 
 // An account for the company's own domain, made the way an admin does it on their own server.
 export function OwnAccountForm({ game, c, className = "cx-form" }: { game: GameState; c: Cluster; className?: string }) {
-  const act = usePageAct(), [domain, setDomain] = useState(companyDomain(game)), [user, setUser] = useState<string | null>(null);
+  const [act, error] = useFormAct(), [domain, setDomain] = useState(companyDomain(game)), [user, setUser] = useState<string | null>(null);
   const username = user ?? accountFor(domain);
   return (
     <form className={className} onSubmit={(e) => { e.preventDefault(); if (act(createOwnWebspace, c.id, domain, username).ok) setUser(null); }}>
-      <fieldset className="cx-group">
+      <fieldset className="cx-group cx-card">
         <legend>{t("webspace.own.title")}</legend>
         <label className="cx-field">{t("pkg.domain")}<input value={domain} onChange={(e) => setDomain(e.target.value)} /></label>
         <label className="cx-field">{t("pkg.username")}<input value={username} onChange={(e) => setUser(e.target.value)} /></label>
+        <div className="cx-tools"><button className="cx-btn primary" type="submit">{t("pkg.create")}</button>{error && <span className="cx-note bad" role="alert">{error}</span>}</div>
       </fieldset>
-      <div className="cx-tools"><button className="cx-btn primary" type="submit">{t("pkg.create")}</button></div>
     </form>
   );
 }

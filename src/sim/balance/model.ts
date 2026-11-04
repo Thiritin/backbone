@@ -9,7 +9,7 @@ import {
   TAX_RATE, TICKET_MINUTES, TICKETS_PER_CUSTOMER, UPGRADE_CHANCE, priceAt, tasksPerHour, vmPlanGb, vpsDemand, vpsPlanGb,
   type ProductId, type Profile,
 } from "../10-catalog/economy";
-import { DATACENTERS, HOME_LINES, homeLineById, MOVE, spacePrice } from "../20-world/datacenters";
+import { ALL_DATACENTERS as DATACENTERS, HOME_LINES, homeLineById, MOVE, spacePrice } from "../20-world/datacenters";
 import { LINE_EXTRA_V4, providerV4, STATIC_LINE_ADDRESSES } from "../10-catalog/addresses";
 import { noticedHours } from "../10-catalog/attention";
 import { dcPerTb } from "../10-catalog/network";

@@ -1,3 +1,4 @@
+import { officeAddress } from "../../../../../sim/60-infra/properties";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { groupIban, ibanEra, ownIban } from "../../../../../sim/46-finance/bank";
@@ -80,7 +81,7 @@ export function Checkout({ game, btn, lines, total, facts, methods, place, confi
   const [kind, setKind] = useState<PaymentKind>(methods[0].kind);
   const [card, setCard] = useState({ number: "", expiry: "", cvc: "", holder: "" });
   const [debit, setDebit] = useState({ iban: game.bank ? (ibanEra(game) ? groupIban(ownIban(game)) : game.bank.number) : "", holder: game.company.name });
-  const autofill = game.company.address && { company: game.company.name, ...game.company.address };
+  const autofill = game.company.address && { company: game.company.name, ...officeAddress(game) };
 
   if (placed) return (
     <div className="co">

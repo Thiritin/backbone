@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { capacityAt, DATACENTERS, datacenterById } from "../src/sim/20-world/datacenters";
+import { ALL_DATACENTERS, capacityAt, DATACENTERS, datacenterById } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
 import { dcAvailability, fits } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
@@ -32,8 +32,8 @@ describe("capacity", () => {
     expect(at(FR5, [2005, 2007, 2008, 2011, 2022, 2023, 2040])).toEqual([300, 300, 450, 600, 1050, 1200, 1200]);
     expect(at("hetzler-park", [2005, 2009, 2013, 2021, 2025, 2030])).toEqual([120, 180, 240, 360, 400, 400]);
     expect(at("mainqubes-fra", [2005, 2010, 2015, 2025, 2040])).toEqual([40, 60, 80, 120, 120]);
-    expect(DATACENTERS.filter((d) => d.size === "small").map((d) => d.provider)).toEqual(["mainqubes", "docklands", "spree", "greenchz", "myloch", "skyblink"]);
-    expect(DATACENTERS.filter((d) => d.size === "medium")).toHaveLength(13);
+    expect(ALL_DATACENTERS.filter((d) => d.size === "small").map((d) => d.provider)).toEqual(["mainqubes", "docklands", "spree", "greenchz", "myloch", "skyblink"]);
+    expect(ALL_DATACENTERS.filter((d) => d.size === "medium")).toHaveLength(13);
   });
   it("seeds competitors at 85% to 97% of capacity without touching the game rng", () => {
     for (let seed = 1; seed <= 20; seed++) {

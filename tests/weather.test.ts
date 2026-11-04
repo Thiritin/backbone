@@ -19,4 +19,10 @@ describe("weather", () => {
   it("snows only in the cold", () => {
     for (let d = 0; d < 800; d++) { const h = at(2005, 1, 1) + d * 24; if (sky("Frankfurt", h) === "snow") expect(temperature("Frankfurt", h)).toBeLessThanOrEqual(1); }
   });
+  it("rains and snows in a Frankfurt year", () => {
+    const days = Array.from({ length: 365 }, (_, d) => sky("Frankfurt", at(2005, 1, 1) + d * 24));
+    expect(days).toContain("rain");
+    expect(days).toContain("snow");
+    expect(sky("Frankfurt", at(2005, 3, 9))).toBe(sky("Frankfurt", at(2005, 3, 9)));
+  });
 });

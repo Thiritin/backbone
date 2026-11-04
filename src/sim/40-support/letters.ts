@@ -4,6 +4,7 @@ import { dateOf } from "../00-core/time";
 import { invoice, supplierAccount, supplierCode, supplierIban, type SupplierId } from "../46-finance/payables";
 import { groupIban, ibanEra } from "../46-finance/bank";
 import type { GameState, LedgerEntry } from "../50-state";
+import { officeOf } from "../60-infra/properties";
 import { t } from "../../i18n/en";
 
 export interface Letter {
@@ -18,6 +19,12 @@ export interface Letter {
   link?: string;
   // The document type the player filed it under in DocuWhere; unset, docType derives it.
   type?: DocType;
+  // The location whose letterbox holds it until fetched; null once it lies at the desk.
+  box: string | null;
+  // The location of the company's address when it was sent; null takes the current one.
+  addressedTo: string | null;
+  // Scanned into DocuWhere.
+  scanned: boolean;
 }
 
 export const DMS_APP = "DocuWhere";
@@ -29,10 +36,10 @@ export const docType = (l: Letter): DocType => l.type ?? (l.bill ? "invoice"
   : /^(office|register)/.test(l.topic) ? "registration"
   : /^(tax|vat|dohle|chamber|notary)/.test(l.topic) ? "official" : "other");
 
-// The arrived letters of one type (or all) whose sender, subject or text contains the query, oldest first.
+// The arrived, scanned letters of one type (or all) whose sender, subject or text contains the query, oldest first.
 export function archive(s: GameState, query: string, type: DocType | null = null): Letter[] {
   const q = query.trim().toLowerCase();
-  return inbox(s).filter((l) => (!type || docType(l) === type)
+  return inbox(s).filter((l) => l.scanned && (!type || docType(l) === type)
     && (!q || [l.from, t(`letter.${l.topic}.subject`, l.params), t(`letter.${l.topic}.body`, l.params)].some((x) => x.toLowerCase().includes(q))));
 }
 
@@ -51,18 +58,32 @@ export function postDay(hour: number, days: number): number {
 }
 
 export function post(s: GameState, from: string, topic: string, params: Record<string, string | number>, days: number, extra: Pick<Letter, "bill" | "form" | "link"> = {}): Letter {
-  const l: Letter = { id: `let${s.nextId++}`, from, topic, params, at: postDay(s.hour, days), read: false, arrived: false, ...extra };
+  const l: Letter = { id: `let${s.nextId++}`, from, topic, params, at: postDay(s.hour, days), read: false, arrived: false, box: null, addressedTo: postLocation(s), scanned: false, ...extra };
   s.letters = [...s.letters, l];
   return l;
 }
 
 export const inbox = (s: GameState): Letter[] => s.letters.filter((l) => l.arrived);
+export const inLetterbox = (s: GameState): Letter[] => inbox(s).filter((l) => l.box);
+export const atDesk = (s: GameState): Letter[] => inbox(s).filter((l) => !l.box);
+// The letterbox the post lands in: the office's from the move on, else the basement's; without either, the first location.
+// For a month after the move a letter addressed to the old place still goes there.
+export const FORWARD_HOURS = 30 * 24;
+export const postLocation = (s: GameState, l?: Letter): string => {
+  const o = officeOf(s), here = (o?.kind !== "basement" && o?.locationId) || (s.locations.find((x) => x.space === "basement") ?? s.locations[0]).id;
+  const movedAt = o?.kind === "basement" ? -Infinity : Math.min(...(o?.sections.map((x) => x.since) ?? []));
+  const old = l?.addressedTo;
+  return old && old !== here && s.hour < movedAt + FORWARD_HOURS && s.locations.some((x) => x.id === old) ? old : here;
+};
+// The letters waiting in one location's letterbox.
+export const boxAt = (s: GameState, locationId: string): Letter[] => inLetterbox(s).filter((l) => l.box === locationId);
 
 // Delivers the letters due this hour; the first one puts the Post app on the dock.
 export function lettersTick(s: GameState): void {
   for (const l of s.letters) {
     if (l.arrived || l.at > s.hour) continue;
     l.arrived = true;
+    l.box = postLocation(s, l);
     if (l.bill) {
       const p = invoice(s, l.bill.supplier, l.from, l.bill.lines, l.bill.days, true);
       l.payable = p.id;

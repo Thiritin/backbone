@@ -2,7 +2,7 @@ import { openBankAccount } from "../src/sim/90-actions/bank";
 import { newGame } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import { STARTER_APPS } from "../src/sim/10-catalog/store";
-import { officeOpen } from "../src/sim/80-business/office";
+import { nextOfficeOpen, officeOpen } from "../src/sim/80-business/office";
 import { resolve } from "../src/sim/80-business/browser";
 import { registerCompany } from "../src/sim/90-actions/company";
 import { tick } from "../src/sim/88-tick/tick";
@@ -67,5 +67,13 @@ describe("trade office", () => {
     const data = JSON.parse(serialize(newGame(1)));
     delete data.company.address;
     expect(deserialize(JSON.stringify(data)).company.address).toBeNull();
+  });
+});
+
+describe("office reopening", () => {
+  it("finds the next open hour", () => {
+    expect(nextOfficeOpen(0)).toBe(MONDAY_8);
+    expect(nextOfficeOpen(MONDAY_8 + 3)).toBe(MONDAY_8 + 3);
+    expect(nextOfficeOpen(MONDAY_8 + 8)).toBe(MONDAY_8 + 24);
   });
 });

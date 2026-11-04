@@ -188,7 +188,7 @@ describe("router throughput in a datacenter", () => {
       s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
       s.devices = s.devices.filter((d) => d.model !== "handoff");
       const router = ok(buyDevice(s, model, "Sysko", 1, loc));
-      s.devices = s.devices.map((d) => (d.id === router ? { ...d, store: null, panel: loc } : d));
+      ok(mountDevice(s, router, ok(buyRack(s, loc, "rack-42", 1)), 1));
       ok(orderTransit(s, loc, "cogentle", 1, 0.2));
       s.hour += 24 * 15;
       return uplinkMbps(s, s.network.uplinks[0]);

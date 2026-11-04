@@ -1,0 +1,295 @@
+/* Every close-up is one object drawn large over the dimmed room; tags and cards inside use the dark theme tokens. */
+.wr-veil { position: absolute; inset: 0; background: oklch(0.12 0.02 258 / 0.72); opacity: 0; transition: opacity 180ms ease; }
+.wr-veil.in { opacity: 1; }
+.wr-panel {
+  position: absolute; inset: 24px;
+  display: flex; flex-direction: column; overflow: hidden;
+  color: oklch(0.95 0.01 250);
+  font-family: var(--font-ui); user-select: none;
+  color-scheme: dark;
+  --win: oklch(0.235 0.012 258); --win-side: oklch(0.205 0.012 258); --win-bar: oklch(0.255 0.012 258);
+  --field: oklch(0.27 0.012 258); --hover: oklch(0.3 0.014 258); --line: oklch(0.33 0.013 258); --line-strong: oklch(0.4 0.014 258);
+  --text: oklch(0.95 0.006 258); --text-2: oklch(0.78 0.012 258); --text-3: oklch(0.64 0.014 258);
+  --accent-soft: oklch(0.34 0.07 262); --accent-text: oklch(0.78 0.12 262);
+  --ok-soft: oklch(0.32 0.06 150); --warn-soft: oklch(0.34 0.06 75); --warn-text: oklch(0.85 0.12 80); --bad-soft: oklch(0.33 0.07 25); --bad-text: oklch(0.8 0.13 25);
+  opacity: 0; transform: scale(0.98); transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+.wr-panel.in { opacity: 1; transform: none; }
+@media (max-width: 899px) { .wr-panel { inset: 16px; } }
+@media (prefers-reduced-motion: reduce) { .wr-veil, .wr-panel { transition: none; } }
+
+.wr-num, .wr-model { font-variant-numeric: tabular-nums; color: oklch(0.75 0.03 220); font-size: 13px; }
+/* The close plate screwed to the scene's corner. */
+.wr-x { position: absolute; top: 8px; right: 8px; z-index: 5; width: 30px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; }
+.wr-x svg { display: block; width: 100%; height: 100%; }
+.wr-x-plate { fill: oklch(0.72 0.01 250); stroke: oklch(0.6 0.012 250); stroke-width: 1; }
+.wr-x-screw { fill: oklch(0.55 0.01 250); }
+.wr-x-mark { stroke: oklch(0.3 0.01 255); stroke-width: 2.4; fill: none; }
+.wr-x:hover .wr-x-plate { fill: oklch(0.8 0.01 250); }
+
+/* The close-up scene: the rack stands centred on a floor strip; the wheel zooms it up to twice its fitted height. */
+.wr-stage { position: relative; --depth: 22px; --tag-w: 260px; --tag-gap: 56px; flex: 1; min-height: 0; overflow: auto; container-type: size; background: oklch(0.2 0.018 255); }
+.wr-room { min-width: 100%; min-height: 100%; width: max-content; display: flex; flex-direction: column; align-items: center; padding: calc(var(--depth) + 10px) 48px 0; box-sizing: border-box; }
+.wr-scene { position: relative; z-index: 1; transition: transform 220ms ease-out; }
+.wr-scene.tagged { transform: translateX(calc(-0.5 * (var(--tag-w) + var(--tag-gap)))); }
+.wr-cab { position: relative; z-index: 1; background: var(--rack); }
+/* The rack's lit top and its darker right side, drawn as faces around the front art. */
+.wr-cab::before { content: ""; position: absolute; pointer-events: none; }
+.wr-cab::before { left: 0; bottom: 100%; width: 100%; height: var(--depth); background: oklch(0.46 0.01 255); box-shadow: inset 0 -1px 0 oklch(0.3 0.008 255); transform: skewX(-45deg); transform-origin: bottom left; }
+/* The rack's right side, a face that turns the rack when grabbed. */
+.wr-flank { position: absolute; left: 100%; top: 0; width: var(--depth); height: 100%; padding: 0; border: 0; background: oklch(0.2 0.008 255); box-shadow: inset 1px 0 0 oklch(0.14 0.006 255); transform: skewY(-45deg); transform-origin: top left; cursor: grab; }
+.wr-flank:hover, .wr-flank:focus-visible { background: oklch(0.3 0.02 255); outline: none; }
+.wr-cab.shelf .wr-flank { background: oklch(0.6 0.008 80); box-shadow: inset 1px 0 0 oklch(0.5 0.01 80); }
+/* The base rail the rack stands on. */
+.wr-rail { position: relative; z-index: 1; height: 10px; margin: 0 -14px; background: oklch(0.58 0.012 255); box-shadow: inset 0 1px 0 oklch(0.7 0.012 255), 0 3px 0 oklch(0.26 0.014 255); }
+/* Square keys over the scene: side indicator, turn, zoom out, zoom in, fit. */
+.wr-keys { position: sticky; top: 0; left: 0; z-index: 6; width: 100cqw; height: 0; pointer-events: none; }
+.wr-keys > div { position: absolute; top: 8px; right: 48px; display: flex; align-items: center; gap: 2px; padding: 3px; background: oklch(0.27 0.012 255); border: 1px solid oklch(0.42 0.012 255); pointer-events: auto; }
+.wr-sep { align-self: stretch; width: 1px; margin: 4px 4px; background: oklch(0.45 0.012 255); }
+.wr-k { min-width: 0; min-height: 0; position: relative; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; background: none; color: oklch(0.92 0.01 255); cursor: pointer; }
+.wr-k svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.wr-k:hover:not(:disabled) { background: oklch(0.38 0.02 255); }
+.wr-k:focus-visible { outline: 2px solid oklch(0.88 0.12 250); outline-offset: 2px; }
+.wr-k:disabled { opacity: 0.35; cursor: default; }
+.wr-face-ind { position: relative; display: grid; place-items: center; width: 36px; height: 32px; margin: 0 4px; background: oklch(0.15 0.012 255); border: 1px solid oklch(0.4 0.012 255); color: oklch(0.82 0.1 215); }
+.wr-face-ind svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.wr-face-ind circle, .wr-face-ind .post { fill: currentColor; }
+.wr-face-ind:hover::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: 0; padding: 4px 8px; background: oklch(0.93 0.025 85); color: oklch(0.28 0.02 60); font: 12px var(--font-ui); white-space: nowrap; pointer-events: none; z-index: 2; }
+.wr-k[data-tip]:hover::after, .wr-k[data-tip]:focus-visible::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: 0; padding: 4px 8px; background: oklch(0.93 0.025 85); color: oklch(0.28 0.02 60); font: 12px var(--font-ui); white-space: nowrap; pointer-events: none; z-index: 2; }
+.wr-stage.panning, .wr-stage.panning * { cursor: grabbing !important; }
+.wr-face { display: flex; justify-content: center; }
+/* A shelf is open light metal: its top board and the side of its uprights. */
+.wr-cab.shelf { background: none; }
+.wr-cab.shelf::before { background: oklch(0.8 0.008 80); box-shadow: inset 0 -1px 0 oklch(0.62 0.01 80); }
+/* The rack fits the stage at zoom 1; zooming scales its height and the stage scrolls. */
+.wr-face > svg { display: block; width: auto; height: calc(min(100cqh - var(--depth) - 62px - var(--pp, 0px), var(--units) * 34px + 80px) * var(--z)); }
+.wr-face.out { position: absolute; inset: 0; z-index: 1; pointer-events: none; animation: wr-turn-out 150ms ease-in forwards; }
+.wr-face.in { animation: wr-turn-in 150ms ease-out 150ms backwards; }
+@keyframes wr-turn-out { to { transform: scaleX(0); } }
+@keyframes wr-turn-in { from { transform: scaleX(0); } }
+.wr-room::before { content: ""; flex: 1; }
+.wr-floor { position: relative; align-self: stretch; flex: 1; min-height: 44px; margin: -10px -48px 0; background: oklch(0.4 0.014 255); border-top: 3px solid oklch(0.62 0.014 255); }
+/* A floor hatch with the cable run out of the rack, where a cable leaves for another rack. */
+.wr-away { position: absolute; left: 24px; bottom: 2px; display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; color: oklch(0.85 0.01 255); font-size: 13px; cursor: pointer; }
+.wr-away .wr-k { width: 40px; height: 40px; background: oklch(0.27 0.012 255); border: 1px solid oklch(0.45 0.012 255); }
+.wr-away:hover .wr-k, .wr-stage:has(.dragging) .wr-away .wr-k { border-color: var(--accent); background: oklch(0.34 0.02 255); }
+@media (prefers-reduced-motion: reduce) { .wr-scene { transition: none; } .wr-face.out { display: none; } .wr-face.in { animation: none; } }
+
+/* The paper tag tied to the picked unit by a string. */
+.wr-tag { z-index: 3; position: absolute; left: calc(100% + var(--tag-gap)); top: 0; width: var(--tag-w); padding: 12px 14px 12px 30px; box-sizing: border-box;
+  background: oklch(0.93 0.025 85); color: oklch(0.28 0.02 60); clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
+  --text: oklch(0.28 0.02 60); --text-2: oklch(0.4 0.02 60); --text-3: oklch(0.5 0.02 60); --line: oklch(0.82 0.03 80); --field: oklch(0.96 0.02 85); --hover: oklch(0.88 0.03 85); color-scheme: light;
+  animation: wr-tag-in 220ms ease-out; overflow: visible; }
+.wr-tag::before { content: ""; position: absolute; left: 12px; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: oklch(0.22 0.018 255); box-shadow: 0 0 0 2px oklch(0.8 0.04 80); }
+.wr-string { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 4; }
+.wr-string line { stroke: oklch(0.85 0.03 80); stroke-width: 1.5; }
+@keyframes wr-tag-in { from { opacity: 0; transform: translateX(16px); } }
+.wr-tag-h { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+.wr-tag-h .loc-label button { color: inherit; font: inherit; }
+.wr-tag .wr-model { display: block; margin-top: 2px; color: oklch(0.45 0.03 60); }
+.wr-tag .loc-node { background: oklch(0.985 0.01 85); border-color: oklch(0.72 0.03 80); color: var(--text); }
+.wr-tag .loc-node .k { color: var(--text-2); }
+.wr-tag .loc-node.here { border-color: oklch(0.45 0.12 150); }
+.wr-tag .pill.ok { background: oklch(0.42 0.1 150); color: oklch(0.98 0.01 150); }
+.wr-tag .btn.danger { color: var(--text); }
+.wr-tag .wr-fault { color: oklch(0.5 0.2 27); font-weight: 600; }
+.wr-lines { display: flex; flex-direction: column; margin-top: 10px; border-top: 1px solid oklch(0.8 0.03 80); }
+.wr-lines hr { height: 0; margin: 4px 0; border: 0; border-top: 1px dashed oklch(0.78 0.03 80); }
+.wr-line { padding: 4px 0; border: 0; border-bottom: 1px solid oklch(0.87 0.025 85); background: none; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.wr-line:hover:not(:disabled) { color: oklch(0.45 0.13 262); }
+.wr-line:disabled { opacity: 0.45; cursor: default; }
+.wr-tag .loc-card { background: none; }
+.wr-tag .wr-acts { padding: 8px 0 0; }
+/* A cabled port's tag stacks header, path and colours in one column so every language fits the paper. */
+.wr-tag-body .loc-card-h { flex-wrap: wrap; padding: 0 0 8px; min-height: 0; }
+.wr-tag-body .loc-card-h .grow { flex-basis: 100%; height: 0; }
+.wr-tag-body .loc-card-h .btn { max-width: 100%; white-space: normal; text-align: left; height: auto; min-height: 28px; }
+.wr-tag-body .loc-path { flex-direction: column; align-items: stretch; padding: 10px 0; }
+.wr-tag-body .loc-node .k, .wr-tag-body .loc-node strong { white-space: normal; overflow-wrap: anywhere; }
+.wr-tag-body .loc-wire { flex: none; width: 3px; min-width: 0; height: auto; min-height: 36px; margin-left: 18px; }
+.wr-tag-body .loc-wire > span { left: 12px; top: 50%; bottom: auto; translate: 0 -50%; white-space: normal; width: max-content; max-width: 190px; }
+.wr-tag-body .loc-row { flex-direction: column; align-items: flex-start; padding: 8px 0; }
+.wr-tag-body .loc-swatch-default { white-space: nowrap; }
+.wr-frame { fill: var(--metal-2); stroke: var(--metal-line); stroke-width: 1; }
+.wr-frame-top { fill: oklch(0.46 0.01 255); }
+.wr-vent { fill: var(--metal); }
+.wr-rack .rack-dev:hover { filter: brightness(1.35) drop-shadow(0 0 2px var(--accent)); }
+.wr-rack .rack-free:hover rect { stroke: var(--accent); stroke-width: 1.5; fill: oklch(0.28 0.03 255); }
+.wr-side { flex: 1; min-width: 280px; max-width: 720px; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.wr-card { border: 3px solid oklch(0.17 0.02 258); border-radius: 0; background: oklch(0.29 0.022 255); box-shadow: inset 0 0 0 1px oklch(0.38 0.02 252); }
+.wr-card-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; padding: 12px 14px; border-bottom: 2px solid oklch(0.2 0.02 258); }
+.wr-card-h h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.wr-card-h .loc-label button { color: inherit; font: inherit; }
+.wr-leds { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-left: auto; }
+.wr-led { width: 8px; height: 8px; border-radius: 0; background: oklch(0.35 0.01 255); box-shadow: 0 0 0 1px oklch(0.15 0.02 258); }
+.wr-led.ok { background: oklch(0.78 0.18 145); box-shadow: 0 0 4px oklch(0.78 0.18 145); }
+.wr-led.warn { background: oklch(0.82 0.16 85); box-shadow: 0 0 4px oklch(0.82 0.16 85); }
+.wr-led.bad { background: oklch(0.65 0.2 25); box-shadow: 0 0 4px oklch(0.65 0.2 25); }
+
+.wr-acts { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; }
+.wr-acts hr { flex-basis: 100%; height: 0; margin: 2px 0; border: 0; border-top: 2px solid oklch(0.22 0.02 258); }
+.wr-btn { padding: 5px 10px; border: 2px solid oklch(0.42 0.02 252); border-radius: 0; background: oklch(0.34 0.022 255); color: inherit; font: inherit; font-size: 13px; cursor: pointer; }
+.wr-btn:hover:not(:disabled) { border-color: var(--accent); background: oklch(0.38 0.03 255); }
+.wr-btn:disabled { opacity: 0.45; cursor: default; }
+
+.wr-card .loc-shop-list { color: var(--text); background: var(--field); }
+
+/* The rack back: ports are click and drag targets, the cable in hand glows, a dragged cable ends in a plug. */
+.wr-cab .rack-hand { fill: color-mix(in oklch, var(--accent) 50%, transparent); stroke: var(--accent); stroke-width: 1.5; }
+.wr-cab .rack-port { cursor: pointer; }
+.wr-cab .rack-port:hover { fill: color-mix(in oklch, var(--accent) 30%, transparent); }
+.wr-cab .rack-drag { stroke: oklch(0.7 0.15 235); stroke-width: 3; }
+.wr-cab .rack-drag.rack-edge { stroke: oklch(0.15 0.03 245); stroke-width: 5.4; }
+.wr-cab .rack-drag { stroke-width: 3; stroke-dasharray: none; stroke-linecap: round; }
+.wr-cab .rack-plug { fill: oklch(0.85 0.02 245); stroke: oklch(0.4 0.05 245); stroke-width: 0.8; }
+.wr-card .loc-card { color: var(--text); border: 0; box-shadow: none; }
+.wr-card .loc-card-h { background-image: none; }
+.wr-card[data-port] > .wr-acts { border-top: 2px solid oklch(0.2 0.02 258); }
+/* The rack's own label plate with its name and units in use, and the turn arrow at its corner. */
+/* The plate is engraved into the lit top face, skewed with it. */
+.wr-plate { position: absolute; z-index: 3; left: 12px; bottom: calc(100% + 3px); height: calc(var(--depth) - 6px); display: flex; gap: 8px; align-items: center; padding: 0 8px; box-sizing: border-box;
+  background: oklch(0.4 0.01 255); box-shadow: inset 0 1px 0 oklch(0.32 0.008 255), inset 0 -1px 0 oklch(0.52 0.01 255); color: oklch(0.84 0.01 255);
+  font-size: 11px; font-variant-numeric: tabular-nums; max-width: 60%; transform: skewX(-45deg); transform-origin: bottom left; }
+.wr-plate b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wr-plate span { font-size: 10px; font-weight: 400; color: oklch(0.72 0.01 255); white-space: nowrap; }
+.wr-cab.shelf .wr-plate { background: oklch(0.7 0.008 80); box-shadow: inset 0 1px 0 oklch(0.6 0.01 80), inset 0 -1px 0 oklch(0.86 0.008 80); color: oklch(0.3 0.01 80); }
+.wr-cab.shelf .wr-plate span { color: oklch(0.4 0.01 80); }
+.wr-floor-units .wp-label b { overflow: visible; white-space: normal; }
+.wr-floor-units .wp-label { max-width: 120px; }
+.wr-floor-units { padding-bottom: 12px; }
+/* Units that fit a picked free unit stand on the floor to the rack's right. */
+.wr-floor-units { position: absolute; left: calc(100% + var(--tag-gap)); bottom: 0; width: var(--tag-w); }
+.wr-floor-units > div { display: flex; flex-wrap: wrap-reverse; align-items: flex-end; gap: 12px 16px; }
+
+/* The lid close-up: the rack fades behind the server pulled out on its rails, its spec sheet taped below the chassis. */
+.wr-room { transition: opacity 220ms ease; }
+.wr-room.lidded { opacity: 0.18; pointer-events: none; }
+.wr-stage:has(.wl-scene) { overflow: hidden; }
+.wl-scene { position: absolute; inset: 0; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; align-content: center; justify-content: center; gap: 24px 40px; padding: 40px 32px; box-sizing: border-box; }
+.wl-pull { position: relative; flex: 0 0 auto; width: max(300px, min(900px, calc(100cqw - 364px), calc((100cqh - 280px) * 2.125))); margin-bottom: 190px;
+  transform: translateX(24%) scale(0.72); opacity: 0; transition: transform var(--pull-ms) ease-out, opacity var(--pull-ms) ease-out; }
+.wl-pull.out { transform: none; opacity: 1; }
+.wl-pull .lid-view { position: relative; z-index: 1; width: 100%; max-height: none; }
+/* The slide rails along both sides of the chassis, running back to the rack's upright on the right. */
+.wl-rail { position: absolute; left: 28%; right: -9%; height: 10px; background: repeating-linear-gradient(90deg, var(--metal-2) 0 18px, var(--metal-line) 18px 20px); box-shadow: inset 0 0 0 1px var(--metal-line); }
+.wl-rail.top { top: calc(7.25% - 10px); }
+.wl-rail.bottom { top: 90.3%; }
+.wl-pull::after { content: ""; position: absolute; right: -11%; top: calc(7.25% - 24px); height: calc(83% + 48px); width: 16px; background: var(--metal-2); box-shadow: inset 0 0 0 1px var(--metal-line), inset 4px 0 0 var(--metal); }
+.wl-spec { position: absolute; z-index: 2; left: 34%; top: 88.5%; width: 240px; padding: 14px 14px 8px; box-sizing: border-box; background: oklch(0.95 0.015 90); color: oklch(0.28 0.02 60); font-size: 12px; transform: rotate(-1.5deg); }
+.wl-spec::before { content: ""; position: absolute; left: 50%; top: -9px; width: 72px; height: 18px; margin-left: -36px; background: oklch(0.92 0.03 95 / 0.7); transform: rotate(2deg); }
+.wl-spec b { display: block; margin-bottom: 6px; font-size: 13px; }
+.wl-spec dl { display: grid; gap: 2px; margin: 0; }
+.wl-spec dl div { display: flex; justify-content: space-between; gap: 6px; }
+.wl-spec dt { color: oklch(0.45 0.03 60); }
+.wl-spec dd { margin: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wl-spec .wr-line { display: block; width: 100%; margin-top: 8px; border-bottom: 0; border-top: 1px solid oklch(0.82 0.03 80); }
+.wl-tag { position: relative; left: auto; top: auto; flex: 0 0 var(--tag-w); }
+.wr-line[aria-disabled] { opacity: 0.6; cursor: default; }
+.wr-line .hands-mode { margin-left: 6px; color: oklch(0.5 0.02 60); }
+@media (prefers-reduced-motion: reduce) { .wl-pull, .wr-room { transition: none; } }
+
+/* The provider panel's provider side drawn large above the rack back. */
+.wr-stage.pp { --pp: 190px; }
+.wr-stage.pp .wr-room { padding-top: calc(var(--depth) + 10px + var(--pp)); }
+.wr-pp { position: absolute; z-index: 2; left: 50%; bottom: calc(100% + var(--depth) + 12px); width: 460px; transform: translateX(-50%); overflow: visible; font-family: "JetBrains Mono", monospace; }
+.pp-face { fill: oklch(0.24 0.006 255); stroke: var(--metal-line); stroke-width: 1; }
+.pp-ear { fill: var(--metal-2); }
+.pp-hit { fill: transparent; }
+.pp-jack { cursor: pointer; }
+.pp-no { font-size: 6px; fill: oklch(0.62 0.01 255); text-anchor: middle; }
+.pp-sock { fill: oklch(0.13 0.006 255); stroke: oklch(0.34 0.006 255); stroke-width: 0.6; }
+.pp-lc { fill: oklch(0.3 0.006 255); }
+.pp-plug { fill: oklch(0.55 0.12 255); }
+.pp-jack.uplink .pp-plug { fill: oklch(0.62 0.13 150); }
+.pp-jack.xconnect .pp-plug { fill: oklch(0.7 0.13 75); }
+.pp-plate { fill: oklch(0.93 0.01 90); stroke: oklch(0.78 0.01 90); stroke-width: 0.5; }
+.pp-jack.free .pp-plate { fill: oklch(0.36 0.006 255); stroke: none; }
+.pp-label { font-size: 9px; fill: oklch(0.25 0.01 255); }
+.pp-jack.free .pp-label { fill: oklch(0.66 0.01 255); }
+.pp-due line { stroke: oklch(0.5 0.02 60); stroke-width: 0.6; }
+.pp-due rect { fill: oklch(0.86 0.1 90); }
+.pp-due text { font-size: 7.5px; fill: oklch(0.3 0.03 60); }
+.pp-jack:hover .pp-sock, .pp-jack.on .pp-sock { stroke: var(--accent); stroke-width: 1.4; }
+.pp-jack.on .pp-plate { stroke: var(--accent); stroke-width: 1.2; }
+/* A jack's tag hangs clear of the wide panel. */
+.wr-tag.far { left: calc(50% + 254px); }
+/* Two rack backs side by side, and the provider's order slip between them. */
+.wr-pair { display: flex; align-items: flex-end; gap: 300px; }
+.wr-slip { left: 50%; top: auto; bottom: 96px; margin-left: calc(var(--tag-w) / -2); z-index: 3; }
+
+.wr-cart { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; background: oklch(0.22 0.018 255); }
+.wr-cart-monitor { width: min(560px, 92%); display: flex; flex-direction: column; flex: 0 0 auto; padding: 20px 20px 24px; border-radius: 10px; background: oklch(0.82 0.015 85); box-shadow: inset 0 0 0 2px oklch(0.7 0.02 85), 0 6px 0 oklch(0.15 0.01 255); }
+.wr-cart-frame { width: min(640px, 80%); margin-top: -6px; }
+.wr-cart-post { fill: oklch(0.45 0.015 255); }
+.wr-cart-shelf, .wr-cart-tray { fill: oklch(0.34 0.014 255); stroke: oklch(0.5 0.015 255); stroke-width: 2; }
+.wr-kb { fill: oklch(0.8 0.012 85); stroke: oklch(0.6 0.015 85); stroke-width: 1; }
+.wr-key { fill: oklch(0.96 0.008 85); }
+.wr-wheel { fill: oklch(0.16 0.008 255); stroke: oklch(0.5 0.015 255); stroke-width: 2; }
+.wr-hub { fill: oklch(0.6 0.015 255); }
+.wr-cart-back { position: absolute; top: 60px; left: 12px; width: 34px; height: 34px; border: 0; border-radius: 6px; background: oklch(0.3 0.012 255); color: oklch(0.9 0.01 255); cursor: pointer; }
+.wr-cart-back::before { content: "\2190"; font-size: 18px; }
+.wr-cart-back:hover { background: oklch(0.4 0.02 262); }
+
+/* The unit tag: a narrow paper tag with a drawn faceplate, then a grid of square pictogram keys. */
+.wr-tag.unit { width: 236px; }
+.wk-plate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; padding: 8px; background: oklch(0.27 0.02 255); border: 1px solid oklch(0.18 0.01 255); }
+.wk-gap { flex: 1; }
+.wk-power { position: relative; width: 40px; height: 40px; padding: 0; border: 2px solid oklch(0.55 0.015 255); border-radius: 0; background: oklch(0.36 0.015 255); color: oklch(0.88 0.01 255); cursor: pointer; box-shadow: 0 3px 0 oklch(0.16 0.01 255); }
+.wk-power:active { transform: translateY(2px); box-shadow: 0 1px 0 oklch(0.16 0.01 255); }
+.wk-power svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: square; }
+.wk-power i { position: absolute; right: 3px; top: 3px; width: 6px; height: 6px; background: oklch(0.4 0.01 255); }
+.wk-power.on i { background: oklch(0.78 0.2 150); box-shadow: 0 0 5px oklch(0.78 0.2 150); }
+.wk-power.armed { border-color: oklch(0.75 0.19 60); outline: 2px solid oklch(0.75 0.19 60); outline-offset: 2px; animation: wk-arm 0.6s steps(2) infinite; }
+.wk-power.armed i { background: oklch(0.75 0.19 60); }
+@keyframes wk-arm { 50% { background: oklch(0.45 0.09 60); } }
+.wk-state { flex-basis: 100%; font-size: 11px; color: oklch(0.85 0.01 255); }
+.wk-power.armed ~ .wk-state { color: oklch(0.8 0.17 60); }
+.wk-port { width: 34px; height: 26px; padding: 2px; border: 1px solid oklch(0.5 0.015 255); border-radius: 0; background: oklch(0.2 0.01 255); color: oklch(0.8 0.01 255); cursor: pointer; }
+.wk-port svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.wk-port:hover:not(:disabled), .wk-port.on { color: oklch(0.85 0.15 262); border-color: oklch(0.7 0.12 262); }
+.wk-port:disabled { opacity: 0.35; cursor: default; }
+.wk-grid { display: grid; grid-template-columns: repeat(4, 38px); gap: 6px; margin-top: 10px; }
+.wk-ic { position: relative; width: 38px; height: 38px; padding: 0; display: grid; place-items: center; border: 1px solid oklch(0.6 0.04 80); border-radius: 0; background: oklch(0.93 0.025 85); color: oklch(0.3 0.03 60); cursor: pointer; box-shadow: 0 2px 0 oklch(0.7 0.04 80); }
+.wk-ic:hover:not(:disabled), .wk-ic:focus-visible, .wk-ic.on { border-color: oklch(0.45 0.13 262); color: oklch(0.4 0.13 262); }
+.wk-ic:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 1px 0 oklch(0.7 0.04 80); }
+.wk-ic:disabled { opacity: 0.4; cursor: not-allowed; background: repeating-linear-gradient(135deg, oklch(0.93 0.025 85) 0 4px, oklch(0.88 0.03 85) 4px 8px); box-shadow: none; }
+.wk-badge { position: absolute; left: 0; right: 0; bottom: -1px; font-size: 9px; line-height: 11px; background: oklch(0.35 0.03 60); color: oklch(0.97 0.01 85); }
+.wk-tip { display: none; position: absolute; top: calc(100% + 3px); left: 0; z-index: 3; padding: 2px 6px; white-space: nowrap; pointer-events: none; font-size: 11px; background: oklch(0.3 0.03 60); color: oklch(0.97 0.01 85); }
+.wk-ic:nth-child(4n+3) .wk-tip, .wk-ic:nth-child(4n) .wk-tip { left: auto; right: 0; }
+.wk-ic:hover .wk-tip, .wk-ic:focus-visible .wk-tip { display: block; }
+.wk-flip { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; border-top: 1px dashed oklch(0.78 0.03 80); }
+.wk { padding: 5px 8px; border: 1px solid oklch(0.6 0.04 80); border-radius: 0; background: oklch(0.93 0.025 85); color: inherit; font: inherit; font-size: 12px; cursor: pointer; box-shadow: 0 2px 0 oklch(0.7 0.04 80); }
+.wk:hover:not(:disabled) { border-color: oklch(0.45 0.13 262); color: oklch(0.4 0.13 262); }
+.wk:disabled { opacity: 0.45; cursor: default; }
+.wk-slip { margin-top: 10px; padding: 8px 10px; background: oklch(0.97 0.02 90); border: 1px dashed oklch(0.6 0.05 80); }
+.wk-slip-name { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.4 0.03 60); }
+.wk-slip-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.wk-stamp { padding: 6px 10px; border: 2px solid oklch(0.5 0.2 27); border-radius: 0; background: none; color: oklch(0.45 0.2 27); font: inherit; font-size: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; transform: rotate(-3deg); }
+.wk-stamp:hover { background: oklch(0.5 0.2 27); color: oklch(0.98 0.01 27); }
+
+/* Cabling: valid targets light up strongly, required ports carry a pulsing marker, a seated plug flashes and a pulled cord stretches then pops free. */
+.wr-cab .rack-ok { fill: color-mix(in oklch, oklch(0.82 0.16 215) 75%, transparent); stroke: oklch(0.97 0.02 215); stroke-width: 2.4; animation: rack-ok 0.9s ease-in-out infinite alternate; }
+.wr-cab .rack-no { cursor: not-allowed; }
+.wr-cab .rack-seated { cursor: grab; }
+.wr-cab .rack-seated:hover, .wr-cab .rack-seated:focus-visible { fill: color-mix(in oklch, var(--accent) 35%, transparent); stroke: var(--accent); stroke-width: 2; }
+.wr-cab .rack-need { fill: oklch(0.84 0.18 80); stroke: oklch(0.2 0.03 80); stroke-width: 2.4; stroke-linejoin: round; animation: rack-need 1.2s ease-in-out infinite alternate; }
+.wr-cab .rack-seat { animation: rack-seat 0.9s ease-out; }
+.wr-cab .rack-pull circle { fill: none; stroke: oklch(0.82 0.16 215); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.wr-cab .rack-pull path { fill: none; stroke: oklch(0.82 0.16 215); stroke-width: 3; stroke-linecap: round; }
+.wr-cab .rack-pull rect { fill: oklch(0.85 0.02 245); stroke: oklch(0.3 0.05 245); stroke-width: 1; }
+.wr-cab .rack-pull.free circle { stroke: oklch(0.7 0.2 27); stroke-dasharray: none; }
+.wr-cab .rack-pull.free path { stroke: oklch(0.7 0.2 27); stroke-dasharray: 2 5; }
+.wr-cab .rack-pull.free rect { fill: oklch(0.7 0.2 27); }
+@keyframes rack-ok { from { fill-opacity: 0.6; } to { fill-opacity: 1; } }
+@keyframes rack-need { from { opacity: 1; } to { opacity: 0.45; } }
+@keyframes rack-seat { 0%, 60% { fill: color-mix(in oklch, oklch(0.78 0.2 145) 70%, transparent); stroke: oklch(0.78 0.2 145); stroke-width: 2; } 100% { fill: transparent; stroke-width: 0; } }
+@media (prefers-reduced-motion: reduce) { .wr-cab .rack-seat, .wr-cab .rack-need, .wr-cab .rack-ok { animation: none; } }
+
+.wk-label-pw { margin-top: 4px; font: 700 16px var(--mono, monospace); letter-spacing: 0.04em; color: oklch(0.25 0.02 60); user-select: all; }
+
+/* A strip on the stage's right edge: the rack's equipment and the part of the rack in view; a click or drag moves the view. */
+.wr-mini { position: sticky; top: 0; left: 0; z-index: 5; width: 100cqw; height: 0; pointer-events: none; }
+.wr-mini-bar { position: absolute; right: 12px; top: 96px; width: 16px; height: calc(100cqh - 96px - 72px); background: oklch(0.15 0.012 255); border: 1px solid oklch(0.4 0.012 255); pointer-events: auto; cursor: pointer; touch-action: none; }
+.wr-mini-mark { position: absolute; left: 3px; right: 3px; background: oklch(0.6 0.04 255); }
+.wr-mini-view { position: absolute; left: -1px; right: -1px; border: 2px solid oklch(0.88 0.12 250); background: oklch(0.88 0.12 250 / 0.18); box-sizing: border-box; pointer-events: none; }

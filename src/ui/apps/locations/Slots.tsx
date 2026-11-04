@@ -11,7 +11,7 @@ import { installPart, removePart, replaceComponent, replaceSpares } from "../../
 import { ageYears, clockLabel, isWorn, PART_NAME, partLabel, partSize, partSlot } from "../hw";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
-import { atDatacenter, useHandWork } from "./HandSheet";
+import { atDatacenter, HandsButtons, handsWays, useHandWork } from "./HandSheet";
 import { TechButton } from "./TechButton";
 
 interface Group { name: string; kinds: ComponentKind[]; slots: number }
@@ -44,7 +44,8 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
   const [adding, setAdding] = useState<string | null>(null);
   const model = modelById(device.model);
   const zone = device.rackId ? locationOf(game, device) : game.locations.find((l) => l.id === device.store);
-  const held = device.maintenance ? t("locations-2.workUnderWay") : device.rackId || device.store ? null : t("locations-2.inTransit");
+  const rep = handsWays(game, zone?.id, "replaceComponent"), rem = handsWays(game, zone?.id, "removePart"), ins = handsWays(game, zone?.id, "installPart");
+  const held = device.maintenance ? t("locations-2.workUnderWay") : device.transitTo ? t("locations-2.inTransit") : null;
   const spares = (kinds: ComponentKind[]) => game.devices.filter((d) => d.store === zone?.id && kinds.some((k) => d.model === `part-${k}`));
   const swapSet = (c: Component) => (zone ? replaceSpares(game, device, c, zone.id).length : 0), spareFor = (c: Component) => swapSet(c) > 0;
   return (
@@ -88,9 +89,9 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                     <td className="r">
                       <span className="loc-acts">
                         {busy ? null : block !== null ? <span className="loc-muted">{block}</span>
-                          : <button className="btn" onClick={() => hand.start(game, { title: swapSet(c) > 1 ? t("locations-2.replaceCpus", { n: swapSet(c) }) : t("locations-2.replacePart", { part: PART_NAME[c.kind] }), deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id } })}>{t("locations-2.replace")}</button>}
+                          : <HandsButtons ways={rep} onRun={(how) => hand.start(game, { title: swapSet(c) > 1 ? t("locations-2.replaceCpus", { n: swapSet(c) }) : t("locations-2.replacePart", { part: PART_NAME[c.kind] }), deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id }, how })}>{t("locations-2.replace")}</HandsButtons>}
                         {!busy && spareFor(c) && <TechButton game={game} deviceId={device.id} kind="replace" componentId={c.id} />}
-                        {removable && (device.rackId && energized(device) && !hot ? null : <button className="btn" onClick={() => hand.start(game, { title: t("locations-2.removePart", { part: PART_NAME[c.kind] }), deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id } })}>{t("locations-2.remove")}</button>)}
+                        {removable && (device.rackId && energized(device) && !hot ? null : <HandsButtons ways={rem} onRun={(how) => hand.start(game, { title: t("locations-2.removePart", { part: PART_NAME[c.kind] }), deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id }, how })}>{t("locations-2.remove")}</HandsButtons>)}
                         {removable && !!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" componentId={c.id} />}
                       </span>
                     </td>
@@ -117,9 +118,9 @@ export function PartsCard({ game, device }: { game: GameState; device: Device })
                         const spec = spareSpec(d), n = fitting.filter((x) => samePart(spareSpec(x), spec)).length;
                         return (
                           <Fragment key={d.id}>
-                            <button className="btn" disabled={cold(d)} onClick={() => { hand.start(game, { title: t("locations-2.installPart", { part: partLabel(spec) }), deviceId: device.id, action: installPart, args: [device.id, d.id, undefined], tech: { kind: "part", partId: d.id } }); setAdding(null); }}>
+                            <HandsButtons ways={ins} disabled={cold(d)} onRun={(how) => { hand.start(game, { title: t("locations-2.installPart", { part: partLabel(spec) }), deviceId: device.id, action: installPart, args: [device.id, d.id, undefined], tech: { kind: "part", partId: d.id }, how }); setAdding(null); }}>
                               {partLabel(spec)}{n > 1 && <span className="num"> × {n}</span>}<span className="num loc-muted"> {euro(partPrice(spec.kind, spec.size, spec.ff, yearOf(game.hour), spec))}</span>
-                            </button>
+                            </HandsButtons>
                             {!!device.rackId && <TechButton game={game} deviceId={device.id} kind="part" partId={d.id} />}
                           </Fragment>
                         );

@@ -2,7 +2,7 @@
 import { nowMinutes, yearOf } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { bankById, banksOpen, defaultPlan, planById, tanMethods, type BankId, type PlanId, type TanMethod } from "../10-catalog/banks";
-import { APPROVAL_HOURS, assign, bankOf, ibanValid, openWithSavings, openAccount, hbci, payAll, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft, type Payee } from "../46-finance/bank";
+import { APPROVAL_HOURS, assign, bankOf, ibanValid, openWithSavings, openAccount, hbci, payAll, billDrafts, ibanEra, limitFor, LOCK_HOURS, MIN_CARD_LIMIT, nextTanIndex, placeTanList, send, spendable, useTan, WRONG_LIMIT, type Draft, type Payee } from "../46-finance/bank";
 import { debitAllowed, invoice, isSupplier, PAY_METHODS, type PayMethod } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
@@ -34,6 +34,20 @@ export function startTransfer(s: GameState, draft: Draft): ActionResult {
   const d = { ...draft, name: draft.name.trim(), account: draft.account.replace(/\s/g, ""), reference: draft.reference.trim() };
   const code = b.tan === "mtan" ? String(100000 + Math.floor(rand(hashRng(s.seed, s.hour, s.minute, s.nextId)) * 900000)) : null;
   s.bank = { ...b, pending: { draft: d, index: b.tan === "itan" ? nextTanIndex(s) : null, code, sendAt: code ? nowMinutes(s) + 1 : null } };
+  return { ok: true };
+}
+
+// A collective order for every open invoice, confirmed with a single TAN.
+export function startBatch(s: GameState): ActionResult {
+  const b = s.bank;
+  if (!b) return fail("error.noBank");
+  if (s.hour < b.lockedUntil) return fail("error.bankLocked");
+  const batch = billDrafts(s);
+  if (!batch.length) return fail("error.noOpenBills");
+  const total = Math.round(batch.reduce((n, d) => n + d.amount, 0) * 100) / 100;
+  if (total > spendable(s)) return fail("error.noCash");
+  const code = b.tan === "mtan" ? String(100000 + Math.floor(rand(hashRng(s.seed, s.hour, s.minute, s.nextId)) * 900000)) : null;
+  s.bank = { ...b, pending: { draft: { ...batch[0], amount: total }, batch, index: b.tan === "itan" ? nextTanIndex(s) : null, code, sendAt: code ? nowMinutes(s) + 1 : null } };
   return { ok: true };
 }
 
@@ -93,6 +107,7 @@ export function confirmTransfer(s: GameState, tan = ""): ActionResult {
     s.bank = { ...s.bank, standingOrders: [...s.bank.standingOrders, { id, name: d.name, account: d.account, amount: d.amount, reference: d.reference, day: p.day }] };
     return { ok: true, id };
   }
+  if (p.batch) return { ok: true, id: p.batch.map((d) => send(s, d).id).at(-1) };
   return { ok: true, id: send(s, p.draft).id };
 }
 

@@ -3,7 +3,7 @@ import { REGIONS, regionOf } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
 import { storageStacks } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addLocation, buyRack, closeLocation, sellDevice, shipStock, unmountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, closeLocation, sellDevice, shipStock as shipRaw, unmountDevice } from "../src/sim/90-actions/hardware";
 import { mountDevice, mountStack } from "./plugged";
 import { buyCart, buyDevice, freeFloor, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -11,6 +11,11 @@ import { drive } from "../src/sim/90-actions/travel";
 import { withServer } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 100_000 });
+// Rented space is handed over after its lead time; these tests ship as if it were ready.
+const shipStock = (s: GameState, ...a: Parameters<typeof shipRaw> extends [unknown, ...infer R] ? R : never) => {
+  for (const l of s.locations) l.readyAt = 0;
+  return shipRaw(s, ...a);
+};
 const ok = (r: ReturnType<typeof buyDevice>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
@@ -74,8 +79,8 @@ describe("storage per zone", () => {
     const sw = ok(buyDevice(s, "sw-8", "Sysko", 1, fr5));
     ok(mountDevice(s, sw, rack, 1));
     expect(dev(s, sw)).toMatchObject({ store: null, name: "fra2-sw-01" });
-    ok(unmountDevice(s, sw));
-    ok(unmountDevice(s, "dev3"));
+    ok(unmountDevice(s, sw, true));
+    ok(unmountDevice(s, "dev3", true));
     expect([dev(s, sw).store, dev(s, "dev3").store]).toEqual([fr5, "loc1"]);
   });
 });
@@ -141,7 +146,7 @@ describe("shipStock", () => {
     ok(shipStock(s, [id], fr5, true));
     expect(s.cash).toBe(cash - fare.fee);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.drive", amount: -fare.fee });
-    expect(s.player).toEqual({ at: fr5, until: fare.hours, doing: "travel" });
+    expect(s.player).toEqual({ at: fr5, until: fare.hours, doing: "travel", by: "drive" });
     expect(dev(s, id).arriveAt).toBe(fare.hours);
     const other = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(err(shipStock(s, [other], fr5, true))).toBe("error.notThere");
@@ -174,7 +179,7 @@ describe("closeLocation and saves", () => {
     const loaded = deserialize(JSON.stringify(raw));
     expect(loaded.locations.map((l) => l.az)).toEqual(["fra1", "fra2", "lon1"]);
     expect(loaded.devices.find((d) => d.id === stored)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
-    expect(loaded.devices.filter((d) => d.store === null).map((d) => d.id)).toEqual(["dev3", "dev4", "dev5", "dev6", s.devices.find((d) => d.panel === fr5)!.id, s.devices.find((d) => d.panel === lon)!.id]);
+    expect(loaded.devices.filter((d) => d.store === null && d.model !== "panel-provider").map((d) => d.id)).toEqual(["dev3", "dev4", "dev5", "dev6", s.devices.find((d) => d.panel === fr5)!.id, s.devices.find((d) => d.panel === lon)!.id]);
     expect(deserialize(serialize(s))).toEqual(s);
   });
 });

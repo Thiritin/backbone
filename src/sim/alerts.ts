@@ -18,6 +18,8 @@ export const ALERT_KEYS: Record<string, string> = {
   "event.feedCascade": "Locations",
   "event.vulnCritical": "Security",
   "event.breach": "Support",
+  "event.billCut.dark": "Books",
+  "event.billCut.domains": "Books",
 };
 
 export const isAlert = (key: string): boolean => Object.hasOwn(ALERT_KEYS, key);

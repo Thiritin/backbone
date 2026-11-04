@@ -49,3 +49,4 @@
 
 /* Panthera: square price fields with a blue focus glow. */
 :root[data-os="aqua"] .price-input:focus-within { border-color: oklch(0.6 0.12 245); }
+.colo-card { display: grid; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); }

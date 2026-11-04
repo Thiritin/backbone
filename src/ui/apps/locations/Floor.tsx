@@ -4,7 +4,7 @@ import { euro } from "../../../sim/00-core/money";
 import { modelById } from "../../../sim/10-catalog/hardware";
 import { BASEMENT, RACK_MODELS, rackUnits as simRackUnits } from "../../../sim/20-world/datacenters";
 import type { GameState, Location, Rack } from "../../../sim/50-state";
-import { rackPower } from "../../../sim/60-infra/status";
+import { heightIn, rackPower } from "../../../sim/60-infra/status";
 import { buyRack } from "../../../sim/90-actions/hardware";
 import { DeviceSvg, LED } from "../../art/fronts";
 import { t } from "../../../i18n/en";
@@ -28,24 +28,24 @@ export function Floor({ game, loc, onRack }: { game: GameState; loc: Location; o
 
 function RackTile({ game, rack, onOpen }: { game: GameState; rack: Rack; onOpen: () => void }) {
   const units = rackUnits(rack), devices = game.devices.filter((d) => d.rackId === rack.id);
-  const used = devices.reduce((n, d) => n + modelById(d.model).height, 0), power = rackPower(game, rack.id), uh = 2.6;
+  const used = devices.reduce((n, d) => n + heightIn(game, rack.id, d.model), 0), power = rackPower(game, rack.id), uh = 2.6;
   return (
     <button className={`loc-tile${rack.arriveAt !== null ? " transit" : ""}`} onClick={onOpen}>
       <span className="loc-tile-pos num">{rack.position}</span>
       <svg width="46" height={units * uh + 6} viewBox={`0 0 46 ${units * uh + 6}`} aria-hidden="true">
         <rect width="46" height={units * uh + 6} rx="3" fill="var(--rack)" />
         {devices.map((d) => {
-          const m = modelById(d.model), y = 3 + (units - d.slot - m.height + 1) * uh;
-          return <g key={d.id}><rect x="5" y={y + 0.3} width="36" height={m.height * uh - 0.6} rx="0.6" fill="oklch(0.48 0.01 255)" /><circle cx="37" cy={y + (m.height * uh) / 2} r="0.9" fill={LED[deviceLamps(game, d.id, m).state]} /></g>;
+          const m = modelById(d.model), h = heightIn(game, rack.id, d.model), y = 3 + (units - d.slot - h + 1) * uh;
+          return <g key={d.id}><rect x="5" y={y + 0.3} width="36" height={h * uh - 0.6} rx="0.6" fill="oklch(0.48 0.01 255)" /><circle cx="37" cy={y + (h * uh) / 2} r="0.9" fill={LED[deviceLamps(game, d.id, m).state]} /></g>;
         })}
       </svg>
       <strong>{rack.name}</strong>
       {rack.provided && <span className="pill">{t("locations-1.provided")}</span>}
-      <span className="num loc-tile-sub">{used} / {units} U</span>
+      <span className="num loc-tile-sub">{rack.model === "shelf" ? `${t("rack.shelf")}, ${used} / ${units}` : `${used} / ${units} U`}</span>
       {rack.arriveAt !== null
         ? <span className="pill"><Truck />{t("locations-1.arrives")} <span className="num">{day(rack.arriveAt)}</span></span>
-        : <PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} />}
-      {power.tripped && <span className="pill bad">{t("locations-1.tripped")}</span>}
+        : <PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.over} />}
+      {game.locations.find((l) => l.id === rack.locationId)?.tripped && <span className="pill bad">{t("locations-1.tripped")}</span>}
     </button>
   );
 }
@@ -55,7 +55,7 @@ function FreeTile({ loc, position, onBought }: { loc: Location; position: number
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, () => setOpen(false));
-  const models = RACK_MODELS.filter((m) => loc.space !== "basement" || m.units <= BASEMENT.maxUnits);
+  const models = RACK_MODELS.filter((m) => loc.space === "basement" ? m.units <= BASEMENT.maxUnits : m.id !== "shelf");
   return (
     <div className="loc-tile-wrap" ref={ref}>
       <button className="loc-tile free" aria-expanded={open} aria-label={t("locations-1.positionFree", { n: position })} onClick={() => setOpen(!open)}>
@@ -67,7 +67,7 @@ function FreeTile({ loc, position, onBought }: { loc: Location; position: number
         <div className="loc-pop" role="dialog" aria-label={t("locations-1.buyRackFor", { n: position })}>
           {models.map((m) => (
             <div key={m.id} className="loc-pop-row">
-              <strong className="num">{m.units}U</strong>
+              <strong className="num">{m.id === "shelf" ? t("rack.shelf") : `${m.units}U`}</strong>
               <span className="grow" />
               <span className="num">{euro(m.price)}</span>
               <button className="btn primary" onClick={() => { const r = act(buyRack, loc.id, m.id, position); if (r.ok) { setOpen(false); if (r.id) onBought(r.id); } }}>{t("locations-1.buy")}</button>

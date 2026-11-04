@@ -5,8 +5,6 @@ button { font: inherit; color: inherit; cursor: default; }
 .wallpaper-host { position: absolute; inset: 0; }
 .wallpaper-host.photo { background: oklch(0.2 0.05 265) center / cover no-repeat; }
 :root[data-theme="dark"] .wallpaper-host.photo { filter: brightness(0.7); }
-.live-only { display: contents; }
-.paused-veil { position: absolute; inset: 0; z-index: 48; display: grid; place-items: center; background: oklch(0 0 0 / 0.45); color: white; font-size: 28px; font-weight: 600; letter-spacing: 0.04em; user-select: none; }
 .windows { position: absolute; inset: 0; z-index: 10; isolation: isolate; pointer-events: none; }
 .windows > .window { pointer-events: auto; }
 
@@ -289,6 +287,8 @@ button { font: inherit; color: inherit; cursor: default; }
   backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); font-size: 12.5px;
 }
 .hand-pop p { margin: 0; color: var(--text-2); }
+.hands-mode { margin-left: 8px; font-size: 11px; font-weight: 400; opacity: 0.75; }
+.hands-mode::before { content: "· "; }
 .hand-pop-alt { border: 0; background: none; padding: 0; text-align: left; color: var(--accent); font: inherit; cursor: pointer; }
 .hand-pop-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
 
@@ -316,3 +316,4 @@ button { font: inherit; color: inherit; cursor: default; }
 .switch-app .dock-tile { width: 64px; height: 64px; border-radius: 15px; }
 .switch-app .dock-tile svg.lucide { width: 32px; height: 32px; }
 .switcher strong { font-size: 13px; font-weight: 600; }
+.menubar .mb-item.paused { opacity: 0.5; }

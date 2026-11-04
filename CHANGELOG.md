@@ -4,6 +4,63 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The travel map now shows roads, railways, rivers, forests, parks and towns at every zoom between the street and the whole of Europe, with town names in your language.
+- Supplier bills now come with a guide card and early warnings before power or domains are cut, all open bills can be paid at once with a single TAN in one bank tab, and a server without power shows Kein Strom instead of Voll.
+- After your first quote is accepted the guide walks you through creating the customer, registering the domain, setting up hosting and sending the access data and the first invoice, the customer form is prefilled from the order, and Escape closes the front window.
+- Two jobs can no longer work on the same server or rack slot at the same time: the second one shows Belegt until the first one is done or cancelled.
+- Alerts no longer pop up over a close-up you have open: a small chip with a count waits under the clock, and the alert appears when you close the close-up or press the chip.
+- The rack close-up has no VORNE and HINTEN labels and no round turntable any more: it stands on a flat floor, turns with a key, and zooms with the wheel, the plus and minus keys and a minimap for tall racks.
+- Cabling in the rack back view now shows which ports to connect, lights the valid targets while you drag a cable, needs a deliberate pull to unplug a power cord, and a server without a plugged power cord shows Kein Strom and refuses to start.
+- The first-steps guide now tells you exactly how to pay for a server, boot the installer from the USB stick and read the router password, and the quote and credit card steps explain themselves.
+- Seasons now change the world outside: blossom in spring, golden autumn leaves that fall, bare winter trees, snow that settles and melts, rain, and a receptionist and seated staff in the lobby; clicking your car in its parking bay leaves for another location.
+- Server actions in the rack close-up are now keys on a small paper tag with a power button, a console key and a ports key, and selling or switching off something that takes other gear offline asks on a paper slip with a stamp.
+- Datacenters now sit in three kinds of surroundings, an industrial estate, open countryside with farms and fields, and a business park, each with its own fence, gate and utilities that grow with the size of the site.
+- Customers' remote-hands jobs appear as paper tickets on a board on the NOC wall, and the three providers without a datacenter have their own site pages.
+- You can plug the install stick into a server's USB port in the rack close-up and use a crash cart with a monitor and keyboard to boot and install it, right in the datacenter.
+- The outside world has a library of 62 buildings, vehicles, trees and props that show snow, autumn colours and bare winter branches.
+- The basement and your own hall now stand in a drawn world: a street with houses on their own driveways, parking, a lobby building, a fenced compound with a gate, trees, fields and moving cars.
+- Everyone who sits down in your hall, NOC room or office now sits on a chair at a desk, and you and a technician no longer take the same seat.
+- Controls in the world no longer have rounded borders, and the hall's edit strip shows a clear hover and focus state.
+- The speed buttons and the order list stay usable while a close-up is open, the NOC wall screens no longer cover the lettering, and the start screen changelog lists each day once.
+- The travel map fades the street detail smoothly into the regional map when you zoom out, and city names on the map follow your language.
+- You and your staff now walk to the racks you work on and show your progress over the rack, and the order list by the clock lets you cancel what is still waiting.
+- Hands-on work in the basement, offices and every datacenter now takes game time: you queue the job, the work happens over minutes, and the checklist ticks when it is done.
+- Build and furnish a NOC room in your own hall, and use the terminal desk in rented datacenter rooms to reach your desktop on site; the main distribution board is now drawn as a real switchgear panel.
+- Work in your own hall now takes game time: your technicians walk to the rack, do the job in minutes, and customers in your hall can book remote hands at a rate you set.
+- The datacenter floor shows how air flows around your racks, the main distribution board and the meet-me room open as close-ups, and the hall plan shows every room.
+- Your own hall can have a NOC with seats for technicians, and a technician on shift resets a tripped breaker after 30 minutes, or 10 with a wall screen.
+- All maps are now light and colourful, with rivers, lakes, parks, country borders and named countries, and the street maps show water, parks, motorways and rail.
+- In edit mode you now place, turn, select, move, copy and sell racks, vents, cooling units and power equipment anywhere in your hall and its power rooms.
+- The cooling in your own hall now works as a trade-off: room cooling covers everything at lower efficiency, floor vents and contained aisles improve it, and the power bill and outage backup follow what you build.
+- Equipment in your own hall needs a free tile in front of it and a way to walk there, and a transformer that technicians cannot reach delivers half its power.
+- Racks and equipment in your own hall now stand on any free floor tile and turn in four directions, each rack keeps the tile in front of it free, and the hall gets a transformer room and a battery room on its right side.
+- Every room now has a coloured band around its walls in your company colour, and the NOC room shows your company logo.
+- Rain, snow and clouds now stay behind the glass of every window.
+- The basement shelf no longer covers the desk, office staff leave when their shift ends, and the map names your hall in your language.
+- Provider websites without an open datacenter show a short notice, and a broken web page shows an error page instead of freezing the game.
+- Paint colocation, cage and meet-me areas on your own hall's floor, and buy transformers, backup power and carrier connections at the hall's service doors.
+- Clouds show in the windows on partly cloudy days, snow shows on the office sill, and your own rack stands out in a shared hall.
+- In your own hall you can click the floor plan on the wall to lay out rows, racks and cooling units by dragging them, and sell them by dropping them on the parts strip.
+- In your own hall you now choose which positions to rent out, larger customers rent cages from 2015, customers order cross-connects in your meet-me area, and a busy hall draws carriers and the city's exchange.
+- Ordered spare parts show when they arrive instead of being ordered twice, provider jacks carry readable labels, and uplinks are offered once you know network operations.
+- Location names in the sidebar, office section labels and the mail search field fit on one line, and the wallpaper and Weather list show city names in your language.
+- The travel map opens on all your places and has zoom buttons, and a location can only be visited once it is ready.
+- The trade office page says when its online service opens again, the DSL line shows as a phone cable, and only European cities are offered.
+- Cooling units in your own hall now cool the racks nearest to them, rows need an aisle, and a moved rack is dark for two hours.
+- The corkboard, wall phone and rack close-up are drawn cleaner: no stray cable loops, one handset on the hook and labels that fit.
+- App and city names now appear in your language, and storage notices name the location.
+- The desktop stays usable while the game is paused, and new windows no longer cover the desktop icons.
+- The home router looks the same in the room as on the rack.
+- Routers, firewalls and switches now flicker wildly while a DDoS attack is hitting their location, and calm down once the traffic is blackholed or filtered.
+- The Weather app now shows the city you are in at the top.
+- Rain now runs down the basement and office windows on wet days, and snow settles on the sill when it is cold outside.
+- An owned building can be fitted as a datacenter hall with rows you lay out, your own cooling, power and carriers, and spare positions sold to colocation customers.
+- The datacenter tubes no longer cast a glow over the racks.
+- Mounting a server now plugs in its power cords, doing a job yourself from the computer starts the drive there, every delivery goes straight into storage with fresh parcels drawn by the basement door for a day, and devices carry the same model name as in the Shop.
+- Alert buttons, the basement's name and the getting-started icon are now translated, and the port tag on the rack back reads clearly.
+- Port tags on the rack back, the captions in the opened server and the place names on the travel map no longer overlap or run off, the router card on the corkboard tells you to cable the router on the shelf, and the add-location table and its button fit the dialog.
+- The street scenes before and after a drive are now drawn in the same clean style as the rooms.
+- Drawing too much power for an hour trips the breaker and the room goes dark until you reset it in the fuse box with less load, while at a datacenter the provider resets it for a remote hands fee; the room also warms with its draw and the window fan spins when it gets warm.
 - The leaderboard has been removed for now.
 - The game and the desktop app now update only when a new version is released.
 - The main menu has a button that opens the raid0 Discord server.
@@ -30,9 +87,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The server inspector shows each CPU's cores and threads, and panel host settings show the host's compute next to its vCPU.
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
-
-## 2026-11-03
-
 - The bookkeeping categories now follow a standard chart of accounts: bank and payment charges, interest, fees and dues, travel, licences, domains, credits and other operating expenses each get their own line, and a trade registration no longer counts as a ransom.
 
 ## 2026-11-02

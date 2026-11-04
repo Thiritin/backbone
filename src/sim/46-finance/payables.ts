@@ -4,8 +4,9 @@ import { hashRng, rand } from "../00-core/rng";
 import { registrarById, registrarHost, REGISTRARS } from "../10-catalog/registrars";
 import { storeItem } from "../10-catalog/store";
 import { deliverMail } from "../42-mail/sources";
+import type { SimEvent } from "../88-tick/tick";
 import type { GameState, LedgerEntry } from "../50-state";
-import { COUNTRY, DATACENTERS, datacenterById } from "../20-world/datacenters";
+import { ALL_DATACENTERS as DATACENTERS, COUNTRY, datacenterById } from "../20-world/datacenters";
 import { cardReady, cardSpent, groupIban, iban, ibanEra } from "./bank";
 
 export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software";
@@ -19,7 +20,7 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   power: [{ days: 30, effect: "dark" }],
   datacenter: [{ days: 30, effect: "dark" }],
   pear: [{ days: 14, effect: "licence" }],
-  registrar: [{ days: 14, effect: "domains" }],
+  registrar: [{ days: 30, effect: "domains" }],
   hardware: [{ days: 0, effect: "noShip" }],
   card: [{ days: 14, effect: "card" }],
   office: [], notary: [], register: [], chamber: [], tax: [],
@@ -37,6 +38,8 @@ export const SUPPLIER_CODE = "60050101";
 export interface Payable {
   id: string; supplier: SupplierId; name: string; number: string; amount: number; issuedAt: number; dueAt: number; paidAt: number | null;
   consequence: Effect | null; lines: LedgerEntry[]; sent: number; held?: Record<string, number>;
+  // Warnings already raised, so each fires once.
+  warned?: string[];
   // What Books counts as paid: the payments out assigned to it there. sent is what the supplier received.
   booked: number;
   // A licence order paid by transfer, whose keys the vendor sends once the money arrives.
@@ -179,8 +182,29 @@ function lift(s: GameState, p: Payable): void {
 }
 
 // Hourly: consequences start on overdue invoices; a dark location stays dark an hour at a time until the bill is paid.
-export function payablesTick(s: GameState): void {
-  if (!s.payables.some((p) => p.paidAt === null)) return;
+export function payablesTick(s: GameState): SimEvent[] {
+  const events: SimEvent[] = [];
+  if (!s.payables.some((p) => p.paidAt === null)) return events;
+  // Power and domains go last: a warning once the bill is overdue and a reminder a week before the cut. Each fires once,
+  // when its hour is first reached, so a skipped hour still warns.
+  s.payables = s.payables.map((p) => {
+    if (p.paidAt !== null) return p;
+    const warned = new Set(p.warned ?? []);
+    let last: SimEvent | null = null;
+    for (const c of CONSEQUENCES[p.supplier]) {
+      if (c.effect !== "dark" && c.effect !== "domains") continue;
+      const steps: [string, number, number][] = [["due", p.dueAt + 1, c.days], ...(c.days > 7 ? [["soon", p.dueAt + (c.days - 7) * 24, 7] as [string, number, number]] : [])];
+      for (const [name, at, days] of steps) {
+        const key = `${c.effect}:${name}`;
+        if (warned.has(key) || s.hour < at) continue;
+        warned.add(key);
+        if (s.hour < p.dueAt + c.days * 24) last = { app: "Books", key: `event.billThreat.${c.effect}`, params: { name: p.name, days } };
+      }
+    }
+    if (warned.size === (p.warned?.length ?? 0)) return p;
+    if (last) events.push(last);
+    return { ...p, warned: [...warned] };
+  });
   s.payables = s.payables.map((p) => {
     if (p.paidAt !== null) return p;
     const effect = CONSEQUENCES[p.supplier].reduce<Effect | null>((e, c) => (s.hour >= p.dueAt + c.days * 24 ? c.effect : e), null);
@@ -195,6 +219,7 @@ export function payablesTick(s: GameState): void {
       held = Object.fromEntries(s.domains.map((d) => [d.name, d.expiresAt]));
       s.domains = s.domains.map((d) => ({ ...d, expiresAt: Math.min(d.expiresAt, s.hour) }));
     }
+    if (effect === "dark" || effect === "domains") events.push({ app: "Books", key: `event.billCut.${effect}`, params: { name: p.name } });
     deliverMail(s, p.name, `consequence.${effect}`, { name: p.name, number: p.number, amount: cents(p.amount - p.sent) }, { source: `supplier:${p.supplier}` });
     return { ...p, consequence: effect, held };
   });
@@ -204,4 +229,5 @@ export function payablesTick(s: GameState): void {
     for (const l of s.locations) if (sup === "power" ? !l.dc : !!l.dc) dark.add(l.id);
   }
   if (dark.size) s.ops = { ...s.ops, dark: { ...s.ops.dark, ...Object.fromEntries([...dark].map((id) => [id, Math.max(s.ops.dark[id] ?? 0, s.hour + 1)])) } };
+  return events;
 }

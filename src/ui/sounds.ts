@@ -8,7 +8,7 @@ import { dateOf, hourOf } from "../sim/00-core/time";
 // Highest priority first: one batch of events plays only its top sound.
 export const SOUNDS = ["month", "warn", "level", "research", "money", "ticket"] as const;
 export type Sound = (typeof SOUNDS)[number];
-export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug" | "typing" | "hover" | "select" | "back";
+export type UiSound = "open" | "close" | "key" | "thump" | "minimize" | "menu" | "banner" | "error" | "trash" | "startup" | "post" | "plug" | "unplug" | "typing" | "hover" | "select" | "back" | "ring";
 
 // How each Pear OS era voices the desktop sounds: glassy and long early on, flat and short in the middle years, soft and airy later.
 export interface Voice { wave: OscillatorType; len: number; lift: number; glass: number; air: number }
@@ -52,7 +52,7 @@ export function monthNet(ledger: LedgerEntry[], hour: number): number {
 
 let ctx: AudioContext | null = null;
 
-function audio(): AudioContext | null {
+export function audio(): AudioContext | null {
   try {
     ctx ??= new AudioContext();
     return ctx;
@@ -68,7 +68,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("keydown", wake, { once: true });
 }
 
-function tone(c: AudioContext, out: AudioNode, hz: number, at: number, dur: number, peak: number, type: OscillatorType = "sine") {
+export function tone(c: AudioContext, out: AudioNode, hz: number, at: number, dur: number, peak: number, type: OscillatorType = "sine") {
   const g = c.createGain(), o = c.createOscillator();
   o.type = type;
   o.frequency.value = hz;
@@ -87,7 +87,7 @@ function note(c: AudioContext, out: AudioNode, v: Voice, hz: number, at: number,
 }
 
 // Noise whose band glides from one pitch to another: a window swooshing into the dock.
-function sweep(c: AudioContext, out: AudioNode, from: number, to: number, at: number, secs: number, peak: number) {
+export function sweep(c: AudioContext, out: AudioNode, from: number, to: number, at: number, secs: number, peak: number) {
   const len = Math.floor(c.sampleRate * secs), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
   for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.sin((Math.PI * i) / len);
   const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
@@ -101,7 +101,7 @@ function sweep(c: AudioContext, out: AudioNode, from: number, to: number, at: nu
 }
 
 // A short band-passed noise burst: the drawer of a cash register, or at a short length and other pitch a key press.
-function rattle(c: AudioContext, out: AudioNode, at: number, peak: number, hz = 3200, secs = 0.06) {
+export function rattle(c: AudioContext, out: AudioNode, at: number, peak: number, hz = 3200, secs = 0.06) {
   const len = Math.floor(c.sampleRate * secs), buf = c.createBuffer(1, len, c.sampleRate), data = buf.getChannelData(0);
   for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
   const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
@@ -160,6 +160,10 @@ export function playSound(kind: Sound | UiSound, volume: number, profit = false,
         break;
       case "level":
         [523, 784, 1047].forEach((hz, i) => tone(c, out, hz, t + i * 0.07, 0.3, 0.045, "triangle"));
+        break;
+      case "ring":
+        // A bell trilling for a second, as the German ring cadence does before its pause.
+        for (let i = 0; i < 20; i++) tone(c, out, i % 2 ? 1180 : 1420, t + i * 0.05, 0.06, 0.03, "square");
         break;
       case "research":
         tone(c, out, 659, t, 0.8, 0.035);

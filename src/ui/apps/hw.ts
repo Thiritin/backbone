@@ -1,4 +1,5 @@
 // Hardware labels shared by the Locations and Shop apps.
+import { floodedDevice } from "../../sim/60-infra/network";
 import { dateOf } from "../../sim/00-core/time";
 import { cardOf } from "../../sim/10-catalog/gpu";
 import { COMPONENTS, isOobPort, jacksOf, OOB_PORT, oobPorts, type ComponentKind, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
@@ -38,7 +39,7 @@ export const readyIn = (at: number, now: number) => {
   return days ? t("apps.hw.days", { n: days }) : `${left} h`;
 };
 export const lampOf = (st: LinkStatus): Lamp => (!st.online ? "bad" : st.warning ? "warn" : "ok");
-export const CABLE_NAME = { copper: t("apps.hw.cable.copper"), dac: "DAC", fiber: t("apps.hw.cable.fiber"), rollover: t("apps.hw.cable.rollover") };
+export const CABLE_NAME = { copper: t("apps.hw.cable.copper"), dac: "DAC", fiber: t("apps.hw.cable.fiber"), rollover: t("apps.hw.cable.rollover"), provider: t("apps.hw.cable.provider") };
 
 export function portsText(m: DeviceModel): string {
   if (m.kind === "patch") return t("apps.hw.jacks", { n: jacksOf(m) });
@@ -66,7 +67,7 @@ export function portName(m: DeviceModel, i: number): string {
 export const portLamps = (m: DeviceModel, peers: (End | null)[]): PortLamp[] => peers.map((p, i) => (p ? (m.ports[i].media === "sfp" ? "fiber" : "ok") : "off"));
 
 export const devName = (d: Device) => d.label ?? d.name;
-export const PART_NAME: Record<ComponentKind, string> = { hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: t("apps.hw.part.psu"), fan: t("apps.hw.part.fan"), ram: t("apps.hw.part.ram"), board: t("apps.hw.part.board"), cpu: "CPU", nic: t("apps.hw.part.nic"), gpu: "GPU" };
+export const PART_NAME: Record<ComponentKind, string> = { optic: t("apps.hw.part.optic"), hdd: "HDD", ssd: "SSD", nvme: "NVMe", psu: t("apps.hw.part.psu"), fan: t("apps.hw.part.fan"), ram: t("apps.hw.part.ram"), board: t("apps.hw.part.board"), cpu: "CPU", nic: t("apps.hw.part.nic"), gpu: "GPU" };
 // A CPU's clock, "2.0 GHz, 2.8 GHz boost"; empty for anything else or a CPU of unknown make.
 export const clockLabel = (p: Pick<Component, "kind" | "vendor" | "gen" | "size" | "sku">): string => {
   if (p.kind !== "cpu") return "";
@@ -131,7 +132,8 @@ export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
   const d = g.devices.find((x) => x.id === id)!, h = deviceHealth(g, id).state;
   const link: Lamp = isMgmtDevice(d) ? (oobUp(g, id) ? "ok" : "bad") : lampOf(linkStatus(g, id));
   const state: Lamp = h === "off" || h === "nopower" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
-  return { state, blink: h === "rebuilding" || h === "booting" || h === "halting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m), parts: partLamps(g, d) };
+  const flood = floodedDevice(g, d);
+  return { state, blink: flood || h === "rebuilding" || h === "booting" || h === "halting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m).map((l) => (flood && l ? { ...l, load: 1 } : l)), parts: partLamps(g, d) };
 }
 
 // Every change to the game replaces the state object, so the links are worked out once per state for all devices.

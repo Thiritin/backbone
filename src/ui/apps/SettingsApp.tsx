@@ -7,6 +7,7 @@ import { SCREENING_SKILL } from "../../sim/45-billing/fraud";
 import { t } from "../../i18n/en";
 import { APPS, appFor, appTitle } from "./registry";
 import { CompanyFields } from "./company";
+import { addressLine, desks, officeAddress } from "../../sim/60-infra/properties";
 import { NOTIFY_TYPES } from "../notify-types";
 import { prefOf, useFocus, useStore, type Theme } from "../store";
 import { playSound } from "../sounds";
@@ -50,6 +51,8 @@ export function SettingsApp() {
       <div className="settings-group settings-company">
         <CompanyFields company={{ ...game.company, name }} onCommit={commitName}
           onChange={(p) => (p.name !== undefined ? setName(p.name) : act(setCompany, p))} />
+        <div className="settings-line"><span>{t("properties.address")}</span><span>{addressLine(officeAddress(game))}</span></div>
+        <div className="settings-line"><span>{t("properties.desks")}</span><span className="num">{t("properties.deskUse", { staff: game.staff.length, desks: desks(game) })}</span></div>
       </div>
       <h2 data-section="Orders">{t("apps.settings.orders")}</h2>
       <div className="settings-group">

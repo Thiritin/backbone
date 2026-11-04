@@ -1,13 +1,14 @@
 import { t } from "../../i18n/en";
-import { FILE_ICON } from "../art/era-icon";
+import { FILE_ICON, RoomIcon } from "../art/era-icon";
 import { useEffect, useState } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent } from "react";
 import type { Doc } from "../../sim/50-state";
 import { addNote, editNote, moveDoc, removeDoc } from "../../sim/90-actions/docs";
-import { APPS, appFor } from "../apps/registry";
+import { APPS, appFor, appTitle } from "../apps/registry";
 import { useStore } from "../store";
 import { Confirm } from "./Confirm";
 import { menuOn, openMenu } from "./ContextMenu";
+import { roomOf } from "../world/World";
 
 const ICON_W = 92, ICON_H = 90, MENUBAR = 30, DOCK = 80;
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
@@ -21,7 +22,7 @@ export function newNote(at?: { x: number; y: number }) {
 
 export function DesktopIcons() {
   const game = useStore((s) => s.game), docs = game.docs;
-  const act = useStore((s) => s.act), openDoc = useStore((s) => s.openDoc);
+  const act = useStore((s) => s.act), openDoc = useStore((s) => s.openDoc), setSurface = useStore((s) => s.setSurface);
   const [selected, setSelected] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [trash, setTrash] = useState<Doc | null>(null);
@@ -87,6 +88,12 @@ export function DesktopIcons() {
 
   return (
     <div className="desktop-icons">
+      {/* The room the player is in, pinned to the top right; it has no doc, so it cannot be moved or trashed. */}
+      <div role="button" tabIndex={0} className="desktop-icon" style={{ right: 16, top: MENUBAR + 16 }}
+        onDoubleClick={() => setSurface("world")} onKeyDown={(e) => e.key === "Enter" && setSurface("world")}>
+        <span className="dock-tile" style={{ "--tile": "var(--accent)" } as CSSProperties}><RoomIcon /></span>
+        <span className="di-label">{roomOf(game).name}</span>
+      </div>
       {docs.map((d) => {
         const app = d.kind === "app" && APPS.some((a) => a.name === d.title) ? appFor(game, d.title) : null;
         const Icon = app?.icon ?? FILE_ICON[d.kind] ?? FILE_ICON.note;
@@ -120,7 +127,7 @@ export function DesktopIcons() {
                 }}
                 onBlur={(e) => rename(d, e.currentTarget.value)}
               />
-            ) : <span className="di-label">{app?.name ?? d.title}</span>}
+            ) : <span className="di-label">{d.kind === "guide" ? t("doc.guide") : app ? appTitle(app) : d.title}</span>}
           </div>
         );
       })}

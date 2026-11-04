@@ -26,3 +26,14 @@ export function useFieldAct(): [Store["act"], string | null] {
   }, [attempt]);
   return [run, error];
 }
+
+// act for a form whose own button shows the error beside it, translated.
+export function useFormAct(): [Store["act"], string | null] {
+  const attempt = useStore((s) => s.attempt), [error, setError] = useState<string | null>(null);
+  const run = useCallback<Store["act"]>((fn, ...args) => {
+    const r = attempt(fn, ...args);
+    setError(r.ok ? null : t(r.error, r.params));
+    return r;
+  }, [attempt]);
+  return [run, error];
+}

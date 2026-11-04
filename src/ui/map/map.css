@@ -1,9 +1,23 @@
+/* Maps stay light whatever the desktop theme. */
+.wm, .travel-road {
+  --win: oklch(0.99 0.004 250); --hover: oklch(0.94 0.01 255); --line-strong: oklch(0.83 0.012 252);
+  --text: oklch(0.22 0.02 258); --accent: oklch(0.53 0.19 262); --accent-ink: oklch(0.99 0.01 262);
+  --bad: oklch(0.58 0.2 25); --shadow-pop: 0 10px 30px -8px oklch(0 0 0 / 0.35), 0 0 0 0.5px oklch(0 0 0 / 0.2);
+  --map-bg: oklch(0.85 0.06 232);
+  --map-label: oklch(0.34 0.03 250);
+  --wm-land: oklch(0.965 0.022 92);
+  --wm-coast: oklch(0.66 0.08 235);
+  --wm-halo: oklch(0.99 0.012 92 / 0.92);
+  --wm-water: oklch(0.85 0.06 232);
+  --wm-river: oklch(0.62 0.12 240);
+  --wm-border: oklch(0.5 0.1 340);
+  --wm-region: oklch(0.66 0.04 70);
+  --wm-country: oklch(0.45 0.05 70);
+}
 .wm {
   --wm-sea: var(--map-bg);
-  --wm-land: color-mix(in oklch, var(--map-bg), var(--map-label) 16%);
-  --wm-coast: color-mix(in oklch, var(--map-bg), var(--map-label) 34%);
-  --wm-grat: color-mix(in oklch, var(--map-bg), var(--map-label) 9%);
-  --wm-cable: color-mix(in oklch, var(--accent) 32%, var(--map-bg));
+  --wm-grat: oklch(0.8 0.04 232);
+  --wm-cable: oklch(0.55 0.15 262 / 0.55);
   position: relative; overflow: hidden; background: var(--wm-sea);
   border-radius: 10px; border: 0.5px solid var(--line-strong);
 }
@@ -11,7 +25,7 @@
 .wm > svg.drag { cursor: grabbing; }
 .wm-s { transform: scale(var(--k, 1)); }
 
-.wm-grat { fill: none; stroke: var(--wm-grat); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.wm-grat { fill: none; stroke: var(--wm-grat); stroke-width: 0.5; opacity: 0.5; vector-effect: non-scaling-stroke; }
 .wm-land { fill: var(--wm-land); stroke: var(--wm-coast); stroke-width: 0.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .wm-cable path { fill: none; vector-effect: non-scaling-stroke; }
 .wm-cable-line { stroke: var(--wm-cable); stroke-width: 0.8; }
@@ -22,13 +36,14 @@
 .wm-city circle { fill: var(--map-label); }
 .wm-city text, .wm-plabel {
   font: 500 11px Inter, sans-serif; fill: var(--map-label);
-  stroke: var(--wm-sea); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke;
+  stroke: var(--wm-halo); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke;
 }
 .wm-city.wm-t1 text { font-weight: 600; }
 .wm-city:hover text { fill: var(--text); }
 .wm-city.wm-covered text { visibility: hidden; }
 .wm[data-z="1"] .wm-t2 text, .wm[data-z="1"] .wm-t3 text, .wm[data-z="2"] .wm-t3 text { display: none; }
 .wm[data-z="1"] .wm-t3 circle { display: none; }
+.wm:not([data-z="4"]) .wm-street, .wm[data-z="4"] .wm-region { display: none; }
 
 .wm-stem { stroke: var(--accent); stroke-width: 1.5px; }
 .wm-pin { cursor: pointer; outline: none; color: var(--text); }
@@ -37,6 +52,7 @@
 .wm-pin.sel > circle:first-of-type { fill: var(--accent); stroke: var(--win); }
 .wm-pin.sel { color: var(--accent-ink); }
 .wm-plabel { font-weight: 600; fill: var(--text); }
+.wm-plane { fill: var(--text); }
 .wm-badge circle { fill: var(--accent); stroke: var(--win); stroke-width: 1.5px; }
 .wm-badge text { font: 650 8.5px "JetBrains Mono", monospace; text-anchor: middle; fill: var(--accent-ink); }
 .wm-pin.sel .wm-badge circle { fill: var(--win); stroke: var(--accent); }
@@ -44,7 +60,7 @@
 .wm-alert { fill: var(--bad); stroke: var(--win); stroke-width: 1.5px; }
 
 .wm-tip {
-  position: absolute; left: 0; top: 0; pointer-events: none; white-space: nowrap;
+  position: absolute; left: 0; top: 0; pointer-events: none; white-space: pre;
   padding: 3px 7px; border-radius: 6px; font-size: 11.5px; font-weight: 500;
   background: var(--win); color: var(--text); box-shadow: var(--shadow-pop);
 }
@@ -62,3 +78,59 @@
 .wm-panel button:hover { background: var(--hover); }
 .wm-panel button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .wm-add .wm-city text { display: none; }
+
+.wm-zoom { position: absolute; right: 8px; bottom: 28px; display: flex; flex-direction: column; gap: 4px; }
+.wm-zoom button {
+  width: 26px; height: 26px; display: grid; place-items: center; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 6px; background: var(--win); color: var(--text); box-shadow: var(--shadow-pop); cursor: pointer;
+}
+.wm-zoom button:hover { background: var(--hover); color: var(--accent); }
+
+.wm-lake { fill: var(--wm-water); stroke: var(--wm-coast); stroke-width: 0.5; vector-effect: non-scaling-stroke; }
+.wm-river { fill: none; stroke: var(--wm-river); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.wm-admin { fill: none; stroke: var(--wm-region); stroke-width: 0.7; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+.wm-border { fill: none; stroke: var(--wm-border); stroke-width: 1; stroke-dasharray: 5 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.wm[data-z="1"] .wm-admin, .wm[data-z="4"] .wm-admin { display: none; }
+.wm-country {
+  font: 650 9.5px Inter, sans-serif; letter-spacing: 0.08em; opacity: 0.85; text-anchor: middle; text-transform: uppercase; pointer-events: none;
+  fill: var(--wm-country); stroke: var(--wm-halo); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke;
+}
+.wm[data-z="1"] .wm-r3, .wm[data-z="1"] .wm-r4, .wm[data-z="1"] .wm-r5, .wm[data-z="2"] .wm-r5, .wm[data-z="4"] .wm-country { display: none; }
+/* The street map carries its own water and detail. */
+.wm-geo[data-z="4"] .wm-lake, .wm-geo[data-z="4"] .wm-river { display: none; }
+
+.geo-built { fill: oklch(0.925 0.018 80); }
+.geo-green { fill: oklch(0.88 0.09 145); }
+.geo-water { fill: var(--wm-water); stroke: var(--wm-coast); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+.geo-waterway { fill: none; stroke: var(--wm-water); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.geo-rail { fill: none; stroke: oklch(0.68 0.01 250); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.geo :is(.geo-second-case, .geo-second, .geo-major-case, .geo-major) { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.geo-second-case { stroke: oklch(0.72 0.05 70); stroke-width: 3px; }
+.geo-second { stroke: oklch(0.97 0.06 95); stroke-width: 2px; }
+.geo-major-case { stroke: oklch(0.58 0.12 55); stroke-width: 4px; }
+.geo-major { stroke: oklch(0.85 0.16 78); stroke-width: 2.6px; }
+/* Zoomed out, the street patch keeps only thin major roads. */
+.wm:not([data-z="4"]) .geo-second-case, .wm:not([data-z="4"]) .geo-second, .wm:not([data-z="4"]) .geo-rail, .wm:not([data-z="4"]) .tr-streets-case { display: none; }
+.wm:not([data-z="4"]) .geo-major-case { stroke-width: 2.2px; }
+.wm:not([data-z="4"]) .geo-major { stroke-width: 1.2px; }
+.wm:not([data-z="4"]) .tr-streets { stroke: oklch(0.8 0.015 80); stroke-width: 0.8px; }
+.geo-patch { opacity: clamp(0, calc((0.008 - var(--k, 0)) / 0.006), 1); }
+
+/* Regional ground between the street patch and the national map. */
+.rg-eu { opacity: var(--o-europe, 1); }
+.rg-patch { opacity: var(--o-region, 1); }
+.rg path { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.rg-urban { fill: oklch(0.925 0.018 80) !important; }
+.rg-forest { fill: oklch(0.9 0.07 145) !important; }
+.rg-lake { fill: var(--wm-water) !important; }
+.rg-river { stroke: var(--wm-river); stroke-width: 1px; }
+.rg-stream, .rg-rail, .rg-second { opacity: var(--o-detail, 1); }
+.rg-stream { stroke: var(--wm-river); stroke-width: 0.7px; }
+.rg-rail { stroke: oklch(0.7 0.01 250); stroke-width: 0.8px; stroke-dasharray: 3 3; }
+.rg-second { stroke: oklch(0.86 0.05 90); stroke-width: clamp(0.8px, calc(0.002px / var(--k, 1)), 2px); }
+.rg-major-case { stroke: oklch(0.62 0.1 55); stroke-width: clamp(1.8px, calc(0.008px / var(--k, 1)), 4.4px); }
+.rg-major { stroke: oklch(0.86 0.15 80); stroke-width: clamp(1px, calc(0.004px / var(--k, 1)), 3px); }
+.rg-town circle { fill: var(--map-label); }
+.rg-town text { font: 500 10px Inter, sans-serif; fill: var(--map-label); stroke: var(--wm-halo); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke; pointer-events: none; }
+.rg-town.rg-hidden { visibility: hidden; }
+.wm-geo[data-z="4"] .rg-river { display: none; }

@@ -9,8 +9,18 @@ import { CustomerLink } from "../customers/open";
 import { initials, patience, PRODUCT, stamp } from "../support/labels";
 import { UpgradeCompose } from "../support/CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
+import { customerSpots, zoneSpots } from "../../../sim/20-world/properties";
+import type { Hall } from "../../../sim/50-state";
+import { goingHandsRate, goingRate, setColoRate, setHandsRate } from "../../../sim/90-actions/hall";
+import { PriceField } from "./PriceField";
 import "../support/support.css";
 import "./sales.css";
+
+// Positions a customer could take: free ones in colocation zones and the positions of empty cages.
+const spareToRent = (h: Hall): number => {
+  const taken = new Set(h.customers.flatMap((c) => customerSpots(h, c)).map((q) => `${q.x},${q.y}`));
+  return h.zones.filter((z) => z.kind !== "meetme").flatMap(zoneSpots).filter((q) => !taken.has(`${q.x},${q.y}`)).length;
+};
 
 export const OPEN = ["open", "countered", "refused"];
 export const STATUS: Record<SalesRequest["status"], string> = {
@@ -90,6 +100,39 @@ export function LostSales() {
         </tbody>
       </table>
       {!lost.length && <div className="sup-none">{t("misc2.noLostSales")}</div>}
+    </div>
+  );
+}
+
+// GDD, Own datacenter: the spare positions of each own hall offered as rack space, at a price set against the city's going rate.
+export function ColoListing() {
+  const game = useStore((s) => s.game);
+  const act = useStore((s) => s.act);
+  const halls = game.properties.flatMap((p) => (p.hall ? [p.hall] : []));
+  return (
+    <div className="sales-lost">
+      <div className="sup-list-h"><h2>{t("hall.rackSpace")}</h2></div>
+      {halls.map((h) => {
+        const loc = game.locations.find((l) => l.id === h.locationId)!, going = goingRate(loc.city), spare = spareToRent(h);
+        return (
+          <div key={h.locationId} className="colo-card">
+            <div className="sup-list-h"><strong>{loc.name}</strong><span className="num">{t("hall.spare", { n: spare })}</span></div>
+            <PriceField value={h.rate ?? going} reference={going} onChange={(v) => act(setColoRate, loc.id, v || null)} />
+            {goingHandsRate(loc.city) > 0 && <PriceField label={t("figures.handsRate")} value={h.handsRate ?? goingHandsRate(loc.city)} reference={goingHandsRate(loc.city)} onChange={(v) => act(setHandsRate, loc.id, v || null)} />}
+            <div className="loc-row">
+              {h.rate === null
+                ? <button className="btn primary" onClick={() => act(setColoRate, loc.id, going)}>{t("hall.list")}</button>
+                : <button className="btn" onClick={() => act(setColoRate, loc.id, null)}>{t("hall.unlist")}</button>}
+            </div>
+            <table className="table">
+              <thead><tr><th>{t("misc2.customer")}</th><th className="num">{t("hall.position")}</th><th className="num">{t("misc2.monthlyPrice")}</th><th>{t("hall.since")}</th></tr></thead>
+              <tbody>
+                {h.customers.map((c) => <tr key={c.id}><td>{c.name}</td><td className="num">{c.tile ? `${c.tile.x + 1}.${c.tile.y + 1}` : "-"}</td><td className="num">{euroCents(c.monthly)}</td><td className="num">{stamp(c.since)}</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
     </div>
   );
 }

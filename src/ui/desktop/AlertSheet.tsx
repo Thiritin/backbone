@@ -7,6 +7,7 @@ import type { GameState } from "../../sim/50-state";
 import { ALERT_KEYS } from "../../sim/alerts";
 import { advisoryNodes, ADVISORY_KEYS, vulnById, vulnerable } from "../../sim/60-infra/security";
 import { useStore, type Banner } from "../store";
+import { appByName, appTitle } from "../apps/registry";
 import { wikiUrl } from "../apps/browser/sites/wiki/articles";
 
 const SOURCE = ["Heize online", "Twister", "Bundesamt für Sicherheit in der Informationstechnick", "PHP project"];
@@ -76,10 +77,23 @@ export function AlertSheet({ alert }: { alert: Banner }) {
         <div className="alert-actions">
           <button className="btn" onClick={() => closeAlert(true)}>{t("desktop.continue")}</button>
           {ALERT_WIKI[key] && <button className="btn" onClick={() => { closeAlert(false); openApp("Browser", { kind: "url", id: wikiUrl(ALERT_WIKI[key]) }); }}>{t("desktop.alert.wiki")}</button>}
-          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, focus(game, key) ?? alert.focus); }}>{t("desktop.alert.open", { app })}</button>
+          <button className="btn primary" autoFocus onClick={() => { closeAlert(false); openApp(app, focus(game, key) ?? alert.focus); }}>{t("desktop.alert.open", { app: appTitle(appByName(app)) })}</button>
         </div>
       </div>
     </div>,
     document.querySelector(".desktop")!,
+  );
+}
+
+// The sheet where it may show; over a world close-up or edit mode it waits as a chip by the clock.
+export function AlertGate() {
+  const { alert, alertQueue, alertNow, closeup, showAlert } = useStore();
+  const over = useStore((s) => s.game.gameOver !== null), desk = useStore((s) => s.surface === "desktop");
+  if (!alert) return null;
+  if (over || desk || !closeup || alertNow) return <AlertSheet alert={alert} />;
+  return (
+    <button className="w-alert-chip" aria-label={t("desktop.alert.chip")} onClick={showAlert}>
+      <TriangleAlert aria-hidden /><span className="num">{1 + alertQueue.length}</span>
+    </button>
   );
 }

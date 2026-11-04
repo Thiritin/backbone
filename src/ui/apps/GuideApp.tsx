@@ -37,7 +37,6 @@ export function GuideApp() {
           );
         })}
       </ol>
-      <p>{t("apps.guide.loans")}</p>
       <h3>{t("apps.guide.time")}</h3>
       <p>{keys(t("apps.guide.timeText"))}</p>
       <h3>{t("apps.guide.windows")}</h3>

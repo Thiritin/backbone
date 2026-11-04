@@ -72,7 +72,7 @@ export function FreePanel(p: PanelProps) {
         {tab === "backup" && <BackupManager game={p.game} c={p.c} />}
         {tab === "sysinfo" && <SystemInfo game={p.game} c={p.c} host={p.host} />}
         {tab === "objects" && <VirtualServers game={p.game} c={p.c} f={p.f} onLogin={setAs} />}
-        {tab === "create" && <><ProvisionForm game={p.game} c={p.c} products={["webHosting"]} order={open?.screen === "create" ? open.order : undefined} /><OwnAccountForm game={p.game} c={p.c} /></>}
+        {tab === "create" && <><ProvisionForm game={p.game} c={p.c} products={["webHosting"]} title={t("pkg.order")} order={open?.screen === "create" ? open.order : undefined} /><OwnAccountForm game={p.game} c={p.c} /></>}
         {tab === "packages" && <PackagesScreen game={p.game} c={p.c} />}
         {tab === "nodes" && <Nodes game={p.game} c={p.c} />}
         {pages.find((g) => g.id === tab)?.body}

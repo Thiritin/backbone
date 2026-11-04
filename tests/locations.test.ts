@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CITIES, START_CASH } from "../src/sim/10-catalog/economy";
-import { BASEMENT, DATACENTERS, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
+import { ALL_DATACENTERS as DATACENTERS, BASEMENT, listed, datacenterById, LEAD_DAYS, PROVIDERS, RACK_MODELS, SPACE_SIZES, spacePrice } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
 import { cpuLoad, freeSlots } from "../src/sim/60-infra/status";
 import { freePositions, linkStatus, moveCost, rackPower, resaleValue } from "../src/sim/60-infra/status";
+import { breakerTick, TRIP_HOURS } from "../src/sim/60-infra/power";
 import { powerPerHour, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { deserialize } from "../src/sim/91-save/save";
-import { addLocation, buyRack, closeLocation, connect, moveRack, sellDevice, sellRack, unmountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, closeLocation, connect, moveRack, resetBreaker, sellDevice, sellRack, unmountDevice } from "../src/sim/90-actions/hardware";
 import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { runServers, withServer } from "./fixtures";
@@ -41,7 +42,7 @@ describe("datacenter catalog", () => {
     expect(datacenterById("equinox-fr5")).toEqual({
       id: "equinox-fr5", name: "Equinox FR5", provider: "equinox", city: "Frankfurt", carriers: 30, exchange: { name: "DE-KICKS", onSite: true },
       feeds: "ab", backup: "ups+generator", green: true, kwPerPosition: 8, positionPrice: 750, powerFactor: 1.4, crossConnect: 250,
-      remoteHands: { perHour: 150, responseHours: 1 }, certified: true, cages: true, size: "large", visitBooking: true, power: "metered",
+      remoteHands: { perHour: 150, responseHours: 1 }, certified: true, cages: true, size: "large", visitBooking: true, power: "metered", aisles: true, lat: 50.1185, lon: 8.735,
     });
     expect(datacenterById("hetzler-park")).toMatchObject({ carriers: 1, exchange: null, feeds: "single", kwPerPosition: 4, positionPrice: 180, powerFactor: 1.1, certified: false, cages: false });
     expect(datacenterById("docklands-data")).toMatchObject({ backup: "ups", green: false, remoteHands: { perHour: 80, responseHours: 8 } });
@@ -54,8 +55,8 @@ describe("datacenter catalog", () => {
     expect(SPACE_SIZES.cage.map((n) => spacePrice(fr5, "cage", n))).toEqual([2550, 4800, 9000]);
     expect(SPACE_SIZES.suite.map((n) => spacePrice(fr5, "suite", n))).toEqual([11250, 21000]);
     expect(LEAD_DAYS).toEqual({ share: 2, cage: 30, suite: 90 });
-    expect(RACK_MODELS.map((m) => [m.id, m.units, m.price])).toEqual([["rack-24", 24, 350], ["rack-42", 42, 800], ["rack-47", 47, 1000]]);
-    expect(BASEMENT).toEqual({ positions: 1, maxUnits: 24, kw: 3 });
+    expect(RACK_MODELS.map((m) => [m.id, m.units, m.price])).toEqual([["shelf", 5, 60], ["rack-24", 24, 350], ["rack-42", 42, 800], ["rack-47", 47, 1000]]);
+    expect(BASEMENT).toEqual({ positions: 3, racks: 2, maxUnits: 24, kw: 3 });
   });
 });
 
@@ -63,7 +64,7 @@ describe("addLocation and closeLocation", () => {
   it("rents space with a handoff on the carrier panel, ready after the lead time", () => {
     const s = rich();
     const id = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 8));
-    expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", az: "fra2", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720, extraCircuit: false });
+    expect(loc(s, id)).toEqual({ id, dc: "equinox-fr5", city: "Frankfurt", az: "fra2", name: "Equinox FR5", space: "cage", positions: 8, readyAt: 720, extraCircuit: false, tripped: false });
     expect(s.devices.find((d) => d.panel === id)).toMatchObject({ model: "handoff", rackId: null, name: "fra2-gw-01" });
     expect(loc(s, ok(addLocation(freeFloor(s), "tellyhouse-north", "suite", 20))).readyAt).toBe(2160);
     expect(loc(s, ok(addLocation(freeFloor(s), "hetzler-park", "share", 1))).readyAt).toBe(48);
@@ -98,15 +99,15 @@ describe("racks", () => {
     const s = rich(10_000);
     const id = ok(addLocation(freeFloor(s), "interaction-fra", "cage", 4));
     const r = ok(buyRack(s, id, "rack-42", 2));
-    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } });
+    expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null }, tile: expect.any(Object) });
     expect(s.cash).toBe(9200);
     expect(s.ledger.at(-1)).toMatchObject({ category: "hardware", key: "ledger.hardware", params: { model: "42U rack", device: "fra2-rack-01" }, amount: -800 });
     expect(freePositions(s, id)).toEqual([1, 3, 4]);
     // Devices in a location that is not ready have no power.
     const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, id));
     ok(mountDevice(s, srv, r, 1));
-    expect(rackPower(s, r)).toEqual({ watts: 100, a: 100, b: 0, limitWatts: 6000, tripped: false });
-    ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }));
+    expect(rackPower(s, r)).toEqual({ watts: 100, a: 100, b: 0, limitWatts: 6000, over: false });
+    ok(connect(s, { device: srv, port: 0 }, { device: handoffOf(s, id), port: 0 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
     s.hour = 720;
     expect(linkStatus(s, srv).online).toBe(true);
@@ -126,14 +127,14 @@ describe("racks", () => {
   it("sells an empty rack at its resale value", () => {
     const s = rich(0);
     expect(err(sellRack(s, "rack2"))).toBe("error.rackNotEmpty");
-    ok(unmountDevice(s, "dev3"));
-    ok(unmountDevice(s, "dev4"));
-    ok(unmountDevice(s, "dev5"));
+    ok(unmountDevice(s, "dev3", true));
+    ok(unmountDevice(s, "dev4", true));
+    ok(unmountDevice(s, "dev5", true));
     s.hour = 730;
     ok(sellRack(s, "rack2"));
     expect(s.cash).toBe(280);
     expect(s.ledger.at(-1)).toEqual({ hour: 730, category: "sales", key: "ledger.sale", params: { device: "fra1-rack-01" }, amount: 280 });
-    expect(freePositions(s, "loc1")).toEqual([1]);
+    expect(freePositions(s, "loc1")).toEqual([1, 2, 3]);
     expect(err(sellRack(s, "rack2"))).toBe("error.unknownRack");
   });
 });
@@ -163,7 +164,7 @@ describe("moveRack", () => {
     expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "moving", key: "ledger.move", params: { rack: "fra1-rack-01", location: "Equinox FR5" }, amount: -300 });
     // The server-to-switch cable stays inside the rack; the cable to the home router is unplugged.
     expect(s.cables.map((c) => c.id)).toEqual(["cab6"]);
-    expect(freePositions(s, "loc1")).toEqual([1]);
+    expect(freePositions(s, "loc1")).toEqual([1, 2, 3]);
     expect(linkStatus(s, "dev3").online).toBe(false);
     expect(rackPower(s, "rack2").watts).toBe(0);
     expect(err(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }))).toBe("error.rackMoving");
@@ -172,9 +173,9 @@ describe("moveRack", () => {
     expect(events).toContainEqual({ app: "Locations", key: "event.rackArrived", params: { rack: "fra1-rack-01", location: "Equinox FR5" } });
     expect(rack(s, "rack2").arriveAt).toBeNull();
     expect(linkStatus(s, "dev3").online).toBe(false);
-    ok(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }));
+    ok(connect(s, { device: "dev4", port: 7 }, { device: handoffOf(s, fr5), port: 0 }, true));
     expect(linkStatus(s, "dev3")).toEqual({ online: true, gbit: 1, warning: null });
-    expect(rackPower(s, "rack2")).toEqual({ watts: 108, a: 108, b: 0, limitWatts: 8000, tripped: false });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 108, a: 108, b: 0, limitWatts: 8000, over: false });
   });
   it("takes three days and €1,200 to another city", () => {
     const s = rich(10_000);
@@ -203,21 +204,27 @@ describe("moveRack", () => {
 });
 
 describe("breakers", () => {
-  it("trips a rack that draws more than its position's limit and takes its devices offline", () => {
+  it("trips the room an hour after a rack draws more than its limit and takes its devices offline", () => {
     const s = rich();
     ok(buyDevice(s, "g1-compute", "Dwell", 11, "loc1"));
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 10));
     runServers(s);
-    expect(rackPower(s, "rack2")).toEqual({ watts: 2768, a: 2768, b: 0, limitWatts: 3000, tripped: false });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 2768, a: 2768, b: 0, limitWatts: 3000, over: false });
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 1));
     runServers(s);
-    expect(rackPower(s, "rack2")).toEqual({ watts: 3018, a: 3018, b: 0, limitWatts: 3000, tripped: true });
+    expect(rackPower(s, "rack2")).toEqual({ watts: 3018, a: 3018, b: 0, limitWatts: 3000, over: true });
+    expect(linkStatus(s, "dev3").online).toBe(true);
+    breakerTick(s);
+    s.hour += TRIP_HOURS;
+    breakerTick(s);
     expect(linkStatus(s, "dev3").online).toBe(false);
     // The router on the rack's shelf goes dark with it.
     expect(linkStatus(s, "dev5").online).toBe(false);
     expect(powerPerHour(s)).toBe(0);
     s.workloads = [];
-    ok(unmountDevice(s, "dev8"));
+    ok(unmountDevice(s, "dev8", true));
+    expect(resetBreaker(s, "loc1").ok).toBe(true);
+    s.hour++;
     expect(linkStatus(s, "dev3").online).toBe(true);
   });
   it("uses the datacenter's kW per position", () => {
@@ -227,10 +234,10 @@ describe("breakers", () => {
     ok(buyDevice(s, "g1-compute", "Dwell", 17, id));
     ok(mountStack(s, "g1-compute", "Dwell", r, 16));
     runServers(s);
-    expect(rackPower(s, r)).toEqual({ watts: 4000, a: 4000, b: 0, limitWatts: 4000, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 4000, a: 4000, b: 0, limitWatts: 4000, over: false });
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
     runServers(s);
-    expect(rackPower(s, r).tripped).toBe(true);
+    expect(rackPower(s, r).over).toBe(true);
   });
 });
 
@@ -272,8 +279,8 @@ describe("rack shares", () => {
       const r = s.racks.find((x) => x.locationId === id)!;
       return [loc(s, id).positions, loc(s, id).readyAt, r.provided, r.position, r.price, freeSlots(s, r.id, 1).length, rackPower(s, r.id).limitWatts];
     });
-    expect(rows).toEqual([[1, 48, true, 1, 0, 5, 1000], [1, 48, true, 1, 0, 10, 2000], [1, 48, true, 1, 0, 21, 4000], [1, 48, true, 1, 0, 42, 8000]]);
-    for (const dc of DATACENTERS) expect(addLocation(rich(), dc.id, "share", 8).ok).toBe(true);
+    expect(rows).toEqual([[1, 48, true, 1, 0, 4, 1000], [1, 48, true, 1, 0, 9, 2000], [1, 48, true, 1, 0, 20, 4000], [1, 48, true, 1, 0, 41, 8000]]);
+    for (const dc of DATACENTERS.filter((d) => listed(d.city))) expect(addLocation(rich(), dc.id, "share", 8).ok).toBe(true);
   });
   it("mounts hardware into the provider rack and trips at the share's limit", () => {
     const s = rich();
@@ -283,15 +290,18 @@ describe("rack shares", () => {
     expect(rackPower(s, r).limitWatts).toBe(500);
     ok(buyDevice(s, "g1-compute", "Dwell", 3, id));
     ok(mountStack(s, "g1-compute", "Dwell", r, 2));
-    const srv = s.devices.find((d) => d.rackId === r)!;
+    const srv = s.devices.find((d) => d.rackId === r && d.model !== "panel-provider")!;
     expect(srv.name).toBe("fra2-srv-01");
-    ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }));
+    ok(connect(s, { device: srv.id, port: 0 }, { device: handoffOf(s, id), port: 0 }, true));
     runServers(s);
-    expect(rackPower(s, r)).toEqual({ watts: 500, a: 500, b: 0, limitWatts: 500, tripped: false });
+    expect(rackPower(s, r)).toEqual({ watts: 500, a: 500, b: 0, limitWatts: 500, over: false });
     expect(linkStatus(s, srv.id).online).toBe(true);
     ok(mountStack(s, "g1-compute", "Dwell", r, 1));
     runServers(s);
-    expect(rackPower(s, r).tripped).toBe(true);
+    expect(rackPower(s, r).over).toBe(true);
+    breakerTick(s);
+    s.hour += TRIP_HOURS;
+    breakerTick(s);
     expect(linkStatus(s, srv.id).online).toBe(false);
     expect(err(mountStack(s, "g1-compute", "Dwell", r, 1))).toBe("error.notInStorage");
   });

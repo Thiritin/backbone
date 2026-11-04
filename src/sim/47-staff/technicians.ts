@@ -12,6 +12,7 @@ import { updateDue, updateSoftware } from "../90-actions/software";
 import { installPart, mountDevice, mountStack, removePart, replaceComponent, replaceSpares, reset, resetBmc, setPower, shutdown, spareFits, unmountDevice, type ActionResult } from "../90-actions/hardware";
 import { migrateWebspace, recover } from "../90-actions/vms";
 import { continueBoot, recoverGear } from "../90-actions/remote";
+import { orderWork } from "../90-actions/work-orders";
 import { callOut, onCallAt, onCallPayroll, respond, restUntil } from "./oncall";
 import { atFair, onShift, working, type Employee, type Task } from "./staff";
 
@@ -195,6 +196,9 @@ function work(s: GameState, e: Employee, events: SimEvent[], taken: Set<string>,
     return true;
   }
   taken.add(o.deviceId);
+  // The operation shows as a work order of the technician for the hour; its effect lands now.
+  const rackId = s.devices.find((x) => x.id === o.deviceId)?.rackId ?? undefined;
+  orderWork(s, e.id, e.location!, { rackId }, null, { kind: "op", what: OP_TASK[o.kind], deviceId: o.deviceId, workMin: Math.min(55, Math.round(60 * (1.5 - e.skill / 100))) });
   // Actions change devices and the ledger in place; the tick works on copies.
   s.devices = s.devices.map((d) => (d.id === o.deviceId || (o.count && d.store) ? { ...d } : d));
   s.ledger = [...s.ledger];

@@ -11,7 +11,7 @@ A G1 server costs about €26 a month in power in 2005; a G7 costs €89 in 2026
 | Location | PUE | Billing |
 | --- | --- | --- |
 | Basement | 1.0 | Household price |
-| Cage or suite | The datacenter's power factor | City business price × power factor; a rack above its position's kW limit trips |
+| Cage or suite | The datacenter's power factor | City business price × power factor; a room above its kW limit for an hour trips its breaker |
 | Own room | 1.6 | City business price |
 | Own datacenter | 1.4, or 1.2 with liquid cooling | City business price, or a custom contract: 3 years fixed at 10% below the current price |
 
@@ -60,7 +60,7 @@ Without a spare kit in stock, a repair waits for a delivery first.
 
 A server has 4 fans; a switch or router 2 fans, 1 or 2 power supplies and a board that fails like a mainboard. The part price column is the reference price of an unsized spare; the shop sells parts at the prices of Part prices by year.
 
-**Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, and in the basement 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
+**Cooling and overheating.** Each location keeps a room temperature: 22 °C in a datacenter hall, which its cooling units hold at any draw, and in the basement and an office 22 + 5 · cos((month − 6.5) · π / 6), from 17 in January to 27 in July, plus 2 °C per kW the room draws. The basement's window fan runs while the room would pass 24 °C and halves that to 1 °C per kW. A tripped room draws nothing. A server's inlet adds up to 3 °C as its rack nears its power limit and 6 °C behind a failed fan. On top of that the room carries heat H, which the sim steps every game minute (60 steps when an hour is ticked at once):
 
 ```math
 \frac{dH}{dt} = \frac{0.5}{m}\,\big(P - C - s \cdot H\big) \quad \text{°C per minute}, \qquad H \ge 0
@@ -116,6 +116,8 @@ A rebuild takes the used data on the drive ÷ the rebuild speed, so a 4 TB HDD t
 **Maintenance.** A swap takes 15 minutes once someone is there. In the basement you are there at once. At a datacenter remote hands arrive after their response time and bill their hourly rate for at least one hour.
 
 **Hand work yourself.** At a datacenter the same swap can be done by you or by a friend, after the drive from the home city (the basement's city). Same city: 1 hour and EUR 20 (anchor: a regional train ticket). Same country: 4 hours and EUR 90 (an ICE return). Another European country: 9 hours and EUR 250 (a short-haul flight). Overseas is not offered. A datacenter that is the highest position price of a city with a rival (`visitBooking`) adds 24 hours for the booked visit. Doing it yourself keeps `playerBusyUntil` set through the drive there, the work and the drive back, and waits behind replies already queued. A friend charges EUR 35 (pizza and beer), at most 3 times per calendar year (`friendFavours`), takes the same drive time and leaves the player free; the game's random sequence rolls a 10% chance per favour that the work takes twice as long. Neither option bills remote hands. A player already at the datacenter presses the front panel buttons and plugs the power cords at once, with no drive and no fee.
+
+**Flights.** A trip into or out of a country across the sea (Britain, Ireland) flies instead of driving. A flight takes 3 hours of taxis, check-in and baggage at both ends plus the great-circle distance between the two places at 800 km/h, rounded up to whole hours, and costs EUR 0.35 per km with a floor of EUR 180 (anchor: a short-haul economy ticket booked a few days ahead plus two taxi rides). Frankfurt to London is 635 km: 4 hours and EUR 222. A booked visit adds its 24 hours as for a drive. The trip stores whether it drove or flew.
 
 **Remote management, hangs and pulled plugs.** A baseboard management controller is part of the server board: it needs no extra part and costs nothing. Anchors for when it appears: Dell DRAC 5 on PowerEdge 9G in 2006 as an add-in card and iDRAC standard from 11G in 2009; HP iLO 2 on ProLiant G5 in 2006; Supermicro onboard IPMI on X8 boards in 2009; Lenovo IMM on System x from 2008. The game maps them to the generations: Dwell and Hewlett-Packet from generation 2 (2008), SuperMacro and Lenovoid from generation 3 (2011), the ARM line always, generation 1 (2005) never. The management address follows the private address rule: 192.168.3.x in the basement, 10.n.2.x in datacenter n, with the same host octet. Hang rates have no public source and are game choices.
 
@@ -206,7 +208,7 @@ Used devices cannot be leased and resell from the price paid like any other devi
 | High-density feed | Doubles the position's kW limit | 60% of the position price per month |
 | Basement circuit | One extra household circuit, +3 kW | €400 once |
 
-**Breakers.** Every feed, the basement circuit included, carries 80% of its limit continuously, as the electrical code rates a breaker for loads that run three hours or more. A feed above its limit trips at once; a feed above 80% of it trips after three hours there. Servers that hang on the tripped feed alone switch off and stay off. Single-supply servers, network gear and customer equipment hang on feed A. A dual-fed server draws half its power from each feed, so when a feed fails or trips its whole draw moves to the other one; when that exceeds one feed's limit, the other feed trips as well and every server in the rack goes dark for the outage. Customer colocation is only placed in a rack while its whole draw stays under 80% of one feed.
+**Breakers.** Every feed, the basement circuit included, carries 80% of its limit continuously, as the electrical code rates a breaker for loads that run three hours or more. A room above its limit for one hour trips its main breaker: the house circuit in the basement, the office circuit in an office, any rack position's feed in a datacenter. Every device in the room loses power and stays switched on. In the basement and an office the player resets the breaker by hand in the fuse box, which holds only once the switched-on devices fit the limit; at a datacenter the provider's remote hands reset it after their response time and bill one hour at their rate. The devices then boot one after another, a minute apart. A feed above 80% of its limit trips after three hours there. Servers that hang on the tripped feed alone switch off and stay off. Single-supply servers, network gear and customer equipment hang on feed A. A dual-fed server draws half its power from each feed, so when a feed fails or trips its whole draw moves to the other one; when that exceeds one feed's limit, the other feed trips as well and every server in the rack goes dark for the outage. Customer colocation is only placed in a rack while its whole draw stays under 80% of one feed.
 
 **Monitoring.** Without monitoring, failures only show as lights on the device fronts. Monitoring is a tier 1 skill in Research.
 

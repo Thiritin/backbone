@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CITIES } from "../src/sim/10-catalog/economy";
 import { exchangeAt, zoneLinkPrice } from "../src/sim/10-catalog/network";
-import { DATACENTERS, datacenterById, inUs, MOVE, regionOf } from "../src/sim/20-world/datacenters";
+import { DATACENTERS, datacenterById, inUs, MOVE, regionOf, WORLD } from "../src/sim/20-world/datacenters";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { CITY_TLD } from "../src/sim/30-customers/domains";
 import { registryCost } from "../src/sim/30-customers/registry";
@@ -27,7 +27,7 @@ const open = (s: GameState, dc: string) => {
 describe("more locations", () => {
   it("gives every new city datacenters, a market, a region, a TLD and a map pin", () => {
     for (const city of NEW) {
-      expect(DATACENTERS.some((d) => d.city === city)).toBe(true);
+      expect(DATACENTERS.some((d) => d.city === city)).toBe(!US.includes(city));
       expect(CITIES.some((c) => c.name === city)).toBe(true);
       expect(regionOf({ city })).toBeDefined();
       expect(CITY_TLD[city]).toBeDefined();
@@ -50,16 +50,17 @@ describe("more locations", () => {
     expect(registryCost("example.com", 2005)).toBe(6);
   });
 
-  it("opens locations in Düsseldorf, Kerkrade and Ashburn", () => {
+  it("opens locations in Düsseldorf and Kerkrade", () => {
     const s = rich();
     expect(open(s, "equinox-du1").az).toBe("dus1");
     expect(open(s, "skyblink-eygelshoven").az).toBe("ker1");
-    expect(open(s, "equinox-dc2").az).toBe("ash1");
   });
 
   it("charges more to cross the Atlantic", () => {
     const s = rich();
-    const [dus, ker, ash] = [open(s, "equinox-du1"), open(s, "skyblink-eygelshoven"), open(s, "equinox-dc2")];
+    const [dus, ker] = [open(s, "equinox-du1"), open(s, "skyblink-eygelshoven")];
+    const ash = { ...dus, id: "loc-ash", city: "Ashburn" };
+    s.locations.push(ash);
     expect(travelCost(s, dus.id, ker.id)).toEqual(MOVE.otherCity);
     expect(travelCost(s, dus.id, ash.id)).toEqual(MOVE.overseas);
     expect(zoneLinkPrice("wave", 10, false, 2026, true)).toBe(zoneLinkPrice("wave", 10, false, 2026) / 3 * 10);
@@ -71,5 +72,15 @@ describe("more locations", () => {
     for (const dc of DATACENTERS.filter((d) => NEW.includes(d.city))) delete old.dcs[dc.id];
     const loaded = deserialize(JSON.stringify(old));
     for (const dc of DATACENTERS) expect(loaded.dcs[dc.id].others).toBeGreaterThan(0);
+  });
+});
+
+describe("the datacenter list", () => {
+  it("offers only European sites while the world is Europe, yet resolves any id", () => {
+    expect(WORLD).toBe("eu");
+    expect(DATACENTERS.some((d) => inUs(d.city))).toBe(false);
+    expect(DATACENTERS.length).toBeGreaterThan(0);
+    expect(datacenterById("equinox-la1").city).toBe("Los Angeles");
+    expect(addLocation(newGame(1), "equinox-la1", "share", 1)).toMatchObject({ ok: false, error: "error.unknownDatacenter" });
   });
 });

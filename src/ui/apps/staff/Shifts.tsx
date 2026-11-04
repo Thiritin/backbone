@@ -8,6 +8,9 @@ import { addTeam, removeTeam, setShift } from "../../../sim/90-actions/staff";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 
+// The starting teams keep English names in the save; the shown name follows the language.
+export const teamName = (tm: Team): string => (tm.id === "office" ? t("misc.teamOffice") : tm.id === "parttime" ? t("misc.teamParttime") : tm.name);
+
 // Monday first; values are getUTCDay indexes.
 const DAYS: [number, string][] = [[1, t("misc.dayMon")], [2, t("misc.dayTue")], [3, t("misc.dayWed")], [4, t("misc.dayThu")], [5, t("misc.dayFri")], [6, t("misc.daySat")], [0, t("misc.daySun")]];
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
@@ -56,7 +59,7 @@ function TeamCard({ game, team }: { game: GameState; team: Team }) {
   return (
     <section className="st-team">
       <div className="st-team-h">
-        <h3>{team.name}</h3>
+        <h3>{teamName(team)}</h3>
         <span className="sub">{t("misc.teamSummary", { people: members.length, hours: weekHours(team), pay: euro(members.reduce((n, e) => n + payOf(game, e), 0)) })}</span>
         <span className="grow" />
         <button className="btn" disabled={members.length > 0} onClick={() => act(removeTeam, team.id)}><Trash2 />{t("misc.remove")}</button>
@@ -68,7 +71,7 @@ function TeamCard({ game, team }: { game: GameState; team: Team }) {
           return (
             <div key={day} className="st-day">
               <span>{label}</span>
-              <input type="checkbox" role="switch" className="switch" aria-label={t("misc.worksDay", { team: team.name, day: label })} checked={!!s}
+              <input type="checkbox" role="switch" className="switch" aria-label={t("misc.worksDay", { team: teamName(team), day: label })} checked={!!s}
                 onChange={() => act(setShift, team.id, day, s ? null : { start: 9, hours: 8 })} />
               {s && <>
                 <select aria-label={t("misc.dayStart", { day: label })} value={s.start} onChange={(ev) => set(Number(ev.target.value), s.hours)}>

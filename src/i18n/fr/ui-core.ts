@@ -11,6 +11,7 @@ export default {
   "core.notify.power": () => "Alimentation électrique",
   "core.notify.domains": () => "Noms de domaine",
   "core.notify.tradeOffice": () => "Bureau de négoce",
+  "core.notify.bank": () => "Banque",
   "core.notify.plannedMaintenance": () => "Maintenance planifiée",
   "core.notify.hardwareFailures": () => "Pannes matérielles",
   "core.notify.deliveriesAndMoves": () => "Livraisons et déménagements",

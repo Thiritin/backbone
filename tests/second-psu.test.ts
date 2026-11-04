@@ -3,7 +3,7 @@ import { modelById } from "../src/sim/10-catalog/hardware";
 import { type GameState } from "../src/sim/50-state";
 import { psuInlets } from "../src/ui/art/backs";
 import { addSecondPsu, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
-import { buyDevice, newGame } from "./fixtures";
+import { buyDevice, newGame, settle } from "./fixtures";
 import { withServer } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
@@ -16,19 +16,23 @@ describe("second power supply", () => {
     const s: GameState = { ...withServer(newGame(7)), cash: 10_000 };
     const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     ok(mountDevice(s, id, "rack2", 20));
+    settle(s);
     const d = s.devices.find((x) => x.id === id)!;
     const paid = d.price, cash = s.cash;
-    const psu = ok(addSecondPsu(s, id));
+    ok(addSecondPsu(s, id));
+    settle(s);
     expect(d.model).toBe("g1-compute-2psu");
     expect(s.cash).toBe(cash - 250);
     expect(d.price).toBe(paid + 250);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.secondPsu", amount: -250 });
     const psus = d.components.filter((c) => c.kind === "psu");
-    expect(psus.map((c) => c.id).at(-1)).toBe(psu);
+    const psu = psus.at(-1)!.id;
     expect(psus[1].plugged).toBe(false);
     expect(new Set(d.components.map((c) => c.id)).size).toBe(d.components.length);
     expect(psuInlets(modelById(d.model), "back", 400, 20)).toHaveLength(2);
     ok(setPlugged(s, id, psu, true));
+    settle(s);
+    expect(d.components.find((c) => c.id === psu)!.plugged).toBe(true);
   });
 
   it("refuses a device without a free bay or without the cash", () => {

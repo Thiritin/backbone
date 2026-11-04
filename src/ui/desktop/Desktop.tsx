@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatClock, MS_PER_HOUR, SPEEDS } from "../../sim/00-core/time";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { t } from "../../i18n/en";
-import { clockCarry, loadedFromSave, useStore } from "../store";
+import { clockCarry, useStore } from "../store";
 import { AppWindow } from "./AppWindow";
 import { Banners, NotificationCenter } from "./Banners";
 import { DesktopIcons } from "./DesktopIcons";
@@ -10,12 +10,13 @@ import { Dock } from "./Dock";
 import { GameOver } from "./GameOver";
 import { SkillSheet } from "../apps/research/SkillSheet";
 import { MenuBar } from "./MenuBar";
+import { World } from "../world/World";
 import { StartScreen } from "./StartScreen";
 import { EarlyAccess } from "./EarlyAccess";
 import { latestOs } from "../../sim/10-catalog/os";
 import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
-import { AlertSheet } from "./AlertSheet";
+import { AlertGate } from "./AlertSheet";
 import { WhatsNew } from "./WhatsNew";
 import { ContextMenuHost } from "./ContextMenu";
 import { Searchlight } from "../search/Searchlight";
@@ -24,10 +25,12 @@ import { UpdateSheet } from "./UpdateSheet";
 import { OsUpdateSheet } from "./OsUpdateSheet";
 import { ConfirmHost } from "./Confirm";
 import { watchUpdates } from "../update";
+import { Travel } from "../travel/Travel";
+import { useTrip } from "../travel/route";
 import type { ChangelogDay } from "../changelog";
+import { escapeStep } from "./escape";
 
 const AUTOSAVE_MS = 15_000;
-let greeted = false;
 
 const dark = matchMedia("(prefers-color-scheme: dark)");
 
@@ -59,26 +62,19 @@ export function Desktop() {
         ? <div className="wallpaper-host photo" style={{ backgroundImage: `url(${photo})` }} />
         : <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />}
       {started ? <Shell theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} /> : <StartScreen />}
-      <EarlyAccess />
     </div>
   );
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
-  const { windows, speed, setSpeed, advance, save, notify, clearUnseen, news, explain, setExplain, alert } = useStore();
-  const gameOver = useStore((s) => s.game.gameOver);
+  const { windows, speed, setSpeed, advance, save, clearUnseen, news, explain, setExplain } = useStore();
+  const gameOver = useStore((s) => s.game.gameOver), surface = useStore((s) => s.surface), desk = surface === "desktop";
   const [update, setUpdate] = useState<{ changes: ChangelogDay[]; install?: () => Promise<void> } | null>(null);
   const dismissed = useRef<number | null>(null);
 
   useEffect(() => watchUpdates((changes, install) => setUpdate({ changes, install }), () => dismissed.current), []);
   const [center, setCenter] = useState(false);
   const carry = clockCarry;
-
-  useEffect(() => {
-    if (!loadedFromSave || greeted) return;
-    greeted = true;
-    notify("Settings", t("save.loaded.title"), t("save.loaded.text"));
-  }, [notify]);
 
   // Clock: whole game minutes from real time × speed; leftovers carry into the next frame.
   useEffect(() => {
@@ -104,6 +100,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   // Space pauses; 1 to 3 pick 1×, 2× and 4×, and 4 skips ahead.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return void escapeStep(e, useStore.getState());
       if (useStore.getState().game.player.until > useStore.getState().game.hour) return;
       if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog], [role=menu]")) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }
@@ -119,26 +116,29 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
 
   return (
     <>
-      <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
-      <ConfirmHost />
-      <div className="live-only" inert={speed === 0}>
-        <DesktopIcons />
-        <Widgets />
-        <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
-        {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
-        <Dock />
-      </div>
-      {speed === 0 && <div className="paused-veil">{t("desktop.paused")}</div>}
-      {news && <WhatsNew changes={news} />}
-      {alert && <AlertSheet alert={alert} />}
+      {surface === "world" ? <><World /><Banners /></> : (
+        <>
+          <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
+          <ConfirmHost />
+          <DesktopIcons />
+          <Widgets />
+          <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>
+          {center ? <NotificationCenter onClose={() => setCenter(false)} /> : <Banners />}
+          <Dock />
+        </>
+      )}
+      {desk && <EarlyAccess />}
+      {desk && news && <WhatsNew changes={news} />}
+      <AlertGate />
       {gameOver !== null && <GameOver hour={gameOver} />}
-      {gameOver === null && <OsUpdateSheet />}
-      {update && <UpdateSheet changes={update.changes} install={update.install} onLater={() => { dismissed.current = Date.now(); setUpdate(null); }} />}
+      {desk && gameOver === null && <OsUpdateSheet />}
+      {desk && update && <UpdateSheet changes={update.changes} install={update.install} onLater={() => { dismissed.current = Date.now(); setUpdate(null); }} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />
       <Searchlight />
       <Switcher />
       <AwayLock />
+      <Travel />
     </>
   );
 }
@@ -148,7 +148,8 @@ const AWAY_MS_PER_HOUR = 150;
 
 function AwayLock() {
   const game = useStore((s) => s.game), advance = useStore((s) => s.advance);
-  const away = game.player.until > game.hour && game.gameOver === null;
+  const driving = useTrip((s) => s.stage !== "room");
+  const away = game.player.until > game.hour && game.gameOver === null && !driving;
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!away) return;

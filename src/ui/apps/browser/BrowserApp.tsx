@@ -28,6 +28,7 @@ import { VaultOffer } from "../../vault";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
 import { PageError } from "./pageAct";
+import { PageBoundary } from "./PageBoundary";
 import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
@@ -224,7 +225,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
       {waiting && <div className="web-load" aria-hidden />}
       <div className={`web-view${paper ? " white" : ""}`}>
         {error && <div className="web-error" role="alert">{t(error)}</div>}
-        <PageError.Provider value={setError}>{body}</PageError.Provider>
+        <PageError.Provider value={setError}><PageBoundary key={`${r.host}${r.path}`}>{body}</PageBoundary></PageError.Provider>
       </div>
     </>
   );
@@ -330,8 +331,13 @@ export function BrowserApp() {
   useFocus("Browser", (f) => {
     if (f.kind !== "url") return;
     const have = tabs.find((x) => x.history[x.at] === f.id);
-    if (have) setActive(have.id);
-    else open(f.id);
+    if (have) return setActive(have.id);
+    // One bank tab: a payment link steers the open one instead of adding another.
+    const bank = resolve(game, f.id).page.kind === "bank" && tabs.find((x) => resolve(game, x.history[x.at]).page.kind === "bank");
+    if (bank) {
+      patch(bank.id, (x) => ({ ...x, history: [...x.history.slice(0, x.at + 1), f.id], at: x.at + 1, nav: x.nav + 1 }));
+      setActive(bank.id);
+    } else open(f.id);
   });
 
   const bookmarks = [...defaultBookmarks(game), ...marks];

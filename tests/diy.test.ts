@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { rand } from "../src/sim/00-core/rng";
 import { DATACENTERS } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
-import { BOOKED_HOURS, FRIEND_FEE, handWork } from "../src/sim/60-infra/handwork";
+import { BOOKED_HOURS, FRIEND_FEE, handWork, present } from "../src/sim/60-infra/handwork";
 import { drive, travelTo } from "../src/sim/90-actions/travel";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { addLocation, atServer, buyRack, installPart, pullPower, setPower } from "../src/sim/90-actions/hardware";
@@ -34,16 +34,18 @@ const rolls = (hit: boolean) => { for (let x = 1; ; x++) if (rand({ s: x }) < 0.
 describe("hand work options", () => {
   it("prices the drive by distance from where the player is", () => {
     const at = (dc: string) => { const { s, loc } = setup(dc); return drive(s, loc); };
-    expect(at("interaction-fra")).toEqual({ hours: 1, fee: 20 });
-    expect(at("interaction-muc")).toEqual({ hours: 4, fee: 90 });
-    expect(at("ironmolehill-ams")).toEqual({ hours: 9, fee: 250 });
+    expect(at("interaction-fra")).toEqual({ hours: 1, fee: 20, by: "drive" });
+    expect(at("interaction-muc")).toEqual({ hours: 4, fee: 90, by: "drive" });
+    expect(at("ironmolehill-ams")).toEqual({ hours: 9, fee: 250, by: "drive" });
     const { s, loc } = setup("interaction-fra");
     expect(handWork(s, loc)!.friend).toMatchObject({ wait: 1, fee: FRIEND_FEE, left: 3 });
     expect(handWork(s, loc)!.hands).toMatchObject({ perHour: 120, wait: 2 });
   });
 
   it("is not offered overseas", () => {
-    const { s, loc, id } = setup("digitalreality-ash");
+    const { s, loc, id } = setup("equinox-du1");
+    // An old save can still hold an American location.
+    Object.assign(s.locations.find((l) => l.id === loc)!, { city: "Ashburn", dc: "digitalreality-ash" });
     expect(drive(s, loc)).toBeNull();
     expect(err(travelTo(s, loc))).toBe("error.tooFar");
     expect(handWork(s, loc)!.friend).toBeNull();
@@ -73,19 +75,17 @@ describe("driving there", () => {
   it("pays the fare, locks the player until arrival and then works on site", () => {
     const { s, loc, id } = setup("interaction-muc");
     const part = stick(s, loc), cash = s.cash, hour = s.hour;
-    expect(err(installPart(s, id, part, undefined, "self"))).toBe("error.notThere");
     ok(travelTo(s, loc));
     expect(s.cash).toBe(cash - 90);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.drive", amount: -90 });
-    expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel" });
+    expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", by: "drive" });
     expect(err(travelTo(s, "loc1"))).toBe("error.away");
-    expect(err(installPart(s, id, part, undefined, "self"))).toBe("error.notThere");
     s.hour = hour + 4;
-    expect(handWork(s, loc)!.here).toBe(true);
+    expect(present(s, loc)).toBe(true);
     ok(installPart(s, id, part, undefined, "self"));
     expect(s.cash).toBe(cash - 90);
-    expect(dev(s, id).maintenance!.doneAt).toBe(s.hour + 0.5);
-    expect(s.player).toEqual({ at: loc, until: s.hour + 0.5, doing: "work" });
+    expect(s.orders).toMatchObject([{ worker: "player", kind: "parts", locationId: loc }]);
+    expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", by: "drive" });
   });
 
   it("pulls a plug on site without a fee and refuses a drive without cash", () => {
@@ -123,7 +123,7 @@ describe("driving there", () => {
   it("starts an old save at home", () => {
     const old = JSON.parse(serialize(newGame(1)));
     delete old.player;
-    expect(deserialize(JSON.stringify(old)).player).toEqual({ at: "loc1", until: 0, doing: "work" });
+    expect(deserialize(JSON.stringify(old)).player).toEqual({ at: "loc1", until: 0, doing: "work", by: "drive" });
   });
 });
 

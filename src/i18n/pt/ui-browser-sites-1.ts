@@ -218,6 +218,7 @@ export default {
   "browser-sites-1.of.construction": () => "Em construção",
   "browser-sites-1.of.constructionText": () => "Esta página está de momento em construção. Volte a visitar-nos em breve.",
   "browser-sites-1.of.serviceClosed": () => "O serviço online está encerrado.",
+  "browser-sites-1.of.reopens": (p) => `Reabre a ${p.date} às ${p.time}.`,
   "browser-sites-1.of.serverTime": (p) => `Hora do servidor: ${p.time}`,
   "browser-sites-1.of.title": () => "Gabinete do Comércio Online",
   "browser-sites-1.of.subtitle": () => "O portal oficial de administração eletrónica do gabinete do comércio",

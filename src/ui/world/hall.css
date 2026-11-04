@@ -1,0 +1,113 @@
+/* The own hall: marked empty positions, the cold aisle, customer locks, the service door signs and the camera. */
+.w-hall-mark { fill: none; stroke: oklch(0.4 0.02 250 / 0.7); stroke-width: 0.9; stroke-dasharray: 3 2; }
+.w-hall-drag { cursor: grab; }
+.w-hall-drag:hover .w-hall-mark { fill: none; stroke: oklch(0.4 0.02 250 / 0.7); stroke-width: 0.9; stroke-dasharray: 3 2; }
+.w-hall-lock path { fill: none; stroke: oklch(0.72 0.11 85); stroke-width: 1.4; }
+.w-hall-lock rect { fill: oklch(0.72 0.11 85); stroke: oklch(0.45 0.08 70); stroke-width: 0.5; }
+.w-hall-sign { fill: oklch(0.96 0.005 250); stroke: oklch(0.5 0.01 250); stroke-width: 0.4; }
+.w-hall-sign-t { font-size: 3.4px; text-anchor: middle; fill: oklch(0.28 0.01 250); font-weight: 600; }
+.w-hall-cam { fill: oklch(0.32 0.01 255); }
+
+/* Edit mode: the grid, drop tiles, hot positions, the plan board and the parts strip. */
+.w-edit-grid { fill: none; stroke: oklch(0.6 0.016 250); stroke-width: 0.7; }
+.w-edit-ok { fill: oklch(0.7 0.15 150 / 0.7); }
+.w-edit-bad { fill: oklch(0.6 0.18 25 / 0.7); }
+.w-edit-sel { fill: oklch(0.78 0.12 90 / 0.5); }
+.w-edit-box { fill: oklch(0.72 0.1 235 / 0.35); }
+.w-edit-clear { fill: oklch(0.9 0.03 235 / 0.6); }
+.w-edit-clear-bad { fill: oklch(0.6 0.18 25 / 0.6); }
+.w-edit-exhaust { fill: oklch(0.7 0.05 60 / 0.5); }
+.w-edit-path { fill: none; stroke: oklch(0.55 0.06 235); stroke-width: 1.4; stroke-dasharray: 3 3; }
+.w-edit-hot { fill: oklch(0.8 0.11 65 / 0.65); }
+.w-edit-ghost { opacity: 0.55; }
+.w-edit-room { cursor: pointer; }
+.w-edit-room polygon { fill: oklch(0.72 0.1 235 / 0.4); stroke: oklch(0.45 0.12 235); stroke-width: 2; stroke-dasharray: 6 4; }
+.w-edit-room:hover polygon { fill: oklch(0.7 0.15 150 / 0.55); }
+.w-edit-msg { fill: oklch(0.28 0.02 250); }
+.w-edit-msg-t { fill: oklch(0.97 0.005 250); font-size: 8px; text-anchor: middle; font-weight: 600; }
+.w-plan-frame { fill: oklch(0.45 0.03 250); }
+.w-plan-paper { fill: oklch(0.94 0.02 235); }
+.w-plan-row { fill: oklch(0.55 0.05 235); }
+.w-plan-cool { fill: oklch(0.7 0.1 200); }
+.w-parts { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 14px; padding: 8px 16px; background: oklch(0.24 0.02 250); color: oklch(0.95 0.005 250); font-size: 12px; }
+.w-parts-drop { background: oklch(0.38 0.1 25); }
+.w-parts-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: grab; touch-action: none; user-select: none; }
+.w-parts-art { display: block; width: auto; }
+.w-parts-meters { display: grid; grid-template-columns: auto auto; gap: 2px 14px; margin-left: auto; }
+.w-parts-done { background: oklch(0.36 0.02 250); color: oklch(0.95 0.005 250); border: 0; border-radius: 0; padding: 6px 14px; font: inherit; cursor: pointer; }
+
+/* Zones: open colocation is a grey band, the cage and the meet-me area add a fence; the meet-me area has a hatched yellow edge. */
+.w-zone-colo { fill: oklch(0.6 0.012 250 / 0.8); }
+.w-zone-cage { fill: oklch(0.66 0.035 235 / 0.55); }
+.w-zone-meetme { fill: oklch(0.84 0.09 90 / 0.5); }
+.w-zone-edge { fill: none; stroke-width: 1.6; }
+.w-zone-edge-colo { stroke: oklch(0.45 0.012 250); }
+.w-zone-edge-cage { stroke: oklch(0.38 0.03 235); }
+.w-zone-edge-meetme { stroke: oklch(0.45 0.05 85); }
+.w-zone-fence { fill: none; stroke: oklch(0.4 0.02 250); stroke-width: 1.2; }
+.w-hall-plate text { font-size: 5.4px; text-anchor: middle; fill: oklch(0.99 0 0); font-weight: 600; }
+.w-parts-on { outline: 2px solid oklch(0.78 0.12 90); outline-offset: 2px; border-radius: 0; }
+.pp-jack.customer .pp-plug { fill: oklch(0.66 0.13 20); }
+.pp-jack.customer .pp-plate { fill: oklch(0.9 0.04 20); }
+
+/* The plan in the Locations app: tiles painted by zone. */
+.hall-tile.zone-colo { background: color-mix(in oklch, var(--field) 70%, oklch(0.7 0.01 250)); }
+.hall-tile.zone-cage { border-style: dashed; }
+.hall-tile.zone-meetme { border-color: oklch(0.78 0.12 90); background: color-mix(in oklch, var(--field) 70%, oklch(0.82 0.1 90)); }
+
+/* The service door close-ups. */
+.hd-room { gap: 28px; }
+.hd-row { display: flex; align-items: flex-start; justify-content: center; flex-wrap: wrap; gap: 28px 36px; }
+.hd-spot { position: relative; }
+.hd-wall { fill: oklch(0.36 0.01 250); }
+.hd-collar { fill: oklch(0.7 0.01 250); }
+.hd-cap { fill: oklch(0.3 0.01 250); }
+.hd-jack { fill: oklch(0.82 0.01 250); }
+.hd-slip.wr-tag { position: relative; left: auto; top: auto; margin: 0 auto; }
+.hd-refused { color: oklch(0.5 0.17 25); }
+
+.w-parts { flex-wrap: wrap; row-gap: 4px; }
+.w-parts-tabs { display: flex; gap: 4px; width: 100%; }
+.w-parts-tab { background: transparent; color: oklch(0.8 0.01 250); border: 0; border-bottom: 2px solid transparent; padding: 3px 10px; font: inherit; cursor: pointer; }
+.w-parts-tab-on { color: oklch(0.97 0.005 250); border-bottom-color: oklch(0.78 0.12 90); }
+.world .w-parts-tab:focus-visible { outline: 0; border-bottom-color: var(--accent); }
+.w-parts-row { display: flex; align-items: center; gap: 14px; width: 100%; }
+
+/* Air tones: flat floor paint under the rack fronts and backs. */
+.w-air-fed { fill: oklch(0.82 0.05 235 / 0.8); }
+.w-air-exhaust { fill: oklch(0.8 0.05 55 / 0.7); }
+.w-air-recirc { fill: oklch(0.66 0.16 28 / 0.75); }
+.w-hall-unm polygon { fill: oklch(0.82 0.15 85); stroke: oklch(0.45 0.1 70); stroke-width: 1; stroke-linejoin: round; }
+.w-hall-unm rect { fill: oklch(0.3 0.04 70); }
+
+/* Meet-me: a duct per carrier; leads run from the duct down a trunk to a tag for each customer. */
+.hd-spot { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 132px; }
+.hd-name { max-width: 132px; }
+.hd-leads { list-style: none; margin: 0; padding: 0 0 0 10px; display: flex; flex-direction: column; gap: 8px; width: 100%; border-left: 3px solid oklch(0.66 0.15 var(--h)); }
+.hd-lead { position: relative; display: flex; }
+.hd-lead::before { content: ""; position: absolute; left: -10px; top: 50%; width: 10px; height: 3px; background: oklch(0.66 0.15 var(--h)); }
+.hd-tag { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 3px 6px; background: oklch(0.96 0.02 90); color: oklch(0.3 0.02 60); border-left: 3px solid oklch(0.66 0.15 var(--h)); font-size: 11px; line-height: 1.2; }
+
+/* Main board: the switchgear panel drawn large; bays, needle meters, lamps, copper feeders and a bus bar. */
+.hb-board .hb-bezel { fill: oklch(0.3 0.01 255); }
+.hb-board .hb-dial { fill: oklch(0.95 0.01 90); }
+.hb-board .hb-tick { stroke: oklch(0.35 0.01 255); stroke-width: 1.2; }
+.hb-board .hb-tick-hot { stroke: oklch(0.55 0.19 27); }
+.hb-board .hb-needle { stroke: oklch(0.45 0.19 27); stroke-width: 1.6; stroke-linecap: round; }
+.hb-board .hb-pivot { fill: oklch(0.3 0.01 255); }
+.hb-board .hb-lamp { fill: oklch(0.5 0.01 250); stroke: oklch(0.38 0.01 250); stroke-width: 1.2; }
+.hb-board .hb-lamp-on { fill: var(--ok); stroke: oklch(0.5 0.12 150); }
+.hb-board .hb-feeder { fill: oklch(0.66 0.12 55); }
+.hb-board .hb-bus { fill: oklch(0.7 0.12 60); }
+.hb-board .hb-bus-shade { fill: oklch(0.52 0.1 55); }
+.hb-board .hb-insulator { fill: oklch(0.55 0.04 40); }
+.hb-board .hb-plate { fill: oklch(0.3 0.01 255); }
+.hb-board .hb-plate-t { font: 600 9px var(--font-ui); fill: oklch(0.92 0.01 90); }
+.hb-board .hb-t { font: 600 10px var(--font-ui); fill: oklch(0.28 0.01 255); }
+.hb-board .hb-num { font-variant-numeric: tabular-nums; font-weight: 500; }
+.hb-board .hb-bad { fill: oklch(0.5 0.17 25); }
+.hb-main { cursor: pointer; }
+.hb-main:hover .wp-brk, .hb-main:focus-visible .wp-brk { stroke: var(--accent); stroke-width: 2; }
+.w-parts-tab:hover:not(.w-parts-tab-on) { background: oklch(1 0 0 / 0.1); }
+.w-parts-item:hover { background: oklch(1 0 0 / 0.1); }
+.w-parts-done:hover { background: oklch(0.46 0.02 250); }

@@ -1,3 +1,6 @@
+import { LOCALE } from "../../i18n/lang";
+import { cityName } from "../cityName";
+
 // Night map of the Western European backbone; same drawing as docs/design/mockups/shell.js.
 export function wallpaperSvg(): string {
   const cities = [
@@ -23,7 +26,7 @@ export function wallpaperSvg(): string {
   const city = ([n]: (string | number)[]) => {
     const [x, y] = all[n];
     return `<circle cx="${x}" cy="${y}" r="9" fill="oklch(0.75 0.13 230 / 0.12)"/><circle cx="${x}" cy="${y}" r="3.2" fill="oklch(0.86 0.1 220)"/>
-      <text x="${x + 10}" y="${y - 8}">${String(n).toUpperCase()}</text>`;
+      <text x="${x + 10}" y="${y - 8}">${cityName(String(n)).toLocaleUpperCase(LOCALE)}</text>`;
   };
   const farCity = ([n]: (string | number)[]) => { const [x, y] = all[n]; return `<circle cx="${x}" cy="${y}" r="2.2" fill="oklch(0.7 0.06 240 / 0.6)"/>`; };
   return `<svg class="wallpaper" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">

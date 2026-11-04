@@ -1,4 +1,5 @@
 import type { OveruseChoice } from "./80-business/overuse";
+import type { Tile } from "./20-world/layout";
 import type { OwnWebspace, WebspaceOverlay } from "./60-infra/webspace";
 import type { SqlDump } from "./60-infra/webdb";
 import { createRng, type Rng } from "./00-core/rng";
@@ -7,14 +8,14 @@ import type { BooksDownload, BooksVendorId, Feature } from "./10-catalog/bookkee
 import type { Vendor } from "./10-catalog/cpus";
 import type { LicenseKind, OsImage, ServerOsId } from "./10-catalog/server-os";
 import { yearOf } from "./00-core/time";
-import { MOMS_DSL, seedDcs } from "./20-world/datacenters";
+import { BASEMENT, MOMS_DSL, seedDcs } from "./20-world/datacenters";
 import { t } from "../i18n/en";
 import type { Customer, Service } from "./30-customers/customers";
 import type { Quote } from "./30-market/quotes";
 import type { BillingRules, HoldReason, Invoice, Loan, Transfer } from "./45-billing/billing";
 import type { Ticket } from "./40-support/tickets";
 import { applications, defaultTeams, type Candidate, type Employee, type Team } from "./47-staff/staff";
-import type { OnCall } from "./47-staff/oncall";
+import type { Call, OnCall } from "./47-staff/oncall";
 import type { TechOp, TechRules } from "./47-staff/technicians";
 import type { ActivityEntry } from "./47-staff/activity";
 import { newMarketing, type Marketing } from "./80-business/marketing";
@@ -62,25 +63,69 @@ import type { WebmailState } from "./80-business/webmail";
 export const SAVE_VERSION = 5;
 
 export type BondMode = "none" | "failover" | "balance";
-export type CableKind = "copper" | "dac" | "fiber" | "rollover";
+export type CableKind = "copper" | "dac" | "fiber" | "rollover" | "provider";
 
-export type SpaceKind = "basement" | "share" | "cage" | "suite";
+export type SpaceKind = "basement" | "share" | "cage" | "suite" | "office" | "hall";
+// Where the company lives (GDD, Properties). building is the postal address; buildingId the listing it was rented or bought from.
+// A section's rent is the monthly price agreed when it was rented (0 once bought); fit is null for a bought section never fitted.
+// refitUntil is the hour a refit is done. locationId is the zone the property's server rooms (or the basement's racks) form.
+export type PropertyKind = "basement" | "office" | "own";
+export type SectionFit = "desks" | "servers" | "closet" | "hall";
+export interface Building { name: string; street: string; zip: string; city: string }
+export interface Section { id: string; floor: number; fit: SectionFit | null; since: number; refitUntil: number; rent: number }
+export interface Property {
+  id: string; kind: PropertyKind; buildingId: string | null; building: Building; sections: Section[];
+  deposit: number; noticeAt: number | null; boughtFor: number | null; locationId: string | null;
+  // The datacenter hall its floors fitted as `hall` form (GDD, Own datacenter); absent until the first hall refit.
+  hall?: Hall;
+}
+export type HallItemKind = "crac" | "vent" | "containment" | "transformer" | "switchgear" | "generator" | "ups" | "battery" | "nocdesk" | "screen";
+export type AreaId = "hall" | "xfmr" | "battery" | "noc" | "yard";
+// An object a hall holds besides racks. x and y are local to its area; price is what was paid, the refund base.
+export interface HallItem { id: string; kind: HallItemKind; area: AreaId; x: number; y: number; facing: "n" | "e" | "s" | "w"; price: number; builtAt: number }
+// A colocation customer's rack on a tile of a colocation zone, paying monthly from since. A cage customer holds its whole
+// zone (tile null) and kw is drawn per tile.
+export interface ColoCustomer { id: string; name: string; tile: Tile | null; monthly: number; since: number; kw: number; zoneId: string | null;
+  // Added to the monthly leave chance by late, declined and failed remote hands jobs; cleared at each month start.
+  leaveBump: number }
+// A line of length tiles from (x, y) the player sets aside: open colocation, a fenced cage or the meet-me area. It runs along x
+// when it faces n or s, along y when it faces e or w.
+export interface HallZone { id: string; kind: "colo" | "cage" | "meetme"; x: number; y: number; length: number; facing: "n" | "e" | "s" | "w"; builtAt: number }
+// A customer's cross-connect to a built carrier, patched on a jack of a fiber panel in the meet-me zone.
+export interface HallXConnect { id: string; customerId: string; carrierId: string; jack: { device: string; port: number } }
+// carriers are the ids of carriers built into the meet-me room; rate is the monthly price per position offered to colocation
+// customers, null while no position is listed; noc is whether the NOC room is built.
+export interface Hall {
+  locationId: string; items: HallItem[]; carriers: string[]; rate: number | null;
+  // The hourly price offered for customers' remote hands, null for the city's going rate.
+  handsRate: number | null; customers: ColoCustomer[];
+  zones: HallZone[]; xconnects: HallXConnect[]; exchange: { id: string; tile: Tile | null } | null; // tile null while the exchange waits for a free meet-me tile
+  // Set when the room's breaker trips; the next month start reads and clears it.
+  outage: boolean;
+  noc: boolean;
+}
 // One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.
 export type LogSev = "info" | "warn" | "crit";
 export interface DeviceLog { hour: number; key: string; sev: LogSev; id: number }
 // Each location is an availability zone (az, like fra2) in the region of its city.
-export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean }
+// line is an office's business line, booked in the Network tab.
+export interface Location { id: string; dc: string | null; city: string; az: string; name: string; space: SpaceKind; positions: number; readyAt: number; extraCircuit: boolean;
+  // The room's main breaker: tripped after TRIP_HOURS over its limit; overSince and trippedAt are game hours with minutes.
+  tripped: boolean; overSince?: number; trippedAt?: number;
+  line?: { name: string; mbit: number; monthly: number } }
 // share-N racks belong to the provider of a rack share and hold N units.
-export type RackModel = "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
+export type RackModel = "shelf" | "rack-24" | "rack-42" | "rack-47" | "share-5" | "share-10" | "share-21" | "share-42";
 // arriveAt is the hour a moving rack arrives; null when it is in place. A moving rack already holds its target location and position.
 export interface Rack { id: string; model: RackModel; locationId: string; position: number; name: string; arriveAt: number | null; price: number; boughtAt: number; provided: boolean; feedB: boolean; highDensity: boolean; extraKw: number; extraKwAt: { kw: number; at: number } | null;
   // A flat-rate power contract's kW, 0 for metered, and a change booked for a later hour.
   flatKw: number; flatKwAt: { kw: number; at: number } | null;
   // The hour each feed went above its continuous load, null while below.
-  overSince: { a: number | null; b: number | null } }
+  overSince: { a: number | null; b: number | null };
+  // Floor tile in its location's room; rackTiles fills it in when missing.
+  tile?: Tile }
 // slot is the lowest unit the device occupies, counted from 1 at the bottom.
 // A datacenter handoff and the basement's line jack sit on their location's carrier panel: rackId null, panel = location id. A stored unit has store = its zone's location id;
-// a shipped unit has store null and transitTo/arriveAt set until it arrives.
+// a shipped unit has store null and transitTo/arriveAt set until it arrives, then waits at the door (location id and arrival hour) until carried.
 // docs/design/software.md, section 3: what a server's or own VM's disk holds. os null is an empty disk; a software whose
 // doneAt is still ahead is installing. An OS whose installedAt is ahead is installing, or upgrading in place from the
 // version in from. Software whose doneAt is ahead with a from is upgrading from that version.
@@ -111,6 +156,8 @@ export interface Device extends MachineState { id: string; model: string; brand:
   hung: boolean; bmcHung: boolean; log: DeviceLog[]; inletSev?: LogSev; cpuThrottled?: true;
   // The chassis a multi-node server's node sits in; it mounts, moves and gets power with it.
   chassisId: string | null;
+  // The hour a delivery landed in storage, null for units that never shipped.
+  arrivedAt: number | null;
   // A hand task waiting for someone on site: pulling the plug or resetting the management controller.
   hands?: { kind: FrontOp | "bmcreset" | "continue" | "recover" | "stick"; doneAt: number } | null;
   // Remote access (60-infra/oob.ts): a server waiting at the firmware prompt (latent while off), a switch or router that locked
@@ -167,7 +214,10 @@ export interface Lease { id: string; lessor: string; monthly: number; months: nu
 export interface Contract { id: string; provider: string; dc: string; locationId: string; space: "share" | "cage" | "suite"; positions: number; since: number; monthly: number; endsAt: number | null; retainedAt: number | null; billing?: Billing }
 export interface Billing { company: string; name: string; address: PostalAddress }
 // A cross-connect from the contract's space to a carrier or exchange on site (to is its id); monthly is fixed at order time.
-export interface CrossConnect { id: string; contractId: string; to: string; monthly: number; since: number }
+// jack is the provider panel jack the line lands on; saves from before panels have none.
+export interface CrossConnect { id: string; contractId: string; to: string; monthly: number; since: number; jack?: End }
+// A cable the provider runs between two provider panel jacks; it is billed and installed at dueAt.
+export interface ProviderCableOrder { id: string; a: End; b: End; fee: number; dueAt: number }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }
@@ -206,6 +256,21 @@ export interface Licence {
   mailTo?: string;  // the address chosen at checkout, where renewal, lapse and edition mail goes; absent for the owner
 }
 
+// One piece of timed work of a worker: "player", an employee id or "provider". action runs at doneAt (null for a visit); times are game
+// minutes. startAt is the later of queuedAt and the end of the worker's previous order; arriveAt = startAt + walkMin; doneAt = arriveAt + workMin.
+export type OrderKind = "mount" | "parts" | "cable" | "op" | "hands";
+export interface WorkOrder {
+  id: string; worker: string; locationId: string;
+  target: { rackId?: string; tile?: Tile; fixture?: string };
+  kind: OrderKind;
+  action: { name: string; args: unknown[] } | null;
+  // The device the work is about, for lists; customerId and fee mark a customer's remote hands job; late is set once it is overdue.
+  deviceId?: string; customerId?: string; fee?: number; late?: true;
+  // The task a figure shows for an operation; applied is set once the action ran, while the worker walks back.
+  what?: string; applied?: true;
+  queuedAt: number; startAt: number | null; walkMin: number; workMin: number;
+}
+
 export interface GameState {
   version: number;
   seed: number;
@@ -215,6 +280,7 @@ export interface GameState {
   cash: number;
   nextId: number;
   locations: Location[];
+  properties: Property[];
   racks: Rack[];
   devices: Device[];
   cables: Cable[];
@@ -280,7 +346,7 @@ export interface GameState {
   // Favours asked of friends for datacenter hand work in a calendar year.
   friendFavours: { year: number; used: number };
   // Where the player is, and until which hour the drive there or the hand work on site keeps the computer locked.
-  player: { at: string; until: number; doing: "travel" | "work" };
+  player: { at: string; until: number; doing: "travel" | "work"; by: "drive" | "fly" };
   downSince: Record<string, number>;
   // Hours in a row each cluster node has run below the timeout performance.
   lowPerf: Record<string, number>;
@@ -292,6 +358,7 @@ export interface GameState {
   waitlist: WaitlistEntry[];
   contracts: Contract[];
   crossConnects: CrossConnect[];
+  providerCables: ProviderCableOrder[];
   // Each provider's position price as a factor of its list price, raised once a game year; new contracts pay it.
   providerPrices: Record<string, number>;
   // Learned research skills (SKILLS ids).
@@ -328,8 +395,13 @@ export interface GameState {
   activity: ActivityEntry[];
   // Operations queued for technicians, oldest first, and the repairs they queue by themselves.
   techOps: TechOp[];
+  // The operation each technician took in the last tick, drawn at its rack for that hour.
+  // Remote hands jobs ordered from the desktop, run with their arguments once due.
+  orders: WorkOrder[];
   techRules: TechRules;
   onCall: OnCall;
+  // Pages ringing on the player's own phone, and the ones answered in the last hour.
+  calls: Call[];
   marketing: Marketing;
   fairs: FairBooking[];
   // Community sponsoring requests and the events running on free services.
@@ -435,7 +507,7 @@ export function deviceDefaults(modelId: string, at: number, partList?: PartSpec[
   return {
     components: parts.map((p, i): Component => ({ id: `c${i + 1}`, ...p, installedAt: at, failedAt: null })),
     on: true, label: null, raid: (drives >= 2 ? "1" : "none") as RaidLevel, rebuildRate: "medium" as RebuildRate,
-    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null,
+    rebuild: null, maintenance: null, dataLost: null, burnin: null as Device["burnin"], burnedInAt: null as number | null, chassisId: null as string | null, arrivedAt: null as number | null,
     hung: false, bmcHung: false, log: [] as DeviceLog[], os: null as MachineState["os"], software: [] as MachineState["software"],
     stuck: false, locked: false, setup: false, bootFrom: "disk" as const, ...(hasFirmware(modelById(modelId)) ? { fw: { version: yearOf(at), updatedAt: at } } : {}),
     ...(isOfficeRouter(modelById(modelId)) ? { lan: homeLan() } : {}),
@@ -464,17 +536,23 @@ export function fillCards(modelId: string, components: Component[]): Component[]
 export const device = (id: string, model: string, brand: string, rackId: string | null, slot: number, panel: string | null, name: string, price: number): Device =>
   ({ id, model, brand, rackId, slot, panel, name, bond: "none", groups: [], price, boughtAt: 0, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults(model, 0) });
 
-// Starting infrastructure: an empty 24U basement rack, the line jack on its panel and the flat's router in storage. The player
-// mounts the router, buys, mounts and cables the first server.
+// Starting infrastructure: a metal shelf in the basement with the flat's router on its top board, and the line jack on its
+// panel. The player cables the router, buys, places and cables the first server.
 const START_NAME = "Basement Hosting";
+
+export const BASEMENT_ADDRESS: Building = { name: "", street: "Kellerweg 3", zip: "60311", city: "Frankfurt am Main" };
+export const basementProperty = (locationId: string | null): Property => ({
+  id: "prop1", kind: "basement", buildingId: null, building: BASEMENT_ADDRESS, sections: [], deposit: 0, noticeAt: null, boughtFor: null, locationId,
+});
 
 export const newGame = (seed: number): GameState => ({
   version: SAVE_VERSION, seed, rng: createRng(seed), hour: 0, minute: 0, cash: 0, nextId: 8,
-  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: 1, readyAt: 0, extraCircuit: false }],
-  racks: [{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
-  devices: [{ ...device("dev5", "home-router", "AVN", null, 0, null, "fra1-gw-01", 0), store: "loc1" }, device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
+  locations: [{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: t("location.basement"), space: "basement", positions: BASEMENT.positions, readyAt: 0, extraCircuit: false, tripped: false }],
+  properties: [basementProperty("loc1")],
+  racks: [{ id: "rack2", model: "shelf", locationId: "loc1", position: 1, name: t("rack.shelf"), arriveAt: null, price: 0, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }],
+  devices: [device("dev5", "home-router", "AVN", "rack2", 5, null, "fra1-gw-01", 0), device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
-  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, powerUse: {}, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
+  ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, powerUse: {}, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerCables: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
   customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, ownWebspaces: [], installers: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
@@ -487,11 +565,11 @@ export const newGame = (seed: number): GameState => ({
   daemons: {},
   gameTitles: {},
   gameLost: {},
-  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work" }, downSince: {}, lowPerf: {},
+  tickets: [], playerBusyUntil: 0, friendFavours: { year: 0, used: 0 }, player: { at: "loc1", until: 0, doing: "work", by: "drive" }, downSince: {}, lowPerf: {},
   company: { name: START_NAME, logo: "server", color: "oklch(0.55 0.15 255)", domain: null, mail: { kind: "free" }, tagline: "", zone: PARKING, address: null },
   homeLine: { id: MOMS_DSL.id, next: null },
   taxLoss: 0, brokeSince: null, gameOver: null,
-  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} },
+  staff: [], teams: defaultTeams(), candidates: applications(seed, 0), activity: [], techOps: [], orders: [], techRules: { failed: true, worn: false, blackhole: true, updates: false, recover: true }, onCall: { roster: [], lastCall: {}, month: {} }, calls: [],
   marketing: newMarketing(), fairs: [], sponsorships: [], sponsorOffers: [],
   network: newNetwork(),
   ops: newOps(),

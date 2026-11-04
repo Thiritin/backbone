@@ -1,7 +1,13 @@
-import { Warehouse } from "lucide-react";
-import { memo, useEffect, useRef, type ReactNode } from "react";
-import { Logo } from "../art/logos";
+import { Minus, Plus, Warehouse } from "lucide-react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
+import { t } from "../../i18n/en";
+import { LOCALE } from "../../i18n/lang";
+import { hasMark, Logo } from "../art/logos";
 import { CABLES, CITIES, COAST, type City } from "./world-data";
+import { cityName } from "../cityName";
+import { fade, townLevel } from "./detail";
+import { RegionLayer, shape } from "./RegionLayer";
+import { inBox, loadRegion, PATCHES } from "./regions";
 import "./map.css";
 
 export type { City };
@@ -10,17 +16,25 @@ export interface Marker {
   id: string; lon: number; lat: number; label: string;
   kind: "basement" | "location" | "datacenter";
   selected?: boolean; alert?: boolean; provider?: string | null; count?: number;
+  // A plane glyph before the label; hint is the hover text.
+  plane?: boolean; hint?: string;
+  // Shown only at street zoom, or only above it; always when unset.
+  zoom?: "street" | "region";
 }
-interface Props { initial?: Bounds; markers?: Marker[]; onMarkerClick?: (id: string) => void; onCityClick?: (city: City) => void; className?: string; children?: ReactNode }
+// minW is the narrowest view in map units; layer draws between the base map and the pins.
+interface Props { initial?: Bounds; markers?: Marker[]; onMarkerClick?: (id: string) => void; onCityClick?: (city: City) => void; className?: string; children?: ReactNode; minW?: number; layer?: ReactNode }
 
 export const EUROPE: Bounds = { west: -9.14, south: 41.9, east: 21.01, north: 59.91 };
+const EU = { w: -11, s: 35, e: 32, n: 62 };
 export const WORLD: Bounds = { west: -180, south: -58, east: 180, north: 84 };
 export const cityNamed = (name: string) => CITIES.find((c) => c.name === name);
 
 // Equirectangular with its standard parallel at about 45 degrees, so Europe keeps its shape.
 const KX = 0.7;
-const X = (lon: number) => Math.round(lon * KX * 100) / 100;
-const Y = (lat: number) => -lat;
+export const X = (lon: number) => Math.round(lon * KX * 100) / 100;
+// Unrounded, for street-level detail.
+export const XF = (lon: number) => lon * KX;
+export const Y = (lat: number) => -lat;
 const X0 = X(WORLD.west), X1 = X(WORLD.east), Y0 = Y(WORLD.north), Y1 = Y(WORLD.south);
 const MIN_W = 4;
 
@@ -37,7 +51,7 @@ function curve(ll: [number, number][]) {
   return d;
 }
 
-const LAND = COAST.map((r) => ring(r) + "Z").join("");
+export const LAND = COAST.map((r) => ring(r) + "Z").join("");
 let GRID = "";
 for (let lon = -180; lon <= 180; lon += 15) GRID += `M${X(lon)} ${Y0}V${Y1}`;
 for (let lat = -45; lat <= 75; lat += 15) GRID += `M${X0} ${Y(lat)}H${X1}`;
@@ -53,11 +67,14 @@ const CABLE_D = CABLES.map((c) => ({
 
 type View = { x: number; y: number; w: number };
 
-export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCityClick, className, children }: Props) {
+export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCityClick, className, children, minW = MIN_W, layer }: Props) {
   const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null), tip = useRef<HTMLDivElement>(null);
   const cityClick = useRef(onCityClick);
   cityClick.current = onCityClick;
   const dragged = useRef(false);
+  const zoomBy = useRef<(f: number) => void>(() => {});
+  // The patches in view and the smallest town class shown, from the zoom.
+  const [det, setDet] = useState({ want: "", level: 0 });
   const pins = markers.map((m) => `${m.id}:${m.label}:${m.lon}:${m.lat}`).join("|");
   useEffect(() => declutter(svg.current!), [pins]);
 
@@ -67,14 +84,21 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
     const cur: View = { x: 0, y: 0, w: X1 - X0 }, goal: View = { ...cur };
     const clamp = (v: View) => {
       const a = ch / cw;
-      v.w = Math.min(Math.max(v.w, MIN_W), X1 - X0, (Y1 - Y0) / a);
+      v.w = Math.min(Math.max(v.w, minW), X1 - X0, (Y1 - Y0) / a);
       v.x = Math.min(Math.max(v.x, X0), X1 - v.w);
       v.y = Math.min(Math.max(v.y, Y0), Y1 - v.w * a);
     };
     const apply = () => {
       s.setAttribute("viewBox", `${cur.x} ${cur.y} ${cur.w} ${(cur.w * ch) / cw}`);
-      const k = cur.w / cw, nz = k > 0.12 ? "1" : k > 0.035 ? "2" : "3";
+      const k = cur.w / cw, nz = k > 0.12 ? "1" : k > 0.035 ? "2" : k > 5e-4 ? "3" : "4";
       s.style.setProperty("--k", String(k));
+      const f = fade(k);
+      s.style.setProperty("--o-region", String(f.region));
+      s.style.setProperty("--o-europe", String(f.europe));
+      s.style.setProperty("--o-detail", String(f.detail));
+      const lvl = townLevel(k), a = ch / cw, view = { w: cur.x / KX, e: (cur.x + cur.w) / KX, n: -cur.y, s: -(cur.y + cur.w * a) };
+      const want = f.region > 0 ? PATCHES.filter((p) => inBox(p.box, view)).map((p) => p.code).join() : "";
+      setDet((d) => (d.want === want && d.level === lvl ? d : { want, level: lvl }));
       if (nz !== z) el.dataset.z = z = nz;
     };
     const step = () => {
@@ -98,6 +122,8 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
       v.y = wy - py * v.w * a;
       clamp(v);
     };
+
+    zoomBy.current = (f) => { zoom(f, 0.5, 0.5); animate(); };
 
     const ro = new ResizeObserver(([e]) => {
       const { width, height } = e.contentRect;
@@ -134,9 +160,9 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
     const move = (e: PointerEvent) => {
       const p = pts.get(e.pointerId);
       if (!p) {
-        const c = (e.target as Element).closest<SVGElement>("[data-cable]");
+        const c = (e.target as Element).closest<SVGElement>("[data-cable], [data-tip]");
         t.hidden = !c;
-        if (c) { const r = el.getBoundingClientRect(); t.textContent = c.dataset.cable!; t.style.transform = `translate(${e.clientX - r.left + 12}px, ${e.clientY - r.top + 12}px)`; }
+        if (c) { const r = el.getBoundingClientRect(); t.textContent = c.dataset.cable ?? c.dataset.tip!; t.style.transform = `translate(${e.clientX - r.left + 12}px, ${e.clientY - r.top + 12}px)`; }
         return;
       }
       if (!dragged.current && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 4) return;
@@ -180,14 +206,17 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
   }, []);
 
   const groups = new Map<string, Marker[]>();
-  for (const m of markers) { const k = `${m.lon},${m.lat}`; groups.set(k, [...(groups.get(k) ?? []), m]); }
+  for (const m of markers) { const k = `${m.zoom},${m.lon},${m.lat}`; groups.set(k, [...(groups.get(k) ?? []), m]); }
 
   return (
     <div ref={wrap} className={`wm ${className ?? ""}`}>
       <svg ref={svg} role="group" aria-label="World map" onClickCapture={(e) => { if (dragged.current) { e.stopPropagation(); dragged.current = false; } }}>
-        <Base onCity={(c) => cityClick.current?.(c)} />
+        <BaseLand />
+        <RegionLayer want={det.want ? det.want.split(",") : []} level={det.level} onDraw={() => svg.current && declutter(svg.current)} />
+        <BaseTop onCity={(c) => cityClick.current?.(c)} />
+        {layer}
         {[...groups.values()].map((g) => (
-          <g key={g[0].id} transform={`translate(${X(g[0].lon)} ${Y(g[0].lat)})`}>
+          <g key={g[0].id} className={g[0].zoom ? `wm-${g[0].zoom}` : undefined} transform={`translate(${XF(g[0].lon)} ${Y(g[0].lat)})`}>
             <g className="wm-s">
               {g[0].kind === "datacenter"
                 ? g.map((m, i) => <Pin key={m.id} m={m} y={-i * 24} onClick={() => onMarkerClick?.(m.id)} />)
@@ -197,42 +226,85 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
         ))}
       </svg>
       <div ref={tip} className="wm-tip" hidden />
+      <div className="wm-zoom">
+        <button type="button" aria-label={t("map.zoomIn")} title={t("map.zoomIn")} onClick={() => zoomBy.current(0.5)}><Plus size={14} /></button>
+        <button type="button" aria-label={t("map.zoomOut")} title={t("map.zoomOut")} onClick={() => zoomBy.current(2)}><Minus size={14} /></button>
+      </div>
       {children}
     </div>
   );
 }
 
-// Hides city names that a pin or its label covers; the names keep their size, so they are measured while hidden.
+const meets = (a: DOMRect) => (b: DOMRect) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+// Moves a pin's label to its left side when the right side runs into another pin or label, then hides city names that a pin
+// or its label covers; the names keep their size, so they are measured while hidden.
 function declutter(s: SVGSVGElement) {
-  const pins = [...s.querySelectorAll(".wm-pin")].map((p) => p.getBoundingClientRect());
-  const cities = [...s.querySelectorAll<SVGGElement>(".wm-city")].map((c) => [c, c.querySelector("text")!.getBoundingClientRect()] as const);
-  for (const [c, r] of cities) {
-    c.classList.toggle("wm-covered", r.width > 0 && pins.some((p) => r.left < p.right && r.right > p.left && r.top < p.bottom && r.bottom > p.top));
+  const all = [...s.querySelectorAll<SVGGElement>(".wm-pin")], labels: DOMRect[] = [];
+  const dots = all.map((p) => p.querySelector("circle")!.getBoundingClientRect());
+  all.forEach((p, i) => {
+    const l = p.querySelector<SVGTextElement>(".wm-plabel")!;
+    const free = (r: DOMRect) => !labels.some(meets(r)) && !dots.some((d, j) => j !== i && d.width > 0 && meets(r)(d));
+    flip(p, false);
+    let r = l.getBoundingClientRect();
+    if (r.width === 0) return;
+    if (!free(r)) { flip(p, true); const left = l.getBoundingClientRect(); if (free(left)) r = left; else flip(p, false); }
+    labels.push(r);
+  });
+  const pins = all.map((p) => p.getBoundingClientRect());
+  for (const c of s.querySelectorAll<SVGGElement>(".wm-city")) {
+    const r = c.querySelector("text")!.getBoundingClientRect();
+    c.classList.toggle("wm-covered", r.width > 0 && pins.some(meets(r)));
   }
+  // Town names yield to pins, city names and larger towns; towns come largest first.
+  const kept = [...pins, ...[...s.querySelectorAll<SVGTextElement>(".wm-city:not(.wm-covered) text, .wm-country")].map((x) => x.getBoundingClientRect()).filter((x) => x.width > 0)];
+  const towns = [...s.querySelectorAll<SVGGElement>(".rg-town")];
+  const hide = towns.map((g) => {
+    const r = g.querySelector("text")!.getBoundingClientRect();
+    if (r.width === 0 || kept.some(meets(r))) return true;
+    kept.push(r);
+    return false;
+  });
+  towns.forEach((g, i) => g.classList.toggle("rg-hidden", hide[i]));
+}
+
+function flip(p: SVGGElement, left: boolean) {
+  const l = p.querySelector(".wm-plabel")!, plane = p.querySelector(".wm-plane"), x = plane ? 29 : 15;
+  l.setAttribute("x", String(left ? -x : x));
+  l.setAttribute("text-anchor", left ? "end" : "start");
+  plane?.setAttribute("transform", `translate(${left ? -21 : 21} 0)${left ? " scale(-1 1)" : ""}`);
 }
 
 function Pin({ m, y, onClick }: { m: Marker; y: number; onClick: () => void }) {
   return (
-    <g className={`wm-pin wm-${m.kind}${m.selected ? " sel" : ""}`} transform={`translate(0 ${y})`} role="button" tabIndex={0} aria-label={m.label} aria-pressed={m.selected}
+    <g className={`wm-pin wm-${m.kind}${m.selected ? " sel" : ""}`} transform={`translate(0 ${y})`} role="button" tabIndex={0} aria-label={m.label} data-tip={m.hint} aria-pressed={m.selected}
       onClick={onClick} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}>
-      <title>{m.label}</title>
+      {!m.hint && <title>{m.label}</title>}
       <circle r="10" />
       <g transform="translate(-7 -7)">
-        {m.kind === "datacenter" ? <Warehouse width={14} height={14} strokeWidth={1.75} /> : <Logo provider={m.kind === "basement" ? null : m.provider ?? null} size={14} />}
+        {m.kind === "datacenter" && !(m.provider && hasMark(m.provider)) ? <Warehouse width={14} height={14} strokeWidth={1.75} /> : <Logo provider={m.kind === "basement" ? null : m.provider ?? null} size={14} />}
       </g>
       {(m.count ?? 0) > 1 && <g className="wm-badge" transform="translate(9 -8)"><circle r="6" /><text y="3">{m.count}</text></g>}
       {m.alert && <circle className="wm-alert" cx="7.5" cy="-7.5" r="3.5" />}
-      <text className="wm-plabel" x="15" y="4">{m.label}</text>
+      {m.plane && <path className="wm-plane" transform="translate(21 0)" d="M6 0L4-1H1L-2-5H-3.5L-1.5-1H-4.5L-6-2.5H-7L-6 0L-7 2.5H-6L-4.5 1H-1.5L-3.5 5H-2L1 1H4Z" />}
+      <text className="wm-plabel" x={m.plane ? 29 : 15} y="4">{m.label}</text>
     </g>
   );
 }
 
 // Coast, graticule, cables and cities never change, so they render once.
-const Base = memo(function Base({ onCity }: { onCity: (c: City) => void }) {
+const BaseLand = memo(function BaseLand() {
   return (
     <>
       <path className="wm-grat" d={GRID} />
       <path className="wm-land" d={LAND} />
+    </>
+  );
+});
+const BaseTop = memo(function BaseTop({ onCity }: { onCity: (c: City) => void }) {
+  return (
+    <>
+      <WorldGeo />
       <clipPath id="wm-world"><rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} /></clipPath>
       <g className="wm-cables" clipPath="url(#wm-world)">
         {CABLE_D.map((c) => (
@@ -244,10 +316,39 @@ const Base = memo(function Base({ onCity }: { onCity: (c: City) => void }) {
       <g className="wm-cities">
         {CITIES.map((c) => (
           <g key={c.code} className={`wm-city wm-t${c.tier}`} transform={`translate(${X(c.lon)} ${Y(c.lat)})`} onClick={() => onCity(c)}>
-            <g className="wm-s"><circle r="2.2" /><text x="5" y="3.5">{c.name}</text></g>
+            <g className="wm-s"><circle r="2.2" /><text x="5" y="3.5">{cityName(c.name)}</text></g>
           </g>
         ))}
       </g>
     </>
   );
 }, () => true);
+
+type WorldGeoData = typeof import("./world-geo");
+export const lines = (ls: [number, number][][], close = false) => ls.map((l) => "M" + l.map(([lon, lat]) => `${X(lon)} ${Y(lat)}`).join("L") + (close ? "Z" : "")).join("");
+
+// Lakes, rivers and borders, with country names in the interface language; loaded after the first paint.
+export function WorldGeo() {
+  const [g, setG] = useState<WorldGeoData | null>(null), [eu, setEu] = useState<Awaited<ReturnType<typeof loadRegion>>>(null);
+  useEffect(() => { void import("./world-geo").then(setG); void loadRegion("europe").then(setEu); }, []);
+  if (!g) return null;
+  const names = new Intl.DisplayNames(LOCALE, { type: "region" });
+  return (
+    <>
+      {/* Europe draws its lakes and rivers from the finer regional data. */}
+      <clipPath id="wm-noeu"><path clipRule="evenodd" d={`M${X0} ${Y0}H${X1}V${Y1}H${X0}ZM${X(EU.w)} ${Y(EU.n)}H${X(EU.e)}V${Y(EU.s)}H${X(EU.w)}Z`} /></clipPath>
+      <g clipPath={eu ? "url(#wm-noeu)" : undefined}>
+        <path className="wm-lake" d={lines(g.LAKES, true)} />
+        <path className="wm-river" d={lines(g.RIVERS)} />
+      </g>
+      {eu && <><path className="wm-lake" d={shape(eu.lake, true)} /><path className="wm-river" d={shape(eu.river, false)} /></>}
+      <path className="wm-admin" d={lines(g.REGION_LINES)} />
+      <path className="wm-border" d={lines(g.BORDERS)} />
+      <g className="wm-countries">
+        {g.COUNTRIES.map(([iso, lon, lat, rank]) => (
+          <g key={`${iso}${lon}`} className={`wm-r${rank}`} transform={`translate(${X(lon)} ${Y(lat)})`}><g className="wm-s"><text className="wm-country">{names.of(iso)}</text></g></g>
+        ))}
+      </g>
+    </>
+  );
+}

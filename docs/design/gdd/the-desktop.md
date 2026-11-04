@@ -1,6 +1,6 @@
 # The desktop
 
-The whole game is a macOS-style desktop. Every system is an app in the dock that opens in its own window, and notifications slide in at the top right so you always know what is happening.
+The game opens in the basement, and clicking the PC on the desk opens a macOS-style desktop. Every system is an app in the dock that opens in its own window, and notifications slide in at the top right so you always know what is happening.
 
 &#91;embedded content: desktop mock-up · menu bar, two windows, notifications, dock\]
 
@@ -18,7 +18,7 @@ The menu bar holds the time controls, date and cash. The game saves itself in th
 
 | App | What it does |
 | --- | --- |
-| Locations | Grid of your locations; opens room views and rack front views |
+| Locations | Grid of your locations; opens rack front views. The room view lives in the world: Stand up in the logo menu or the Room button in Locations walks you into it, and Escape or the PC brings you back. |
 | Shop | Servers, switches and patch panels by manufacturer and class, new or used, bought into storage |
 | Network | Europe map, uplinks, topology view, DDoS protection |
 | Products | Product lines, software licenses, clusters |

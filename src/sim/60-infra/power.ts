@@ -2,14 +2,16 @@
 import { nowHours } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
-import { CONTINUOUS } from "../20-world/datacenters";
-import type { Device, GameState, MachineState } from "../50-state";
+import { CONTINUOUS, datacenterById } from "../20-world/datacenters";
+import type { Device, GameState, Location, MachineState } from "../50-state";
+import { HALL } from "../20-world/properties";
+import { shiftTechs } from "./properties";
 import { pushLog } from "./syslog";
 import { dropCluster, insideVm, installingOn, isOwnVm, type Workload } from "./cluster";
 import { rebuildHours, type SimEvent } from "../88-tick/tick";
 import { reportLoss } from "../85-products/products";
 import { loadSaved } from "./switches";
-import { bootHours, booting, haltHours, osBootHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, readOnlySweep, takesShutdown } from "./status";
+import { bootHours, booting, haltHours, osBootHours, deviceHealth, drivesOf, dualFed, HOURS_PER_YEAR, locationOf, powered, pluggedIn, psusOf, rackPower, readOnlySweep, roomPower, takesShutdown } from "./status";
 
 // An unclean stop corrupts the data of the workloads that ran with this chance.
 export const CORRUPT_CHANCE = 0.15;
@@ -121,9 +123,9 @@ export function haltTick(s: GameState): void {
     : { ...w, haltUntil: undefined, reboot: undefined, ...(w.reboot ? { bootUntil: now + osBootHours(s, w) } : { stopped: true }) });
 }
 
-// Every minute: a feed above its limit trips at once, one above its continuous load after CONTINUOUS.hours. Servers on the
-// tripped feed lose power and stay off; dual-fed servers move to the other feed, which trips too if it cannot carry them.
-// The breaker resets once the servers no longer draw. Network gear comes back by itself.
+// Every minute: a feed above its continuous load trips after CONTINUOUS.hours. Servers on the tripped feed lose power and
+// stay off; dual-fed servers move to the other feed, which trips too if it cannot carry them. The breaker resets once the
+// servers no longer draw. Network gear comes back by itself. A feed above its limit trips the room's main breaker (breakerTick).
 export function tripTick(s: GameState): SimEvent[] {
   const isServer = (d: Device) => d.on && modelById(d.model).kind === "server";
   const now = nowHours(s), events: SimEvent[] = [], out = new Set<string>();
@@ -133,8 +135,8 @@ export function tripTick(s: GameState): SimEvent[] {
     const p = servers.length ? rackPower(s, r.id) : null;
     const since = (load: number, at: number | null) => (p && load > CONTINUOUS.share * p.limitWatts ? at ?? now : null);
     const overSince = { a: since(p?.a ?? 0, r.overSince.a), b: since(p?.b ?? 0, r.overSince.b) };
-    const trips = (load: number, at: number | null) => !!p && (load > p.limitWatts || (at !== null && now - at >= CONTINUOUS.hours));
-    const feed = trips(p?.a ?? 0, overSince.a) ? "A" : trips(p?.b ?? 0, overSince.b) ? "B" : null;
+    const trips = (at: number | null) => !!p && at !== null && now - at >= CONTINUOUS.hours;
+    const feed = trips(overSince.a) ? "A" : trips(overSince.b) ? "B" : null;
     if (feed && p) {
       // Feed B carries only the dual-fed halves, feed A everything else.
       const all = !r.feedB || (feed === "A" ? 2 * p.b : p.a + p.b) > p.limitWatts;
@@ -155,6 +157,66 @@ export function tripTick(s: GameState): SimEvent[] {
     return n;
   });
   return events;
+}
+
+// Hours a room stays over its limit before its main breaker trips.
+export const TRIP_HOURS = 1;
+
+const setRoom = (s: GameState, id: string, patch: Partial<Location>) => {
+  s.locations = s.locations.map((l) => (l.id === id ? { ...l, ...patch } : l));
+};
+const roomDevices = (s: GameState, loc: Location) => s.devices.filter((d) => d.on && d.rackId && locationOf(s, d)?.id === loc.id);
+
+// Every minute: a room over its limit for TRIP_HOURS trips its main breaker and every device in it loses power, staying
+// switched on to come back with the reset. A datacenter's remote hands reset it after their response time and bill an hour.
+export function breakerTick(s: GameState): SimEvent[] {
+  const now = nowHours(s), events: SimEvent[] = [];
+  const over = readOnlySweep(s, () => new Set(s.locations.filter((l) => !l.tripped && roomPower(s, l).over).map((l) => l.id)));
+  for (const loc of s.locations) {
+    if (loc.tripped) {
+      const own = s.properties.find((q) => q.hall?.locationId === loc.id);
+      if (own?.hall) {
+        // An on-shift technician of the hall resets it; wall screens make it faster.
+        const wait = (own.hall.items.some((i) => i.kind === "screen") ? HALL.noc.resetMinScreens : HALL.noc.resetMin) / 60;
+        if (!shiftTechs(s, loc.id).length || now < (loc.trippedAt ?? now) + wait) continue;
+        closeBreaker(s, loc);
+        events.push({ app: "Locations", key: "event.hallBreakerReset", params: { location: loc.name } });
+        continue;
+      }
+      if (!loc.dc) continue;
+      const hands = datacenterById(loc.dc).remoteHands;
+      if (now < (loc.trippedAt ?? now) + hands.responseHours) continue;
+      s.cash = Math.round((s.cash - hands.perHour) * 100) / 100;
+      s.ledger.push({ hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device: loc.name, hours: 1, dc: loc.dc, done: s.hour }, amount: -hands.perHour });
+      closeBreaker(s, loc);
+      events.push({ app: "Locations", key: "event.breakerReset", params: { location: loc.name, fee: hands.perHour } });
+    } else if (!over.has(loc.id)) {
+      if (loc.overSince !== undefined) setRoom(s, loc.id, { overSince: undefined });
+    } else if (loc.overSince === undefined) setRoom(s, loc.id, { overSince: now });
+    else if (now - loc.overSince >= TRIP_HOURS) {
+      // The cut reads the devices as they ran, so it comes before the room goes dark.
+      const cut = new Set(roomDevices(s, loc).map((d) => d.id));
+      s.devices = s.devices.map((d) => {
+        if (!cut.has(d.id)) return d;
+        const n = { ...d, bootUntil: undefined, haltUntil: undefined };
+        losePower(s, n);
+        return n;
+      });
+      setRoom(s, loc.id, { tripped: true, overSince: undefined, trippedAt: now });
+      const hall = s.properties.find((p) => p.hall?.locationId === loc.id)?.hall;
+      if (hall) hall.outage = true;
+      events.push({ app: "Locations", key: "event.roomTripped", params: { location: loc.name } });
+    }
+  }
+  return events;
+}
+
+// Closes a tripped room's main breaker; its devices boot one after another, a minute apart, in the order they stand.
+export function closeBreaker(s: GameState, loc: Location): void {
+  setRoom(s, loc.id, { tripped: false, overSince: undefined, trippedAt: undefined });
+  const back = new Set(roomDevices(s, loc).map((d) => d.id)), now = nowHours(s);
+  let i = 0;
+  s.devices = s.devices.map((d) => (back.has(d.id) ? { ...d, bootUntil: now + i++ / 60 + bootHours(s, d) } : d));
 }
 
 export function bootUp(s: GameState, d: Device): void {

@@ -5,7 +5,7 @@ import { newGame } from "../src/sim/50-state";
 import { transferHost, transferHours, transferMinutes, transferTick } from "../src/sim/60-infra/transfers";
 import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
-import { startTransfer } from "../src/sim/90-actions/webpanel";
+import { startWebTransfer } from "../src/sim/90-actions/webpanel";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { panelServer, withServer } from "./fixtures";
 
@@ -44,18 +44,18 @@ describe("account transfers", () => {
     expect(transferMinutes(25)).toBe(15 + 5 * 3);
     const { s, host, id } = world();
     const before = s.playerBusyUntil, gb = s.services.find((v) => v.id === id)!.spec.diskGb;
-    ok(startTransfer(s, host, id));
+    ok(startWebTransfer(s, host, id));
     const x = s.webpanel.transfers[id];
     expect(x).toMatchObject({ from: "old-host-7.example", status: "running", doneAt: s.hour + transferHours(gb) });
     expect(s.playerBusyUntil).toBeGreaterThan(before);
-    expect(startTransfer(s, host, id)).toEqual({ ok: false, error: "error.transferStarted" });
+    expect(startWebTransfer(s, host, id)).toEqual({ ok: false, error: "error.transferStarted" });
   });
 
   it("refuses accounts without a flag and hosts that are not cPanic", () => {
     const a = world({ transferFrom: undefined });
-    expect(startTransfer(a.s, a.host, a.id)).toEqual({ ok: false, error: "error.noTransfer" });
+    expect(startWebTransfer(a.s, a.host, a.id)).toEqual({ ok: false, error: "error.noTransfer" });
     const b = world({}, "pleskit");
-    expect(startTransfer(b.s, b.host, b.id)).toEqual({ ok: false, error: "error.notCpanic" });
+    expect(startWebTransfer(b.s, b.host, b.id)).toEqual({ ok: false, error: "error.notCpanic" });
   });
 
   it("ends in time, raising happiness when quick, and fails more often behind on PHP", () => {
@@ -63,7 +63,7 @@ describe("account transfers", () => {
     for (let seed = 1; seed <= 200; seed++) {
       const { s, host, id, cust } = copy();
       s.seed = seed;
-      ok(startTransfer(s, host, id));
+      ok(startWebTransfer(s, host, id));
       const happy = s.customers.find((c) => c.id === cust)!.happiness;
       transferTick(s);
       expect(s.webpanel.transfers[id].status).toBe("running");
@@ -83,11 +83,11 @@ describe("account transfers", () => {
     for (let seed = 1; seed < 400; seed++) {
       const { s, host, id } = copy();
       s.seed = seed;
-      ok(startTransfer(s, host, id));
+      ok(startWebTransfer(s, host, id));
       s.hour = s.webpanel.transfers[id].doneAt;
       transferTick(s);
       if (s.webpanel.transfers[id].status !== "failed") continue;
-      ok(startTransfer(s, host, id));
+      ok(startWebTransfer(s, host, id));
       expect(s.webpanel.transfers[id].status).toBe("running");
       expect(s.tickets.filter((t) => t.topic === "transferFailed" && t.status !== "resolved")).toHaveLength(0);
       return;
@@ -97,7 +97,7 @@ describe("account transfers", () => {
 
   it("keeps transfers through a save and drops ended services", () => {
     const { s, host, id } = world();
-    ok(startTransfer(s, host, id));
+    ok(startWebTransfer(s, host, id));
     const back = deserialize(serialize(s));
     expect(back.webpanel.transfers[id]).toEqual(s.webpanel.transfers[id]);
     back.services = back.services.map((v) => (v.id === id ? { ...v, endedAt: back.hour } : v));

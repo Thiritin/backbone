@@ -8,6 +8,7 @@ import {
 import { OP_TASK, queueOp, taskFor, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
 import { anchorOf, clusterOf } from "../60-infra/cluster";
+import { freeDesk } from "../60-infra/properties";
 import { locationOf } from "../60-infra/status";
 import { phpDue } from "./clusters";
 import { updateDue } from "./software";
@@ -45,10 +46,12 @@ export function hire(s: GameState, candidateId: string, team = s.teams[0]?.id): 
   if (!s.teams.some((t) => t.id === team)) return fail("error.unknownTeam");
   const mail = hireTenant(s);
   if (!mail) return fail("error.hireNoMailbox");
+  const desk = freeDesk(s);
+  if (!desk) return fail("error.noFreeDesk");
   const e: Employee = {
     id: `emp${s.nextId++}`, name: c.name, role: c.role, skill: c.skill, talent: c.talent, salary: c.salary, hiredAt: s.hour, assignment: "queue",
     location: c.role === "technician" ? s.locations[0]?.id ?? null : null,
-    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, team, worked: 0,
+    trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: s.hour + YEAR, refusedAt: null, team, worked: 0, desk,
   };
   s.candidates = s.candidates.filter((x) => x.id !== c.id);
   s.staff = [...s.staff, e];
@@ -141,6 +144,13 @@ export function setTechLocation(s: GameState, id: string, locationId: string): A
   if (!e) return fail("error.unknownEmployee");
   if (e.role !== "technician") return fail("error.notTechnician");
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
+  const hall = s.properties.find((p) => p.hall?.locationId === locationId);
+  // A technician at an own hall sits at one of its NOC seats.
+  if (hall && e.desk?.propertyId !== hall.id) {
+    const desk = freeDesk(s, hall.id);
+    if (!desk) return fail("error.noFreeDesk");
+    e.desk = desk;
+  }
   e.location = locationId;
   return { ok: true };
 }
@@ -220,4 +230,13 @@ export function cancelOperation(s: GameState, id: string): ActionResult {
 export function setTechRules(s: GameState, rules: Partial<TechRules>): ActionResult {
   s.techRules = { ...s.techRules, ...rules };
   return { ok: true };
+}
+
+// Picking up the ringing phone.
+export function answerCall(s: GameState, callId: string): ActionResult {
+  const c = s.calls.find((x) => x.id === callId && x.answeredAt === null);
+  if (!c) return fail("error.unknownCall");
+  const answeredAt = s.hour * 60 + s.minute;
+  s.calls = s.calls.map((x) => (x === c ? { ...x, answeredAt } : x));
+  return { ok: true, id: c.id };
 }

@@ -6,9 +6,12 @@ import { type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addLocation, buyCart as buyCartReal, buyDevice as buyReal, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, newGame, onSaleAt } from "./fixtures";
+import { buyDevice, newGame, onSaleAt, settle } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { withServer } from "./fixtures";
+import { newGame as blankGame } from "../src/sim/50-state";
+
+const funded = (s: GameState): GameState => ({ ...s, cash: START_CASH });
 
 const atYear = (year: number, cash = 1_000_000): GameState => ({ ...withServer(newGame(1)), hour: hourOf(new Date(Date.UTC(year, 0, 1))), cash });
 const ok = (r: ReturnType<typeof buyDevice>) => {
@@ -82,17 +85,17 @@ describe("catalog", () => {
 });
 
 describe("new game", () => {
-  it("starts with an empty basement rack, the line jack and the flat's router in storage", () => {
-    const s = newGame(3);
+  it("starts with the basement shelf, the line jack and the flat's router on the shelf's top board", () => {
+    const s = funded(blankGame(3));
     expect(s.cash).toBe(START_CASH);
-    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 1, readyAt: 0, extraCircuit: false }]);
-    expect(s.racks).toEqual([{ id: "rack2", model: "rack-24", locationId: "loc1", position: 1, name: "fra1-rack-01", arriveAt: null, price: 350, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }]);
+    expect(s.locations).toEqual([{ id: "loc1", dc: null, city: "Frankfurt", az: "fra1", name: "Basement", space: "basement", positions: 3, readyAt: 0, extraCircuit: false, tripped: false }]);
+    expect(s.racks).toEqual([{ id: "rack2", model: "shelf", locationId: "loc1", position: 1, name: "Shelf", arriveAt: null, price: 0, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null } }]);
     expect(s.devices.map((d) => [d.model, d.brand, d.name, d.rackId, d.panel, d.price, d.boughtAt])).toEqual([
-      ["home-router", "AVN", "fra1-gw-01", null, null, 0, 0],
+      ["home-router", "AVN", "fra1-gw-01", "rack2", null, 0, 0],
       ["line-jack", "", "fra1-line-01", null, "loc1", 0, 0],
     ]);
-    expect(s.devices[0].store).toBe("loc1");
-    expect(freeSlots(s, "rack2", 1)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1));
+    expect(s.devices[0]).toMatchObject({ store: null, slot: 5 });
+    expect(freeSlots(s, "rack2", 1)).toEqual([1, 2, 3, 4]);
     expect(portPeers(s, "dev5")).toEqual([null, null, null, null, null]);
   });
 });
@@ -103,7 +106,7 @@ describe("buyDevice and storage", () => {
     const first = ok(buyDevice(s, "g1-compute", "Dwell", 3, "loc1"));
     expect(first).toBe("dev8");
     expect(s.cash).toBe(2500);
-    expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "Balanced 1U G1", qty: 3 }, amount: -7500 }]);
+    expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "PowerEdgy 1850", qty: 3 }, amount: -7500 }]);
     expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "Dwell", name: "fra1-srv-02", price: 2500, boughtAt: s.hour });
     ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(storageStacks(s, "loc1")).toEqual([
@@ -162,10 +165,12 @@ describe("mounting", () => {
     ok(setBond(s, "dev3", "balance"));
     ok(setPortGroup(s, "dev4", [2, 3]));
     ok(unmountDevice(s, "dev4"));
+    settle(s);
     expect(dev(s, "dev4")).toMatchObject({ rackId: null, panel: null, name: "fra1-sw-01", groups: [[2, 3]] });
     expect(s.cables.map((c) => c.id)).toEqual(["cab-line"]);
     expect(linkStatus(s, "dev3").online).toBe(false);
     ok(unmountDevice(s, "dev3"));
+    settle(s);
     expect(dev(s, "dev3").bond).toBe("balance");
     expect(err(unmountDevice(s, "dev3"))).toBe("error.notMounted");
     expect(err(unmountDevice(s, "dev6"))).toBe("error.notMounted");
@@ -200,9 +205,9 @@ describe("connect", () => {
     const swA = mounted(s, "sw-48", a, 41);
     const swB = mounted(s, "sw-48", b, 41);
     const kind = (r: ReturnType<typeof connect>) => s.cables.find((c) => c.id === ok(r))!.kind;
-    expect(kind(connect(s, { device: swA, port: 0 }, { device: handoff, port: 0 }))).toBe("copper");
-    expect(kind(connect(s, { device: srv, port: 0 }, { device: swA, port: 48 }))).toBe("dac");
-    expect(kind(connect(s, { device: swA, port: 49 }, { device: swB, port: 48 }))).toBe("fiber");
+    expect(kind(connect(s, { device: swA, port: 0 }, { device: handoff, port: 0 }, true))).toBe("copper");
+    expect(kind(connect(s, { device: srv, port: 0 }, { device: swA, port: 48 }, true))).toBe("dac");
+    expect(kind(connect(s, { device: swA, port: 49 }, { device: swB, port: 48 }, true))).toBe("fiber");
   });
   it("rejects every invalid cable", () => {
     const s = atYear(2011);
@@ -211,20 +216,21 @@ describe("connect", () => {
     const srv = mounted(s, "g3-compute", a, 1);
     const sw = mounted(s, "sw-48", a, 41);
     const stored = ok(buyDevice(s, "sw-48", "Sysko", 1, "loc1"));
-    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 48 }));
-    expect(err(connect(s, { device: "x", port: 0 }, { device: sw, port: 1 }))).toBe("error.unknownDevice");
-    expect(err(connect(s, { device: srv, port: 9 }, { device: sw, port: 1 }))).toBe("error.unknownPort");
-    expect(err(connect(s, { device: sw, port: 2 }, { device: sw, port: 1 }))).toBe("error.sameDevice");
-    expect(err(connect(s, { device: srv, port: 0 }, { device: sw, port: 49 }))).toBe("error.portInUse");
-    expect(err(connect(s, { device: sw, port: 0 }, { device: "dev4", port: 1 }))).toBe("error.otherLocation");
-    expect(err(connect(s, { device: sw, port: 0 }, { device: stored, port: 1 }))).toBe("error.notMounted");
-    expect(err(connect(s, { device: srv, port: 1 }, { device: sw, port: 0 }))).toBe("error.mediaMismatch");
+    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 48 }, true));
+    expect(err(connect(s, { device: "x", port: 0 }, { device: sw, port: 1 }, true))).toBe("error.unknownDevice");
+    expect(err(connect(s, { device: srv, port: 9 }, { device: sw, port: 1 }, true))).toBe("error.unknownPort");
+    expect(err(connect(s, { device: sw, port: 2 }, { device: sw, port: 1 }, true))).toBe("error.sameDevice");
+    expect(err(connect(s, { device: srv, port: 0 }, { device: sw, port: 49 }, true))).toBe("error.portInUse");
+    expect(err(connect(s, { device: sw, port: 0 }, { device: "dev4", port: 1 }, true))).toBe("error.otherLocation");
+    expect(err(connect(s, { device: sw, port: 0 }, { device: stored, port: 1 }, true))).toBe("error.notMounted");
+    expect(err(connect(s, { device: srv, port: 1 }, { device: sw, port: 0 }, true))).toBe("error.mediaMismatch");
     const sw24 = mounted(s, "sw-24", a, 40);
-    expect(err(connect(s, { device: srv, port: 1 }, { device: sw24, port: 24 }))).toBe("error.speedMismatch");
+    expect(err(connect(s, { device: srv, port: 1 }, { device: sw24, port: 24 }, true))).toBe("error.speedMismatch");
   });
   it("disconnects", () => {
     const s = withServer(newGame(1));
     ok(disconnect(s, "cab6"));
+    settle(s);
     expect(linkStatus(s, "dev3").online).toBe(false);
     expect(err(disconnect(s, "cab6"))).toBe("error.unknownCable");
   });
@@ -236,9 +242,9 @@ describe("linkStatus", () => {
     const { racks: [rack], handoff } = colo(s);
     const srv = mounted(s, "g1-compute", rack, 1);
     const sw = mounted(s, "sw-24", rack, 41);
-    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 0 }));
+    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 0 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
-    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 1 }));
+    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 1 }, true));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: null });
     expect(linkStatus(s, sw).online).toBe(true);
   });
@@ -246,13 +252,13 @@ describe("linkStatus", () => {
     const s = atYear(2005);
     const { racks: [a, b], handoff } = colo(s, 2);
     const sw = mounted(s, "sw-24", a, 41);
-    ok(connect(s, { device: sw, port: 0 }, { device: handoff, port: 0 }));
+    ok(connect(s, { device: sw, port: 0 }, { device: handoff, port: 0 }, true));
     const srv = mounted(s, "g1-compute", b, 1);
     const pp = mounted(s, "patch-24", b, 41);
-    ok(connect(s, { device: srv, port: 0 }, { device: pp, port: 3 }));
-    ok(connect(s, { device: pp, port: 4 }, { device: sw, port: 5 }));
+    ok(connect(s, { device: srv, port: 0 }, { device: pp, port: 3 }, true));
+    ok(connect(s, { device: pp, port: 4 }, { device: sw, port: 5 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
-    ok(connect(s, { device: pp, port: 27 }, { device: sw, port: 6 }));
+    ok(connect(s, { device: pp, port: 27 }, { device: sw, port: 6 }, true));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: null });
   });
   it("adds up a grouped balance bond and warns when the switch ports are not grouped", () => {
@@ -260,9 +266,9 @@ describe("linkStatus", () => {
     const { racks: [rack], handoff } = colo(s);
     const srv = mounted(s, "g1-compute", rack, 1);
     const sw = mounted(s, "sw-24", rack, 41);
-    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }));
-    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 0 }));
-    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }));
+    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }, true));
+    ok(connect(s, { device: srv, port: 0 }, { device: sw, port: 0 }, true));
+    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }, true));
     expect(linkStatus(s, srv).gbit).toBe(1);
     ok(setBond(s, srv, "balance"));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: "bondNotGrouped" });
@@ -274,10 +280,10 @@ describe("linkStatus", () => {
     const { racks: [rack], handoff } = colo(s);
     const srv = mounted(s, "g1-compute", rack, 1);
     const sw = mounted(s, "sw-24", rack, 41);
-    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }));
+    ok(connect(s, { device: sw, port: 23 }, { device: handoff, port: 0 }, true));
     const dead = mounted(s, "sw-24", rack, 40);
-    ok(connect(s, { device: srv, port: 0 }, { device: dead, port: 0 }));
-    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }));
+    ok(connect(s, { device: srv, port: 0 }, { device: dead, port: 0 }, true));
+    ok(connect(s, { device: srv, port: 1 }, { device: sw, port: 1 }, true));
     expect(linkStatus(s, srv).online).toBe(false);
     ok(setBond(s, srv, "failover"));
     expect(linkStatus(s, srv)).toEqual({ online: true, gbit: 1, warning: null });
@@ -320,7 +326,8 @@ describe("mount over a clicked unit", () => {
     expect(mountFrom(s, rack, 2, 3, 10)).toBe(5);
     expect(mountFrom(s, rack, 2, 1, 4)).toBeUndefined();
     expect(mountMax(s, rack, 2, 5, 3)).toBe(1);
-    expect(mountMax(s, rack, 2, 5, 47)).toBe(5);
+    expect(mountMax(s, rack, 2, 5, 47)).toBe(0);
+    expect(mountMax(s, rack, 2, 5, 46)).toBe(5);
   });
 });
 
@@ -328,7 +335,7 @@ describe("delivery wait", () => {
   it("falls from 72 hours in 2005 to 24 in 2015 and stays there", () => {
     expect([2005, 2010, 2015, 2024].map(deliveryHours)).toEqual([72, 48, 24, 24]);
   });
-  it("lands the purchases of a company without a server at once", () => {
+  it("lands the purchases of a company without a server at once, in storage", () => {
     const s = { ...newGame(1), cash: 100_000 };
     const first = ok(buyReal(s, "g1-compute", "Dwell", 2, "loc1"));
     expect(dev(s, first)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
@@ -345,7 +352,6 @@ describe("delivery wait", () => {
       const events = tick(s);
       expect(events).toContainEqual(expect.objectContaining({ key: "event.stockArrived", params: { count: 1, location: "Basement" } }));
       expect(dev(s, id)).toMatchObject({ store: "loc1", transitTo: null, arriveAt: null });
-      expect(err(mountDevice(s, id, "rack2", 5))).toBe("ok");
     }
   });
   it("delays a cart on cash or lease alike", () => {

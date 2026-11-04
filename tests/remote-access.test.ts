@@ -13,7 +13,7 @@ import { resolve } from "../src/sim/80-business/browser";
 import { connect, remotePower, reset, setPortGroup, setPower } from "../src/sim/90-actions/hardware";
 import { continueBoot, fitAtx, recoverGear, setUplink, updateFirmware } from "../src/sim/90-actions/remote";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { readyGame } from "./fixtures";
+import { readyGame, settle } from "./fixtures";
 
 // readyGame: dev3 a G1 Dwell server on dev4 (sw-8) port 0, dev4 port 7 on the home router dev5, all in rack2.
 const at = (year: number): GameState => {
@@ -29,7 +29,10 @@ const add = (s: GameState, id: string, model: string, brand: string, slot: numbe
 const err = (r: object) => (r as { error?: string }).error;
 const must = (r: { ok: boolean }) => { expect(err(r)).toBeUndefined(); expect(r.ok).toBe(true); };
 const oob = (s: GameState, id: string, kind: string, n = 0) => OOB_PORT + oobPorts(modelById(dev(s, id).model)).map((p, i) => [p, i] as const).filter(([p]) => p === kind)[n][1];
-const cable = (s: GameState, a: string, ap: number, b: string, bp: number) => must(connect(s, { device: a, port: ap }, { device: b, port: bp }));
+const cable = (s: GameState, a: string, ap: number, b: string, bp: number) => {
+  must(connect(s, { device: a, port: ap }, { device: b, port: bp }));
+  settle(s);
+};
 // The location becomes a datacenter, so hand work goes to remote hands.
 const inDc = (s: GameState) => { s.locations[0].dc = DATACENTERS[0].id; return datacenterById(DATACENTERS[0].id).remoteHands; };
 // A PiKVN on the data switch, its output on the server's console end.
@@ -175,6 +178,8 @@ describe("out-of-band management", () => {
     const { s } = hungSwitch();
     consoleServer(s);
     expect(consoleVia(s, "dev4")?.device.id).toBe("dev92");
+    // Recovery counts from the full hour, so the cabling work must not leave the clock mid-hour.
+    s.minute = 0;
     must(recoverGear(s, "dev4"));
     expect(dev(s, "dev4").hands ?? null).toBeNull();
     expect(working(s, "dev4")).toBe(false);

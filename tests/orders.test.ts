@@ -1,160 +1,177 @@
 import { describe, expect, it } from "vitest";
-import { FIRST_ORDER_DAYS, isStandard, orderLead, orderOf } from "../src/sim/30-market/orders";
-import { salesTick, targetFor } from "../src/sim/30-market/sales";
-import { productsTick } from "../src/sim/85-products/products";
-import { MINUTES } from "../src/sim/40-support/tickets";
-import { visibleCandidates } from "../src/sim/47-staff/staff";
+import { hourOf } from "../src/sim/00-core/time";
+import { datacenterById } from "../src/sim/20-world/datacenters";
+import { rackTiles } from "../src/sim/20-world/layout";
+import { visibleCandidates, type Employee } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
-import { tick } from "../src/sim/88-tick/tick";
-import { provisionService } from "../src/sim/90-actions/clusters";
-import { setAutoOrders } from "../src/sim/90-actions/orders";
-import { buyModule } from "../src/sim/90-actions/shop";
-import { moduleFor } from "../src/sim/80-business/shop";
-import { hire, quoteOrder } from "./fixtures";
-import { openShop, readyGame } from "./fixtures";
-import { closeTicket, resolveTicket } from "../src/sim/90-actions/support";
+import { figuresIn, lobbySeats, seating } from "../src/sim/60-infra/figures";
+import { failComponents, tick, tickMinute } from "../src/sim/88-tick/tick";
+import { addLocation, buyRack, mountDevice, type ActionResult } from "../src/sim/90-actions/hardware";
+import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
+import { setOnCall } from "../src/sim/90-actions/staff";
+import { cancelWorkOrder, doneAt, frontOf, orderWork, seatOf, workMinutes } from "../src/sim/90-actions/work-orders";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { view } from "../src/sim/42-mail/model";
-import { syncTicketMail } from "../src/sim/42-mail/tickets";
+import { buyDevice, freeFloor, hire, newGame, settle, withServer } from "./fixtures";
+import { ownHall, at } from "./own-dc-hall";
 
-const MONDAY_9 = 48 + 9;
-const run = (s: GameState, hours: number) => { for (let i = 0; i < hours; i++) tick(s); };
-const runTo = (s: GameState, hour: number) => { while (s.hour < hour) tick(s); };
-const web = { product: "webHosting" as const, size: 0, sla: "basic" as const };
+const ok = (r: ActionResult) => {
+  if (!r.ok) throw new Error(r.error);
+  return r.id!;
+};
+const err = (r: ActionResult) => (r.ok ? "ok" : r.error);
+const dev = (s: GameState, id: string) => s.devices.find((d) => d.id === id)!;
+const steps = (s: GameState, n: number) => { for (let i = 0; i < n; i++) tickMinute(s); };
 
-function order(s: GameState, city = "Frankfurt") {
-  const r = orderLead(s, "private", city, [], web);
-  const t = s.tickets.find((x) => x.id === r.ticketId)!;
-  return { r, t, req: () => s.sales.requests.find((x) => x.id === r.id)!, tk: () => s.tickets.find((x) => x.id === t.id)! };
+// A cage at a datacenter with an empty rack and the player standing in it, at 10:00 on a weekday.
+function site() {
+  const s: GameState = { ...withServer(newGame(7)), cash: 1_000_000 };
+  const loc = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4)), rack = ok(buyRack(s, loc, "rack-42", 1));
+  s.locations.find((l) => l.id === loc)!.readyAt = 0;
+  s.hour = hourOf(new Date(Date.UTC(2010, 0, 4, 10)));
+  s.minute = 0;
+  s.player = { ...s.player, at: loc };
+  return { s, loc, rack, units: (n: number) => Array.from({ length: n }, () => ok(buyDevice(s, "sw-8", "Sysko", 1, loc))) };
 }
 
-describe("orders by email", () => {
-  it("brings the first order email within two weeks and no direct customers", () => {
-    for (const seed of [1, 2, 3, 4]) {
-      const s = readyGame(seed);
-      // The products tick notes the web opening, then the lead flow alone runs: every order and customer of these weeks comes from it.
-      productsTick(s);
-      expect(s.webOpenedAt).not.toBeNull();
-      while (s.hour < FIRST_ORDER_DAYS * 24) { s.hour++; salesTick(s); }
-      const orders = s.tickets.filter((t) => t.kind === "order");
-      expect(orders.length).toBeGreaterThan(0);
-      expect(s.customers.length).toBe(3);
-    }
+describe("work orders: schedule", () => {
+  it("starts a player mount at once, arrives a minute later and mounts it 30 minutes after that", () => {
+    const { s, loc, rack, units } = site();
+    const [id] = units(1), now = s.hour * 60;
+    ok(mountDevice(s, id, rack, 10));
+    const [o] = s.orders, tile = rackTiles(s.locations.find((l) => l.id === loc)!, s.racks)[rack];
+    const d = Math.abs(seatOf(s, loc, "player")!.x - frontOf(tile).x) + Math.abs(seatOf(s, loc, "player")!.y - frontOf(tile).y);
+    expect(o).toMatchObject({ worker: "player", kind: "mount", startAt: now, walkMin: 1 + Math.floor(d / 30), workMin: 30 });
+    expect(doneAt(o)).toBe(now + 31);
+    steps(s, 30);
+    expect(dev(s, id).rackId).toBeNull();
+    steps(s, 1);
+    expect(dev(s, id)).toMatchObject({ rackId: rack, slot: 10 });
+    expect(s.orders.filter((x) => !x.applied)).toEqual([]);
   });
 
-  it("keeps business SLAs and big budgets in sales", () => {
-    expect(isStandard("private", "basic")).toBe(true);
-    expect(isStandard("smallBiz", "business")).toBe(false);
-    expect(isStandard("office", "basic")).toBe(false);
+  it("runs two orders one after the other and refuses a sixth", () => {
+    const { s, rack, units } = site();
+    const ids = units(6);
+    ids.slice(0, 5).forEach((id, i) => ok(mountDevice(s, id, rack, 10 + i)));
+    expect(s.orders.map((o) => o.startAt)).toEqual([0, 1, 2, 3, 4].map((i) => s.orders[0].startAt! + i * (31)));
+    expect(err(mountDevice(s, ids[5], rack, 20))).toBe("error.queueFull");
+  });
+});
+
+describe("work orders: cancel", () => {
+  it("leaves a cancelled queued device unmounted and moves the queue up", () => {
+    const { s, rack, units } = site();
+    const [a, b, c] = units(3);
+    ok(mountDevice(s, a, rack, 10));
+    const queued = ok(mountDevice(s, b, rack, 11));
+    ok(mountDevice(s, c, rack, 12));
+    ok(cancelWorkOrder(s, queued));
+    expect(s.orders[1].startAt).toBe(doneAt(s.orders[0]));
+    settle(s);
+    expect([a, b, c].map((id) => dev(s, id).rackId)).toEqual([rack, null, rack]);
   });
 
-  it("creates the customer and the service when accepted, after the ticket minutes", () => {
-    const s = readyGame(1);
-    const { r, t, req, tk } = order(s);
-    expect(t).toMatchObject({ kind: "order", topic: "webHosting", customerId: "", status: "open", dueAt: r.deadline });
-    expect(r.quote).toBe(r.reference);
-    expect(resolveTicket(s, t.id, "accept")).toEqual({ ok: true, id: t.id });
-    expect(s.playerBusyUntil).toBe(s.hour * 60 + MINUTES.order);
-    run(s, 1);
-    const c = s.customers.find((x) => x.id === req().customerId)!;
-    const v = s.services.find((x) => x.customerId === c.id)!;
-    expect(req().status).toBe("won");
-    expect(v).toMatchObject({ product: "webHosting", spec: r.spec, sla: "basic" });
-    expect(v.price).toBeCloseTo(r.quote! / 730, 6);
-    expect(tk()).toMatchObject({ status: "resolved", outcome: "accepted", customerId: c.id, serviceId: v.id });
+  it("wastes the time of the running order and does nothing", () => {
+    const { s, rack, units } = site();
+    const [a] = units(1), id = ok(mountDevice(s, a, rack, 10));
+    steps(s, 10);
+    ok(cancelWorkOrder(s, id));
+    settle(s);
+    expect(dev(s, a).rackId).toBeNull();
+    expect(err(cancelWorkOrder(s, id))).toBe("error.unknownOperation");
+  });
+});
+
+describe("work orders: staff work", () => {
+  it("takes half the time at skill 100 and one and a half times at skill 0", () => {
+    const { s } = site();
+    s.staff.push({ ...visibleCandidates(s)[0], id: "t100", skill: 100 } as never, { ...visibleCandidates(s)[0], id: "t0", skill: 0 } as never);
+    expect(workMinutes(s, "t100", "parts")).toBe(30);
+    expect(workMinutes(s, "t0", "parts")).toBe(90);
+    expect(workMinutes(s, "player", "parts")).toBe(60);
+  });
+});
+
+describe("work orders: conversion", () => {
+  it("finishes a provider job at the same minute and fee as the hourly model", () => {
+    const s: GameState = { ...withServer(newGame(7)), cash: 100_000 };
+    const loc = ok(addLocation(freeFloor(s), "equinox-fr5", "cage", 4)), rack = ok(buyRack(s, loc, "rack-42", 1)), rh = datacenterById("equinox-fr5").remoteHands;
+    s.locations.find((l) => l.id === loc)!.readyAt = 0;
+    const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc)), cash = s.cash, hour = s.hour;
+    ok(mountDevice(s, id, rack, 10));
+    const [o] = s.orders;
+    expect(o).toMatchObject({ worker: "provider", fee: JOB_HOURS.mount * rh.perHour });
+    expect(doneAt(o)).toBe((hour + rh.responseHours + JOB_HOURS.mount) * 60);
+    expect(handsJobs(s)).toHaveLength(1);
+    steps(s, doneAt(o) - hour * 60 - 1);
+    expect(dev(s, id).rackId).toBeNull();
+    steps(s, 1);
+    expect(dev(s, id).rackId).toBe(rack);
+    expect(cash - s.cash).toBe(JOB_HOURS.mount * rh.perHour);
   });
 
-  it("refuses to accept without disk or an offer in the city", () => {
-    const s = readyGame(1);
-    const { r, t } = order(s);
-    const friend = s.customers[0].id, cluster = s.clusters.find((c) => c.kind === "panel")!.id;
-    for (let i = 0; i < 500 && targetFor(s, r); i++) provisionService(s, friend, "webHosting", { label: `fill${i}`, spec: r.spec, clusterId: cluster });
-    expect(resolveTicket(s, t.id, "accept")).toEqual({ ok: false, error: "error.noCapacity" });
-    expect(resolveTicket(s, order(s, "London").t.id, "accept")).toEqual({ ok: false, error: "error.orderNotOffered" });
+  it("still lets a technician do one operation an hour", () => {
+    const s = { ...withServer(newGame(1)), cash: 100_000 };
+    const c = visibleCandidates(s).find((x) => x.role === "technician")!;
+    const t = ok(hire(s, c.id));
+    s.staff = s.staff.map((x) => (x.id === t ? { ...x, trained: ["hardware"] } : x));
+    ok(setOnCall(s, t, true));
+    s.hour = hourOf(new Date(Date.UTC(2005, 0, 8, 1)));
+    const fan = dev(s, "dev3").components.find((x) => x.kind === "fan")!;
+    s.devices = s.devices.map((d) => (d.id === "dev3" ? failComponents(s, d, [fan.id]) : d));
+    ok(buyDevice(s, "part-fan", "Generic", 1, "loc1"));
+    tick(s);
+    expect(s.orders.filter((o) => o.worker === t && o.kind === "op")).toHaveLength(1);
   });
+});
 
-  it("loses the lead when declined or closed", () => {
-    const s = readyGame(1);
-    const a = order(s), b = order(s);
-    resolveTicket(s, a.t.id, "reject");
-    run(s, 1);
-    expect(a.req().status).toBe("declined");
-    expect(a.tk()).toMatchObject({ status: "closed", outcome: "declined" });
-    expect(closeTicket(s, b.t.id).ok).toBe(true);
-    expect(b.req().status).toBe("declined");
-    expect(s.sales.lost.filter((l) => l.reason === "lost.declined")).toHaveLength(2);
-    expect(s.customers).toHaveLength(3);
+describe("work orders: figures", () => {
+  it("shows a worker walking, working with progress, walking back and gone", () => {
+    const { s, loc, rack, units } = site();
+    const [id] = units(1);
+    ok(mountDevice(s, id, rack, 10));
+    const [o] = s.orders, start = o.startAt!;
+    const pose = (m: number) => figuresIn(s, loc, m).find((f) => f.id === "player");
+    expect(pose(start - 1)).toBeUndefined();
+    expect(pose(start)).toMatchObject({ pose: "walk" });
+    expect(pose(start + o.walkMin)).toMatchObject({ pose: "work", progress: 0 });
+    expect(pose(start + o.walkMin + 15)).toMatchObject({ pose: "work", progress: 0.5, job: { rackId: rack } });
+    expect(pose(doneAt(o))).toMatchObject({ pose: "walk" });
+    expect(pose(doneAt(o) + o.walkMin)).toBeUndefined();
   });
+});
 
-  it("goes to a competitor when left past its due time", () => {
-    const s = readyGame(1);
-    const { r, req, tk } = order(s);
-    runTo(s, r.deadline + 1);
-    expect(req().status).toBe("lost");
-    expect(tk().status).toBe("closed");
-    expect(s.sales.lost.at(-1)).toMatchObject({ name: r.company ?? r.contact, reason: "lost.expired" });
+describe("work orders: seats", () => {
+  it("seats the hires at their desks and sends the player to the first lobby chair when they fill every seat", () => {
+    const e = ownHall();
+    e.s.hour = at(2013, 3, 4, 10);
+    const loc = e.s.locations.find((l) => l.id === e.hallId)!, seats = 3;
+    const desk = e.hall().items.find((i) => i.kind === "nocdesk")!.id;
+    const mk = (n: number): Employee => ({ id: `s${n}`, name: `s${n}`, role: "technician", skill: 50, talent: 50, salary: 3000, hiredAt: n, assignment: "queue", location: e.hallId, trained: [], plan: [], training: null, busyUntil: 0, raise: null, nextRaiseAt: 1e9, refusedAt: null, team: e.s.teams[0].id, worked: 0, desk: { propertyId: e.propertyId, sectionId: `noc:${desk}`, index: n - 1 } });
+    e.s.staff.push(...[1, 2, 3].map(mk));
+    const none = seating(e.s, loc, e.s.hour);
+    expect(none.every((x) => x.seated)).toBe(true);
+    expect(none).toHaveLength(seats);
+    e.s.player = { ...e.s.player, at: e.hallId };
+    const some = seating(e.s, loc, e.s.hour);
+    expect(some.find((x) => x.id === "player")).toMatchObject({ seated: true });
+    expect(some.filter((x) => x.seated)).toHaveLength(seats + 1);
+    expect(some.find((x) => x.id === "player")!.at).toEqual(lobbySeats(e.s, loc)[0]);
   });
+});
 
-  it("is worked by a support employee trained on orders once the player has quoted", () => {
-    const s = readyGame(1);
-    runTo(s, MONDAY_9);
-    const c = visibleCandidates(s).find((x) => x.role === "support")!;
-    const id = hire(s, c.id);
-    if (!id.ok) throw new Error(id.error);
-    s.staff.find((e) => e.id === id.id)!.trained = ["order"];
-    const { r, req, tk } = order(s);
-    run(s, 3);
-    expect(req().customerId).toBeNull();
-    s.sales.requests = s.sales.requests.map((x) => (x.id === r.id ? { ...x, budget: 100 } : x));
-    expect(quoteOrder(s, tk().id, r.quote!).ok).toBe(true);
-    for (let i = 0; i < 24 * 4 && !req().serviceId; i++) run(s, 1);
-    expect(tk().status).toBe("waiting");
-    s.invoices = s.invoices.map((i) => (i.id === req().invoiceId ? { ...i, payStep: 0, payAt: s.hour, bank: undefined } : i));
-    for (let i = 0; i < 24 * 4 && req().status !== "won"; i++) run(s, 1);
-    expect(req().status).toBe("won");
-    expect(tk().replies).toEqual([]);
-    expect(tk().outcome).toBe("accepted");
-  });
-
-  it("orders directly once a shop is open and orders run automatically", () => {
-    const s = readyGame(1);
-    s.cash = 1e6;
-    openShop(s);
-    s.unlocks = [...s.unlocks, "shops", "provisioning"];
-    expect(setAutoOrders(s, true).ok).toBe(true);
-    // Without a module for the panel the shop order waits in Support.
-    const waiting = orderLead(s, "private", "Frankfurt", [], web, false);
-    expect(waiting.status).toBe("accepted");
-    expect(buyModule(s, moduleFor(s, "webHosting", targetFor(s, waiting)!.clusterId)).ok).toBe(true);
-    const tickets = s.tickets.length;
-    const r = orderLead(s, "private", "Frankfurt", [], web, false);
-    const done = s.sales.requests.find((x) => x.id === r.id)!;
-    expect(done.status).toBe("won");
-    expect(s.tickets.length).toBe(tickets);
-    expect(s.services.some((v) => v.customerId === done.customerId && v.id === done.serviceId)).toBe(true);
-    expect(s.services.find((v) => v.id === done.serviceId)!.spec).toMatchObject(r.spec);
-    // Without room the shop order is cancelled.
-    const away = orderLead(s, "private", "London", [], web, false);
-    expect(s.sales.requests.find((x) => x.id === away.id)).toMatchObject({ ticketId: null, status: "lost" });
-  });
-
-  it("keeps an open order through a save", () => {
-    const s = readyGame(1);
-    const { t } = order(s);
-    const back = deserialize(serialize(s));
-    expect(orderOf(back, back.tickets.find((x) => x.id === t.id)!)?.status).toBe("open");
-    run(back, 1);
-    const old = JSON.parse(serialize(readyGame(2)));
-    expect(() => run(deserialize(JSON.stringify(old)), 24)).not.toThrow();
-  });
-
-  it("renders the order email body from the request", () => {
-    const s = readyGame(3);
-    const { t } = order(s);
-    syncTicketMail(s);
-    const m = Object.values(s.mail.msgs).flat().find((x) => x.ticket === t.id)!;
-    const text = view(s, m).text;
-    expect(text).not.toContain("ticket.order");
-    expect(text.length).toBeGreaterThan(40);
+describe("work orders: old saves", () => {
+  it("loads queued hand jobs and the player's work in progress to the same finish times", () => {
+    const { s, loc, rack, units } = site();
+    const [id] = units(1);
+    const raw = JSON.parse(serialize(s)) as Record<string, unknown> & { player: Record<string, unknown>; hour: number };
+    delete raw.orders;
+    raw.handsJobs = [{ id: "hj1", action: "mountDevice", args: [id, rack, 10], locationId: loc, deviceId: id, dueAt: raw.hour + 5, fee: 60 }];
+    raw.player = { ...raw.player, doing: "work", until: raw.hour + 2 };
+    const old = deserialize(JSON.stringify(raw));
+    expect(old.orders.map((o) => [o.worker, doneAt(o)])).toEqual([["provider", (raw.hour + 5) * 60], ["player", (raw.hour + 2) * 60]]);
+    expect(old.player.until).toBe(0);
+    expect(handsJobs(old)).toMatchObject([{ id: "hj1", dueAt: raw.hour + 5, fee: 60 }]);
+    void orderWork;
   });
 });

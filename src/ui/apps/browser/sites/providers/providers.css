@@ -21,3 +21,10 @@
 .ps-pill { white-space: nowrap; }
 .ps dt, .ps dd { font: inherit; color: inherit; letter-spacing: normal; text-transform: none; }
 .ps-facts { column-gap: 32px; }
+
+.ps .ps-noc { padding: 18px 22px 28px; }
+.ps .ps-noc h2 { font-size: 1.1em; margin: 22px 0 8px; }
+.ps .ps-noc h2:first-child { margin-top: 0; }
+.ps .ps-noc ul { margin: 0; padding-left: 20px; }
+.ps .ps-noc p { margin: 0 0 8px; }
+.ps .ps-noc .ps-notice { margin-top: 18px; padding: 8px 12px; border: 1px solid currentColor; }

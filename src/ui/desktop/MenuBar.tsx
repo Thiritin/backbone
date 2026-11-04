@@ -6,12 +6,14 @@ import { Confirm } from "./Confirm";
 import { Intro, PearMark } from "./Intro";
 import { newNote } from "./DesktopIcons";
 import { restoreGuide } from "../../sim/90-actions/docs";
-import { formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core/time";
+import { dateOf, formatClock, SKIP, SPEEDS, type Speed } from "../../sim/00-core/time";
 import { euro } from "../../sim/00-core/money";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { sky } from "../../sim/20-world/weather";
 import { SkyIcon } from "../apps/weather/SkyIcon";
+import { daylight } from "../world/draw";
 import { degrees } from "../apps/weather/WeatherApp";
+import { roomOf } from "../world/World";
 import { DISCORD_URL, uiSound, useStore, type Win } from "../store";
 import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
@@ -24,8 +26,23 @@ declare const __BUILD_ID__: string;
 
 interface Props { theme: string; onTheme: () => void; onBell: () => void }
 
+export function SpeedControl({ speed, setSpeed }: { speed: Speed; setSpeed: (s: Speed) => void }) {
+  return (
+    <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
+      {SPEEDS.map((s: Speed, i) => {
+        const label = s === SKIP ? t("desktop.menu.skip") : s ? t("desktop.menu.speedN", { n: s }) : t("desktop.menu.pause");
+        return (
+          <button key={s} aria-pressed={speed === s} aria-label={label} title={label} onClick={() => setSpeed(s)}>
+            {s === SKIP ? <SkipForward className="skip" /> : s ? <span className="arrows">{Array.from({ length: i }, (_, k) => <Play key={k} />)}</span> : <Pause />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function MenuBar({ theme, onTheme, onBell }: Props) {
-  const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, toMenu, openNews, deleteProgress, minimize, close } = useStore();
+  const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, toMenu, openNews, deleteProgress, minimize, close, setSurface } = useStore();
   const guideGone = !game.docs.some((d) => d.kind === "guide");
   const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
   const appName = (w: Win) => (w.console ? t("desktop.menu.console") : appTitle(appFor(game, w.app)));
@@ -83,27 +100,20 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("raid0", "raid0", [[t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/raid0", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/raid0/issues/new?body=${encodeURIComponent(`\n\nBuild: ${__BUILD_ID__}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <span className="mb-pear"><PearMark /></span>, "mb-logo")}
+      {item("raid0", "raid0", [[t("world.standUp"), () => setSurface("world")], [t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/raid0", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/raid0/issues/new?body=${encodeURIComponent(`\n\nBuild: ${__BUILD_ID__}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <span className="mb-pear"><PearMark /></span>, "mb-logo")}
       {front ? (extra.some((m) => m.id === "app") ? panel("app", appName(front), appList, "mb-app") : item("app", appName(front), appMenu(front), appName(front), "mb-app")) : <span className="mb-item mb-app">raid0</span>}
       {extra.filter((m) => m.id !== "window" && m.id !== "app").map((m) => panel(m.id, m.title, () => fresh(m.id)))}
       {panel("window", t("desktop.menu.window"), windowList)}
       <span className="mb-spacer" />
       <button className="mb-item mb-place" onClick={() => openApp("Weather")}>
-        <SkyIcon kind={sky(here.city, game.hour)} />{degrees(here.city, game.hour)} {here.name}
+        <SkyIcon kind={sky(here.city, game.hour)} night={daylight(dateOf(game.hour).getUTCHours() + game.minute / 60, dateOf(game.hour).getUTCMonth()) < 0.5} />{degrees(here.city, game.hour)} {here.name}
       </button>
       <span className="mb-sep" />
-      <div className="speed" role="group" aria-label={t("desktop.menu.speed")}>
-        {SPEEDS.map((s: Speed, i) => {
-          const label = s === SKIP ? t("desktop.menu.skip") : s ? t("desktop.menu.speedN", { n: s }) : t("desktop.menu.pause");
-          return (
-            <button key={s} aria-pressed={speed === s} aria-label={label} title={label} onClick={() => setSpeed(s)}>
-              {s === SKIP ? <SkipForward className="skip" /> : s ? <span className="arrows">{Array.from({ length: i }, (_, k) => <Play key={k} />)}</span> : <Pause />}
-            </button>
-          );
-        })}
-      </div>
+      <button className="mb-item" onClick={() => setSurface("world")}>{roomOf(game).name}</button>
       <span className="mb-sep" />
-      <button className="mb-item num" onClick={() => openApp("Calendar")}>{formatClock(game.hour, game.minute)}</button>
+      <SpeedControl speed={speed} setSpeed={setSpeed} />
+      <span className="mb-sep" />
+      <button className={`mb-item num${speed === 0 ? " paused" : ""}`} onClick={() => openApp("Calendar")}>{formatClock(game.hour, game.minute)}</button>
       <span className="mb-sep" />
       <button className="mb-item mb-cash num" onClick={() => openApp("Books")}>{euro(game.cash)}</button>
       <button className="mb-item mb-badge" aria-label={unseen ? t("desktop.notif.unseen", { n: unseen }) : t("desktop.notif.title")} onClick={onBell}>

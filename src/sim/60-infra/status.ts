@@ -1,3 +1,5 @@
+import { isProviderPanel } from "./panels";
+import { PANEL_JACKS } from "../10-catalog/uplinks";
 import { monthIndexOf, nowHours, yearOf } from "../00-core/time";
 import { lineCut } from "../46-finance/payables";
 import { wanPort, wattsFactorOf, boardVendor, COMPONENTS, cpuWattsShift, genOf, isOobPort, jacksOf, modelById, oobFits, oobPortOf, type ComponentKind, type DeviceKind } from "../10-catalog/hardware";
@@ -6,6 +8,7 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, PARCEL, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
+import { CLOSET_KW, HALL, hallCapacity, hallCustomerKw, hallKw, access, hallOf, hallSpots } from "../20-world/properties";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
@@ -58,7 +61,7 @@ export const jacked = (s: GameState, gatewayId: string): boolean => {
 const climbing = new Set<string>();
 function lineUp(s: GameState, gatewayId: string): boolean {
   const d = s.devices.find((x) => x.id === gatewayId)!;
-  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && !!s.homeLine.id && !lineCut(s));
+  if (!isOwnRouter(d)) return wanPort(modelOf(s, gatewayId)) < 0 || (jacked(s, gatewayId) && lineLive(s, locationOf(s, d)?.id));
   return sweepMemo(s, `up:${gatewayId}`, () => {
     const peer = peerOf(s, { device: gatewayId, port: uplinkPort(d) });
     if (!peer || isOobPort(peer.port) || climbing.has(gatewayId)) return false;
@@ -141,9 +144,11 @@ function computeLinkStatus(s: GameState, deviceId: string): LinkStatus {
 }
 
 // Where a rack stands, whether it is still in transit, and its height in units.
+// A rack delivered to an own hall stands crated at the entry until the player places it.
+export const unplaced = (s: GameState, rack: Rack): boolean => !rack.tile && s.locations.find((l) => l.id === rack.locationId)?.space === "hall";
 export function spotOf(s: GameState, id: string | null): { locationId: string; moving: boolean; units: number } | undefined {
   const rack = s.racks.find((r) => r.id === id);
-  return rack && { locationId: rack.locationId, moving: rack.arriveAt !== null, units: rackUnits(rack.model) };
+  return rack && { locationId: rack.locationId, moving: rack.arriveAt !== null || unplaced(s, rack), units: rackUnits(rack.model) };
 }
 
 // One step of a route. device is set for your own hardware; location for a line or uplink, whose load slows it.
@@ -178,15 +183,20 @@ function cabled(s: GameState, from: string, goal: (id: string) => boolean, live:
 }
 
 // Whether a hop of a route is cut: a stopped device, or a basement without an internet line.
-export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && (!s.homeLine.id || lineCut(s)));
+export const hopDown = (s: GameState, h: Hop): boolean => (h.device ? !working(s, h.device) : h.kind === "line" && !lineLive(s, h.location));
+// An office runs on its own business line, the basement on the home line.
+function lineLive(s: GameState, locationId: string | undefined): boolean {
+  const loc = s.locations.find((l) => l.id === locationId);
+  return loc?.space === "office" ? !!loc.line : !!s.homeLine.id && !lineCut(s);
+}
 
 // The hops from a device out to its location's edge: the gateway, then the carrier line (basement) or the datacenter's uplink.
 function toEdge(s: GameState, id: string, loc: Location, live: boolean, exempt?: string): Hop[] | null {
   const ids = cabled(s, id, (x) => kindOf(s, x) === "gateway", live, exempt);
   if (!ids) return null;
   const hops = ids.map((x) => hopOf(s, x));
-  if (!loc.dc) return [...hops, { kind: "line", name: homeLineById(s.homeLine.id).isp || "line", location: loc.id }];
-  const uplink: Hop = { kind: "uplink", name: datacenterById(loc.dc).name, location: loc.id };
+  if (!loc.dc && loc.space !== "hall") return [...hops, { kind: "line", name: (loc.space === "office" ? loc.line?.name : homeLineById(s.homeLine.id).isp) || "line", location: loc.id }];
+  const uplink: Hop = { kind: "uplink", name: loc.dc ? datacenterById(loc.dc).name : loc.name, location: loc.id };
   if (hops[hops.length - 1].kind === "uplink") hops[hops.length - 1] = { ...hops[hops.length - 1], ...uplink };
   else hops.push(uplink);
   return hops;
@@ -214,12 +224,18 @@ export function pathTo(s: GameState, fromId: string, toId: string, live = true):
   return hops && live && hops.slice(0, -1).some((h) => hopDown(s, h)) ? null : hops;
 }
 
+// The units a device takes in a rack: one board on a shelf, whatever its height.
+export const heightIn = (s: GameState, rackId: string | null, modelId: string): number => {
+  const h = modelById(modelId).height;
+  return h > 0 && s.racks.find((r) => r.id === rackId)?.model === "shelf" ? 1 : h;
+};
+
 // Every slot where a device of this height fits, lowest first. Units rented out for colocation are taken.
 export function freeSlots(s: GameState, rackId: string, height: number): number[] {
   const rack = s.racks.find((r) => r.id === rackId);
   if (!rack) return [];
   const used = new Set(s.devices.filter((d) => d.rackId === rackId).flatMap((d) => {
-    const h = modelById(d.model).height;
+    const h = heightIn(s, rackId, d.model);
     return Array.from({ length: h }, (_, i) => d.slot + i);
   }).concat(s.workloads.filter((w) => w.rackId === rackId).flatMap((w) => Array.from({ length: w.units }, (_, i) => w.slot + i))));
   const free: number[] = [];
@@ -301,14 +317,18 @@ export const drawWatts = (s: GameState, d: Device, busy: Set<string | null>): nu
 };
 
 const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? EXTRA_CIRCUIT_KW : 0);
+// ponytail: an office with closets only runs on the closet circuit; a closet beside a server room shares the room's limit, per-section circuits if that matters.
+const officeKw = (s: GameState, loc: Location): number =>
+  s.properties.some((p) => p.locationId === loc.id && p.sections.some((x) => x.fit === "servers")) ? circuitKw(loc) : CLOSET_KW;
 
-function computeRackPower(s: GameState, rackId: string): RackPower {
+// demand counts what a tripped room's racks draw once its breaker is reset.
+function computeRackPower(s: GameState, rackId: string, demand = false): RackPower {
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
-  if (!rack || !loc) return { watts: 0, a: 0, b: 0, limitWatts: 0, tripped: false };
+  if (!rack || !loc) return { watts: 0, a: 0, b: 0, limitWatts: 0, over: false };
   const busy = busyDevices(s);
   let a = 0, b = 0;
-  if (rack.arriveAt === null) {
+  if (rack.arriveAt === null && (demand || !loc.tripped)) {
     for (const d of s.devices) {
       if (d.rackId !== rackId || !d.on || !pluggedIn(d) || chassisOut(s, d)) continue;
       const w = drawWatts(s, d, busy);
@@ -318,15 +338,29 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
   }
   const share = SHARE_RACKS.find((m) => m.id === rack.model)?.size ?? 1;
   // A high-density feed doubles a position's limit; the basement's extra circuit adds another household circuit.
-  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : circuitKw(loc);
+  const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : loc.space === "hall" ? HALL.kwPerPosition : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc);
   // A flat-rate contract's kW replaces the position's limit.
   const limitWatts = rack.flatKw ? Math.round(1000 * rack.flatKw) : Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
-  return { watts: a + b, a, b, limitWatts, tripped: a > limitWatts || b > limitWatts };
+  return { watts: a + b, a, b, limitWatts, over: a > limitWatts || b > limitWatts };
+}
+
+// A room's draw against its main breaker: the house or office circuit in the basement and an office, each rack
+// position's own limit in a datacenter.
+export function roomPower(s: GameState, loc: Location, demand = false): { watts: number; limitWatts: number; over: boolean } {
+  const racks = s.racks.filter((r) => r.locationId === loc.id).map((r) => (demand ? summed(s, r.id, true) : rackPower(s, r.id)));
+  const hall = loc.space === "hall" ? hallOf(s, loc.id) : undefined;
+  // A hall's customers draw their kW through the same breaker.
+  const watts = racks.reduce((n, p) => n + p.watts, 0) + 1000 * hallCustomerKw(hall);
+  const over = racks.some((p) => p.over);
+  if (loc.dc) return { watts, limitWatts: racks.reduce((n, p) => n + p.limitWatts, 0), over };
+  const prop = loc.space === "hall" && s.properties.find((p) => p.hall?.locationId === loc.id);
+  const limitWatts = 1000 * (prop ? hallKw(prop, access.cut(s, loc.id)) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc));
+  return { watts, limitWatts, over: over || watts > limitWatts };
 }
 
 // Link, rack power and lookup results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
 // a and b are the draw on each feed; limitWatts is the limit of one feed.
-type RackPower = { watts: number; a: number; b: number; limitWatts: number; tripped: boolean };
+type RackPower = { watts: number; a: number; b: number; limitWatts: number; over: boolean };
 type Memo = { s: GameState; link?: Map<string, LinkStatus>; power?: Map<string, RackPower>; working?: Map<string, boolean>; powered?: Map<string, boolean>; groups?: Map<string, Map<string, unknown[]>>; other?: Map<string, unknown> };
 let memo: Memo | null = null;
 export function readOnlySweep<T>(s: GameState, fn: () => T): T {
@@ -395,13 +429,13 @@ export function cabledOut(s: GameState, deviceId: string): NetFail | null {
 export const linkStatus = (s: GameState, deviceId: string): LinkStatus => memoised(s, deviceId, (m) => (m.link ??= new Map()), () => computeLinkStatus(s, deviceId));
 // A server's CPU load asks whether its rack has power while the rack's draw is being summed; inside that sum the rack counts as untripped.
 const summing = new Set<string>();
+const summed = (s: GameState, rackId: string, demand = false): RackPower => {
+  summing.add(rackId);
+  try { return computeRackPower(s, rackId, demand); } finally { summing.delete(rackId); }
+};
 export const rackPower = (s: GameState, rackId: string): RackPower =>
-  summing.has(rackId) ? { watts: 0, a: 0, b: 0, limitWatts: 0, tripped: false } : memoised(s, rackId, (m) => (m.power ??= new Map()), () => {
-    summing.add(rackId);
-    try { return computeRackPower(s, rackId); } finally { summing.delete(rackId); }
-  });
+  summing.has(rackId) ? { watts: 0, a: 0, b: 0, limitWatts: 0, over: false } : memoised(s, rackId, (m) => (m.power ??= new Map()), () => summed(s, rackId));
 
-// Stored devices, devices in a moving or tripped rack and devices in a location that is not ready have no power.
 export const EXTRA_CIRCUIT_KW = 3;
 
 export const isDrive = (c: Component): boolean => c.kind === "hdd" || c.kind === "ssd" || c.kind === "nvme";
@@ -526,15 +560,16 @@ function computeWorking(s: GameState, deviceId: string): boolean {
 export const osInstalling = (s: GameState, d: Device): boolean => !!d.os && d.os.installedAt > nowHours(s);
 export const takesShutdown = (s: GameState, d: Device): boolean => working(s, d.id) || (d.on && !halting(d) && osInstalling(s, d) && powered(s, d.id));
 
+// Stored devices, devices in a moving rack and devices in a tripped room or a location that is not ready have no power.
 export const powered = (s: GameState, deviceId: string): boolean => flagMemo(s, deviceId, (m) => (m.powered ??= new Map()), () => computePowered(s, deviceId));
 function computePowered(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   const loc = d && locationOf(s, d);
-  if (!d || !loc || loc.readyAt > s.hour || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
+  if (!d || !loc || loc.readyAt > s.hour || loc.tripped || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
   if (d.chassisId) return !chassisOut(s, d) && powered(s, d.chassisId);
   if (!d.rackId) return true;
   const rack = s.racks.find((r) => r.id === d.rackId)!;
-  return rack.arriveAt === null && pluggedIn(d) && !rackPower(s, rack.id).tripped;
+  return rack.arriveAt === null && !unplaced(s, rack) && pluggedIn(d);
 }
 
 // A device switched on with every power cord pulled is as safe to open as one switched off.
@@ -544,7 +579,10 @@ export function freePositions(s: GameState, locationId: string): number[] {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return [];
   const taken = new Set(s.racks.filter((r) => r.locationId === locationId).map((r) => r.position));
-  return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p));
+  const prop = loc.space === "hall" ? s.properties.find((x) => x.hall?.locationId === locationId) : undefined;
+  // In a hall the numbers are spare ones up to the capacity left after the racks, the customers and the zones.
+  const room = prop?.hall ? hallCapacity(prop) - hallSpots(prop.hall, Object.fromEntries(s.racks.filter((r) => r.locationId === locationId).map((r) => [r.id, r.tile ?? null]))) : Infinity;
+  return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p)).slice(0, Math.max(0, room));
 }
 
 const KIND_ORDER: DeviceKind[] = ["server", "chassis", "switch", "firewall", "patch", "ups", "pdu", "kvm", "console", "oob", "gateway", "part"];
@@ -594,9 +632,13 @@ export function connectError(s: GameState, a: End, b: End): string | null {
   const la = locationOf(s, da), lb = locationOf(s, db);
   if (!la || !lb) return "error.notMounted";
   if (s.racks.some((r) => (r.id === da.rackId || r.id === db.rackId) && r.arriveAt !== null)) return "error.rackMoving";
-  if (la.id !== lb.id) return "error.otherLocation";
+  // On a provider's floor the provider runs cables between racks; the provider side of its panel takes only its own cables.
+  if (la.id !== lb.id) return la.dc && la.dc === lb.dc ? "error.useProviderCable" : "error.otherLocation";
+  if (la.space === "share" && da.rackId && db.rackId && da.rackId !== db.rackId) return "error.useProviderCable";
+  const pp = isProviderPanel(da) || isProviderPanel(db);
+  if ((isProviderPanel(da) && a.port < PANEL_JACKS) || (isProviderPanel(db) && b.port < PANEL_JACKS)) return "error.providerJack";
   if (oa || ob) return oobFits(ma, (oa ?? pa)!, mb, (ob ?? pb)!) ? null : "error.mediaMismatch";
-  if (pa.media !== pb.media) return "error.mediaMismatch";
+  if (pa.media !== pb.media && !pp) return "error.mediaMismatch";
   // A patch panel is passive, so the speed check happens between the devices on either side of it.
   if (ma.kind !== "patch" && mb.kind !== "patch" && pa.gbit !== pb.gbit) return "error.speedMismatch";
   return null;
@@ -615,7 +657,7 @@ export function locationRent(s: GameState, loc: Location): number {
   const dc = datacenterById(loc.dc);
   const extra = s.racks.filter((r) => r.locationId === loc.id).reduce((sum, r) => sum + (r.extraKw / EXTRA_STEP_KW) * extraStepPrice(dc), 0);
   const contract = s.contracts.find((c) => c.locationId === loc.id);
-  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement">, rentedSize(s, loc))) + extra;
+  return (contract?.monthly ?? spacePrice(dc, loc.space as Exclude<SpaceKind, "basement" | "office" | "hall">, rentedSize(s, loc))) + extra;
 }
 
 // How a rack in this location can bill power: flat-rate contracts are offered on own racks in cages and suites.
@@ -625,17 +667,17 @@ export function flatOffer(s: GameState, locationId: string): Datacenter["power"]
 }
 
 // Floor space in eighths of a position, so a 1/8 share is 1 and a position is 8.
-export const eighthsOf = (space: Exclude<SpaceKind, "basement">, size: number): number => (space === "share" ? 8 / size : 8 * size);
+export const eighthsOf = (space: Exclude<SpaceKind, "basement" | "office" | "hall">, size: number): number => (space === "share" ? 8 / size : 8 * size);
 
 // Positions in a datacenter: competitors', the player's, those held for the waitlist, and what is free.
 export function dcAvailability(s: GameState, dcId: string): { capacity: number; others: number; mine: number; held: number; free: number; freeEighths: number } {
   const capacity = capacityAt(datacenterById(dcId), yearOf(s.hour));
   const others = s.dcs[dcId]?.others ?? 0;
-  const mineEighths = s.locations.filter((l) => l.dc === dcId).reduce((sum, l) => sum + eighthsOf(l.space as Exclude<SpaceKind, "basement">, rentedSize(s, l)), 0);
+  const mineEighths = s.locations.filter((l) => l.dc === dcId).reduce((sum, l) => sum + eighthsOf(l.space as Exclude<SpaceKind, "basement" | "office" | "hall">, rentedSize(s, l)), 0);
   const heldEighths = s.waitlist.filter((w) => w.dc === dcId && w.heldUntil !== null).reduce((sum, w) => sum + eighthsOf(w.space, w.size), 0);
   const freeEighths = Math.max(0, capacity * 8 - others * 8 - mineEighths - heldEighths);
   return { capacity, others, mine: mineEighths / 8, held: heldEighths / 8, free: Math.floor(freeEighths / 8), freeEighths };
 }
 
-export const fits = (s: GameState, dcId: string, space: Exclude<SpaceKind, "basement">, size: number): boolean =>
+export const fits = (s: GameState, dcId: string, space: Exclude<SpaceKind, "basement" | "office" | "hall">, size: number): boolean =>
   dcAvailability(s, dcId).freeEighths >= eighthsOf(space, size);

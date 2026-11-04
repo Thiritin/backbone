@@ -18,6 +18,7 @@ export default {
 
   "desktop.alert.affectedNodes": () => "Affected nodes",
   "desktop.alert.compromised": () => "Compromised",
+  "desktop.alert.chip": () => "Alerts",
   "desktop.alert.balance": () => "Balance",
   "desktop.alert.openLoans": () => "Open loans",
   "desktop.alert.host": () => "Host",
@@ -120,7 +121,6 @@ export default {
   "desktop.menu.speed": () => "Game speed",
   "desktop.menu.skip": () => "Skip to next event",
   "desktop.menu.pause": () => "Pause",
-  "desktop.paused": () => "Paused",
   "desktop.menu.speedN": (p) => `${p.n}× speed`,
   "desktop.menu.language": () => "Language",
   "desktop.menu.darkMode": () => "Toggle dark mode",

@@ -218,6 +218,7 @@ export default {
   "browser-sites-1.of.construction": () => "In costruzione",
   "browser-sites-1.of.constructionText": () => "Questa pagina è attualmente in costruzione. Tornate a trovarci presto.",
   "browser-sites-1.of.serviceClosed": () => "Il servizio online è chiuso.",
+  "browser-sites-1.of.reopens": (p) => `Riapre il ${p.date} alle ${p.time}.`,
   "browser-sites-1.of.serverTime": (p) => `Ora del server: ${p.time}`,
   "browser-sites-1.of.title": () => "Ufficio Commercio Online",
   "browser-sites-1.of.subtitle": () => "Il portale ufficiale di eGovernment dell'ufficio commercio",

@@ -44,8 +44,10 @@ export function respond(s: GameState, address: string, subject: string, attachme
 }
 
 export function readLetter(s: GameState, id: string): ActionResult {
-  if (!s.letters.some((l) => l.id === id)) return fail("error.unknownLetter");
-  s.letters = s.letters.map((l) => (l.id === id ? { ...l, read: true } : l));
+  const l = s.letters.find((x) => x.id === id);
+  if (!l) return fail("error.unknownLetter");
+  if (l.box) return fail("error.inLetterbox");
+  s.letters = s.letters.map((x) => (x.id === id ? { ...x, read: true } : x));
   return { ok: true };
 }
 

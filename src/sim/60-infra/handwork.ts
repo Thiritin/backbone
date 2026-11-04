@@ -2,9 +2,12 @@
 import { rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { COUNTRY, datacenterById } from "../20-world/datacenters";
+import { ORDERS } from "../20-world/properties";
 import type { GameState, Location } from "../50-state";
+import { opensOf, orderWork } from "../90-actions/work-orders";
 
-export type How = "hands" | "self" | "friend" | "tech";
+// "job" is a queued remote hands job running: at once, already paid.
+export type How = "hands" | "self" | "friend" | "tech" | "job";
 
 // Travel hours and fee of a drive: within a city, within a country, to another European country. Overseas is not offered.
 export const TRAVEL = { city: { hours: 1, fee: 20 }, country: { hours: 4, fee: 90 }, europe: { hours: 9, fee: 250 } } as const;
@@ -17,8 +20,6 @@ export const MISHAP_CHANCE = 0.1;
 export interface HandOption { wait: number; fee: number }
 export interface HandWork {
   hands: HandOption & { perHour: number };
-  // The player is on site and does the work at once.
-  here: boolean;
   friend: (HandOption & { travel: number; left: number }) | null;
 }
 
@@ -35,8 +36,8 @@ export const playerAt = (s: GameState): Location => s.locations.find((l) => l.id
 // Whether the player stands in the location, not still on the way there.
 export const present = (s: GameState, locationId: string): boolean =>
   playerAt(s).id === locationId && !(s.player.doing === "travel" && s.player.until > s.hour);
-// Claims the player's time for hand work on site.
-const workOnSite = (s: GameState, hours: number) => { s.player = { at: s.player.at, until: Math.max(s.player.until, s.hour) + hours, doing: "work" }; };
+// Claims the player's time for hand work on site: a visit order without an action, queued behind the player's other orders.
+const workOnSite = (s: GameState, locationId: string, hours: number) => { if (hours > 0) orderWork(s, "player", locationId, {}, null, { kind: "op", workMin: Math.round(hours * 60) }); };
 
 export const favoursLeft = (s: GameState): number =>
   FAVOURS_PER_YEAR - (s.friendFavours.year === yearOf(s.hour) ? s.friendFavours.used : 0);
@@ -49,7 +50,6 @@ export function handWork(s: GameState, locationId: string): HandWork | null {
   const dc = datacenterById(loc.dc), t = trip(s.locations[0].city, loc.city), book = dc.visitBooking ? BOOKED_HOURS : 0;
   return {
     hands: { wait: dc.remoteHands.responseHours, fee: dc.remoteHands.perHour, perHour: dc.remoteHands.perHour },
-    here: present(s, loc.id),
     friend: t && { wait: book + t.hours, fee: FRIEND_FEE, travel: t.hours, left: favoursLeft(s) },
   };
 }
@@ -61,6 +61,7 @@ export interface HandJob { cost: number; wait: number; commit: () => number }
 // Prices work of the given hours at a location. Remote hands bill at least an hour; a technician and the basement are on site at once.
 export function handJob(s: GameState, device: string, loc: Location | undefined, how: How | boolean, work: number, billHours = Math.max(1, work)): { error: string } | HandJob {
   const h: How = how === true ? "tech" : how === false ? "hands" : how;
+  if (h === "job") return { cost: 0, wait: 0, commit: () => 0 };
   const w = h === "tech" || !loc ? null : handWork(s, loc.id);
   if (!w) return { cost: 0, wait: work, commit: () => work };
   const book = (key: string, amount: number, params: Record<string, string | number>) => {
@@ -73,8 +74,9 @@ export function handJob(s: GameState, device: string, loc: Location | undefined,
     return { cost: bill, wait, commit: () => { book("ledger.remoteHands", bill, { device, hours: billHours, dc: loc!.dc!, done: s.hour + wait }); return wait; } };
   }
   if (h === "self") {
-    if (!w.here) return { error: "error.notThere" };
-    return { cost: 0, wait: work, commit: () => { workOnSite(s, work); return work; } };
+    if (!present(s, loc!.id)) return { error: "error.notThere" };
+    if (opensOf(s, "player").length >= ORDERS.max) return { error: "error.queueFull" };
+    return { cost: 0, wait: work, commit: () => { workOnSite(s, loc!.id, work); return work; } };
   }
   const o = w.friend;
   if (!o) return { error: "error.tooFar" };

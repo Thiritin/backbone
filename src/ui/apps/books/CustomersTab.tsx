@@ -11,7 +11,7 @@ import { useStore } from "../../store";
 import { arrowRows, useBooks } from "./view";
 import { formatDay } from "../billing/format";
 import { monthYear } from "../support/labels";
-import { NEW, NewCustomer } from "./NewCustomer";
+import { accountChoices, NEW, NewCustomer } from "./NewCustomer";
 import { ChangePrice, CreditSheet } from "../customers/CustomerPage";
 import "../customers/customers.css";
 
@@ -28,13 +28,19 @@ export function CustomersTab({ focus }: { focus: string | null }) {
   if (adding !== null) return <NewCustomer game={game} initial={adding} onDone={() => setAdding(null)} />;
   const add = <button className="btn" onClick={() => setAdding("")}><UserPlus />{t("pkg.newCustomer")}</button>;
   const toggle = archived.length > 0 && <button className="btn books-archive" aria-pressed={archive} onClick={() => { setArchive(!archive); setSelected((archive ? current : archived)[0]?.id ?? null); }}>{archive ? t("books.tab.customers") : t("books.archive", { n: archived.length })}</button>;
-  if (list.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}{add}{toggle}</div>;
+  const working = archive ? [] : accountChoices(game).filter((o) => game.tickets.find((x) => x.id === o.ticketId)?.work);
+  if (list.length === 0 && working.length === 0) return <div className="fin-empty"><Users />{t("books.noCustomers")}{add}{toggle}</div>;
   const services = c ? activeServices(game.services, c.id) : [];
   const domains = c ? game.domains.filter((d) => d.customerId === c.id) : [];
   return (
     <div className="books-customers">
       <nav className="sidebar books-list" aria-label={t("books.tab.customers")} onKeyDown={arrowRows}>
         {add}
+        {working.map((o) => (
+          <div key={o.ticketId} className="books-item">
+            <span className="books-li"><strong>{o.name}</strong><small>{t("books.inWork")}</small></span>
+          </div>
+        ))}
         {list.map((x) => {
           const first = activeServices(game.services, x.id)[0];
           return (

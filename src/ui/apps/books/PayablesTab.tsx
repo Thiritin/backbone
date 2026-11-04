@@ -7,7 +7,6 @@ import { lateInBooks, unbooked, supplierAccount, supplierCode, supplierIban, typ
 import type { GameState } from "../../../sim/50-state";
 import { payAllDue, setAutoPay } from "../../../sim/90-actions/bank";
 import { useStore } from "../../store";
-import { Locked } from "./Locked";
 
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const left = (p: Payable) => Math.round((p.amount - p.sent) * 100) / 100;
@@ -34,7 +33,7 @@ export function PayablesTab() {
           <button className="btn" onClick={() => act(payAllDue)}>{t("bank.pay.all")}</button>
           <label><input type="checkbox" checked={!!game.bank?.autoPay} onChange={(e) => act(setAutoPay, e.target.checked)} /> {t("bank.pay.auto")}</label>
         </div>
-      ) : <div className="fin-toolbar"><Locked id="hbci" label={t("bank.pay.all")} /></div>}
+      ) : game.bank && <div className="fin-toolbar"><button className="btn" disabled={!rows.some((p) => unbooked(p) && left(p) > 0)} onClick={() => openApp("Browser", { kind: "url", id: `www.${bankOf(game)!.host}/banking/transfer?batch=1` })}>{t("bank.pay.all")}</button></div>}
       <table className="table">
         <thead><tr><th>{t("bank.pay.supplier")}</th><th>{t("bank.pay.number")}</th><th>{t("bank.pay.due")}</th><th className="r">{t("misc.amount")}</th><th>{t("bank.pay.status")}</th><th /></tr></thead>
         <tbody>

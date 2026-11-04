@@ -218,6 +218,7 @@ export default {
   "browser-sites-1.of.construction": () => "En construction",
   "browser-sites-1.of.constructionText": () => "Cette page est actuellement en construction. Merci de revenir bientôt.",
   "browser-sites-1.of.serviceClosed": () => "Le service en ligne est fermé.",
+  "browser-sites-1.of.reopens": (p) => `Rouvre le ${p.date} à ${p.time}.`,
   "browser-sites-1.of.serverTime": (p) => `Heure du serveur : ${p.time}`,
   "browser-sites-1.of.title": () => "Bureau du commerce en ligne",
   "browser-sites-1.of.subtitle": () => "Le portail officiel d'administration électronique du bureau du commerce",

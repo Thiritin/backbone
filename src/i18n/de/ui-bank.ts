@@ -59,6 +59,8 @@ export default {
   "bank.site.date": () => "Datum",
   "bank.site.text": () => "Verwendungszweck",
   "bank.site.amount": () => "Betrag",
+  "bank.site.total": () => "Summe",
+  "bank.site.confirmBatch": () => "Sammelüberweisung bestätigen",
   "bank.site.noBookings": () => "Keine Buchungen",
   "bank.site.locked": (p) => `Das Online-Banking ist bis ${p.date} gesperrt.`,
   "bank.site.sent": () => "Überweisung gesendet.",

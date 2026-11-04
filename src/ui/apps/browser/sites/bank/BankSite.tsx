@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
@@ -7,7 +7,7 @@ import { bankById, monthlyFee, plansFor, tanMethods, type Bank, type BankId, typ
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
 import { cardDetails, cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft, type Payee } from "../../../../../sim/46-finance/bank";
 import type { GameState } from "../../../../../sim/50-state";
-import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deletePayee, deleteStandingOrder, savePayee, setPlan, setTanMethod, startStandingOrder, startTransfer, switchBank } from "../../../../../sim/90-actions/bank";
+import { applyCard, applyOverdraft, openBankAccount, cancelTransfer, confirmTransfer, deletePayee, deleteStandingOrder, savePayee, setPlan, setTanMethod, startBatch, startStandingOrder, startTransfer, switchBank } from "../../../../../sim/90-actions/bank";
 import { repayLoan, takeLoan } from "../../../../../sim/90-actions/billing";
 import { readSession, writeSession } from "../../../../session";
 import { noAutofill } from "../../../../no-autofill";
@@ -204,6 +204,7 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
   const payees = b.payees ?? [];
   const title = t(standing ? "bank.site.newOrder" : "bank.site.nav.transfer"), again = `www.${bank.host}/banking/${standing ? "orders" : "transfer"}`;
   const [sent, setSent] = useState(false);
+  useEffect(() => { if (prefill.get("batch") && !b.pending) act(startBatch); }, []);
   if (game.hour < b.lockedUntil) return <Box title={title}><p className="bks-error">{t("bank.site.locked", { date: day(b.lockedUntil) })}</p></Box>;
   if (sent && !b.pending) {
     return (
@@ -216,8 +217,16 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
   if (b.pending) {
     const p = b.pending, d = p.draft;
     return (
-      <Box title={t("bank.site.confirm")}>
-        <table className="bks-table">
+      <Box title={t(p.batch ? "bank.site.confirmBatch" : "bank.site.confirm")}>
+        {p.batch ? (
+          <table className="bks-table">
+            <thead><tr><th>{t("bank.site.payee")}</th><th>{t("bank.site.reference")}</th><th className="r">{t("bank.site.amount")}</th></tr></thead>
+            <tbody>
+              {p.batch.map((x) => <tr key={x.reference}><td>{x.name}</td><td>{x.reference}</td><td className="r num">{euroCents(x.amount)}</td></tr>)}
+              <tr><td colSpan={2}>{t("bank.site.total")}</td><td className="r num">{euroCents(d.amount)}</td></tr>
+            </tbody>
+          </table>
+        ) : <table className="bks-table">
           <tbody>
             <tr><td>{t("bank.site.payee")}</td><td>{d.name}</td></tr>
             <tr><td>{iban ? t("bank.site.iban") : t("bank.site.payeeAccount")}</td><td className="num">{iban ? groupIban(d.account) : `${d.account} / ${d.code}`}</td></tr>
@@ -225,7 +234,7 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
             <tr><td>{t("bank.site.reference")}</td><td>{d.reference}</td></tr>
             {p.day !== undefined && <tr><td>{t("bank.site.orderDay")}</td><td className="num">{p.day}</td></tr>}
           </tbody>
-        </table>
+        </table>}
         <form className="bks-form" onSubmit={(e) => { e.preventDefault(); if (act(confirmTransfer, tan).ok) setSent(true); setTan(""); }}>
           {b.tan === "itan" && <label>{t("bank.site.tanNo", { n: String(p.index! + 1).padStart(3, "0") })}<input inputMode="numeric" autoFocus value={tan} onChange={(e) => setTan(e.target.value)} /></label>}
           {b.tan === "mtan" && <label>{t("bank.site.mtan")}<input inputMode="numeric" autoFocus value={tan} onChange={(e) => setTan(e.target.value)} /></label>}

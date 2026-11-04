@@ -46,6 +46,7 @@ export default {
   "books.bookCredit": () => "Buchen, Rest als Guthaben",
   "books.level.none": () => "Keine",
   "books.noCustomers": () => "Keine Kunden",
+  "books.inWork": () => "In Arbeit",
   "books.archive": (p) => `Archiv (${p.n})`,
   "books.noInvoices": () => "Keine Rechnungen",
   "books.noTransfers": () => "Keine Zahlungseingänge",

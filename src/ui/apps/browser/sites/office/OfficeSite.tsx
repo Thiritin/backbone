@@ -1,8 +1,10 @@
+import { addressLine, officeAddress } from "../../../../../sim/60-infra/properties";
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
+import { LOCALE } from "../../../../../i18n/lang";
 import { dateOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
-import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, officeOpen } from "../../../../../sim/80-business/office";
+import { LEGAL_FORMS, OFFICE_HOST, OFFICE_URL, nextOfficeOpen, officeOpen } from "../../../../../sim/80-business/office";
 import { registerCompany } from "../../../../../sim/90-actions/company";
 import { euroCents } from "../../../../../sim/00-core/money";
 import { euro } from "../../../../../sim/00-core/money";
@@ -48,7 +50,7 @@ function Register({ game }: { game: GameState }) {
   const at = error ? FIELD[error] ?? "form" : null, note = (field: string) => at === field && <span className="to-error" role="alert">{t(error!)}</span>;
   const [name, setName] = useState(game.company.name);
   const [owner, setOwner] = useState("");
-  const blank = { street: "", zip: "", city: game.locations[0]?.city ?? "" };
+  const blank = officeAddress(game);
   const [address, setAddress] = useState<AddressValue>(blank);
   return (
     <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, "sole", address); }}>
@@ -105,7 +107,7 @@ function Extract({ game }: { game: GameState }) {
           <tr><td>{t("browser-sites-1.of.regNumber")}</td><td>GA {r.number}</td></tr>
           <tr><td>{t("browser-sites-1.of.businessName")}</td><td>{game.company.name}</td></tr>
           {r.owner && <tr><td>{t("browser-sites-1.of.owner")}</td><td>{r.owner}</td></tr>}
-          {game.company.address && <tr><td>{t("checkout.address")}</td><td>{game.company.address.street}, {game.company.address.zip} {game.company.address.city}</td></tr>}
+          {game.company.address && <tr><td>{t("checkout.address")}</td><td>{addressLine(officeAddress(game))}</td></tr>}
           <tr><td>{t("browser-sites-1.of.legalForm")}</td><td>{LEGAL_FORMS[r.form]}</td></tr>
           <tr><td>{t("browser-sites-1.of.registeredOn")}</td><td>{stamp(r.hour)}</td></tr>
         </tbody>
@@ -169,10 +171,12 @@ function Body({ game, path, go }: { game: GameState; path: string; go: (url: str
   }
   if (game.registration) return <><h1>{t("browser-sites-1.of.eservice")}</h1><Extract game={game} /></>;
   if (!officeOpen(game.hour)) {
+    const reopen = dateOf(nextOfficeOpen(game.hour));
     return (
       <>
         <h1>{t("browser-sites-1.of.eservice")}</h1>
         <p className="to-closed">{t("browser-sites-1.of.serviceClosed")}</p>
+        <p>{t("browser-sites-1.of.reopens", { date: reopen.toLocaleDateString(LOCALE, { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }), time: reopen.toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) })}</p>
         <p>{t("browser-sites-1.of.serverTime", { time: clock(game.hour, game.minute) })}</p>
         <h2>{t("browser-sites-1.of.hours")}</h2>
         <Hours />

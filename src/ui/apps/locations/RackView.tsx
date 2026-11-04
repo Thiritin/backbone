@@ -2,11 +2,12 @@ import { Gauge, Plug, Truck, Zap } from "lucide-react";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
-import { modelById, type DeviceKind } from "../../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById, type DeviceKind, modelName } from "../../../sim/10-catalog/hardware";
+import { routerPassword } from "../../../sim/60-infra/lan";
 import { BASEMENT, EXTRA_STEP_KW, extraStepPrice, FLAT_CONTRACTS, flatMonthly, maxExtraKw, SHARE_RACKS } from "../../../sim/20-world/datacenters";
 import { yearOf } from "../../../sim/00-core/time";
 import type { Device, GameState, Location, Rack } from "../../../sim/50-state";
-import { EXTRA_CIRCUIT_KW, flatOffer, freePositions, freeSlots, isPlugged, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
+import { EXTRA_CIRCUIT_KW, flatOffer, heightIn, freePositions, freeSlots, isPlugged, pluggedIn, locationOf, mountFrom, mountMax, moveCost, portPeers, rackPower, storageStacks } from "../../../sim/60-infra/status";
 import { FEED_PRICE } from "../../../sim/88-tick/tick";
 import { buyCircuit, CIRCUIT_PRICE, connect, mountDevice, mountStack, moveInRack, moveRack, moveServer, sellRack, setExtraPower, setFeed, setFlatPower } from "../../../sim/90-actions/hardware";
 import { Stepper } from "../shop/Cart";
@@ -27,16 +28,16 @@ import { clusterOf } from "../../../sim/60-infra/cluster";
 import { rackAlarms } from "../../../sim/60-infra/alarms";
 import { present } from "../../../sim/60-infra/handwork";
 import { useSessionState } from "../../session";
-import { useHandWork, type HandTask } from "./HandSheet";
+import { HandsButtons, HandsJobs, handsWays, jobBadge, useHandWork, type HandsHow, type HandTask } from "./HandSheet";
 
 export function rackItems(g: GameState, rackId: string): RackItem[] {
   return g.devices.filter((d) => d.rackId === rackId).map((d) => {
     const model = modelById(d.model);
-    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), stick: g.media.stick.in === d.id, ...deviceLamps(g, d.id, model) };
+    return { id: d.id, slot: d.slot, model, brand: d.brand, name: devName(d), groups: d.groups, chassisId: d.chassisId, plugs: d.components.filter((c) => c.kind === "psu").map(isPlugged), stick: g.media.stick.in === d.id, note: modelById(d.model).kind === "gateway" && isOfficeRouter(model) ? routerPassword(g, d.id) : undefined, badge: jobBadge(g, d.id) ?? (model.kind === "server" && !pluggedIn(d) ? t("locations-1.stNoPower") : undefined), badgeFault: !jobBadge(g, d.id) && model.kind === "server" && !pluggedIn(d), ...deviceLamps(g, d.id, model) };
   });
 }
 
-function rackLinks(g: GameState, rackId: string): RackLink[] {
+export function rackLinks(g: GameState, rackId: string): RackLink[] {
   const dev = new Map(g.devices.map((d) => [d.id, d]));
   return g.cables.flatMap((c) => [[c.a, c.b], [c.b, c.a]].flatMap(([end, peer]) => (dev.get(end.device)?.rackId === rackId ? [{ id: c.id, end, peer, color: cableColor(c) }] : [])));
 }
@@ -44,7 +45,7 @@ function rackLinks(g: GameState, rackId: string): RackLink[] {
 const KIND_LABEL: Record<DeviceKind, string> = { server: t("locations-2.kind.server"), switch: t("locations-2.kind.switch"), firewall: t("locations-2.kind.firewall"), gateway: t("locations-2.kind.gateway"), patch: t("locations-2.kind.patch"), ups: t("locations-2.kind.ups"), pdu: t("locations-2.kind.pdu"), part: t("locations-2.kind.part"), kvm: t("locations-2.kind.kvm"), console: t("locations-2.kind.console"), oob: t("locations-2.kind.oob"), chassis: t("locations-2.kind.chassis"), jack: t("locations-2.kind.jack") };
 
 // Devices outside the rack that it is cabled to, plus the location's carrier panel and patch panels to cable to.
-function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
+export function rackRemotes(g: GameState, rack: Rack): RackRemote[] {
   const here = g.devices.filter((d) => (d.rackId || d.panel) && locationOf(g, d)?.id === rack.locationId);
   const ids = new Set(g.devices.filter((d) => d.rackId === rack.id).map((d) => d.id));
   const cabled = new Set(g.cables.flatMap((c) => (ids.has(c.a.device) ? [c.b.device] : ids.has(c.b.device) ? [c.a.device] : [])));
@@ -144,7 +145,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
   const main = useRef<HTMLDivElement>(null);
   const { zoom, ref: rackRef, width: rackWidth } = useRackZoom();
   const items = rackItems(game, rack.id), units = rackUnits(rack), power = rackPower(game, rack.id);
-  const used = items.reduce((n, it) => n + it.model.height, 0);
+  const used = items.reduce((n, it) => n + heightIn(game, rack.id, it.model.id), 0);
   const nodes = game.devices.filter((d) => d.rackId === rack.id && clusterOf(game, d.id));
   const dev = game.devices.find((d) => d.id === device && d.rackId === rack.id);
   const loc = game.locations.find((l) => l.id === rack.locationId)!;
@@ -184,7 +185,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           </div>
         </div>
         <div className="loc-rack-scroll" ref={rackRef} style={{ width: rackWidth }}>
-          <RackFront units={units} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
+          <RackFront units={units} shelf={rack.model === "shelf"} items={items} links={rackLinks(game, rack.id)} remotes={side === "back" ? rackRemotes(game, rack) : []} side={side} w={420 * zoom} u={22 * zoom}
             hot={dev ? hot : null} selected={dev?.id ?? null} onDevice={(id) => { onDevice(id); setMount(null); if (id !== monitor) setMonitor(null); }} onDeviceMenu={deviceMenu} onFree={openMount}
             onConnect={(a, b) => act(connect, a, b)} onPlug={plug} onConsole={here ? (id) => { onDevice(id); setMonitor(id); } : undefined} onUsb={here ? (id) => (game.media.stick.in === id ? act(unplugStick) : act(plugStick, id)) : undefined} onMove={(id, slot) => act(moveInRack, id, slot)} />
         </div>
@@ -194,16 +195,16 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           <>
             <div className="loc-insp-h" onContextMenu={menuOn(rackMenu)}>
               <h2>{rack.name}</h2>
-              {power.tripped && <span className="pill bad">{t("locations-2.tripped")}</span>}
+              {loc.tripped && <span className="pill bad">{t("locations-2.tripped")}</span>}
               {rack.arriveAt !== null && <span className="pill"><Truck />{t("locations-2.arrives", { day: day(rack.arriveAt) })}</span>}
               <span className="grow" />
               {!rack.provided && <More label={rack.name} entries={rackMenu} />}
             </div>
             <div className="loc-card">
-              <Facts rows={[[t("locations-2.location"), loc.name], [t("locations-2.position"), <span className="num">{rack.position}</span>], [t("locations-2.used"), <span className="num">{used} / {units} U</span>], ...(rack.provided ? [[t("locations-2.owner"), t("locations-2.provided")]] as [string, string][] : [[t("locations-2.paid"), <span className="num">{euro(rack.price)}</span>]] as [string, ReactNode][])]} />
+              <Facts rows={[[t("locations-2.location"), loc.name], [t("locations-2.position"), <span className="num">{rack.position}</span>], [t("locations-2.used"), <span className="num">{rack.model === "shelf" ? `${t("rack.shelf")}, ${used} / ${units}` : `${used} / ${units} U`}</span>], ...(rack.provided ? [[t("locations-2.owner"), t("locations-2.provided")]] as [string, string][] : [[t("locations-2.paid"), <span className="num">{euro(rack.price)}</span>]] as [string, ReactNode][])]} />
             </div>
             <div className="loc-card">
-              <div className="loc-card-h"><h3><Plug />{t("locations-2.power")}</h3><span className="grow" /><PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} /></div>
+              <div className="loc-card-h"><h3><Plug />{t("locations-2.power")}</h3><span className="grow" /><PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.over} /></div>
               {rack.feedB && (["a", "b"] as const).map((f) => (
                 <div key={f} className="loc-row"><span className="loc-k">{t("locations-1.feed", { feed: f.toUpperCase() })}</span><span className="grow" /><PowerMeter watts={power[f]} limit={power.limitWatts} tripped={power[f] > power.limitWatts} /></div>
               ))}
@@ -215,6 +216,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
                 <BookedMeters game={game} devices={nodes} />
               </div>
             )}
+            <HandsJobs game={game} locationId={rack.locationId} />
             <Upgrades loc={loc} rack={rack} />
           </>
         )}
@@ -234,7 +236,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
 function MountPop({ game, rack, unit, top, left, onClose, onMount }: { game: GameState; rack: Rack; unit: number; top: number; left: number; onClose: () => void; onMount: (task: HandTask) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, onClose);
-  const rows = storageStacks(game, rack.locationId).filter((st) => { const h = modelById(st.model).height; return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
+  const rows = mountable(game, rack, unit);
   const where = `U${unit}`;
   return (
     <div className="loc-shop" ref={ref} style={{ top, left }} role="dialog" aria-label={t("locations-2.mountAt", { where })}>
@@ -247,11 +249,14 @@ function MountPop({ game, rack, unit, top, left, onClose, onMount }: { game: Gam
   );
 }
 
-function MountRow({ game, rack, st, unit, onMount }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMount: (task: HandTask) => void }) {
-  const m = modelById(st.model), max = mountMax(game, rack.id, m.height, st.ids.length, unit);
+export const mountable = (game: GameState, rack: Rack, unit: number) =>
+  storageStacks(game, rack.locationId).filter((st) => { const h = heightIn(game, rack.id, st.model); return h > 0 && mountFrom(game, rack.id, h, 1, unit) !== undefined; });
+
+export function MountRow({ game, rack, st, unit, onMount }: { game: GameState; rack: Rack; st: ReturnType<typeof storageStacks>[number]; unit: number; onMount: (task: HandTask) => void }) {
+  const m = modelById(st.model), h = heightIn(game, rack.id, st.model), max = mountMax(game, rack.id, h, st.ids.length, unit);
   const [count, setCount] = useState(1);
-  const n = Math.min(count, max), from = mountFrom(game, rack.id, m.height, n, unit) ?? unit;
-  const mount = () => onMount(mountTask(st, rack.id, n, from));
+  const n = Math.min(count, max), from = mountFrom(game, rack.id, h, n, unit) ?? unit;
+  const mount = (how: HandsHow) => onMount({ ...mountTask(st, rack.id, n, from), how });
   return (
     <div className="loc-shop-row">
       <Isometric model={m} brand={st.brand} w={64} />
@@ -260,7 +265,7 @@ function MountRow({ game, rack, st, unit, onMount }: { game: GameState; rack: Ra
         <div className="loc-shop-specs num">{t("locations-2.nInStorage", { n: st.ids.length })}</div>
       </div>
       {max > 1 && <Stepper value={n} min={1} onChange={(v) => setCount(Math.min(v, max))} />}
-      <button className="btn primary" onClick={mount}>{t("locations-2.mount")}</button>
+      <HandsButtons className="btn primary" ways={handsWays(game, rack.locationId, "mountDevice")} onRun={mount}>{t("locations-2.mount")}</HandsButtons>
     </div>
   );
 }
@@ -414,7 +419,7 @@ export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
 
 // Mounting as hand work: a unit or a whole stack goes in one job.
 export const mountTask = (st: { ids: string[]; model: string; brand: string }, rackId: string, n: number, from: number): HandTask => ({
-  title: t("locations-2.mountName", { name: `${st.brand} ${modelById(st.model).name}` }),
+  title: t("locations-2.mountName", { name: `${st.brand} ${modelName(modelById(st.model), st.brand)}` }),
   deviceId: st.ids[0],
   ...(n === 1
     ? { action: mountDevice, args: [st.ids[0], rackId, from], tech: { kind: "mount" as const, componentId: rackId, slot: from } }

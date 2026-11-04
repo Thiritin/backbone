@@ -18,6 +18,7 @@ export default {
 
   "desktop.alert.affectedNodes": () => "Nœuds concernés",
   "desktop.alert.compromised": () => "Compromis",
+  "desktop.alert.chip": () => "Alertes",
   "desktop.alert.balance": () => "Solde",
   "desktop.alert.openLoans": () => "Prêts en cours",
   "desktop.alert.host": () => "Hôte",
@@ -120,7 +121,6 @@ export default {
   "desktop.menu.speed": () => "Vitesse du jeu",
   "desktop.menu.skip": () => "Passer au prochain événement",
   "desktop.menu.pause": () => "Pause",
-  "desktop.paused": () => "En pause",
   "desktop.menu.speedN": (p) => `Vitesse ×${p.n}`,
   "desktop.menu.language": () => "Langue",
   "desktop.menu.darkMode": () => "Basculer le mode sombre",

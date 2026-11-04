@@ -59,6 +59,8 @@ export default {
   "bank.site.date": () => "Fecha",
   "bank.site.text": () => "Concepto",
   "bank.site.amount": () => "Importe",
+  "bank.site.total": () => "Total",
+  "bank.site.confirmBatch": () => "Confirmar transferencia colectiva",
   "bank.site.noBookings": () => "Sin movimientos",
   "bank.site.locked": (p) => `La banca en línea está bloqueada hasta el ${p.date}.`,
   "bank.site.sent": () => "Transferencia enviada.",

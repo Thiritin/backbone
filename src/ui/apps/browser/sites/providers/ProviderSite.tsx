@@ -17,7 +17,7 @@ import { contractNo, Portal } from "./portal/Portal";
 import "./providers.css";
 
 // docs/design/plans/colo-portals.md, section 4: the pages every provider site shares; each provider lays them out in its own look.
-export type Rented = Exclude<SpaceKind, "basement">;
+export type Rented = Exclude<SpaceKind, "basement" | "office" | "hall">;
 export type Route =
   | { page: "home" }
   | { page: "sites" }
@@ -203,4 +203,24 @@ export function Body({ game, p, route, go, className }: ProviderProps & { classN
   if (route.page === "order") return <OrderForm game={game} p={p} route={route} className={className} />;
   if (route.page === "account") return <Portal game={game} p={p} route={route} go={go} className={className} />;
   return null;
+}
+
+// Home content for a provider whose datacenters are not on offer: pitch, product list without order buttons, contact, and the notice.
+export function NoSites({ p, look, heroClass }: { p: ProviderProps["p"]; look: string; heroClass: string }) {
+  const k = `providers.${p.id}`;
+  return (
+    <>
+      <section className={heroClass}>
+        <h1>{t(look === "early" ? `${k}.heroEarly` : `${k}.heroLate`)}</h1>
+        <p>{t(`${k}.blurb`)}</p>
+      </section>
+      <section className="ps-noc">
+        <h2>{t("providers.productsHead")}</h2>
+        <ul>{[1, 2, 3].map((i) => <li key={i}>{t(`${k}.product${i}`)}</li>)}</ul>
+        <h2>{t("providers.contactHead")}</h2>
+        <p>{t(`${k}.contact`, { mail: `sales@${p.host}` })}</p>
+        <p className="ps-notice">{t("providers.noSites")}</p>
+      </section>
+    </>
+  );
 }

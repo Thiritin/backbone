@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 // Requests over time: new leads through the day, expansion requests from upgrade tickets, customer replies to quotes,
 // expiry into lost sales and the monthly happiness drift. Decisions are recorded in docs/design/economy/requests-slas-and-growth.md, "Requests, SLAs and growth".
 import { rand, type Rng } from "../00-core/rng";
@@ -384,16 +385,16 @@ function reply(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   } else loseRequest(s, r, "lost", "lost.price");
 }
 
-function expire(s: GameState): void {
+function expire(s: GameState, events: SimEvent[]): void {
   for (const r of s.sales.requests) {
     // An accepted quote waits for the steps until its deadline too.
     const accepted = r.status === "accepted";
     if (!(["open", "countered", "refused"].includes(r.status) || accepted) || s.hour < r.deadline || orderQueued(s, r)) continue;
     const missing = missingFor(s, r)[0];
-    if (r.shop) cancelShopOrder(s, r);
-    else if (r.status !== "open" && !accepted) loseRequest(s, r, "lost", "lost.price");
-    else if (missing) loseRequest(s, r, "lost", missing.key, missing.params);
-    else loseRequest(s, r, "lost", "lost.expired");
+    if (r.shop) { cancelShopOrder(s, r); continue; }
+    const [reason, params] = r.status !== "open" && !accepted ? ["lost.price", {}] as const : missing ? [missing.key, missing.params] as const : ["lost.expired", {}] as const;
+    loseRequest(s, r, "lost", reason, params);
+    events.push({ app: "Support", key: "event.orderExpired", params: { name: requestName(r), reason: t(reason, params) } });
   }
 }
 
@@ -435,6 +436,6 @@ export function salesTick(s: GameState): SimEvent[] {
     reply(s, r, events);
     if (r.kind === "order") answerQuote(s, r.id, events);
   }
-  expire(s);
+  expire(s, events);
   return events;
 }

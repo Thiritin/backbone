@@ -14,13 +14,18 @@ import { opsTick } from "../40-support/notices";
 import { supportTick, workTick } from "../40-support/tick";
 import { abandonTickets } from "../40-support/abandon";
 import { financeTick } from "../46-finance/finance";
-import { bankTick, tanTick } from "../46-finance/bank";
+import { bankOf, bankTick, tanTick } from "../46-finance/bank";
 import { deliverPaidOrders } from "../80-business/vendor-shop";
 import { staffTick } from "../47-staff/staff";
 import { techTick } from "../47-staff/technicians";
+import { phoneTick } from "../47-staff/oncall";
+import { workOrdersTick } from "../90-actions/work-orders";
 import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
+import { HALL, hallCustomerKw } from "../20-world/properties";
 import { closeLocation, noticeEnd } from "../90-actions/hardware";
+import { propertiesEnd, propertyBills } from "../90-actions/properties";
+import { coloTick, handsTick } from "../90-actions/hall";
 import { endService } from "../90-actions/holds";
 import { officeOpen } from "../80-business/office";
 import { fairsTick } from "../80-business/fairs";
@@ -48,7 +53,7 @@ import { importTick } from "../42-mail/imports";
 import { deliverMail } from "../42-mail/sources";
 import { pearMailTick } from "../43-pear-mail/check";
 import { computeTick, pinMembers } from "../60-infra/cluster";
-import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
+import { breakerTick, haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
 import { loadSaved } from "../60-infra/switches";
 import { installNetTick } from "../60-infra/oob";
 import { moduleBills, panelOpsTick } from "../60-infra/panel-services";
@@ -59,6 +64,7 @@ import { migrationTick } from "../60-infra/migration";
 import { maintenanceTick } from "../60-infra/maintenance";
 import { statsTick } from "../60-infra/stats";
 import { networkTick } from "../60-infra/network";
+import { providerCableTick } from "../90-actions/connectivity";
 import { leaseTick } from "../60-infra/lan";
 import { appsTick } from "../60-infra/apps";
 import { bansTick } from "../60-infra/bans";
@@ -74,13 +80,14 @@ import { familyById, familyFailure } from "../10-catalog/families";
 import { lessorName } from "../10-catalog/leasing";
 import { BURNIN_BONUS_HOURS, BURNIN_FACTOR } from "../10-catalog/burnin";
 import { burninTick } from "../60-infra/burnin";
+import { airflow } from "../60-infra/airflow";
 import { sensorTick } from "../60-infra/sensors";
-import { heatOf, THERMAL, thermalTick } from "../60-infra/thermal";
+import { heatOf, hotSpot, THERMAL, thermalTick } from "../60-infra/thermal";
 import { FAILURE_FACTOR, unsupported } from "../10-catalog/lifecycle";
 import { skillById } from "../10-catalog/research";
 import { deskItem, KNOW_HOW, storeItem, subscriptionEntry } from "../10-catalog/store";
 import { deskById } from "../10-catalog/desks";
-import { capacityAt, DATACENTERS, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR, PROVIDERS } from "../20-world/datacenters";
+import { ALL_DATACENTERS, capacityAt, datacenterById, flatMonthly, homeLineById, HOUSEHOLD_FACTOR, PROVIDERS } from "../20-world/datacenters";
 import type { Component, Device, GameState, LedgerEntry, Location, PowerUse } from "../50-state";
 import { trendTick } from "../80-business/trend";
 import { arrayLost, busyDevices, dcAvailability, drawWatts, driveGb, drivesOf, fits, isDrive, HOURS_PER_YEAR, locationOf, locationRent, powered, readOnlySweep } from "../60-infra/status";
@@ -122,6 +129,8 @@ export function endLease(s: GameState, leaseId: string) {
   s.devices = s.devices.map((d) => (d.lease === leaseId ? { ...d, lease: null } : d));
 }
 
+// The factor on the business price: a datacenter's own, an own hall's cheaper one, or the household's.
+const powerFactorOf = (s: GameState, loc: Location): number => (loc.dc ? datacenterById(loc.dc).powerFactor : loc.space === "hall" ? HALL.powerFactor * airflow(s, loc).pue : HOUSEHOLD_FACTOR);
 // Power drawn in one hour per location: kWh, and euros at the business price × the datacenter's power factor, or the household
 // price in the basement. Racks on a flat-rate contract pay it monthly instead.
 export function powerByLocation(s: GameState): Record<string, PowerUse> {
@@ -132,9 +141,17 @@ export function powerByLocation(s: GameState): Record<string, PowerUse> {
       if (!d.on || flat.has(d.rackId ?? "") || !powered(s, d.id)) continue;
       const loc = locationOf(s, d)!, kwh = drawWatts(s, d, busy) / 1000, u = (out[loc.id] ??= { kwh: 0, eur: 0 });
       u.kwh += kwh;
-      u.eur += kwh * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
+      u.eur += kwh * price * powerFactorOf(s, loc);
     }
   });
+  // A hall's customers draw their kW all hour.
+  for (const p of s.properties) {
+    const kw = hallCustomerKw(p.hall), loc = p.hall && s.locations.find((l) => l.id === p.hall!.locationId);
+    if (!kw || !loc) continue;
+    const u = (out[loc.id] ??= { kwh: 0, eur: 0 });
+    u.kwh += kw;
+    u.eur += kw * price * powerFactorOf(s, loc);
+  }
   return out;
 }
 // Euros of power drawn in one hour.
@@ -167,14 +184,14 @@ const setOthers = (s: GameState, id: string, others: number) => {
 
 // Every competitor position cancels with a small chance each month.
 function competitorsCancel(s: GameState) {
-  for (const dc of DATACENTERS) setOthers(s, dc.id, s.dcs[dc.id].others - binomial(s.rng, s.dcs[dc.id].others, CANCEL_CHANCE));
+  for (const dc of ALL_DATACENTERS) setOthers(s, dc.id, s.dcs[dc.id].others - binomial(s.rng, s.dcs[dc.id].others, CANCEL_CHANCE));
 }
 
 // In the first 3 months of an expansion phase competitors take a sixth of the new positions a month; otherwise they fill
 // free space down to a random level between 0% and 4% of capacity. Held and player space is never taken.
 function competitorsTake(s: GameState) {
   const year = yearOf(s.hour), month = dateOf(s.hour).getUTCMonth();
-  for (const dc of DATACENTERS) {
+  for (const dc of ALL_DATACENTERS) {
     const { capacity, free } = dcAvailability(s, dc.id);
     const phase = capacity - capacityAt(dc, year - 1);
     const take = phase > 0 && month < 3 ? Math.round(phase / 6) : free - Math.floor(rand(s.rng) * FREE_TARGET * capacity);
@@ -242,7 +259,7 @@ function wear(s: GameState, events: SimEvent[]) {
   // powered() reads the devices from before this sweep, so its rack power can be memoised.
   s.devices = readOnlySweep(s, () => s.devices.map((d) => {
     if (!d.components.length || !d.on || !powered(s, d.id)) return d;
-    if (heatOf(s, d).hot) d = { ...d, hotHours: (d.hotHours ?? 0) + 1 };
+    if (heatOf(s, d).hot || hotSpot(s, d)) d = { ...d, hotHours: (d.hotHours ?? 0) + 1 };
     const broke = d.components.filter((c) => c.failedAt === null && rand(s.rng) < failureChance(s, d, c));
     return broke.length ? failComponents(s, d, broke.map((c) => c.id), events) : d;
   }));
@@ -292,12 +309,13 @@ export function tick(state: GameState): SimEvent[] {
   }
   const minutes = 60 - state.minute;
   state.hour++;
+  const ordered = workOrdersTick(state, state.hour * 60);
   state.minute = 0;
   tanTick(state);
   haltTick(state);
   installNetTick(state);
   panelOpsTick(state);
-  const events: SimEvent[] = [...tripTick(state), ...thermalTick(state, minutes)];
+  const events: SimEvent[] = [...ordered, ...tripTick(state), ...breakerTick(state), ...thermalTick(state, minutes)];
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
     state.racks = state.racks.map((r) => {
@@ -318,7 +336,7 @@ export function tick(state: GameState): SimEvent[] {
     state.devices = state.devices.map((d) => {
       if (d.arriveAt === null || d.arriveAt > state.hour) return d;
       if (!d.chassisId) arrived.set(d.transitTo!, (arrived.get(d.transitTo!) ?? 0) + 1);
-      return { ...d, store: d.transitTo, transitTo: null, arriveAt: null };
+      return { ...d, store: d.transitTo, transitTo: null, arriveAt: null, arrivedAt: d.arriveAt };
     });
     for (const [id, count] of arrived) {
       events.push({ app: "Locations", key: "event.stockArrived", params: { count, location: state.locations.find((l) => l.id === id)!.name } });
@@ -331,6 +349,8 @@ export function tick(state: GameState): SimEvent[] {
     events.push({ app: "Locations", key: "event.lineReady", params: { line: line.name, isp: line.isp } });
   }
   if (!state.registration && officeOpen(state.hour) && !officeOpen(state.hour - 1)) events.push({ app: "Browser", key: "event.officeOpen", params: {} });
+  const card = state.bank?.card;
+  if (card && card.readyAt === state.hour) events.push({ app: "Browser", key: "event.cardReady", params: { bank: bankOf(state)?.name ?? "" } });
   if (state.training && state.training.doneAt <= state.hour) {
     const skill = skillById(state.training.id)!;
     state.unlocks = [...state.unlocks, skill.id];
@@ -350,6 +370,8 @@ export function tick(state: GameState): SimEvent[] {
   }
   if (state.waitlist.length) updateHolds(state, events);
   contractsEnd(state, events);
+  if (monthStart) propertiesEnd(state, events);
+  if (monthStart) events.push(...coloTick(state));
   for (const v of state.services) if (v.endedAt === null && v.endsAt !== undefined && v.endsAt <= state.hour) endService(state, v.id);
   if (monthStart) competitorsTake(state);
   if (monthStart) events.push(...rivalsTick(state));
@@ -362,6 +384,7 @@ export function tick(state: GameState): SimEvent[] {
     const free = (l: Location) => { const c = state.contracts.find((x) => x.locationId === l.id); return c?.retainedAt != null && noticeEnd(c.retainedAt, 0) === state.hour ? c.monthly : 0; };
     const bills: LedgerEntry[] = state.locations.filter((l) => l.dc)
       .map((l) => ({ hour: state.hour, category: "rent", key: "ledger.space", params: { location: l.name, dc: l.dc! }, amount: free(l) - locationRent(state, l) }));
+    bills.push(...propertyBills(state));
     for (const r of state.racks) {
       const loc = state.locations.find((l) => l.id === r.locationId)!;
       if (!loc.dc) continue;
@@ -439,12 +462,13 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...pearMailTick(state));
   leaseTick(state);
   pinMembers(state);
+  events.push(...providerCableTick(state));
   events.push(...networkTick(state));
   lifecycleTick(state);
   events.push(...securityTick(state));
   events.push(...appsTick(state));
   events.push(...webpanelTick(state));
-  if (state.hour % 24 === 0) resellerTick(state);
+  if (state.hour % 24 === 0) { resellerTick(state); events.push(...handsTick(state)); }
   bansTick(state);
   events.push(...supportTick(state));
   abandonTickets(state);
@@ -454,9 +478,10 @@ export function tick(state: GameState): SimEvent[] {
   paperworkTick(state);
   taxTick(state);
   lettersTick(state);
-  payablesTick(state);
+  events.push(...payablesTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));
+  events.push(...phoneTick(state));
   events.push(...autoUpdateTick(state));
   events.push(...fairsTick(state));
   events.push(...marketingTick(state));
@@ -476,7 +501,7 @@ export function tickMinute(state: GameState): SimEvent[] {
   haltTick(state);
   installNetTick(state);
   panelOpsTick(state);
-  const tripped = tripTick(state);
+  const tripped = [...tripTick(state), ...breakerTick(state)];
   tanTick(state);
-  return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state), ...pearMailTick(state)];
+  return [...tripped, ...workOrdersTick(state), ...thermalTick(state), ...workTick(state), ...deliverLicences(state), ...pearMailTick(state), ...phoneTick(state)];
 }

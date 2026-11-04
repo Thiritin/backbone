@@ -6,14 +6,14 @@ import { specFor } from "../src/sim/30-market/spec";
 import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeTakes } from "../src/sim/60-infra/cluster";
 import { deviceWatts, installedThreads, perCoreOf } from "../src/sim/60-infra/status";
-import { tick } from "../src/sim/88-tick/tick";
+import { tick, tickMinute, type SimEvent } from "../src/sim/88-tick/tick";
 import { setCompatMode } from "../src/sim/90-actions/cpus";
 import { installPart, replaceComponent, setPower } from "../src/sim/90-actions/hardware";
 import { createVm } from "../src/sim/90-actions/clusters";
 import { migrationDowntime } from "../src/sim/90-actions/vms";
 import { runAction } from "../src/sim/90-actions";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyBare, buyDevice, hypervisor, join, onSaleAt, skipTo, withServer, newGame } from "./fixtures";
+import { buyBare, buyDevice, hypervisor, join, onSaleAt, settle, skipTo, withServer, newGame } from "./fixtures";
 
 type R = { ok: boolean; id?: string; error?: string };
 const ok = (r: R) => {
@@ -144,6 +144,7 @@ describe("matched sockets", () => {
     expect(err(installPart(s, id, spare(s, 2)))).toBe("error.mixedCpus");
     expect(err(installPart(s, id, spare(s, 1, "amb")))).toBe("error.wrongVendor");
     ok(installPart(s, id, spare(s, 1)));
+    settle(s);
     expect(cpus(s, id).map((c) => c.size)).toEqual([1, 1]);
   });
 
@@ -153,6 +154,7 @@ describe("matched sockets", () => {
     const first = spare(s, 2);
     spare(s, 2);
     ok(installPart(s, id, first));
+    settle(s);
     expect(cpus(s, id).map((c) => c.size)).toEqual([2, 2]);
     expect(s.devices.filter((d) => d.model === "part-cpu")).toHaveLength(0);
   });
@@ -165,6 +167,7 @@ describe("matched sockets", () => {
     expect(err(replaceComponent(s, "dev3", a.id))).toBe("error.noPart");
     spare(s, 2);
     ok(replaceComponent(s, "dev3", a.id));
+    settle(s);
     expect(dev(s, "dev3").maintenance).toMatchObject({ componentId: a.id, others: [b.id] });
     expect(s.devices.filter((d) => d.model === "part-cpu")).toHaveLength(0);
     while (dev(s, "dev3").maintenance) tick(s);
@@ -177,6 +180,7 @@ describe("matched sockets", () => {
     const [a, b] = cpus(s, "dev3");
     spare(s, 1);
     ok(replaceComponent(s, "dev3", a.id));
+    settle(s);
     expect(dev(s, "dev3").maintenance!.others).toBeUndefined();
     while (dev(s, "dev3").maintenance) tick(s);
     expect(cpus(s, "dev3").find((c) => c.id === b.id)).toBeDefined();
@@ -189,11 +193,13 @@ describe("installing from the UI", () => {
     const s = rich(), d = dev(s, "dev3"), cpu = cpus(s, "dev3")[0], sockets = cpus(s, "dev3").length;
     d.on = false;
     ok(runAction(s, "removePart", ["dev3", cpu.id, "hands"]));
+    settle(s);
     dev(s, "dev3").maintenance = null;
     const part = ok(buyDevice(s, "part-cpu", "Generic", 1, "loc1", { part: { kind: "cpu", size: cpu.size, vendor: cpu.vendor, gen: cpu.gen } }));
     ok(runAction(s, "installPart", ["dev3", part, undefined, "hands"]));
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 24 * 60 && s.orders.some((o) => !o.applied); i++) events.push(...tickMinute(s));
     expect(cpus(s, "dev3")).toHaveLength(sockets);
-    const events = Array.from({ length: 2 }, () => tick(s)).flat();
     expect(events.map((e) => e.key)).toContain("event.workDone");
   });
 });

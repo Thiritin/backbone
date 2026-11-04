@@ -2,13 +2,14 @@
 import { hourOf, START_YEAR } from "../00-core/time";
 import type { RouterLan } from "../50-state";
 import { GENERATIONS } from "./economy";
+import { opticsOn, PANEL_JACKS, portOptic, PROVIDER_PANEL } from "./uplinks";
 import { cardAt, cardOf, gpuOffers, gpuPrice } from "./gpu";
 import { DDR_BY_GEN, defaultFamily, familiesOn, familyById, familySizes, isRamFamily, PART_MAKERS } from "./families";
 import { cpuModel, cpuSkus, cpuWatts, defaultSku, defaultVendor, genOfYear, skuById, skuOf, socketCores, socketOf, VENDOR_ARCH, VENDOR_NAME, VENDORS, vendorsAt, type Vendor } from "./cpus";
 
 // A chassis holds the nodes of a multi-node server with their shared power supplies and fans; the nodes are servers.
 export type DeviceKind = "server" | "switch" | "firewall" | "gateway" | "patch" | "ups" | "pdu" | "part" | "kvm" | "console" | "oob" | "chassis" | "jack";
-export interface PortSpec { media: "rj45" | "sfp" | "dsl"; gbit: number }
+export interface PortSpec { media: "rj45" | "sfp" | "dsl" | "ib"; gbit: number }
 // Management ports outside the data plane, numbered from OOB_PORT: a server's console end, a switch or router's mgmt and RS-232
 // console ports, a KVM's outputs, a console server's serial ports, and the network jack of every management device.
 export type OobPort = "console" | "mgmt" | "kvm" | "serial" | "net";
@@ -40,8 +41,8 @@ export interface ServerSpec {
 }
 // Values from economy/README.md (Components): life in years, yearly failure rates before and after it, part price, and when a swap
 // can happen with the device running: in a RAID array, with a second working power supply, always, or never.
-export type ComponentKind = "hdd" | "ssd" | "nvme" | "psu" | "fan" | "ram" | "board" | "cpu" | "nic" | "gpu";
-export const COMPONENT_KINDS: ComponentKind[] = ["hdd", "ssd", "nvme", "psu", "fan", "ram", "board", "cpu", "nic", "gpu"];
+export type ComponentKind = "hdd" | "ssd" | "nvme" | "psu" | "fan" | "ram" | "board" | "cpu" | "nic" | "gpu" | "optic";
+export const COMPONENT_KINDS: ComponentKind[] = ["hdd", "ssd", "nvme", "psu", "fan", "ram", "board", "cpu", "nic", "gpu", "optic"];
 export const COMPONENTS: Record<ComponentKind, { life: number; before: number; after: number; price: number; hotSwap: "raid" | "dual" | "yes" | "no" }> = {
   hdd: { life: 5, before: 0.015, after: 0.08, price: 120, hotSwap: "raid" },
   ssd: { life: 5, before: 0.008, after: 0.04, price: 150, hotSwap: "raid" },
@@ -53,9 +54,10 @@ export const COMPONENTS: Record<ComponentKind, { life: number; before: number; a
   cpu: { life: 7, before: 0.0005, after: 0.002, price: 400, hotSwap: "no" },
   nic: { life: 10, before: 0.003, after: 0.01, price: 80, hotSwap: "no" },
   gpu: { life: 5, before: 0.015, after: 0.08, price: 9000, hotSwap: "no" },
+  optic: { life: 10, before: 0.003, after: 0.01, price: 400, hotSwap: "yes" },
 };
 const COMPONENT_NAMES: Record<ComponentKind, string> = {
-  hdd: "HDD", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card", gpu: "GPU card",
+  hdd: "HDD", ssd: "SSD", nvme: "NVMe drive", psu: "power supply", fan: "fan", ram: "RAM stick", board: "mainboard", cpu: "CPU", nic: "network card", gpu: "GPU card", optic: "network module",
 };
 const DRIVE_KIND = { HDD: "hdd", SSD: "ssd", NVMe: "nvme" } as const;
 
@@ -150,6 +152,8 @@ export function slotsOf(m: DeviceModel, kind: ComponentKind): number {
   if (kind === "psu") return m.chassis ? 0 : v?.psuBays ?? m.psus;
   if (kind === "gpu") return gpuSlots(m);
   if (kind === "fan") return fanSlots(m);
+  // A module goes into each port that takes a pluggable module.
+  if (kind === "optic") return m.kind === "gateway" || m.kind === "switch" ? m.ports.filter((p) => portOptic(p.gbit, p.media)).length : 0;
   return m.kind === "server" || m.kind === "switch" || m.kind === "firewall" ? 1 : 0;
 }
 
@@ -160,7 +164,7 @@ export function fits(m: DeviceModel, parts: PartSpec[]): string | null {
   const boards = m.kind === "server" || m.kind === "switch" || m.kind === "firewall" ? 1 : 0;
   // Network ports come with the model, so a server takes its onboard NIC and no more.
   if (count("cpu") > (v?.sockets ?? 0) || count("ram") > (v?.dimmSlots ?? 0) || count("psu") > slotsOf(m, "psu")
-    || count("fan") > fans || count("board") > boards || count("nic") > (v ? 1 : 0)) return "error.noSlot";
+    || count("fan") > fans || count("board") > boards || count("nic") > (v ? 1 : 0) || count("optic") > slotsOf(m, "optic")) return "error.noSlot";
   const cards = parts.filter((p) => p.kind === "gpu");
   if (cards.length > gpuSlots(m) || (m.height < 4 && cards.some((p) => cardOf(p.size, p.sku).wide))) return "error.noSlot";
   if (v && parts.filter((p) => p.kind === "ram").reduce((n, p) => n + (p.size ?? 0), 0) > v.maxRamGb) return "error.tooMuchRam";
@@ -700,6 +704,8 @@ export const MODELS: DeviceModel[] = [
   other("edge-l", "Edge router L", "gateway", 2, ports(32, 100), 600, 40000, 2014, { brand: "Sysko", ...router(400, 512, true) }),
   other("edge-xl", "Edge router XL", "gateway", 2, ports(36, 400), 900, 90000, 2021, { brand: "Sysko", ...router(800, 2048, true) }),
   other("edge-xxl", "Edge router XXL", "gateway", 2, ports(36, 400), 1200, 150000, 2027, { brand: "Sysko", ...router(1600, 4096, true) }),
+  other("edge-osfp", "Edge router OSFP", "gateway", 2, ports(32, 800), 1500, 220000, 2030, { brand: "Sysko", ...router(3200, 8192, true) }),
+  other("ib-switch", "InfiniBand switch", "gateway", 1, ports(32, 1600, "ib"), 1400, 260000, 2030, { brand: "Sysko", ...router(6400, 8192, true) }),
   // Small-office routers replace the basement's router on its shelf; the routed speed caps the home line.
   other("fb-7050", "Fritz!Bocks 7050", "gateway", 1, fritzPorts, 8, 150, 2006, { ...fritz, ...router(0.1, 0) }),
   other("fb-7390", "Fritz!Bocks 7390", "gateway", 1, fritzPorts, 9, 220, 2010, { ...fritz, ...router(0.3, 0) }),
@@ -744,6 +750,8 @@ export const MODELS: DeviceModel[] = [
   // The carrier's socket on the basement's panel, where a router's DSL port takes the line.
   other("line-jack", "Line jack", "jack", 0, [{ media: "dsl", gbit: 1 }], 0, 0),
   other("handoff", "Datacenter handoff", "gateway", 0, ports(2, 1), 0, 0),
+  // The provider's panel in the top unit of a rented rack: jacks 0 to 23 face the provider, 24 to 47 the rack (uplinks.ts).
+  other(PROVIDER_PANEL, "Provider patch panel", "patch", 1, ports(PANEL_JACKS * 2, 1600, "sfp"), 0, 0),
   ...COMPONENT_KINDS.map((k) => other(`part-${k}`, `Spare ${COMPONENT_NAMES[k]}`, "part", 0, [], 0, COMPONENTS[k].price)),
 ];
 // Model ids from older saves.
@@ -833,6 +841,7 @@ export function partOffers(year: number): PartSpec[] {
   // Every size of every memory and drive family on sale, and the cards of every line.
   for (const kind of ["ram", "hdd", "ssd", "nvme"] as const) for (const f of familiesOn(kind, year)) for (const gb of familySizes(f, year)) add({ kind, size: gb, ...(isRamFamily(f) ? {} : { ff: f.ff }), sku: f.id });
   for (const c of gpuOffers(year)) add({ kind: "gpu", size: c.year, sku: c.id });
+  for (const o of opticsOn(year)) add({ kind: "optic", size: o.gbit });
   const maker = (p: PartSpec) => (p.vendor ? VENDORS.indexOf(p.vendor) : p.sku ? PART_MAKERS.findIndex((m) => p.sku!.startsWith(`${m.id}-`)) : -1);
   return out.sort((a, b) => COMPONENT_KINDS.indexOf(a.kind) - COMPONENT_KINDS.indexOf(b.kind) || maker(a) - maker(b) || (a.size ?? 0) - (b.size ?? 0));
 }

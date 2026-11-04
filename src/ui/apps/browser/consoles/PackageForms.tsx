@@ -10,7 +10,7 @@ import type { Cluster } from "../../../../sim/60-infra/cluster";
 import { belowFloor, covers, defaultSpecFor, packageNamed, packageProducts, packageUse, packagesOf, type PackageDef } from "../../../../sim/80-business/packages";
 import { provisionOrder } from "../../../../sim/90-actions/orders";
 import { addPackage, changePackage, copyPackages, deletePackage, editPackage } from "../../../../sim/90-actions/packages";
-import { usePageAct } from "../pageAct";
+import { useFormAct, usePageAct } from "../pageAct";
 import { IMPORT_LAG } from "../../../../sim/10-catalog/games";
 import { TitleCatalogue } from "./GamePanel";
 import { noAutofill } from "../../../no-autofill";
@@ -133,10 +133,10 @@ export const HYPERVISOR_ORDERS: Product[] = ["vps", "gameServer", "cloud"];
 
 // The create-account form: the Order field fills the fixed facts, the player picks host, package and username.
 // sections are the console's own names for the three groups; without them the fields sit in one list.
-export function ProvisionForm({ game, c, products, order, sections, className = "cx-form", button = t("pkg.create") }: {
-  game: GameState; c: Cluster; products: Product[]; order?: string; sections?: { order: string; account: string; plan: string }; className?: string; button?: string;
+export function ProvisionForm({ game, c, products, order, sections, className = "cx-form", button = t("pkg.create"), title }: {
+  game: GameState; c: Cluster; products: Product[]; order?: string; sections?: { order: string; account: string; plan: string }; className?: string; button?: string; title?: string;
 }) {
-  const act = usePageAct(), choices = orderChoices(game, products);
+  const [act, error] = useFormAct(), choices = orderChoices(game, products);
   const [ticket, setTicket] = useState(choices.some((o) => o.ticketId === order) ? order! : ""), [pkg, setPkg] = useState(""), [user, setUser] = useState<string | null>(null);
   const hosts = hostChoices(game, c);
   const [route, setRoute] = useState(c.id);
@@ -144,8 +144,8 @@ export function ProvisionForm({ game, c, products, order, sections, className = 
   const username = user ?? o?.suggestedUsername ?? "";
   const group = (title: string | undefined, body: ReactNode) => (title ? <fieldset className="cx-group"><legend>{title}</legend>{body}</fieldset> : <>{body}</>);
   const run = () => o && act(provisionOrder, o.ticketId, route, { package: pkg || undefined, username: web ? username : undefined });
-  return (
-    <form className={className} onSubmit={(e) => { e.preventDefault(); run(); }}>
+  const body = (
+    <>
       {group(sections?.order, (
         <>
           <OrderPicker choices={choices} value={ticket} onChange={(id) => { setTicket(id); setPkg(""); setUser(null); }} />
@@ -178,7 +178,13 @@ export function ProvisionForm({ game, c, products, order, sections, className = 
       <div className="cx-tools">
         <button className="cx-btn primary" type="submit" disabled={!o || !!o.error || !!tk?.work || (!!pkg && !packageNamed(c, pkg))}>{button}</button>
         {tk?.work && <span className="cx-note">{t("pkg.queued")}</span>}
+        {error && <span className="cx-note bad" role="alert">{error}</span>}
       </div>
+    </>
+  );
+  return (
+    <form className={className} onSubmit={(e) => { e.preventDefault(); run(); }}>
+      {title ? <fieldset className="cx-group cx-card"><legend>{title}</legend>{body}</fieldset> : body}
     </form>
   );
 }

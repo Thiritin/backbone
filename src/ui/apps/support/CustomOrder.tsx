@@ -1,4 +1,6 @@
 import { ArrowRight, Check, CircleX, FilePlus, FileText, Globe, KeyRound, Receipt, Rocket, Send, UserPlus } from "lucide-react";
+import { serverOf, vmById } from "../../../sim/60-infra/cluster";
+import { powered } from "../../../sim/60-infra/status";
 import { useId, useState } from "react";
 import { t } from "../../../i18n/en";
 import { euroCents } from "../../../sim/00-core/money";
@@ -108,10 +110,16 @@ function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: s
   const game = useStore((s) => s.game);
   const better = betterHost(game), suggested = hostFor(game, r);
   const hosts = routeOptions(game, r.product, r.city, sizeOf(r.spec!)).sort((a, b) => Number(b.fits) - Number(a.fits) || better(game.clusters.find((c) => c.id === a.id)!, game.clusters.find((c) => c.id === b.id)!));
+  // A host whose machines have no power is not full; the card says so.
+  const noPower = (id: string) => {
+    const c = game.clusters.find((x) => x.id === id)!, vm = c.vm ? vmById(game, c.vm) : null;
+    const devs = vm ? [serverOf(game, vm)] : c.nodes.map((n) => n.deviceId);
+    return devs.length > 0 && devs.every((d) => !d || !powered(game, d));
+  };
   const used = (h: (typeof hosts)[number], k: "ramGb" | "diskGb") => t("support.ofGb", { a: n(h.used[k]), b: n(h.cap[k]) });
-  const card = (id: string, title: string, fits: boolean, rows: [string, string][]) => (
+  const card = (id: string, title: string, fits: boolean, rows: [string, string][], reason = t("support.full")) => (
     <div key={id} className={`host${value === id ? " sel" : ""}${fits ? "" : " full"}`}>
-      <span className="host-t">{title}{!fits && <span className="pill">{t("support.full")}</span>}{id === suggested && <span className="pill accent">{t("support.suggested")}</span>}</span>
+      <span className="host-t">{title}{!fits && <span className="pill">{reason}</span>}{id === suggested && <span className="pill accent">{t("support.suggested")}</span>}</span>
       {rows.map(([k, v]) => <span key={k} className="host-r"><span>{k}</span><span className="num">{v}</span></span>)}
       <button className="btn" aria-pressed={value === id} disabled={disabled || !fits} onClick={() => onChange(id)}>{value === id ? t("support.selected") : t("support.select")}</button>
     </div>
@@ -121,7 +129,7 @@ function HostCards({ r, value, onChange, disabled }: { r: SalesRequest; value: s
       {canAutomate(game) && card("auto", t("support.automatic"), hosts.some((h) => h.fits), [[t("support.hosts"), String(hosts.length)]])}
       {hosts.map((h) => {
         const q = hostQuality(game, game.clusters.find((c) => c.id === h.id)!);
-        return card(h.id, `${h.name} · ${h.az}`, h.fits, [[t("support.hardware"), q.year ? String(q.year) : t("support.unknown")], [t("support.downThisMonth"), `${n(q.down)} h`], [t("support.ramBooked"), used(h, "ramGb")], [t("support.diskBooked"), used(h, "diskGb")]]);
+        return card(h.id, `${h.name} · ${h.az}`, h.fits, [[t("support.hardware"), q.year ? String(q.year) : t("support.unknown")], [t("support.downThisMonth"), `${n(q.down)} h`], [t("support.ramBooked"), used(h, "ramGb")], [t("support.diskBooked"), used(h, "diskGb")]], noPower(h.id) ? t("support.noPowerPill") : undefined);
       })}
     </div>
   );
@@ -200,7 +208,7 @@ export function CustomCompose({ tk, r }: { tk: Ticket; r: SalesRequest }) {
   // Only the step the order is at: the offer until the customer accepts, then account, invoice, domain, setup, access data.
   const shown = [!done.quote ? (waiting ? "" : "quote") : !done.account ? "account" : !done.invoice ? "invoice" : web && !done.domain ? "domain" : !done.provision ? "provision" : !done.access ? "access" : ""];
   const cost = web ? (game.registrar ? wholesale(game, r.domain!) : registryCost(r.domain!, yearOf(game.hour))) : 0;
-  const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : t("support.notSent");
+  const quoteValue = done.quote ? t("support.perMonth", { price: euroCents(r.quote ?? 0) }) : waiting ? t("support.sent") : r.status === "countered" ? t("support.counter", { price: euroCents(r.counter ?? 0) }) : r.status === "refused" ? t("support.refused") : game.quotes.some((q) => q.ticketId === tk.id && q.status === "draft") ? t("orderSteps.status.draft") : t("support.notSent");
   const row = (id: string, label: string, value: string, body?: React.ReactNode) => (
     shown.includes(id) && (
       <li key={id} className="step now">

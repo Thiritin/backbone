@@ -4,8 +4,10 @@ import { visibleCandidates } from "../src/sim/47-staff/staff";
 import { type GameState } from "../src/sim/50-state";
 import { BOOT_HOURS, deviceHealth, installedRamGb } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
+import { datacenterById } from "../src/sim/20-world/datacenters";
+import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
 import { addLocation, addSecondPsu, buyRack, installPart, removePart, setPower, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyBare, buyDevice, newGame } from "./fixtures";
+import { buyBare, buyDevice, newGame, settle } from "./fixtures";
 import { queueOperation } from "../src/sim/90-actions/staff";
 import { hire } from "./fixtures";
 import { mountDevice } from "./plugged";
@@ -49,13 +51,17 @@ describe("installing parts", () => {
     expect(err(installPart(s, id, ram))).toBe("error.powerOffFirst");
     ok(setPower(s, id, false));
     ok(installPart(s, id, ram));
-    expect(dev(s, id).maintenance).toMatchObject({ doneAt: s.hour + 0.5 });
+    // The work is a queued order; the stick goes in when it is done.
+    expect(s.orders.filter((o) => !o.applied)).toMatchObject([{ kind: "parts", action: { name: "installPart" } }]);
+    expect(kinds(s, id, "ram")).toHaveLength(0);
+    // A second install on the same unit is busy while the first is queued.
+    expect(err(installPart(s, id, spare(s, "ram", 2)))).toBe("error.busy");
+    settle(s);
     expect(kinds(s, id, "ram")).toHaveLength(1);
     expect(kinds(s, id, "ram")[0]).toMatchObject({ size: 2, installedAt: s.hour, failedAt: null });
     expect(s.devices.some((d) => d.id === ram)).toBe(false);
     expect(installedRamGb(dev(s, id))).toBe(2);
     expect(deviceHealth(s, id).state).toBe("off");
-    expect(err(installPart(s, id, spare(s, "ram", 2)))).toBe("error.busy");
     run(s, 1);
     expect(dev(s, id).maintenance).toBeNull();
     expect(dev(s, id).on).toBe(false);
@@ -68,6 +74,7 @@ describe("installing parts", () => {
     const id = rack(s, { extras: [HDD] });
     expect(dev(s, id).raid).toBe("1");
     ok(installPart(s, id, spare(s, "hdd", 500, "3.5")));
+    settle(s);
     expect(dev(s, id).on).toBe(true);
     expect(dev(s, id).maintenance).toBeNull();
     expect(kinds(s, id, "hdd")).toHaveLength(3);
@@ -84,14 +91,19 @@ describe("installing parts", () => {
     const id = rack(s);
     const fan = kinds(s, id, "fan")[0].id;
     ok(removePart(s, id, fan));
+    settle(s);
     expect(kinds(s, id, "fan")).toHaveLength(3);
     ok(installPart(s, id, spare(s, "fan")));
+    settle(s);
     expect(kinds(s, id, "fan")).toHaveLength(4);
     expect(dev(s, id).maintenance).toBeNull();
-    const psu = ok(installPart(s, id, spare(s, "psu")));
+    ok(installPart(s, id, spare(s, "psu")));
+    settle(s);
+    const psu = kinds(s, id, "psu").at(-1)!.id;
     expect(dev(s, id).model).toBe("g1-compute-2psu");
     expect(dev(s, id).components.find((c) => c.id === psu)!.plugged).toBe(false);
     ok(removePart(s, id, psu));
+    settle(s);
     expect(dev(s, id).model).toBe("g1-compute");
     expect(dualPsuModel("g1-compute")).toBeDefined();
   });
@@ -102,6 +114,7 @@ describe("installing parts", () => {
     ok(setPower(s, id, false));
     expect(err(installPart(s, id, spare(s, "ram", 2)))).toBe("error.noSlot");
     expect(err(installPart(s, id, spare(s, "cpu", 1), 1))).toBe("ok");
+    settle(s);
     expect(err(installPart(s, id, spare(s, "cpu", 1), 0))).toBe("error.partSlotTaken");
     run(s, 1);
     expect(err(installPart(s, id, spare(s, "cpu", 1), 5))).toBe("error.unknownSlot");
@@ -126,13 +139,15 @@ describe("installing parts", () => {
     const s = rich();
     const id = ok(buyBare(s, "g1-compute", "Dwell", 1, "loc1"));
     ok(installPart(s, id, spare(s, "cpu", 1)));
+    settle(s);
     ok(installPart(s, id, spare(s, "cpu", 1)));
+    settle(s);
     expect(dev(s, id).maintenance).toBeNull();
     expect(kinds(s, id, "cpu")).toHaveLength(2);
     expect(err(installPart(s, id, spare(s, "cpu", 1)))).toBe("error.noSlot");
   });
 
-  it("bills remote hands at a datacenter and waits for them", () => {
+  it("queues a remote hands job at a datacenter and installs when it runs", () => {
     const s = rich();
     const loc = ok(addLocation(s, "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
@@ -140,11 +155,17 @@ describe("installing parts", () => {
     const id = ok(buyBare(s, "g1-compute", "Dwell", 1, loc));
     ok(mountDevice(s, id, r, 1));
     ok(setPower(s, id, false));
-    const ram = spare(s, "ram", 2, undefined, loc), cash = s.cash;
+    const ram = spare(s, "ram", 2, undefined, loc), cash = s.cash, before = dev(s, id).components.length;
+    const hands = datacenterById("interaction-fra").remoteHands, wait = hands.responseHours + JOB_HOURS.parts;
     ok(installPart(s, id, ram));
-    expect(s.cash).toBe(cash - 120);
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", amount: -120 });
-    expect(dev(s, id).maintenance!.doneAt).toBe(s.hour + 2.5);
+    expect(handsJobs(s)).toHaveLength(1);
+    expect(s.cash).toBe(cash);
+    expect(dev(s, id).components).toHaveLength(before);
+    for (let h = 0; h < Math.ceil(wait); h++) tick(s);
+    expect(handsJobs(s)).toHaveLength(0);
+    expect(dev(s, id).components).toHaveLength(before + 1);
+    expect(s.cash).toBe(cash - JOB_HOURS.parts * hands.perHour);
+    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.remoteHands", amount: -JOB_HOURS.parts * hands.perHour });
   });
 });
 
@@ -156,12 +177,13 @@ describe("removing parts", () => {
     expect(err(removePart(s, id, stick.id))).toBe("error.powerOffFirst");
     ok(setPower(s, id, false));
     ok(removePart(s, id, stick.id));
+    settle(s);
     expect(kinds(s, id, "ram")).toHaveLength(3);
-    expect(dev(s, id).maintenance!.doneAt).toBe(s.hour + 0.5);
     expect(s.devices.filter((d) => d.model === "part-ram" && d.store === "loc1")).toMatchObject([{ part: { kind: "ram", size: 2 } }]);
     // The spare goes back into the same chassis.
     run(s, 1);
     ok(installPart(s, id, s.devices.find((d) => d.model === "part-ram")!.id));
+    settle(s);
     expect(kinds(s, id, "ram")).toHaveLength(4);
   });
 
@@ -171,6 +193,7 @@ describe("removing parts", () => {
     const fan = kinds(s, id, "fan")[0];
     fan.failedAt = 1;
     ok(removePart(s, id, fan.id));
+    settle(s);
     expect(s.devices.some((d) => d.model === "part-fan")).toBe(false);
     expect(err(removePart(s, id, kinds(s, id, "board")[0].id))).toBe("error.notRemovable");
     expect(err(removePart(s, id, kinds(s, id, "nic")[0].id))).toBe("error.notRemovable");
@@ -182,7 +205,9 @@ describe("removing parts", () => {
     const id = rack(s, { extras: [HDD] });
     expect(err(removePart(s, id, kinds(s, id, "hdd")[1].id))).toBe("error.raidLevel");
     ok(installPart(s, id, spare(s, "hdd", 500, "3.5")));
+    settle(s);
     ok(removePart(s, id, kinds(s, id, "hdd")[2].id));
+    settle(s);
     expect(kinds(s, id, "hdd")).toHaveLength(2);
     expect(dev(s, id).rebuild).toBeNull();
     expect(s.devices.filter((d) => d.model === "part-hdd" && d.store === "loc1")).toMatchObject([{ part: { kind: "hdd", size: 500, ff: "3.5" } }]);
@@ -195,6 +220,7 @@ describe("the second power supply", () => {
     const id = rack(s);
     const cash = s.cash;
     ok(addSecondPsu(s, id));
+    settle(s);
     expect(dev(s, id).model).toBe("g1-compute-2psu");
     expect(cash - s.cash).toBe(250);
     expect(kinds(s, id, "psu")).toHaveLength(2);

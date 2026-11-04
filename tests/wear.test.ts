@@ -7,7 +7,9 @@ import { type Device, type GameState } from "../src/sim/50-state";
 import { arrayLost, deviceHealth, linkStatus, raidTolerance, raidUsable, rackPower } from "../src/sim/60-infra/status";
 import { failComponents, failureChance, rebuildHours, tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { addLocation, buyCircuit, buyRack, connect, replaceComponent, setCableColor, setFeed, setLabel, setPower, setRaid, setRebuildRate, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, freeFloor, newGame } from "./fixtures";
+import { datacenterById } from "../src/sim/20-world/datacenters";
+import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
+import { buyDevice, freeFloor, newGame, settle } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -33,9 +35,11 @@ const run = (s: GameState, hours: number) => {
 // Replaces the starting server with a stored model in the basement rack, cabled to the switch.
 function server(s: GameState, model: string, brand = "Dwell"): string {
   ok(unmountDevice(s, "dev3"));
+  settle(s);
   const id = ok(buyDevice(s, model, brand, 1, "loc1"));
   ok(mountDevice(s, id, "rack2", 1));
   ok(connect(s, { device: id, port: 0 }, { device: "dev4", port: 0 }));
+  settle(s);
   return id;
 }
 const part = (s: GameState, kind: string, loc = "loc1") => ok(buyDevice(s, `part-${kind}`, "Generic", 1, loc));
@@ -74,6 +78,7 @@ describe("components and failure rates", () => {
     const play = (monitoring: boolean) => {
       const s = rich();
       ok(unmountDevice(s, "dev3"));
+      settle(s);
       const first = ok(buyDevice(s, "g1-archive", "Dwell", 5, "loc1"));
       // A hot history makes failures ninety times likelier.
       s.devices = s.devices.map((d) => ({ ...d, hotHours: 9000, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
@@ -140,14 +145,15 @@ describe("RAID", () => {
     expect(dev(s, id).dataLost).toBeNull();
     part(s, "hdd");
     ok(replaceComponent(s, id, drive.id));
+    settle(s);
     expect(deviceHealth(s, id).state).toBe("maintenance");
     expect(linkStatus(s, id).online).toBe(true);
     ok(setRebuildRate(s, id, "low"));
     run(s, 1);
     const fresh = dev(s, id).components[3];
-    expect(fresh).toMatchObject({ kind: "hdd", installedAt: 1, failedAt: null });
+    expect(fresh).toMatchObject({ kind: "hdd", installedAt: s.hour, failedAt: null });
     expect(fresh.id).not.toBe(drive.id);
-    expect(dev(s, id).rebuild).toEqual({ componentId: fresh.id, doneAt: 1 + rebuildHours(dev(s, id)) });
+    expect(dev(s, id).rebuild).toEqual({ componentId: fresh.id, doneAt: s.hour + rebuildHours(dev(s, id)) });
     expect(rebuildHours(dev(s, id))).toBeCloseTo((160 * 1000 * 0.7) / 50 / 3600, 9);
     expect(deviceHealth(s, id).state).toBe("rebuilding");
     run(s, 2);
@@ -165,6 +171,7 @@ describe("RAID", () => {
     expect(err(replaceComponent(s, "dev3", drive.id))).toBe("error.powerOffFirst");
     ok(setPower(s, "dev3", false));
     ok(replaceComponent(s, "dev3", drive.id));
+    settle(s);
     run(s, 1);
     ok(setPower(s, "dev3", true));
     s.hour += 1;
@@ -183,6 +190,7 @@ describe("power supplies, fans and power", () => {
     expect(linkStatus(s, id).online).toBe(true);
     part(s, "psu");
     ok(replaceComponent(s, id, a.id));
+    settle(s);
     run(s, 1);
     fail(s, id, b.id, dev(s, id).components.find((c) => c.kind === "psu" && c.id !== b.id)!.id);
     expect(deviceHealth(s, id).state).toBe("down");
@@ -200,6 +208,7 @@ describe("power supplies, fans and power", () => {
     expect(err(replaceComponent(s, "dev3", fan.id))).toBe("error.noPart");
     part(s, "fan");
     ok(replaceComponent(s, "dev3", fan.id));
+    settle(s);
     expect(err(replaceComponent(s, "dev3", fan.id))).toBe("error.busy");
     run(s, 1);
     expect(deviceHealth(s, "dev3").state).toBe("ok");
@@ -210,6 +219,7 @@ describe("power supplies, fans and power", () => {
     ok(setPower(s, "dev3", false));
     // Preventive: the RAM stick works, and the swap still goes through.
     ok(replaceComponent(s, "dev3", ram.id));
+    settle(s);
   });
   it("takes everything behind a switch down when the switch is powered off", () => {
     const s = rich();
@@ -241,7 +251,7 @@ describe("power supplies, fans and power", () => {
 });
 
 describe("remote hands", () => {
-  it("swaps after the response time plus 15 minutes and bills at least an hour", () => {
+  it("queues a swap and runs it after the response time plus the job hours", () => {
     const s = rich();
     const loc = ok(addLocation(freeFloor(s), "interaction-fra", "cage", 4));
     s.locations.find((l) => l.id === loc)!.readyAt = 0;
@@ -252,21 +262,23 @@ describe("remote hands", () => {
     part(s, "fan");
     expect(err(replaceComponent(s, id, fan.id))).toBe("error.noPart");
     part(s, "fan", loc);
-    const cash = s.cash;
+    const cash = s.cash, hands = datacenterById("interaction-fra").remoteHands, wait = Math.ceil(hands.responseHours + JOB_HOURS.parts);
     ok(replaceComponent(s, id, fan.id));
-    expect(s.cash).toBe(cash - 120);
-    expect(s.ledger.at(-1)).toMatchObject({ category: "maintenance", key: "ledger.remoteHands", params: { hours: 1 }, amount: -120 });
-    expect(dev(s, id).maintenance!.doneAt).toBe(2.25);
-    run(s, 2);
-    expect(dev(s, id).maintenance).not.toBeNull();
+    expect(handsJobs(s)).toHaveLength(1);
+    expect(s.cash).toBe(cash);
+    expect(comp(s, id, "fan").id).toBe(fan.id);
+    run(s, wait - 1);
+    expect(handsJobs(s)).toHaveLength(1);
     run(s, 1);
-    expect(dev(s, id).maintenance).toBeNull();
-    expect(comp(s, id, "fan").installedAt).toBe(3);
+    expect(handsJobs(s)).toHaveLength(0);
+    expect(comp(s, id, "fan").id).not.toBe(fan.id);
+    expect(s.cash).toBe(cash - JOB_HOURS.parts * hands.perHour);
+    expect(s.ledger.at(-1)).toMatchObject({ category: "maintenance", key: "ledger.remoteHands", amount: -JOB_HOURS.parts * hands.perHour });
     // The basement has no remote hands: the swap is done by the next hour, for free.
     part(s, "fan");
     const before = s.cash;
     ok(replaceComponent(s, "dev3", comp(s, "dev3", "fan").id));
-    expect(dev(s, "dev3").maintenance!.doneAt).toBe(3.25);
+    settle(s);
     expect(s.cash).toBe(before);
   });
 });

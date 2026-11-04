@@ -1,9 +1,11 @@
 import type { GameState } from "../src/sim/50-state";
+import { settle } from "./fixtures";
 import { mountDevice as mountOne, mountStack as mountMany } from "../src/sim/90-actions/hardware";
 
 // Mounting leaves power supplies unplugged and takes hand work at a datacenter; suites that are not about power or racking mount
 // through these, which have a technician rack the device at once and plug every supply in.
 const plugAll = <T>(s: GameState, r: T): T => {
+  settle(s);
   for (const d of s.devices) {
     if (d.maintenance?.mount) d.maintenance = null;
     if (d.rackId) for (const c of d.components) if (c.kind === "psu") c.plugged = true;

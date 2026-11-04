@@ -14,7 +14,7 @@ export interface Parts { drives: PartLamp[]; psus: PartLamp[]; fans: PartLamp[] 
 export type PortLight = { lamp: "ok" | "warn"; load: number } | null;
 
 export const LED = { ok: "oklch(0.78 0.2 145)", warn: "oklch(0.83 0.17 80)", bad: "oklch(0.66 0.23 27)", off: "oklch(0.4 0.01 255)", act: "oklch(0.8 0.14 225)", fiber: "oklch(0.8 0.12 195)" };
-export const CABLE = { copper: "oklch(0.62 0.14 250)", dac: "oklch(0.7 0.02 255)", fiber: LED.fiber, rollover: "oklch(0.84 0.07 220)", uplink: "oklch(0.82 0.15 90)" };
+export const CABLE = { copper: "oklch(0.62 0.14 250)", dac: "oklch(0.7 0.02 255)", fiber: LED.fiber, rollover: "oklch(0.84 0.07 220)", uplink: "oklch(0.82 0.15 90)", provider: "oklch(0.78 0.16 145)" };
 // Custom cable colours; a cable without one takes its kind's colour.
 export const SWATCHES: [string, string][] = [
   ["Red", "#d9453b"], ["Orange", "#e8862d"], ["Yellow", "#e9c53a"], ["Green", "#3fa45b"],
@@ -94,10 +94,11 @@ export const partLed = (lamp: PartLamp | undefined, idle: string) =>
 const bayLed = (p: FrontProps, i: number, idle: string) =>
   p.state === "off" || (p.parts && i >= p.parts.drives.length) ? { fill: LED.off } : partLed(p.parts?.drives[i], idle);
 
-function StatusLeds({ x, y, state, blink }: { x: number; y: number; state: Lamp; blink?: boolean }) {
+// A failed part holds the fault light steady red.
+function StatusLeds({ x, y, state, blink, fault }: { x: number; y: number; state: Lamp; blink?: boolean; fault?: boolean }) {
   return (
     <>
-      <circle cx={x} cy={y} r="1.8" fill={LED[state]} className={blink ? "led-blink" : undefined} />
+      <circle cx={x} cy={y} r="1.8" fill={LED[fault ? "bad" : state]} className={blink && !fault ? "led-blink" : undefined} data-fault={fault ? "" : undefined} />
       <circle cx={x + 7} cy={y} r="1.8" fill={state === "off" ? LED.off : LED.ok} />
     </>
   );
@@ -129,7 +130,11 @@ export interface FrontProps {
   groups?: number[][];
   parts?: Parts;
   blink?: boolean;
+  // A part has failed: the fault light is red.
+  fault?: boolean;
   onPower?: () => void;
+  // The password printed on the sticker of a small-office router.
+  note?: string;
   // The USB stick is in this server; onUsb plugs it in or pulls it.
   stick?: boolean;
   onUsb?: () => void;
@@ -177,7 +182,7 @@ function ServerFace(p: FrontProps) {
         <circle className="svg-hit" cx={cx + panel - 8} cy={h - 6} r={Math.min(8, h * 0.3)} fill="transparent" role="button" tabIndex={0} aria-label={state === "off" ? t("art.powerOn") : t("art.shutDown")}
           onClick={p.onPower} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); p.onPower!(); } }}><title>{state === "off" ? t("art.powerOn") : t("art.shutDown")}</title></circle>
       )}
-      <StatusLeds x={cx + panel - 26} y={h - 6} state={state} blink={blink} />
+      <StatusLeds x={cx + panel - 26} y={h - 6} state={state} blink={blink} fault={p.fault} />
       {h >= 18 && <BrandMark brand={brand} x={cx + 4} y={h - 11} size={8} />}
       <UsbPort cx={cx - (h >= 28 ? 13 : 10)} cy={h - 6} h={h} stick={p.stick} onUsb={p.onUsb} />
     </>
@@ -206,7 +211,7 @@ function NodeFace(p: FrontProps) {
       ))}
       {name && <AssetTag x={3} y={h - strip / 2 - 1} text={name} h={Math.min(h, 16)} />}
       <UsbPort cx={w - 34} cy={h - strip / 2 - 1} h={strip} stick={p.stick} onUsb={p.onUsb} />
-      <StatusLeds x={w - 22} y={h - strip / 2 - 1} state={state} blink={blink} />
+      <StatusLeds x={w - 22} y={h - strip / 2 - 1} state={state} blink={blink} fault={p.fault} />
       <circle cx={w - 5} cy={h - strip / 2 - 1} r={Math.min(2.6, strip * 0.3)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.8" aria-label={t("art.powerButton")} />
     </>
   );
@@ -246,7 +251,7 @@ function Caddies(p: FrontProps) {
         );
       })}
       <Mark brand={brand} x={w - 31} h={h} />
-      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} fault={p.fault} />
       <UsbPort cx={x1 - 10} cy={top / 2} h={h} stick={p.stick} onUsb={p.onUsb} />
     </>
   );
@@ -373,14 +378,28 @@ function Gateway(p: FrontProps) {
   const fs = fsz(Math.min(h, 24));
   // A small-office router is a white box standing on a shelf.
   if (model.brand === "AVN") {
-    const bx = w * 0.32, bw = w * 0.4;
+    const n = model.ports.length, bw = w * 0.5, bx = (w - bw) / 2, by = 2.5, bh = h - 6.5, px = bx + bw - 10 - n * 16;
     return (
       <>
         <rect x="0" y={h - 3} width={w} height="2.5" rx="0.8" fill="var(--metal)" stroke="var(--metal-line)" />
-        <rect x={bx} y="1.5" width={bw} height={h - 5} rx="3" fill="oklch(0.93 0.005 90)" stroke="oklch(0.7 0.01 90)" />
-        <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
-        {model.ports.map((_, i) => <circle key={i} cx={bx + 10 + i * 6} cy={h / 2 - 1} r="1.3" {...ledProps(lights[i], name, i)} />)}
-        <StatusLeds x={bx + bw - 18} y={h / 2 - 1} state={state} blink={blink} />
+        <rect x="1" y={h - 3.2} width={w - 2} height="0.8" fill="var(--metal-3)" />
+        <rect x={bx} y={by} width={bw} height={bh} rx="2.5" fill="oklch(0.78 0.008 90)" stroke="oklch(0.6 0.01 90)" strokeWidth="0.6" />
+        <rect x={bx + 1.5} y={by + 1} width={bw - 3} height="1.2" rx="0.6" fill="oklch(0.86 0.006 90)" />
+        <Label x={bx + 8} y={by + bh / 2 + fs * 0.9} text={name} size={fs} />
+        {p.note && (
+          <g>
+            <title>{p.note}</title>
+            <rect x={bx + bw * 0.5} y={by + 2.5} width={bw * 0.46} height={fs * 1.7} rx="0.6" fill="oklch(0.96 0.03 95)" stroke="oklch(0.7 0.02 90)" strokeWidth="0.4" />
+            <text x={bx + bw * 0.5 + 2} y={by + 2.5 + fs * 1.2} fontSize={fs * 0.95} fontFamily="var(--mono, monospace)" fill="oklch(0.25 0.01 90)">{p.note}</text>
+          </g>
+        )}
+        {model.ports.map((_, i) => (
+          <g key={i}>
+            <rect x={px + i * 16} y={by + bh - 8} width="12" height="6" rx="0.8" fill="oklch(0.2 0.004 255)" />
+            <circle cx={px + i * 16 + 6} cy={by + bh - 10} r="1" {...ledProps(lights[i], name, i)} />
+          </g>
+        ))}
+        <StatusLeds x={bx + 8} y={by + 5} state={state} blink={blink} fault={p.fault} />
       </>
     );
   }
@@ -389,7 +408,7 @@ function Gateway(p: FrontProps) {
       <Ears w={w} h={h} />
       <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
       {[...gatewayLayout(model, name, w, h)].map(([i, p]) => <circle key={i} cx={p.x + p.w / 2} cy={h / 2} r="1.3" {...ledProps(lights[i], name, i)} />)}
-      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} />
+      <StatusLeds x={w - 22} y={h / 2} state={state} blink={blink} fault={p.fault} />
     </>
   );
 }
@@ -464,16 +483,22 @@ export function Pdu({ w, h, name, model, state }: FrontProps) {
 // A front USB port with its centre at (cx, cy): a light bezel on a dark plate so it reads on any face, the USB trident
 // beside it on faces of two units or more, and the stick in it when it is plugged in. Every face places its own.
 export function UsbPort({ cx, cy, h, stick, onUsb }: { cx: number; cy: number; h: number; stick?: boolean; onUsb?: () => void }) {
-  const x = cx - 4.5, y = cy - 2, label = stick ? t("art.unplugUsb") : t("art.plugInUsb"), glyph = h >= 28;
+  const x = cx - 10, y = cy - 4, label = stick ? t("art.unplugUsb") : t("art.plugInUsb"), glyph = h >= 28;
   return (
     <>
-      <rect x={x - 1.5} y={y - 1.5} width={glyph ? 17 : 12} height="7" rx="0.8" fill="oklch(0.12 0.004 255)" aria-hidden="true" />
-      <rect x={x} y={y} width="9" height="4" rx="0.5" fill="oklch(0.08 0.004 255)" stroke="oklch(0.72 0.01 255)" strokeWidth="0.6" aria-label={t("art.usbPort")} />
-      <rect x={x + 1.5} y={y + 1} width="6" height="1.2" fill="oklch(0.6 0.14 250)" aria-hidden="true" />
-      {glyph && <path d={`M${x + 11.5} ${cy + 1.6}V${cy - 1.8}M${x + 11.5} ${cy - 0.6}l1.6-1M${x + 11.5} ${cy + 0.6}l-1.6-1`} fill="none" stroke="oklch(0.72 0.01 255)" strokeWidth="0.5" strokeLinecap="round" aria-hidden="true" />}
-      {stick && <><rect x={x - 1} y={y - 1.5} width="11" height="7" rx="0.9" fill="oklch(0.42 0.13 150)" stroke="oklch(0.25 0.05 150)" strokeWidth="0.4" /><circle cx={x + 8.4} cy={y + 2} r="0.7" fill={LED.act} /></>}
+      <rect x={x - 2} y={y - 2} width={glyph ? 38 : 24} height="12" rx="1" fill="oklch(0.12 0.004 255)" aria-hidden="true" />
+      <rect x={x} y={y} width="20" height="8" rx="0.8" fill="oklch(0.08 0.004 255)" stroke="oklch(0.78 0.01 255)" strokeWidth="1" aria-label={t("art.usbPort")} />
+      <rect x={x + 3} y={y + 2.5} width="14" height="2.5" fill="oklch(0.6 0.14 250)" aria-hidden="true" />
+      {glyph && <path d={`M${x + 28} ${cy + 3.5}V${cy - 3.5}M${x + 28} ${cy - 1}l3-1.8M${x + 28} ${cy + 1.2}l-3-1.8`} fill="none" stroke="oklch(0.78 0.01 255)" strokeWidth="1" strokeLinecap="round" aria-hidden="true" />}
+      {stick && (
+        <g aria-hidden="true">
+          <rect x={x - 1} y={y - 1} width="22" height="10" rx="1" fill="oklch(0.7 0.17 55)" stroke="oklch(0.38 0.09 50)" strokeWidth="0.8" />
+          <rect x={x + 18} y={y - 3} width="8" height="14" rx="1" fill="oklch(0.5 0.15 50)" stroke="oklch(0.28 0.07 50)" strokeWidth="0.8" />
+          <circle cx={x + 22} cy={y + 4} r="1.3" fill={LED.act} />
+        </g>
+      )}
       {onUsb && (
-        <rect className="svg-hit" x={x - 3} y={y - 3} width="15" height="10" fill="transparent" role="button" tabIndex={0} aria-label={label}
+        <rect className="svg-hit usb-hit" x={x - 6} y={y - 6} width="40" height="20" fill="transparent" role="button" tabIndex={0} aria-label={label}
           onClick={(e) => { e.stopPropagation(); onUsb(); }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onUsb(); } }}><title>{label}</title></rect>
       )}
     </>

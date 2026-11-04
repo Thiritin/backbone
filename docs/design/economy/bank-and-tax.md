@@ -23,6 +23,8 @@ The loan limit is the higher of the level's minimum and 12× the average monthly
 
 **Bankruptcy.** When cash stays below zero for 30 days and no loan is available that covers the deficit, the company is insolvent and the game ends.
 
+**Supplier bills.** A supplier that cuts a service warns twice: a notification when the bill falls due and another seven days before the cut. The power supplier cuts 30 days past due and the registrar lets the domains lapse 14 days past due, each with an alert. The guide step Pay bills shows with the first such bill and ticks when no bill is overdue. Pay all on the bank site sends one collective order for every open bill with a single TAN.
+
 **Account plans.** Each bank sells account plans, and the account fee a month is the plan's (docs/design/plans/bank-plans.md). A dearer plan makes each booking cheaper, and the top plans include the credit card. A booking is any ledger line of the month except the bank's own fees. Each month start books last month's bookings above the plan's free ones, then the plan's fee for the new month. A plan change takes effect at that month start. A limited company pays the plan's fee times the bank's limited factor, which is the ratio of its old limited fee to its old partnership fee. A legal form needs a plan that serves it, so the player moves up a plan before the paperwork, and a limited company application also needs the share capital of €25,000 in the account, without the overdraft.
 
 | Plan | Serves | Fee a month | Free bookings | Per booking | Card |

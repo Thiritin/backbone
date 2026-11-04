@@ -9,7 +9,8 @@ import { ACTIONS, actionName, LOG_CAP, runAction } from "../src/sim/90-actions/i
 import { installPanel } from "../src/sim/90-actions/clusters";
 import { setPortShare } from "../src/sim/90-actions/lan";
 import { setCompany } from "../src/sim/90-actions/company";
-import { openBankAccount } from "../src/sim/90-actions/bank";
+import { openBankAccount, startTransfer as bankStartTransfer } from "../src/sim/90-actions/bank";
+import { startWebTransfer } from "../src/sim/90-actions/webpanel";
 import { savingsOf } from "../src/sim/46-finance/bank";
 import { buyDevice, connect, mountDevice, orderHomeLine, setPlugged } from "../src/sim/90-actions/hardware";
 import { startChallenge } from "../src/sim/90-actions/start";
@@ -24,12 +25,16 @@ const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   return r.id!;
 };
 const store = useStore.getState;
+// Hand work is queued as work orders; plays on until the player has done them.
+const settleStore = () => {
+  for (let i = 0; i < 24 * 30 && store().game.orders.some((o) => !o.applied); i++) store().advance(1);
+};
 const play = (hours: number) => {
   const until = store().game.hour + hours;
   while (store().game.hour < until && store().game.gameOver === null) store().advance(until - store().game.hour);
 };
 
-// The first server through the store, as the player does it: bought, delivered, mounted, plugged, cabled, online, a panel.
+// The first server through the store, as the player does it: bought, delivered, put on the shelf, plugged, cabled, online, a panel.
 function shortGame(): GameState {
   useStore.setState({ game: startChallenge("2026-W43") });
   ok(store().act(openBankAccount, "sparklasse"));
@@ -37,10 +42,12 @@ function shortGame(): GameState {
   const srv = ok(store().act(buyDevice, "g1-compute", "Dwell", 1, "loc1"));
   play(24 * 6);
   ok(store().act(mountDevice, srv, "rack2", 1));
+  settleStore();
   for (const c of store().game.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(store().act(setPlugged, srv, c.id, true));
-  ok(store().act(mountDevice, "dev5", "rack2", 24));
+  settleStore();
   ok(store().act(connect, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
   ok(store().act(connect, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
+  settleStore();
   ok(store().act(orderHomeLine, "dsl-16"));
   play(24 * 9);
   ok(store().act(installPanel, srv, "freepanel"));
@@ -60,7 +67,7 @@ describe("action log", () => {
     const s = short;
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
-    expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "mountDevice", "connect", "connect", "orderHomeLine", "installPanel", "setPortShare"]);
+    expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "connect", "connect", "orderHomeLine", "installPanel", "setPortShare"]);
     expect(s.log[2]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
     expect(store().act(mountDevice, "nope", "rack2", 1).ok).toBe(false);
     expect(store().game.log).toHaveLength(s.log.length);
@@ -87,6 +94,10 @@ describe("action log", () => {
     }
     expect(bad).toEqual([]);
     for (const fn of Object.values(POWER_ACTION)) expect(actionName(fn)).toBeDefined();
+  });
+  it("registers the bank transfer under its own name", () => {
+    expect(actionName(bankStartTransfer)).toBe("startTransfer");
+    expect(actionName(startWebTransfer)).toBe("startWebTransfer");
   });
 
   it("loads an old save with an empty log, no challenge, and ignores leaderboard scores", () => {

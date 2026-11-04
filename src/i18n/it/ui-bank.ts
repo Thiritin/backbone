@@ -59,6 +59,8 @@ export default {
   "bank.site.date": () => "Data",
   "bank.site.text": () => "Causale",
   "bank.site.amount": () => "Importo",
+  "bank.site.total": () => "Totale",
+  "bank.site.confirmBatch": () => "Conferma bonifico collettivo",
   "bank.site.noBookings": () => "Nessun movimento",
   "bank.site.locked": (p) => `L'home banking è bloccato fino al ${p.date}.`,
   "bank.site.sent": () => "Bonifico inviato.",

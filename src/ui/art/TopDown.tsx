@@ -91,21 +91,31 @@ interface Props {
   onPick: (id: string | null) => void;
 }
 
+// The fault mark on a failed part: a red warning triangle with an exclamation mark.
+function Fault({ x, y }: { x: number; y: number }) {
+  return (
+    <g className="lid-fault" data-fault="" pointerEvents="none" aria-hidden="true">
+      <path d={`M${x + 5} ${y}L${x + 10} ${y + 9}H${x}Z`} fill={LED.bad} stroke="oklch(0.1 0.004 255)" strokeWidth="0.6" strokeLinejoin="round" />
+      <path d={`M${x + 5} ${y + 3}V${y + 5.6}M${x + 5} ${y + 7}V${y + 7.4}`} stroke="oklch(0.98 0 0)" strokeWidth="1.1" strokeLinecap="round" />
+    </g>
+  );
+}
+
 export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick }: Props) {
   const slots = chassisSlots(model, parts), { at, bayLen, boardX, rearLen, board } = layout(model, slots);
   const tall = model.height >= 2, gpu = !!lineOf(model)?.startsWith("gpu");
   const boardPart = slots.find((s) => s.group === "board")?.part, boardWear = boardPart ? wear(boardPart) : "ok";
-  const caps: [number, string][] = [[0, t("art.cap.bays")], [boardX + 6, t("art.cap.cpuRam")], [L - rearLen + 6, gpu ? t("art.cap.gpu") : t("art.cap.pcie")]];
 
   const slot = (s: Slot, label: string, body: ReactNode, pad = 2) => {
     const r = at[s.id], w = s.part ? wear(s.part) : null;
     const pick = (e: KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(sel === s.id ? null : s.id); } };
     return (
-      <g key={s.id} className="lid-slot" role="button" tabIndex={open ? 0 : -1} aria-label={label} aria-pressed={sel === s.id}
+      <g key={s.id} className="lid-slot" role="button" tabIndex={open ? 0 : -1} aria-label={label} aria-pressed={sel === s.id} data-wear={w && w !== "ok" ? w : undefined}
         onClick={(e) => { e.stopPropagation(); onPick(sel === s.id ? null : s.id); }} onKeyDown={pick}>
         <title>{label}</title>
         {body}
         {w && <circle cx={r.x + r.w - 4} cy={r.y + 4} r="2.2" fill={LED[w]} stroke="oklch(0.1 0.004 255)" strokeWidth="0.5" />}
+        {w === "bad" && <Fault x={r.x + 2} y={r.y + 2} />}
         <rect className="lid-ring" x={r.x - pad - 1} y={r.y - pad - 1} width={r.w + 2 * pad + 2} height={r.h + 2 * pad + 2} rx="3" />
         <rect className="lid-ring-in" x={r.x - pad + 0.5} y={r.y - pad + 0.5} width={r.w + 2 * pad - 1} height={r.h + 2 * pad - 1} rx="2" />
       </g>
@@ -124,9 +134,12 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
         <pattern id="lid-pins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill={CAVITY} /><circle cx="2" cy="2" r="0.9" fill={GOLD} opacity="0.7" /></pattern>
         <pattern id="lid-fins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill={ALU} /><rect width="1.6" height="4" fill="oklch(0.55 0.01 255)" /></pattern>
       </defs>
-      {caps.map(([x, c]) => <text key={c} className="lid-cap" x={X0 + x} y={Y0 - 10}>{c}</text>)}
-      <text className="lid-cap dim" x={X0} y={Y0 + W + 20}>Front</text>
-      <text className="lid-cap dim" x={X0 + L} y={Y0 + W + 20} textAnchor="end">Rear</text>
+      {/* The board's caption sits a line above the two edge captions, which grow inward from the lid's ends, so none can meet. */}
+      <text className="lid-cap" x={X0} y={Y0 - 6}>{t("art.cap.bays")}</text>
+      <text className="lid-cap" x={X0 + boardX + 6} y={Y0 - 20}>{t("art.cap.cpuRam")}</text>
+      <text className="lid-cap" x={X0 + L} y={Y0 - 6} textAnchor="end">{gpu ? t("art.cap.gpu") : t("art.cap.pcie")}</text>
+      <text className="lid-cap dim" x={X0} y={Y0 + W + 20}>{t("locations-2.front")}</text>
+      <text className="lid-cap dim" x={X0 + L} y={Y0 + W + 20} textAnchor="end">{t("locations-2.back")}</text>
 
       <g transform={`translate(${X0} ${Y0})`}>
         <rect x="0" y="0" width={L} height={W} rx="6" className="lid-tub" />
@@ -160,6 +173,7 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(sel === "board0" ? null : "board0"); } }}>
           <title>{t("art.mainboard")}</title>
           <rect {...box(board)} rx="3" fill={PCB} stroke={boardWear === "ok" ? TRACE : LED[boardWear]} strokeWidth="1.4" />
+          {boardWear === "bad" && <Fault x={board.x + 4} y={board.y + 4} />}
           {Array.from({ length: model.server!.sockets }, (_, j) => (
             <g key={j} stroke={TRACE} strokeWidth="1" opacity="0.7">
               {[0, 1, 2].map((k) => <line key={k} x1={at[`cpu${j}`].x + at[`cpu${j}`].w} x2={at[`cpu${j}`].x + at[`cpu${j}`].w + 22} y1={at[`cpu${j}`].y + 22 + k * 22} y2={at[`cpu${j}`].y + 22 + k * 22} />)}

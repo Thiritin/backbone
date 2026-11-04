@@ -60,9 +60,9 @@ describe("registrar form", () => {
     const s = readyGame(5);
     const id = atDomain(s, false), [address] = owner(s, id);
     expect(registerOrderDomain(s, id)).toEqual({ ok: false, error: "error.ownerMismatch" });
-    expect(registerOrderDomain(s, id, { ...address!, street: "" })).toEqual({ ok: false, error: "error.ownerMismatch" });
-    expect(registerOrderDomain(s, id, { ...address!, city: "Elsewhere" })).toEqual({ ok: false, error: "error.ownerMismatch" });
-    expect(registerOrderDomain(s, id, { ...address!, company: "Someone GmbH" })).toEqual({ ok: false, error: "error.ownerMismatch" });
+    expect(registerOrderDomain(s, id, { ...address!, street: "" })).toMatchObject({ ok: false, error: "error.ownerField", params: { registrar: "" } });
+    expect(registerOrderDomain(s, id, { ...address!, city: "Elsewhere" })).toMatchObject({ ok: false, error: "error.ownerField", params: { registrar: "Elsewhere" } });
+    expect(registerOrderDomain(s, id, { ...address!, company: "Someone GmbH" })).toMatchObject({ ok: false, error: "error.ownerField", params: { registrar: "Someone GmbH" } });
     expect(domainOf(s, req(s, id).domain!)).toBeUndefined();
   });
 

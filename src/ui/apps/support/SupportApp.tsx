@@ -1,4 +1,4 @@
-import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, FileText, Hourglass, Inbox, Layers, Mails, Search, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
+import { AlarmClock, BadgeCheck, ChartColumn, Check, CircleCheck, CircleX, FileText, Hourglass, Inbox, Layers, Mails, Search, Server, Timer, TrendingDown, TriangleAlert, Wrench, X } from "lucide-react";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { deskHas, deskOf, type DeskFeature } from "../../../sim/10-catalog/desks";
@@ -29,7 +29,7 @@ import type { ReplyAnswer } from "../browser/sites/desk/headless/useTicketReplie
 import type { PaneExtra, PaneMessage } from "../browser/sites/desk/headless/useTicketPane";
 import { due, initials, KINDS, kindOf, moodClass, span, stamp, statusOf } from "./labels";
 import { SLAS } from "../../../sim/10-catalog/products";
-import { Card, LostSales, need, SLA_LABEL } from "../sales/SalesApp";
+import { Card, ColoListing, LostSales, need, SLA_LABEL } from "../sales/SalesApp";
 import "./support.css";
 import "./mail-styles.css";
 
@@ -75,7 +75,7 @@ function Sla({ tk, hour }: { tk: Ticket; hour: number }) {
   return <span className={`sla ${cls}`}><span className="num">{span(left)}</span> {left < 0 ? t("support.over") : t("support.left")}</span>;
 }
 
-type Box = "all" | TicketBox | "lost" | "incidents" | "reports";
+type Box = "all" | TicketBox | "lost" | "colo" | "incidents" | "reports";
 // What the installed desk unlocks in the thread view.
 type Gates = Record<"assign" | "templates" | "slaTimers" | "customerSidebar", boolean>;
 type Kind = TicketKind;
@@ -152,7 +152,7 @@ export function SupportApp() {
   );
 
   return (
-    <div className={`sup sales${box === "lost" || box === "reports" ? " sales-wide" : ""}`} data-style={style} data-mode={desk ? "desk" : "inbox"}>
+    <div className={`sup sales${box === "lost" || box === "colo" || box === "reports" ? " sales-wide" : ""}`} data-style={style} data-mode={desk ? "desk" : "inbox"}>
       <header className="sup-brand">
         <span className="sup-logo" style={{ "--tile": tile } as CSSProperties}><Logo /></span>
         <strong>{brand}</strong>
@@ -163,6 +163,7 @@ export function SupportApp() {
         {side("all", t("support.all"), Mails, itemsIn(game, "all").length)}
         {BOXES.map((b) => side(b.id, b.label, b.icon, game.tickets.filter((tk) => b.match(tk, game.hour)).length))}
         {side("lost", t("support.lostSales"), TrendingDown, game.sales.lost.length)}
+        {game.properties.some((p) => p.hall) && side("colo", t("hall.rackSpace"), Server, game.properties.reduce((n, p) => n + (p.hall?.customers.length ?? 0), 0))}
         {has("filters") && <>
           <div className="side-h">{t("support.type")}</div>
           {typeItem(null, t("support.allTypes"), Layers)}
@@ -173,7 +174,7 @@ export function SupportApp() {
         {has("reports") && side("reports", t("support.tickets"), ChartColumn, game.tickets.length)}
       </aside>}
 
-      {box === "incidents" ? <Incidents /> : box === "lost" ? <LostSales /> : box === "reports" ? <Reports /> : <>
+      {box === "incidents" ? <Incidents /> : box === "lost" ? <LostSales /> : box === "colo" ? <ColoListing /> : box === "reports" ? <Reports /> : <>
 
       <div className="sup-list" role="list">
         <div className="sup-list-h">
@@ -231,7 +232,8 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           <span>{r.city}</span>
           <span>{t("support.slaLine", { sla: SLA_LABEL[r.sla], uptime: (SLAS[r.sla].uptime * 100).toFixed(SLAS[r.sla].uptime >= 0.999 ? 2 : 1), h: SLAS[r.sla].responseHours })}</span>
           <InvoicePill r={r} />
-          {tk.status === "open" && gates.slaTimers
+          {r.status === "accepted" && <span className={`pill ${r.deadline - game.hour <= 24 ? "warn" : ""}`}><Timer /><span>{t("support.orderLeft", { h: Math.max(0, r.deadline - game.hour) })}</span></span>}
+          {tk.status === "open" && gates.slaTimers && r.status !== "accepted"
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span>{t("support.toRespond", { h: Math.max(0, left) })}</span></span>
             : <span className="pill">{statusOf(tk)}</span>}
         </div>
@@ -253,6 +255,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
         </ul>
       )}
 
+      <div className={r.spec ? "order-split" : "order-flat"}>
       <div className="thread">
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
@@ -275,6 +278,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

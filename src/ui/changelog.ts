@@ -7,11 +7,12 @@ export const changeKeys = (days: ChangelogDay[]): string[] => days.flatMap((d) =
 
 export function parseChangelog(text: string): ChangelogDay[] {
   const days: ChangelogDay[] = [];
+  let cur: ChangelogDay | undefined;
   for (const raw of text.split("\n")) {
     const line = raw.trimEnd();
     const head = /^## (\d{4}-\d{2}-\d{2})\s*$/.exec(line);
-    if (head) days.push({ date: head[1], items: [] });
-    else if (line.startsWith("- ") && days.length > 0) days[days.length - 1].items.push(line.slice(2).trim());
+    if (head) cur = days.find((d) => d.date === head[1]) ?? (days.push({ date: head[1], items: [] }), days[days.length - 1]);
+    else if (line.startsWith("- ") && cur) cur.items.push(line.slice(2).trim());
   }
   return days.map((d) => ({ ...d, version: Number(d.date.replaceAll("-", "")) }));
 }

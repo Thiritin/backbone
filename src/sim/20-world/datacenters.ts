@@ -17,6 +17,10 @@ export interface Datacenter {
   visitBooking: boolean;
   // How a rack position bills power: per kWh, as a flat-rate contract, or either.
   power: "metered" | "flat" | "both";
+  // The site's spot in its city.
+  lat: number; lon: number;
+  // Hot and cold aisles: rack rows face each other across an aisle instead of all facing one way.
+  aisles: boolean;
 }
 
 export const PROVIDERS: Provider[] = [
@@ -42,51 +46,52 @@ export const PROVIDERS: Provider[] = [
   { id: "myloch", name: "myLoch", host: "myloch.de" },
 ];
 
+// aisles: large and certified halls run hot and cold aisles, budget sites do not.
 type Row = [id: string, name: string, provider: string, city: string, carriers: number, exchange: string | null, onSite: boolean,
   ab: boolean, backup: Datacenter["backup"], green: boolean, kw: number, price: number, factor: number, cross: number,
-  handsPerHour: number, handsHours: number, certified: boolean, cages: boolean, power: Datacenter["power"]];
+  handsPerHour: number, handsHours: number, certified: boolean, cages: boolean, power: Datacenter["power"], aisles: boolean];
 
 const ROWS: Row[] = [
-  ["equinox-fr5", "Equinox FR5", "equinox", "Frankfurt", 30, "DE-KICKS", true, true, "ups+generator", true, 8, 750, 1.4, 250, 150, 1, true, true, "metered"],
-  ["interaction-fra", "Interaction FRA", "interaction", "Frankfurt", 25, "DE-KICKS", true, true, "ups+generator", false, 6, 600, 1.3, 200, 120, 2, true, true, "metered"],
-  ["mainqubes-fra", "mainqubes FRA", "mainqubes", "Frankfurt", 12, "DE-KICKS", false, true, "ups+generator", true, 6, 450, 1.3, 150, 100, 4, true, true, "metered"],
-  ["hetzler-park", "Hetzler Park", "hetzler", "Frankfurt", 1, null, false, false, "ups+generator", true, 4, 180, 1.1, 80, 60, 8, false, false, "both"],
-  ["tellyhouse-north", "Tellyhouse North", "tellyhouse", "London", 30, "LYNX", true, true, "ups+generator", false, 6, 800, 1.5, 300, 160, 1, true, true, "metered"],
-  ["globalsnitch-lon", "Global Snitch LON", "globalsnitch", "London", 20, "LYNX", false, true, "ups+generator", true, 8, 700, 1.4, 250, 140, 2, true, true, "metered"],
-  ["docklands-data", "Docklands Data", "docklands", "London", 3, null, false, false, "ups", false, 4, 350, 1.2, 100, 80, 8, false, false, "both"],
-  ["equinox-am3", "Equinox AM3", "equinox", "Amsterdam", 25, "HAMS-IX", true, true, "ups+generator", true, 8, 650, 1.3, 220, 140, 1, true, true, "metered"],
-  ["ironmolehill-ams", "Iron Molehill AMS", "ironmolehill", "Amsterdam", 10, "HAMS-IX", false, true, "ups+generator", true, 10, 500, 1.2, 180, 110, 4, true, true, "metered"],
-  ["tellyhouse-voltaire", "Tellyhouse Voltaire", "tellyhouse", "Paris", 25, "Franz-IX", true, true, "ups+generator", false, 6, 650, 1.3, 220, 140, 2, true, true, "metered"],
-  ["data5-marcoussis", "Data5 Marcoussis", "data5", "Paris", 8, "Franz-IX", false, true, "ups+generator", true, 10, 450, 1.2, 150, 100, 4, true, true, "metered"],
-  ["ntd-berlin1", "NTD Berlin 1", "ntd", "Berlin", 12, "BeCIX", true, true, "ups+generator", true, 6, 500, 1.3, 150, 110, 2, true, true, "metered"],
-  ["spree-colo", "Spree Colo", "spree", "Berlin", 3, null, false, false, "ups", true, 4, 250, 1.2, 90, 70, 8, false, false, "both"],
-  ["data5-milano", "Data5 Milano", "data5", "Milan", 10, "MIXup", true, true, "ups+generator", false, 6, 500, 1.3, 160, 110, 2, true, true, "metered"],
-  ["arubaba-hub", "Arubaba Hub", "arubaba", "Milan", 4, null, false, true, "ups+generator", true, 6, 350, 1.2, 100, 80, 4, true, false, "both"],
-  ["interaction-vie", "Interaction VIE", "interaction", "Vienna", 15, "VieX", true, true, "ups+generator", false, 6, 500, 1.3, 160, 120, 2, true, true, "metered"],
-  ["nextlair-vie", "Next Lair VIE", "nextlair", "Vienna", 4, "VieX", false, false, "ups+generator", false, 4, 300, 1.2, 100, 80, 4, false, false, "both"],
-  ["equinox-zh4", "Equinox ZH4", "equinox", "Zurich", 15, "SwizzIX", true, true, "ups+generator", true, 8, 800, 1.5, 250, 160, 1, true, true, "metered"],
-  ["greenchz-lupfig", "Green.chz Lupfig", "greenchz", "Zurich", 6, "SwizzIX", false, true, "ups+generator", true, 6, 550, 1.3, 180, 120, 4, true, true, "metered"],
-  ["equinox-du1", "Equinox DU1", "equinox", "Düsseldorf", 18, "ECKS-IX", true, true, "ups+generator", true, 8, 650, 1.35, 220, 140, 1, true, true, "metered"],
-  ["interaction-dus", "Interaction DUS", "interaction", "Düsseldorf", 14, "ECKS-IX", false, true, "ups+generator", false, 6, 520, 1.3, 180, 110, 2, true, true, "metered"],
-  ["ntd-dus1", "NTD Düsseldorf 1", "ntd", "Düsseldorf", 10, "ECKS-IX", false, true, "ups+generator", true, 6, 430, 1.25, 140, 100, 2, true, true, "metered"],
-  ["myloch-dus", "myLoch DUS", "myloch", "Düsseldorf", 8, "ECKS-IX", false, true, "ups+generator", false, 6, 380, 1.2, 120, 80, 4, true, true, "both"],
-  ["skyblink-eygelshoven", "SkyBlink Eygelshoven", "skyblink", "Kerkrade", 20, null, false, true, "ups+generator", true, 6, 300, 1.15, 60, 60, 2, true, false, "both"],
-  ["hetzler-nbg", "Hetzler NBG", "hetzler", "Nuremberg", 1, null, false, false, "ups+generator", true, 4, 170, 1.1, 80, 60, 8, false, false, "flat"],
-  ["boris-nbg", "Boris Network NBG", "borisnet", "Nuremberg", 10, "N-ICKS", true, true, "ups+generator", true, 6, 420, 1.25, 150, 100, 2, true, true, "metered"],
-  ["hetzler-fsn", "Hetzler FSN", "hetzler", "Falkenstein", 1, null, false, false, "ups+generator", true, 4, 160, 1.1, 80, 60, 8, false, false, "both"],
-  ["equinox-mu1", "Equinox MU1", "equinox", "Munich", 15, "IN-EXCESS", true, true, "ups+generator", true, 8, 700, 1.4, 230, 150, 1, true, true, "metered"],
-  ["interaction-muc", "Interaction MUC", "interaction", "Munich", 10, "IN-EXCESS", false, true, "ups+generator", false, 6, 550, 1.3, 180, 120, 2, true, true, "metered"],
-  ["equinox-dc2", "Equinox DC2", "equinox", "Ashburn", 60, "Equinox IX", true, true, "ups+generator", false, 8, 650, 1.15, 200, 130, 1, true, true, "metered"],
-  ["digitalreality-ash", "Digital Reality ACC", "digitalreality", "Ashburn", 25, "Equinox IX", false, true, "ups+generator", false, 10, 480, 1.1, 150, 100, 2, true, true, "metered"],
-  ["corespite-va1", "CoreSpite VA1", "corespite", "Ashburn", 15, "Equinox IX", false, true, "ups+generator", false, 8, 420, 1.1, 120, 90, 4, true, true, "both"],
-  ["equinox-ny4", "Equinox NY4", "equinox", "New York", 45, "NYIKES", true, true, "ups+generator", false, 8, 800, 1.4, 250, 160, 1, true, true, "metered"],
-  ["telex-60hudson", "Telex 60 Hudson", "telex", "New York", 35, "NYIKES", false, true, "ups+generator", false, 5, 700, 1.45, 220, 150, 2, true, true, "metered"],
-  ["digitalreality-cermak", "Digital Reality 350 Cermak", "digitalreality", "Chicago", 40, "CHI-KICKS", true, true, "ups+generator", false, 8, 550, 1.2, 180, 120, 2, true, true, "metered"],
-  ["corespite-ch1", "CoreSpite CH1", "corespite", "Chicago", 15, "CHI-KICKS", false, true, "ups+generator", false, 8, 450, 1.15, 140, 100, 4, true, true, "both"],
-  ["equinox-da1", "Equinox DA1", "equinox", "Dallas", 30, "Y'ALL-IX", true, true, "ups+generator", false, 8, 500, 1.1, 170, 120, 2, true, true, "metered"],
-  ["digitalreality-dfw", "Digital Reality DFW", "digitalreality", "Dallas", 12, "Y'ALL-IX", false, true, "ups+generator", false, 10, 400, 1.05, 130, 90, 4, true, true, "metered"],
-  ["corespite-la1", "CoreSpite One Wilshire", "corespite", "Los Angeles", 60, "Any3", true, true, "ups+generator", false, 6, 750, 1.45, 230, 150, 1, true, true, "metered"],
-  ["equinox-la1", "Equinox LA1", "equinox", "Los Angeles", 30, "Any3", false, true, "ups+generator", false, 8, 650, 1.4, 210, 140, 2, true, true, "metered"],
+  ["equinox-fr5", "Equinox FR5", "equinox", "Frankfurt", 30, "DE-KICKS", true, true, "ups+generator", true, 8, 750, 1.4, 250, 150, 1, true, true, "metered", true],
+  ["interaction-fra", "Interaction FRA", "interaction", "Frankfurt", 25, "DE-KICKS", true, true, "ups+generator", false, 6, 600, 1.3, 200, 120, 2, true, true, "metered", true],
+  ["mainqubes-fra", "mainqubes FRA", "mainqubes", "Frankfurt", 12, "DE-KICKS", false, true, "ups+generator", true, 6, 450, 1.3, 150, 100, 4, true, true, "metered", false],
+  ["hetzler-park", "Hetzler Park", "hetzler", "Frankfurt", 1, null, false, false, "ups+generator", true, 4, 180, 1.1, 80, 60, 8, false, false, "both", false],
+  ["tellyhouse-north", "Tellyhouse North", "tellyhouse", "London", 30, "LYNX", true, true, "ups+generator", false, 6, 800, 1.5, 300, 160, 1, true, true, "metered", true],
+  ["globalsnitch-lon", "Global Snitch LON", "globalsnitch", "London", 20, "LYNX", false, true, "ups+generator", true, 8, 700, 1.4, 250, 140, 2, true, true, "metered", true],
+  ["docklands-data", "Docklands Data", "docklands", "London", 3, null, false, false, "ups", false, 4, 350, 1.2, 100, 80, 8, false, false, "both", false],
+  ["equinox-am3", "Equinox AM3", "equinox", "Amsterdam", 25, "HAMS-IX", true, true, "ups+generator", true, 8, 650, 1.3, 220, 140, 1, true, true, "metered", true],
+  ["ironmolehill-ams", "Iron Molehill AMS", "ironmolehill", "Amsterdam", 10, "HAMS-IX", false, true, "ups+generator", true, 10, 500, 1.2, 180, 110, 4, true, true, "metered", true],
+  ["tellyhouse-voltaire", "Tellyhouse Voltaire", "tellyhouse", "Paris", 25, "Franz-IX", true, true, "ups+generator", false, 6, 650, 1.3, 220, 140, 2, true, true, "metered", true],
+  ["data5-marcoussis", "Data5 Marcoussis", "data5", "Paris", 8, "Franz-IX", false, true, "ups+generator", true, 10, 450, 1.2, 150, 100, 4, true, true, "metered", true],
+  ["ntd-berlin1", "NTD Berlin 1", "ntd", "Berlin", 12, "BeCIX", true, true, "ups+generator", true, 6, 500, 1.3, 150, 110, 2, true, true, "metered", true],
+  ["spree-colo", "Spree Colo", "spree", "Berlin", 3, null, false, false, "ups", true, 4, 250, 1.2, 90, 70, 8, false, false, "both", false],
+  ["data5-milano", "Data5 Milano", "data5", "Milan", 10, "MIXup", true, true, "ups+generator", false, 6, 500, 1.3, 160, 110, 2, true, true, "metered", true],
+  ["arubaba-hub", "Arubaba Hub", "arubaba", "Milan", 4, null, false, true, "ups+generator", true, 6, 350, 1.2, 100, 80, 4, true, false, "both", false],
+  ["interaction-vie", "Interaction VIE", "interaction", "Vienna", 15, "VieX", true, true, "ups+generator", false, 6, 500, 1.3, 160, 120, 2, true, true, "metered", true],
+  ["nextlair-vie", "Next Lair VIE", "nextlair", "Vienna", 4, "VieX", false, false, "ups+generator", false, 4, 300, 1.2, 100, 80, 4, false, false, "both", false],
+  ["equinox-zh4", "Equinox ZH4", "equinox", "Zurich", 15, "SwizzIX", true, true, "ups+generator", true, 8, 800, 1.5, 250, 160, 1, true, true, "metered", true],
+  ["greenchz-lupfig", "Green.chz Lupfig", "greenchz", "Zurich", 6, "SwizzIX", false, true, "ups+generator", true, 6, 550, 1.3, 180, 120, 4, true, true, "metered", true],
+  ["equinox-du1", "Equinox DU1", "equinox", "Düsseldorf", 18, "ECKS-IX", true, true, "ups+generator", true, 8, 650, 1.35, 220, 140, 1, true, true, "metered", true],
+  ["interaction-dus", "Interaction DUS", "interaction", "Düsseldorf", 14, "ECKS-IX", false, true, "ups+generator", false, 6, 520, 1.3, 180, 110, 2, true, true, "metered", true],
+  ["ntd-dus1", "NTD Düsseldorf 1", "ntd", "Düsseldorf", 10, "ECKS-IX", false, true, "ups+generator", true, 6, 430, 1.25, 140, 100, 2, true, true, "metered", false],
+  ["myloch-dus", "myLoch DUS", "myloch", "Düsseldorf", 8, "ECKS-IX", false, true, "ups+generator", false, 6, 380, 1.2, 120, 80, 4, true, true, "both", false],
+  ["skyblink-eygelshoven", "SkyBlink Eygelshoven", "skyblink", "Kerkrade", 20, null, false, true, "ups+generator", true, 6, 300, 1.15, 60, 60, 2, true, false, "both", false],
+  ["hetzler-nbg", "Hetzler NBG", "hetzler", "Nuremberg", 1, null, false, false, "ups+generator", true, 4, 170, 1.1, 80, 60, 8, false, false, "flat", false],
+  ["boris-nbg", "Boris Network NBG", "borisnet", "Nuremberg", 10, "N-ICKS", true, true, "ups+generator", true, 6, 420, 1.25, 150, 100, 2, true, true, "metered", false],
+  ["hetzler-fsn", "Hetzler FSN", "hetzler", "Falkenstein", 1, null, false, false, "ups+generator", true, 4, 160, 1.1, 80, 60, 8, false, false, "both", false],
+  ["equinox-mu1", "Equinox MU1", "equinox", "Munich", 15, "IN-EXCESS", true, true, "ups+generator", true, 8, 700, 1.4, 230, 150, 1, true, true, "metered", true],
+  ["interaction-muc", "Interaction MUC", "interaction", "Munich", 10, "IN-EXCESS", false, true, "ups+generator", false, 6, 550, 1.3, 180, 120, 2, true, true, "metered", true],
+  ["equinox-dc2", "Equinox DC2", "equinox", "Ashburn", 60, "Equinox IX", true, true, "ups+generator", false, 8, 650, 1.15, 200, 130, 1, true, true, "metered", true],
+  ["digitalreality-ash", "Digital Reality ACC", "digitalreality", "Ashburn", 25, "Equinox IX", false, true, "ups+generator", false, 10, 480, 1.1, 150, 100, 2, true, true, "metered", true],
+  ["corespite-va1", "CoreSpite VA1", "corespite", "Ashburn", 15, "Equinox IX", false, true, "ups+generator", false, 8, 420, 1.1, 120, 90, 4, true, true, "both", false],
+  ["equinox-ny4", "Equinox NY4", "equinox", "New York", 45, "NYIKES", true, true, "ups+generator", false, 8, 800, 1.4, 250, 160, 1, true, true, "metered", true],
+  ["telex-60hudson", "Telex 60 Hudson", "telex", "New York", 35, "NYIKES", false, true, "ups+generator", false, 5, 700, 1.45, 220, 150, 2, true, true, "metered", true],
+  ["digitalreality-cermak", "Digital Reality 350 Cermak", "digitalreality", "Chicago", 40, "CHI-KICKS", true, true, "ups+generator", false, 8, 550, 1.2, 180, 120, 2, true, true, "metered", true],
+  ["corespite-ch1", "CoreSpite CH1", "corespite", "Chicago", 15, "CHI-KICKS", false, true, "ups+generator", false, 8, 450, 1.15, 140, 100, 4, true, true, "both", false],
+  ["equinox-da1", "Equinox DA1", "equinox", "Dallas", 30, "Y'ALL-IX", true, true, "ups+generator", false, 8, 500, 1.1, 170, 120, 2, true, true, "metered", true],
+  ["digitalreality-dfw", "Digital Reality DFW", "digitalreality", "Dallas", 12, "Y'ALL-IX", false, true, "ups+generator", false, 10, 400, 1.05, 130, 90, 4, true, true, "metered", true],
+  ["corespite-la1", "CoreSpite One Wilshire", "corespite", "Los Angeles", 60, "Any3", true, true, "ups+generator", false, 6, 750, 1.45, 230, 150, 1, true, true, "metered", true],
+  ["equinox-la1", "Equinox LA1", "equinox", "Los Angeles", 30, "Any3", false, true, "ups+generator", false, 8, 650, 1.4, 210, 140, 2, true, true, "metered", true],
 ];
 
 const SIZE_OF: Record<string, Datacenter["size"]> = {
@@ -99,15 +104,37 @@ const SIZE_OF: Record<string, Datacenter["size"]> = {
 const topPrice = (city: string) => Math.max(...ROWS.filter((r) => r[3] === city).map((r) => r[11]));
 const rivals = (city: string) => ROWS.filter((r) => r[3] === city).length > 1;
 
-export const DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages, power]) => ({
+// Where each site stands in its city: industrial estates and edge-of-town plots, [lat, lon].
+const POS: Record<string, [number, number]> = {
+  "equinox-fr5": [50.1185, 8.735], "interaction-fra": [50.1095, 8.7385], "mainqubes-fra": [50.129, 8.6], "hetzler-park": [50.127, 8.765],
+  "tellyhouse-north": [51.5105, -0.0035], "globalsnitch-lon": [51.524, -0.083], "docklands-data": [51.507, 0.028],
+  "equinox-am3": [52.356, 4.953], "ironmolehill-ams": [52.394, 4.832],
+  "tellyhouse-voltaire": [48.859, 2.38], "data5-marcoussis": [48.75, 2.35],
+  "ntd-berlin1": [52.44, 13.38], "spree-colo": [52.505, 13.44],
+  "data5-milano": [45.478, 9.07], "arubaba-hub": [45.487, 9.24],
+  "interaction-vie": [48.265, 16.4], "nextlair-vie": [48.17, 16.43],
+  "equinox-zh4": [47.43, 8.56], "greenchz-lupfig": [47.397, 8.448],
+  "equinox-du1": [51.23, 6.73], "interaction-dus": [51.27, 6.78], "ntd-dus1": [51.175, 6.865], "myloch-dus": [51.212, 6.745],
+  "skyblink-eygelshoven": [50.892, 6.065],
+  "hetzler-nbg": [49.43, 11.07], "boris-nbg": [49.41, 11.045],
+  "hetzler-fsn": [50.48, 12.345],
+  "equinox-mu1": [48.145, 11.7], "interaction-muc": [48.18, 11.51],
+  "equinox-dc2": [39.017, -77.462], "digitalreality-ash": [39.03, -77.45], "corespite-va1": [39.005, -77.49],
+  "equinox-ny4": [40.778, -74.07], "telex-60hudson": [40.718, -74.008],
+  "digitalreality-cermak": [41.853, -87.618], "corespite-ch1": [41.881, -87.64],
+  "equinox-da1": [32.8, -96.82], "digitalreality-dfw": [32.782, -96.799],
+  "corespite-la1": [34.0485, -118.256], "equinox-la1": [34.053, -118.24],
+};
+
+export const ALL_DATACENTERS: Datacenter[] = ROWS.map(([id, name, provider, city, carriers, ex, onSite, ab, backup, green, kw, price, factor, cross, perHour, responseHours, certified, cages, power, aisles]) => ({
   id, name, provider, city, carriers, exchange: ex ? { name: ex, onSite } : null, feeds: ab ? "ab" : "single", backup, green,
-  kwPerPosition: kw, positionPrice: price, powerFactor: factor, crossConnect: cross, remoteHands: { perHour, responseHours }, certified, cages, power,
-  size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city),
+  kwPerPosition: kw, positionPrice: price, powerFactor: factor, crossConnect: cross, remoteHands: { perHour, responseHours }, certified, cages, power, aisles,
+  size: SIZE_OF[provider], visitBooking: rivals(city) && price === topPrice(city), lat: POS[id][0], lon: POS[id][1],
 }));
 
 export const dcProvider = (id: string): Provider => PROVIDERS.find((p) => p.id === id)!;
 export const datacenterById = (id: string): Datacenter => {
-  const dc = DATACENTERS.find((d) => d.id === id);
+  const dc = ALL_DATACENTERS.find((d) => d.id === id);
   if (!dc) throw new Error(`unknown datacenter ${id}`);
   return dc;
 };
@@ -140,6 +167,11 @@ export const COUNTRY: Record<string, string> = {
 };
 export const regionOf =(loc: { city: string }) => REGIONS.find((r) => r.city === loc.city)!;
 export const inUs = (city: string): boolean => REGIONS.some((r) => r.city === city && r.us);
+// The part of the world on offer; "all" brings the North American sites back to the map and the datacenter list.
+export const WORLD = "eu" as "eu" | "all";
+export const listed = (city: string): boolean => WORLD === "all" || !inUs(city);
+// Only the datacenters on offer; datacenterById still resolves the rest so an old save keeps loading.
+export const DATACENTERS: Datacenter[] = ALL_DATACENTERS.filter((d) => listed(d.city));
 // The region code plus the next free number in that region: fra1, fra2, ams1.
 export function nextAz(locations: { city: string; az?: string }[], city: string): string {
   const code = regionOf({ city }).id;
@@ -159,12 +191,14 @@ export function capacityAt(dc: Datacenter, year: number): number {
 }
 export const COMPETITOR_START = { min: 0.85, max: 0.97 } as const;
 // Competitors' positions per datacenter, drawn from the seed without touching the game's rng.
-export const seedDcs = (seed: number, year: number): Record<string, { others: number }> => Object.fromEntries(DATACENTERS.map((dc, i) => {
+export const seedDcs = (seed: number, year: number): Record<string, { others: number }> => Object.fromEntries(ALL_DATACENTERS.map((dc, i) => {
   const share = COMPETITOR_START.min + rand(hashRng(seed, i, 0xdc)) * (COMPETITOR_START.max - COMPETITOR_START.min);
   return [dc.id, { others: Math.round(capacityAt(dc, year) * share) }];
 }));
 
 export const RACK_MODELS: { id: RackModel; units: number; price: number }[] = [
+  // A used metal shelf: units are its boards, counted from the bottom like rack units, each holding one device.
+  { id: "shelf", units: 5, price: 60 },
   { id: "rack-24", units: 24, price: 350 },
   { id: "rack-42", units: 42, price: 800 },
   { id: "rack-47", units: 47, price: 1000 },
@@ -185,7 +219,10 @@ export const rackUnits = (model: RackModel): number => {
   return u;
 };
 
-export const BASEMENT = { positions: 1, maxUnits: 24, kw: 3 } as const;
+// The basement holds the shelf and at most two racks.
+export const BASEMENT = { positions: 3, racks: 2, maxUnits: 24, kw: 3 } as const;
+// The tallest device a shelf board holds; patch panels and PDUs need rails.
+export const SHELF = { maxHeight: 2, railKinds: ["patch", "pdu"] } as const;
 // A circuit carries 80% of its limit continuously; a draw above that for three hours trips its breaker.
 export const CONTINUOUS = { share: 0.8, hours: 3 } as const;
 export const HOUSEHOLD_FACTOR = 1.6;
@@ -213,7 +250,7 @@ export const NO_LINE: HomeLine = { id: "", isp: "", get name() { return t("sim.l
 export const MOMS_DSL: HomeLine = { id: "moms-dsl", isp: "Deutsche Telekomm", name: "Mom's DSL", down: 6, up: 0.5, monthly: 0, from: 2005, installDays: 0, staticIp: false };
 export const homeLineById = (id: string): HomeLine => (id === MOMS_DSL.id ? MOMS_DSL : HOME_LINES.find((l) => l.id === id) ?? NO_LINE);
 
-type RentedSpace = Exclude<SpaceKind, "basement">;
+type RentedSpace = Exclude<SpaceKind, "basement" | "office" | "hall">;
 export const SPACE_SIZES: Record<RentedSpace, number[]> = { share: [8, 4, 2, 1], cage: [4, 8, 16], suite: [20, 40] };
 export const LEAD_DAYS: Record<RentedSpace, number> = { share: 2, cage: 30, suite: 90 };
 // Months of notice to the end of a month before a rented space is handed back.

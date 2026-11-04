@@ -14,7 +14,9 @@ import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
 import { deserialize, serialize } from "../sim/91-save/save";
 import { actionName, runAction } from "../sim/90-actions/index";
-import { SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
+import { nowHours, SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
+import { playerAt } from "../sim/60-infra/handwork";
+import { useTrip, type Trip } from "./travel/route";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
 import { readSession, writeSession } from "./session";
@@ -30,7 +32,8 @@ export const SAVE_KEY = "raid0.save";
 // inner: the focus a page opened at this url applies, as Books inside a browser program.
 export interface Focus { kind: string; id: string; n: number; inner?: Omit<Focus, "n"> }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; draft?: string; focus?: Focus }
-export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; focus?: Omit<Focus, "n"> }
+// from names the source when it is not the app, like the room an action failed in.
+export interface Banner { id: number; app: string; title: string; text: string; hour: number; key?: string; focus?: Omit<Focus, "n">; from?: string }
 
 // An order ticket that is a quote request sent through the active shop.
 const shopAsk = (s: GameState, ticketId: string): boolean => shopActive(s) && s.sales.requests.some((r) => r.ticketId === ticketId && r.viaShop);
@@ -81,6 +84,14 @@ export interface Store {
   closeNews: () => void;
   // The alert sheet an alert event opens; the event pauses the game and resume is the speed to return to.
   alert: Banner | null;
+  // Alerts that fired while one was open, shown in order.
+  alertQueue: Banner[];
+  // A world close-up or edit mode is open: alerts wait behind a chip until it closes or the chip is clicked.
+  closeup: boolean;
+  setCloseup: (open: boolean) => void;
+  // The chip was clicked: the open alert shows over the close-up.
+  alertNow: boolean;
+  showAlert: () => void;
   resume: Speed;
   closeAlert: (resume: boolean) => void;
   // The skill whose How it works sheet is open.
@@ -105,7 +116,7 @@ export interface Store {
   toggleZoom: (id: string) => void;
   place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
   // key is the sim event key that picks the sound.
-  notify: (app: string, title: string, text: string, key?: string, focus?: Omit<Focus, "n">) => void;
+  notify: (app: string, title: string, text: string, key?: string, focus?: Omit<Focus, "n">, from?: string) => void;
   dismiss: (id: number) => void;
   forget: (id: number | null) => void;
   started: boolean;
@@ -128,7 +139,12 @@ export interface Store {
   // The location open in Locations; the Shop delivers there by default.
   openLoc: string | null;
   setOpenLoc: (id: string | null) => void;
+  // The desk computer or the room the player stands in; never saved.
+  surface: Surface;
+  setSurface: (surface: Surface) => void;
 }
+
+export type Surface = "desktop" | "world";
 
 export type { CartLine };
 // Two lines are the same item when model, brand, build and part match.
@@ -136,7 +152,7 @@ export const sameLine = (a: CartLine, b: CartLine): boolean =>
   a.model === b.model && a.brand === b.brand && a.vendor === b.vendor && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null, alertQueue: [] as Banner[], alertNow: false, surface: "world" as Surface });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -248,8 +264,13 @@ export const useStore = create<Store>((set, get) => ({
   openNews: (news) => set({ news }),
   closeNews: () => set({ news: null }),
   alert: null,
+  alertQueue: [],
+  closeup: false,
+  alertNow: false,
+  setCloseup: (closeup) => set({ closeup }),
+  showAlert: () => set({ alertNow: true }),
   resume: 0,
-  closeAlert: (resume) => set(({ resume: speed }) => (resume ? { alert: null, speed } : { alert: null })),
+  closeAlert: (resume) => set(({ resume: speed, alertQueue: [next, ...rest] }) => (next ? { alert: next, alertQueue: rest, alertNow: false } : resume ? { alert: null, speed, alertNow: false } : { alert: null, alertNow: false })),
   explain: null,
   setExplain: (explain) => set({ explain }),
   started: initial.loaded,
@@ -266,6 +287,8 @@ export const useStore = create<Store>((set, get) => ({
   clearCart: () => set({ cart: [] }),
   openLoc: null,
   setOpenLoc: (openLoc) => set({ openLoc }),
+  surface: "world",
+  setSurface: (surface) => set({ surface }),
 
   // Steps game minutes, so hours may be fractional; the hourly tick runs on every sixtieth.
   advance: (hours) => {
@@ -283,7 +306,7 @@ export const useStore = create<Store>((set, get) => ({
       if (game.gameOver !== null || alert || (skip && happened)) break;
     }
     if (game.gameOver !== null) set({ game, speed: 0 });
-    else if (alert) set(({ speed, alert: open, resume }) => ({ game, alert: open ?? alert, speed: 0, resume: open ? resume : speed === SKIP ? 1 : speed }));
+    else if (alert) set(({ speed, alert: open, resume, alertQueue }) => ({ game, alert: open ?? alert, alertQueue: open ? [...alertQueue, alert!] : alertQueue, speed: 0, resume: open ? resume : speed === SKIP ? 1 : speed }));
     else if (skip && happened) set({ game, speed: 1 });
     else set({ game });
   },
@@ -291,7 +314,10 @@ export const useStore = create<Store>((set, get) => ({
     const r = get().attempt(fn, ...args);
     if (!r.ok) {
       lastBanner = Date.now();
-      get().notify("Settings", t("action.failed.title"), t(r.error, r.params));
+      // The failure belongs to the front window's app, or in the room to the room.
+      const { surface, windows, game } = get(), top = windows.filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
+      if (surface === "world") get().notify("Locations", t("action.failed.title"), t(r.error, r.params), undefined, undefined, playerAt(game).name);
+      else get().notify(top?.app ?? "Settings", t("action.failed.title"), t(r.error, r.params));
     }
     return r;
   },
@@ -303,7 +329,13 @@ export const useStore = create<Store>((set, get) => ({
     if (r.ok) {
       if (booted(get().game, game)) setTimeout(() => uiSound("post"), 1200);
       if (game.media.stick.in !== get().game.media.stick.in) uiSound(game.media.stick.in ? "plug" : "unplug");
-      set({ game });
+      const was = get().game.player, now = game.player;
+      // A drive any action starts, from the map or a job done in person, plays as the trip in the room.
+      if (now.doing === "travel" && now.until > game.hour && now.at !== was.at && ["room", "map"].includes(useTrip.getState().stage)) {
+        const trip: Trip = { from: playerAt(get().game), to: playerAt(game), start: nowHours(game), until: now.until, resume: get().speed, by: now.by };
+        set({ game, speed: 0, surface: "world" });
+        useTrip.setState({ stage: "leave", trip });
+      } else set({ game });
     } else uiSound("error");
     return r;
   },
@@ -326,12 +358,13 @@ export const useStore = create<Store>((set, get) => ({
       const m = target && (s.pearMail.local.messages.find(hit) ?? findMail(s, hit));
       return get().openApp("Pear Mail", m ? { kind: "message", id: m.id } : undefined, fresh);
     }
+    set({ surface: "desktop" });
     const ws = get().windows;
     const open = fresh ? undefined : ws.filter((w) => w.app === app && !w.draft).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
-    const x = 96 + n * 32, y = 64 + n * 28;
+    const x = 136 + n * 32, y = 64 + n * 28;
     // Leaves room for the dock on small screens.
     const w = Math.min(size.w, (globalThis.innerWidth ?? Infinity) - x - 16), h = Math.min(size.h, (globalThis.innerHeight ?? Infinity) - y - 110);
     uiSound("open");
@@ -384,7 +417,7 @@ export const useStore = create<Store>((set, get) => ({
     set({ sound });
     savePrefs(get().notifyPrefs, sound);
   },
-  notify: (app, title, text, key, focus) => {
+  notify: (app, title, text, key, focus, from) => {
     const pref = prefOf(get().notifyPrefs, app);
     // Alerts show whatever the preferences say.
     if (!(key && isAlert(key)) && (!pref.allow || (key && pref.types?.[typeOf(app, key)] === false))) return;
@@ -402,7 +435,7 @@ export const useStore = create<Store>((set, get) => ({
       lastBanner = Date.now();
       uiSound("banner");
     }
-    const b = { id: ++bannerId, app, title, text, hour: get().game.hour, key, focus };
+    const b = { id: ++bannerId, app, title, text, hour: get().game.hour, key, focus, from };
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     setTimeout(() => get().dismiss(b.id), 6000);
   },
@@ -413,7 +446,7 @@ export const useStore = create<Store>((set, get) => ({
   clearUnseen: () => set({ unseen: 0 }),
   toMenu: () => {
     get().save();
-    set({ started: false, canContinue: true });
+    set({ started: false, canContinue: true, surface: "world" });
   },
   continueGame: () => set({ started: true }),
   save: () => {
@@ -428,12 +461,16 @@ export const useStore = create<Store>((set, get) => ({
     set({ ...fresh(), ...wipeLocal(get().sound), game: newCompany(Date.now() >>> 0), started: true });
     uiSound("startup");
     get().openApp("Getting started");
+    // The guide waits on the desktop; the game opens in the room.
+    set({ surface: "world" });
     get().save();
   },
   startChallenge: () => {
     set({ ...fresh(), ...wipeLocal(get().sound), game: newChallenge(weeklyChallenge(new Date()).id), started: true });
     uiSound("startup");
     get().openApp("Getting started");
+    // The guide waits on the desktop; the game opens in the room.
+    set({ surface: "world" });
     get().save();
   },
   importSave: (raw) => {

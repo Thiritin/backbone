@@ -16,7 +16,8 @@ const DESIGNS: Record<string, Design> = Object.fromEntries(
 const PLAIN: Design = { view: Plain, late: 2015 };
 
 export function ProviderSite({ game, id, path, go }: { game: GameState; id: string; path: string; go: (url: string) => void }) {
-  const p = dcProvider(id), { view: View, late } = DESIGNS[id] ?? PLAIN, year = yearOf(game.hour);
+  const p = dcProvider(id);
+  const { view: View, late } = DESIGNS[id] ?? PLAIN, year = yearOf(game.hour);
   const look = eraOf([{ from: 2005, look: "early" }, { from: late, look: "late" }], year);
   return <View game={game} p={p} look={look} route={routeOf(id, path)} year={year} go={(to) => go(`${displayHost(p.host)}${to}`)} />;
 }

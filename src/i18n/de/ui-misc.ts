@@ -1,7 +1,6 @@
 import type { Dict } from "../lang";
 
 const plural = (n: unknown, one: string, many: string) => (Number(n) === 1 ? one : many);
-const cap = (s: unknown) => String(s).charAt(0).toUpperCase() + String(s).slice(1);
 
 export default {
   "misc.accept": () => "Annehmen",
@@ -159,7 +158,7 @@ export default {
   "misc.letGoNamed": (p) => `${p.name} entlassen?`,
   "misc.letGoText": (p) => `Das spart ${p.saved} im Monat. ${p.first} geht heute.`,
   "misc.letGoTextPaid": (p) => `Das spart ${p.saved} im Monat. ${p.first} geht heute und bekommt ${p.owed} für die in diesem Monat geleisteten Tage.`,
-  "misc.levelRole": (p) => `${p.level} ${cap(p.role)}`,
+  "misc.levelRole": (p) => `${p.level} ${p.role}`,
   "misc.lifetime": () => "Gesamt",
   "misc.lifetimeSpend": () => "Gesamtausgaben",
   "misc.listed": () => "Eingetragen",
@@ -195,7 +194,7 @@ export default {
   "misc.noHistoryYet": () => "Noch kein Verlauf",
   "misc.noInvoices": () => "Keine Rechnungen",
   "misc.none": () => "Keine",
-  "misc.noneLooking": (p) => `Zurzeit suchen keine ${cap(p.role)} Arbeit.`,
+  "misc.noneLooking": (p) => `Zurzeit suchen keine ${p.role} Arbeit.`,
   "misc.noneLower": () => "keine",
   "misc.noPublicAddresses": () => "Keine öffentlichen Adressen in dieser Zone.",
   "misc.noServices": () => "Keine Dienste",
@@ -356,6 +355,8 @@ export default {
   "misc.taskSuspend": () => "Sperrungen",
   "misc.taskUpgrade": () => "Upgrade",
   "misc.team": () => "Team",
+  "misc.teamOffice": () => "Büro",
+  "misc.teamParttime": () => "Teilzeit",
   "misc.teamHoursWeek": (p) => `${p.name} · ${p.hours} Std. pro Woche`,
   "misc.teamName": () => "Teamname",
   "misc.teamSummary": (p) => `${p.people} ${plural(p.people, "Person", "Personen")} · ${p.hours} Std. pro Woche · ${p.pay} im Monat`,

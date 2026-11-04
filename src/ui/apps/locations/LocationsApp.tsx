@@ -1,4 +1,4 @@
-import { Hourglass, Map as MapIcon, Plus } from "lucide-react";
+import { Building2, Hourglass, Map as MapIcon, Plus } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
@@ -19,11 +19,13 @@ import { PlanButton, useMaintenance, Windows, windowsAtLocation } from "./Mainte
 import { menuOn } from "../../desktop/ContextMenu";
 import "./locations.css";
 import { NetworkTab, networkCount } from "./NetworkTab";
+import { Properties } from "./Properties";
 import { Overview, Waitlist } from "./Overview";
 import { RackView, Upgrades } from "./RackView";
 import { Storage } from "./Storage";
 import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, RoomTemp, spaceLabel, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
+import { cityName } from "../../cityName";
 
 type Tab = "floor" | "cabling" | "storage" | "network" | "line";
 
@@ -53,6 +55,10 @@ export function LocationsApp() {
       if (home) { go(home.id); setTab("line"); }
       return;
     }
+    const k = f.kind === "rack" && game.racks.find((x) => x.id === f.id);
+    if (k) return void go(k.locationId, k.id);
+    if (f.kind === "storage") { go(f.id); setTab("storage"); return; }
+    if (f.kind === "network") { go(f.id); setTab("network"); return; }
     if (f.kind !== "device" && f.kind !== "location") return;
     const d = f.kind === "device" ? game.devices.find((x) => x.id === f.id) : undefined;
     const l = d?.store ? game.locations.find((x) => x.id === d.store) : d ? locationOf(game, d) : game.locations.find((x) => x.id === f.id);
@@ -71,10 +77,11 @@ export function LocationsApp() {
     <div className="loc">
       <nav className="sidebar fin-side" aria-label={t("locations-1.locations")}>
         {item("overview", view === null, <><MapIcon />{t("locations-1.overview")}</>, () => go(null))}
+        {item("properties", view === "properties", <><Building2 />{t("properties.title")}</>, () => go("properties"))}
         {game.waitlist.length > 0 && item("waitlist", view === "waitlist", <><Hourglass />{t("locations-1.waitlist")}</>, () => go("waitlist"), game.waitlist.length)}
         {REGIONS.filter((r) => game.locations.some((l) => l.city === r.city)).map((r) => (
-          <div key={r.id} className="fin-side" role="group" aria-label={r.name}>
-            <div className="side-h">{r.name}</div>
+          <div key={r.id} className="fin-side" role="group" aria-label={cityName(r.city)}>
+            <div className="side-h">{cityName(r.city)}</div>
             {game.locations.filter((l) => l.city === r.city).flatMap((l) => [
               item(l.id, l.id === loc?.id && !rack, <><Logo provider={providerOf(l)} size={16} /><LocName loc={l} />
                 {l.readyAt > game.hour && <span className="side-count num">{readyIn(l.readyAt, game.hour)}</span>}</>, () => go(l.id), undefined, l.readyAt > game.hour),
@@ -89,6 +96,8 @@ export function LocationsApp() {
       <div className="loc-main">
         {view === "waitlist" ? (
           <div className="loc-scroll"><Waitlist game={game} /></div>
+        ) : view === "properties" ? (
+          <Properties game={game} />
         ) : !loc ? (
           <Overview game={game} onOpen={(id) => go(id)} />
         ) : (
@@ -157,7 +166,7 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
       <Logo provider={providerOf(loc)} size={28} />
       <div className="loc-head-name">
         <h2>{loc.name}<Zone loc={loc} /></h2>
-        <span className="loc-muted">{loc.city} · {spaceLabel(loc, game)}</span>
+        <span className="loc-muted">{cityName(loc.city)} · {spaceLabel(loc, game)}</span>
       </div>
       <span className="grow" />
       {loc.readyAt > game.hour && <span className="pill warn">{t("locations-1.readyIn")} <span className="num">{readyIn(loc.readyAt, game.hour)}</span></span>}

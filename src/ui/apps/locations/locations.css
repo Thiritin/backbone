@@ -103,7 +103,7 @@ svg.logo-mark { flex: none; }
 .loc-sort:hover { color: var(--text); }
 .loc-sort svg { width: 12px; height: 12px; }
 .loc-none { padding: 16px; text-align: center; }
-.loc-sheet-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 16px; border-top: var(--ar-bw) solid var(--line); min-height: 52px; }
+.loc-sheet-foot { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 16px; border-top: var(--ar-bw) solid var(--line); min-height: 52px; }
 .loc-sheet-foot > * { white-space: nowrap; flex-shrink: 0; }
 .loc-sheet-foot > .btn.primary { margin-left: auto; }
 .mnt-body { display: flex; flex-direction: column; min-height: 0; overflow: auto; }
@@ -117,6 +117,8 @@ svg.logo-mark { flex: none; }
 .loc-city { display: block; font-size: 11.5px; font-weight: 450; color: var(--text-3); }
 .loc-dcs td { height: 44px; }
 .loc-badges { display: inline-flex; gap: 4px; }
+.loc-dcs th, .loc-dcs td { padding-left: 6px; padding-right: 6px; }
+.loc-dcs .loc-badge { white-space: normal; height: auto; min-height: 20px; }
 .loc-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font-size: 11.5px; font-weight: 550; background: color-mix(in oklch, var(--text) 8%, transparent); white-space: nowrap; }
 .loc-badge.off { background: none; color: var(--text-3); box-shadow: inset 0 0 0 0.5px var(--line-strong); }
 .loc-form { padding: 14px 16px; display: grid; gap: 10px; }
@@ -152,6 +154,9 @@ svg.logo-mark { flex: none; }
 .loc-port[data-lamp="warn"] { --lamp: oklch(0.83 0.17 80); color: oklch(0.88 0.01 255); }
 .loc-port[data-lamp="bad"] { --lamp: oklch(0.66 0.23 27); color: oklch(0.88 0.01 255); }
 .loc-port:hover { background: oklch(0.22 0.006 255); }
+.loc-port[data-role="uplink"] { background: oklch(0.3 0.06 145); }
+.loc-port[data-role="xconnect"] { background: oklch(0.3 0.06 262); }
+.loc-port[data-role="provider-cable"] { background: oklch(0.3 0.06 80); }
 .loc-port.grouped { outline: 1.2px dashed oklch(0.74 0.14 300); outline-offset: 1px; }
 .loc-port[aria-pressed="true"] { box-shadow: 0 0 0 1.6px var(--accent); background: oklch(0.24 0.04 262); }
 .loc-port:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -180,6 +185,9 @@ button.loc-node:hover { background: var(--hover); }
 .loc-node .k { font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
 .loc-node strong { font-weight: 600; white-space: nowrap; }
 .loc-node.here { border-color: var(--accent); }
+.loc-node .k { color: var(--text-2); }
+.loc-card-h .pill.ok { color: var(--text); background: color-mix(in oklch, var(--ok) 38%, transparent); }
+.loc-card-h .btn.danger { color: var(--text); border-color: var(--bad-text); }
 .loc-wire { flex: 1; min-width: 70px; position: relative; height: 3px; border-radius: 2px; background: oklch(0.62 0.14 250); }
 .loc-wire.fiber { background: oklch(0.72 0.12 195); }
 .loc-wire.dac { background: oklch(0.6 0.02 255); }
@@ -236,6 +244,9 @@ button.loc-node:hover { background: var(--hover); }
 
 /* Zone chip next to a location name. */
 .loc-name { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.side-item { min-width: 0; }
+.side-item .loc-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-item .side-count { flex-shrink: 0; white-space: nowrap; }
 .loc-az { display: inline-flex; align-items: center; height: 17px; padding: 0 5px; border-radius: 4px; background: var(--hover); color: var(--text-2); font-size: 11px; font-weight: 500; letter-spacing: 0.02em; }
 h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 .loc-card-h .loc-az { margin-left: 2px; }
@@ -477,3 +488,21 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 :root[data-os="tahoe"] .loc-cab-bar { border-radius: 22px; }
 :root[data-os="tahoe"] .loc-rack { margin: 8px 0 8px 8px; border: var(--ar-bw) solid var(--line); border-radius: var(--ar-card); box-shadow: var(--ar-lift); }
 :root[data-os="tahoe"] .loc-card, :root[data-os="tahoe"] .loc-tile:not(.free) { background: color-mix(in oklch, var(--field), transparent 30%); }
+
+/* Properties: a building's floor plan, top floor first, one cell per section. */
+.prop-plan { display: grid; gap: 4px; padding: 0 14px 12px; }
+.prop-floor { display: flex; align-items: stretch; gap: 4px; }
+.prop-floor .loc-k { align-self: center; }
+.prop-sec { flex: 1; min-width: 0; display: grid; gap: 1px; padding: 5px 6px; text-align: left; border-radius: 5px; border: var(--ar-bw) solid var(--line-strong); background: var(--field); color: var(--text); font-size: 11.5px; cursor: pointer; }
+.prop-sec small { font-size: 10.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.prop-sec.taken { cursor: default; background: color-mix(in oklch, var(--text) 8%, transparent); color: var(--text-3); }
+.prop-sec.mine { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 14%, var(--field)); }
+.prop-sec[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+.prop-actions { flex-wrap: wrap; border-top: var(--ar-bw) solid var(--line); }
+.hall-plan { display: grid; gap: 6px; padding: 0 14px 12px; }
+.hall-grid { display: grid; gap: 2px; max-width: 480px; }
+.hall-tile { aspect-ratio: 1; min-width: 0; padding: 0; border-radius: 2px; border: var(--ar-bw) solid var(--line); background: var(--field); font-size: 10px; line-height: 1; color: var(--accent-ink, var(--text)); }
+.hall-tile:disabled { cursor: default; }
+.hall-tile.row { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 22%, var(--field)); }
+.hall-tile.row.filled { background: color-mix(in oklch, var(--accent) 55%, var(--field)); }
+.hall-tile[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 0; }

@@ -1,3 +1,5 @@
+import { t } from "../../i18n/en";
+import { syncProviderPanels } from "../90-actions/connectivity";
 import { fillDesk } from "./desk";
 import { fillShopWebspace } from "../90-actions/shop-setup";
 import { fillDeskWebspace } from "../90-actions/desk-setup";
@@ -11,7 +13,7 @@ import { legacyLicences } from "../60-infra/licence";
 import { leave } from "../90-actions/clusters";
 import { yearOf } from "../00-core/time";
 import { asImage } from "../10-catalog/server-os";
-import { capacityAt, DATACENTERS, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
+import { BASEMENT, capacityAt, datacenterById, DEFAULT_HOME_LINE, LEAD_DAYS, nextAz, seedDcs, SHARE_RACKS, spacePrice } from "../20-world/datacenters";
 import { fillAddresses } from "../60-infra/addresses";
 import { mergeWebPanel } from "../60-infra/webpanel";
 import { fillBackups } from "../60-infra/backups";
@@ -22,7 +24,11 @@ import { legacyTax } from "../80-business/tax";
 import { legacyBank, savingsOf } from "../46-finance/bank";
 import { bankById, defaultPlan } from "../10-catalog/banks";
 import type { Employee } from "../47-staff/staff";
-import { device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Contract, type Device, type GameState, type Location } from "../50-state";
+import { basementProperty, device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Contract, type Device, type GameState, type WorkOrder, type Hall, type HallItem, type HallItemKind, type HallZone, type Location, type Rack, type AreaId, type ColoCustomer } from "../50-state";
+import { footprint, hallSize, intake, type Tile } from "../20-world/layout";
+import { hallCapacity, isHalle, zoneSpots } from "../20-world/properties";
+import { packArea } from "../90-actions/hall";
+import { JOB_HOURS, jobKind, type HandsAction } from "../90-actions/presence";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
@@ -36,6 +42,81 @@ import { fillDaemons } from "../60-infra/daemons";
 import { fillGames } from "../60-infra/games";
 import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
+
+// Halls from before free placement hold rows; their racks, customers, zones and upgrades become tiles and items. Items that need a spot
+// in the transformer or battery room are marked x = -1 and placed once the state exists (packPending).
+interface OldRow { id: string; x: number; y: number; length: number; facing: Tile["facing"] }
+interface OldHall { locationId: string; rows: OldRow[]; coolers?: number[]; cooling?: number; transformers?: number; feedB?: boolean; ups?: boolean; generator?: boolean; customers: (Omit<ColoCustomer, "tile"> & { position: number })[];
+  zones?: (HallZone & { rowId?: string; from?: number })[]; exchange?: { id: string; position: number } | null }
+const rowTiles = (r: OldRow): Tile[] => Array.from({ length: r.length }, (_, i) => ({ x: r.x + (r.facing === "n" || r.facing === "s" ? i : 0), y: r.y + (r.facing === "e" || r.facing === "w" ? i : 0), facing: r.facing }));
+const PENDING = -1;
+
+const fillHall = (p: GameState["properties"][number], racks: Rack[], devices: Device[], uplinks: GameState["network"]["uplinks"]): GameState["properties"][number] => {
+  const raw = p.hall as unknown as (Hall & Partial<OldHall>) | undefined;
+  if (!raw) return p;
+  if (!raw.rows) return { ...p, hall: { ...raw, handsRate: raw.handsRate ?? null, customers: raw.customers.map((c) => ({ ...c, leaveBump: c.leaveBump ?? 0 })), items: raw.items ?? [], zones: raw.zones ?? [], xconnects: raw.xconnects ?? [], exchange: raw.exchange ?? null, outage: raw.outage ?? false, noc: raw.noc ?? false } };
+  const old = raw as unknown as OldHall & Hall, at = old.rows.flatMap(rowTiles), tileOf = (position: number): Tile | null => at[position - 1] ?? null;
+  const cap = hallCapacity(p), halle = isHalle(p.buildingId), size = hallSize(cap, halle), floors = new Set(p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size;
+  const items: HallItem[] = [];
+  let n = 0;
+  const add = (kind: HallItemKind, area: AreaId, x: number, y: number, facing: Tile["facing"], price: number) => { items.push({ id: `m${++n}`, kind, area, x, y, facing, price, builtAt: 0 }); };
+  const pending = (kind: HallItemKind, area: AreaId, price: number) => add(kind, area, PENDING, PENDING, "s", price);
+  // Zones keep their row and index; halls from before zones get a colocation zone under each customer and a meet-me zone under the first rack whose fiber panel carries an uplink.
+  let zones: HallZone[] = (old.zones ?? []).map(({ rowId, from, ...z }) => {
+    const row = old.rows.find((r) => r.id === rowId), t = row && rowTiles(row)[from ?? 0];
+    return { ...z, x: t?.x ?? 0, y: t?.y ?? 0, facing: t?.facing ?? "s" };
+  });
+  const zoneAt = (id: string, kind: HallZone["kind"], position: number) => { const t = tileOf(position); if (t) zones = [...zones, { id, kind, x: t.x, y: t.y, length: 1, facing: t.facing, builtAt: 0 }]; };
+  const customers: ColoCustomer[] = old.customers.map((c) => {
+    if (c.zoneId === undefined || c.kw === undefined) zoneAt(`zone-${c.id}`, "colo", c.position);
+    const zoneId = c.zoneId ?? `zone-${c.id}`, cage = zones.find((z) => z.id === zoneId)?.kind === "cage";
+    const { position, ...rest } = c;
+    return { ...rest, kw: c.kw ?? 3, zoneId, leaveBump: 0, tile: cage ? null : tileOf(position) };
+  });
+  if (!old.zones && old.carriers.length) {
+    const linked = uplinks.flatMap((u) => u.links).map((l) => racks.find((r) => r.id === devices.find((d) => d.id === l.jack?.device)?.rackId)).find((r) => r?.locationId === old.locationId);
+    if (linked) zoneAt("zone-meetme", "meetme", linked.position);
+  }
+  for (const r of racks) if (r.locationId === old.locationId) r.tile = tileOf(r.position) ?? undefined;
+  // Cooling units: from the count of units of the oldest saves, or the wall slots they stood on (far wall first, then down the right wall).
+  const far = Math.floor((size.w - 4 - (halle ? 3 : 0)) / 2), right = Math.floor((size.h - 4) / 2);
+  for (const slot of old.coolers ?? Array.from({ length: old.cooling ?? 0 }, (_, i) => i)) {
+    if (slot < far) add("crac", "hall", 3 + 2 * slot, 0, "s", 18_000);
+    else if (slot - far < right) add("crac", "hall", size.w - 1, 2 + 2 * (slot - far), "w", 18_000);
+  }
+  add("nocdesk", "hall", 6, size.h - 1, "n", 0);
+  for (let i = 0; i < floors; i++) pending("transformer", "xfmr", 0);
+  for (let i = 0; i < (old.transformers ?? 0); i++) pending("transformer", "xfmr", 80_000);
+  if (old.feedB) pending("switchgear", "xfmr", 25_000);
+  const kw = floors * (halle ? 300 : 100) + (old.transformers ?? 0) * (halle ? 300 : 100);
+  if (old.ups) {
+    for (let i = 0; i < Math.ceil(kw / 150); i++) pending("ups", "battery", i ? 0 : 40_000);
+    for (let i = 0; i < Math.ceil(kw / 4 / 50); i++) pending("battery", "battery", 0);
+  }
+  if (old.generator) for (let i = 0; i < Math.ceil(kw / 300); i++) pending("generator", "xfmr", i ? 0 : 60_000);
+  // Vents on every intake tile of a rack, customer, exchange or zone tile that is free of bodies, so old layouts keep their cooling.
+  const spots = [...racks.filter((r) => r.locationId === old.locationId && r.tile).map((r) => r.tile!), ...customers.flatMap((c) => (c.tile ? [c.tile] : [])), ...zones.flatMap(zoneSpots)];
+  const ex = old.exchange?.position ? tileOf(old.exchange.position) : null;
+  if (ex) spots.push(ex);
+  const body = new Set([...spots, ...items.filter((i) => i.kind === "crac").flatMap((i) => footprint("crac", i, halle))].map((q) => `${q.x},${q.y}`)), vent = new Set<string>();
+  for (const q of spots) {
+    const v = intake(q), k = `${v.x},${v.y}`;
+    if (v.x >= 0 && v.y >= 0 && v.x < size.w && v.y < size.h && !body.has(k) && !vent.has(k)) { vent.add(k); add("vent", "hall", v.x, v.y, "s", 0); }
+  }
+  const { rows: _r, coolers: _c, cooling: _g, transformers: _t, feedB: _f, ups: _u, generator: _gen, ...rest } = old as unknown as Record<string, unknown>;
+  return { ...p, hall: { ...(rest as unknown as Hall), handsRate: null, items, customers, zones, exchange: old.exchange ? { id: old.exchange.id, tile: ex } : null, xconnects: old.xconnects ?? [], outage: old.outage ?? false, noc: false } };
+};
+
+// Places the items fillHall left without a spot.
+function packPending(s: GameState): void {
+  for (const p of s.properties) {
+    const h = p.hall;
+    if (!h || !h.items.some((i) => i.x === PENDING)) continue;
+    const todo = h.items.filter((i) => i.x === PENDING);
+    h.items = h.items.filter((i) => i.x !== PENDING);
+    for (const i of todo) packArea(s, h.locationId, i.kind, i.area, i.price);
+  }
+}
 import { seededPassword } from "../42-mail/new";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -63,6 +144,21 @@ function renameHetzna(data: Partial<GameState>): void {
 
 // Old saves keep loading: every field missing from a save takes its new-game default.
 // A version 1 save (no rack in the basement, or no infrastructure at all) gets the version 2 starting infrastructure.
+// Saves from before work orders: queued hand jobs become provider (or player) orders that finish at the same minute, and a player's
+// hand work in progress becomes a visit order with no action. Technician jobs held only the current hour and are dropped.
+function oldOrders(data: Partial<GameState> & { handsJobs?: { id: string; action: string; args: unknown[]; locationId: string; deviceId: string; dueAt: number; fee: number; self?: true }[] }): WorkOrder[] {
+  const out: WorkOrder[] = (data.handsJobs ?? []).map((j) => {
+    const workMin = JOB_HOURS[jobKind(j.action as HandsAction)] * 60, startAt = j.dueAt * 60 - workMin;
+    return { id: j.id, worker: j.self ? "player" : "provider", locationId: j.locationId, target: {}, kind: jobKind(j.action as HandsAction), action: { name: j.action, args: j.args },
+      deviceId: j.deviceId, ...(!j.self && { fee: j.fee }), queuedAt: startAt, startAt, walkMin: 0, workMin };
+  });
+  const p = data.player, now = (data.hour ?? 0) * 60 + (data.minute ?? 0);
+  if (p?.doing === "work" && p.until * 60 > now) out.push({ id: "ord-visit", worker: "player", locationId: p.at, target: {}, action: null, kind: "op", queuedAt: now, startAt: now, walkMin: 0, workMin: p.until * 60 - now });
+  if (p?.doing === "work") data.player = { ...p, until: 0 };
+  delete (data as { handsJobs?: unknown }).handsJobs; delete (data as { techJobs?: unknown }).techJobs;
+  return out;
+}
+
 export function deserialize(raw: string): GameState {
   const data = JSON.parse(raw) as Partial<GameState>;
   if (typeof data.seed !== "number") throw new Error("save has no seed");
@@ -87,8 +183,10 @@ export function deserialize(raw: string): GameState {
   const locations: GameState["locations"] = [];
   // The basement's tower shelf is gone, and rack positions became cages.
   for (const { shelf: _, ...l } of (data.locations ?? base.locations) as (Location & { shelf?: number })[]) {
-    locations.push({ ...l, space: (l.space as string) === "positions" ? "cage" : l.space, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false });
+    locations.push({ ...l, space: (l.space as string) === "positions" ? "cage" : l.space, az: l.az ?? nextAz(locations, l.city), extraCircuit: l.extraCircuit ?? false, tripped: l.tripped ?? false, ...(l.space === "basement" && { positions: BASEMENT.positions, name: t("location.basement") }) });
   }
+  // A hall's name is stored in the language it was fitted in; show it in the current one.
+  for (const p of data.properties ?? []) { const l = locations.find((x) => x.id === p.hall?.locationId); if (l) l.name = t("location.hall", { building: p.building.name }); }
   // Older saves had one stockroom; its units go to the first location.
   const stored = (d: Device) => d.store !== undefined ? d.store : !d.rackId && !d.panel ? locations[0].id : null;
   const known = (d: { model: string }) => MODELS.some((m) => m.id === (RENAMED_MODELS[d.model] ?? d.model));
@@ -108,27 +206,37 @@ export function deserialize(raw: string): GameState {
       ...(defaults.saved && !d.saved ? { saved: { groups: d.groups ?? [], vlans: d.vlans ?? {} } } : {}),
     };
   });
+  // Builds with carrying kept units at the door or in the player's hands; both go into storage there.
+  const held = (data.player as { carrying?: string | null } | undefined)?.carrying, heldAt = data.player?.at ?? locations[0].id;
+  for (const d of devices as (Device & { door?: { at: string; since: number } | null })[]) {
+    if (d.door) Object.assign(d, { store: d.door.at, arrivedAt: d.door.since });
+    else if (held && (d.id === held || d.chassisId === held)) d.store = heldAt;
+    delete d.door;
+  }
   const racks = (data.racks ?? base.racks).map((r) => ({ ...r, provided: r.provided ?? false, feedB: r.feedB ?? false, highDensity: r.highDensity ?? false, extraKw: r.extraKw ?? 0, extraKwAt: r.extraKwAt ?? null, flatKw: r.flatKw ?? 0, flatKwAt: r.flatKwAt ?? null, overSince: r.overSince ?? { a: null, b: null } }));
   const cables = (data.cables ?? base.cables).map((c) => ({ ...c, color: c.color ?? null }));
   // Competitors fill datacenters the save has not seen yet as if the game had started this year. A datacenter far below
   // last year's capacity can't come from play (competitors refill every month), so it is reseeded for this year too.
   const year = yearOf(data.hour ?? 0);
   const seeded = seedDcs(data.seed, year);
-  const dcs = Object.fromEntries(DATACENTERS.map((dc) => {
+  const dcs = Object.fromEntries(Object.keys(seeded).map(datacenterById).map((dc) => {
     const kept = data.dcs?.[dc.id];
     return [dc.id, kept && kept.others >= REPAIR_FLOOR * capacityAt(dc, year - 1) ? kept : seeded[dc.id]];
   }));
   // Saves from before addresses get theirs.
   const fill = data.ips ? (x: GameState) => x : fillAddresses;
   const s = fillMachines(dropGone(gone, fillRegistrar(fill(fillLaunch(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
-    ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
+    ...base, ...data, orders: data.orders ?? oldOrders(data), dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
+    properties: data.properties?.map((p) => fillHall(p, racks, devices, data.network?.uplinks ?? [])) ?? [basementProperty(locations.find((l) => l.space === "basement")?.id ?? null)],
     billingRules: { ...base.billingRules, ...data.billingRules },
     // Quotes from before the shop wrote its own were all written in Books.
     quotes: (data.quotes ?? []).map((q) => ({ ...q, origin: q.origin ?? "books" })),
+    // Letters from before the letterbox lie at the desk, and the delivered ones are filed in DocuWhere.
+    letters: (data.letters ?? base.letters).map((l) => ({ ...l, box: l.box ?? null, addressedTo: l.addressedTo ?? l.box ?? null, scanned: l.scanned ?? l.arrived })),
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
     // Saves from before contracts get one per rented location at today's price.
     contracts: data.contracts?.map((c: Contract) => ({ ...c, retainedAt: c.retainedAt ?? null })) ?? locations.filter((l) => l.dc).map((l, i) => {
-      const dc = DATACENTERS.find((d) => d.id === l.dc)!;
+      const dc = datacenterById(l.dc!);
       const space = l.space as "share" | "cage" | "suite";
       const size = space === "share" ? SHARE_RACKS.find((m) => m.id === racks.find((r) => r.locationId === l.id && r.provided)?.model)?.size ?? 1 : l.positions;
       return { id: `contract-old-${i}`, provider: dc.provider, dc: dc.id, locationId: l.id, space, positions: size, since: l.readyAt - 24 * LEAD_DAYS[space], monthly: spacePrice(dc, space, size), endsAt: null, retainedAt: null };
@@ -138,7 +246,7 @@ export function deserialize(raw: string): GameState {
     network: { ...base.network, ...data.network },
     ops: { ...base.ops, ...data.ops },
     friendFavours: { ...base.friendFavours, ...data.friendFavours },
-    player: data.player ?? { ...base.player, at: locations[0].id },
+    player: (({ carrying: _, ...p }) => p)({ ...base.player, at: locations[0].id, ...data.player } as GameState["player"] & { carrying?: string | null }),
     security: { ...base.security, ...data.security },
     sites: { ...base.sites, ...data.sites },
     // Saves from before paid lines had the free DSL line from the start.
@@ -172,7 +280,7 @@ export function deserialize(raw: string): GameState {
     hosttoast: { ...base.hosttoast, ...data.hosttoast },
     shop: { ...base.shop, ...data.shop },
     used: (data.used ?? base.used).filter(known).map((l) => ({ ...l, model: RENAMED_MODELS[l.model] ?? l.model, brand: maker(RENAMED_MODELS[l.model] ?? l.model, l.brand), ...(l.device && { device: { ...l.device, brand: maker(l.device.model, l.device.brand) } }) })),
-    staff: (data.staff ?? []).map(({ hours: _h, hoursFrom: _f, ...e }: Employee & { hours?: number; hoursFrom?: number }) => ({ ...e, location: e.location ?? null, team: e.team ?? "office", worked: e.worked ?? 0 })),
+    staff: (data.staff ?? []).map(({ hours: _h, hoursFrom: _f, ...e }: Employee & { hours?: number; hoursFrom?: number }) => ({ ...e, location: e.location ?? null, team: e.team ?? "office", worked: e.worked ?? 0, desk: e.desk ?? null })),
     techRules: { ...base.techRules, ...data.techRules },
     // upgradeCompute fills the cluster defaults.
     clusters: data.clusters ?? [], workloads: (data.workloads ?? []).map((w) => workloadDefaults({ ...w, media: w.media && asImage((w.media as string) === "iso" ? "lunix" : w.media, year) })), downHours: data.downHours ?? {},
@@ -219,6 +327,8 @@ export function deserialize(raw: string): GameState {
   fillDeskWebspace(s);
   s.webmail = { ...base.webmail, ...data.webmail };
   s.webmail.installs = Object.fromEntries(Object.entries(s.webmail.installs).map(([id, cfg]) => [id, { ...cfg, conf: cfg.conf ?? {} }]));
+  packPending(s);
+  syncProviderPanels(s);
   return s;
 }
 

@@ -1,5 +1,6 @@
 // docs/design/web-hosting.md 4.2: the tables inside a web space's databases as phpMyAdmon shows them. Tables and rows derive
 // from the app, the seed and the database's size; only rows the player edited or inserted are stored, in the overlay's rows.
+import { FREEMAIL_DOMAINS } from "../30-customers/addresses";
 import { md5 } from "../00-core/md5";
 import { hashRng, rand, type Rng } from "../00-core/rng";
 import { dateOf, yearOf } from "../00-core/time";
@@ -241,7 +242,7 @@ function value(col: DbColumn, r: Rng, pk: number, rows: number, at: number, doma
     case "name": return first[0].toUpperCase() + first.slice(1);
     case "last": return last;
     case "login": return login;
-    case "email": return pk === 1 ? `info@${domain}` : `${first}.${last.toLowerCase()}@${["web.de", "gmx.net", "yahoo.com", "hotmail.com"][who.n % 4]}`;
+    case "email": return pk === 1 ? `info@${domain}` : `${first}.${last.toLowerCase()}@${FREEMAIL_DOMAINS[who.n % FREEMAIL_DOMAINS.length]}`;
     case "date": return stamp(at);
     case "day": return stamp(at).slice(0, 10);
     case "ts": return String(Math.floor(dateOf(at).getTime() / 1000));

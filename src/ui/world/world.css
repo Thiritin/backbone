@@ -1,0 +1,278 @@
+/* Flat isometric: two or three tones per object, a thin edge in a darker tone of the same hue, no gradients or blur. */
+.world {
+  --w-bg: oklch(0.3 0.025 250);
+  --w-floor: oklch(0.76 0.012 250);
+  --w-grid: oklch(0.7 0.014 250);
+  --w-wall-l: oklch(0.962 0.007 250);
+  --w-wall-r: oklch(0.9 0.009 252);
+  --w-wall-top: oklch(0.99 0.004 250);
+  --w-wall-end: oklch(0.83 0.012 252);
+  --w-wall-edge: oklch(0.8 0.012 252);
+  --w-skirt: oklch(0.68 0.014 252);
+  position: fixed;
+  inset: 0;
+  background: var(--w-bg);
+  user-select: none;
+}
+.world-svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.world-svg:active { cursor: grabbing; }
+
+.w-floor { fill: var(--w-floor); pointer-events: none; }
+/* Raised floor panels: one lighter cool tone with a fine grid. */
+.w-raised { fill: oklch(0.85 0.008 245); }
+.w-raised-line { fill: none; stroke: oklch(0.77 0.01 245); stroke-width: 0.45; }
+.w-tile { fill: none; stroke: var(--w-grid); stroke-width: 0.5; pointer-events: none; }
+
+.w-walls polygon { stroke: var(--w-wall-edge); stroke-width: 0.6; stroke-linejoin: round; }
+.w-wall-l { fill: var(--w-wall-l); }
+.w-wall-r { fill: var(--w-wall-r); }
+.w-wall-top { fill: var(--w-wall-top); }
+.w-wall-end { fill: var(--w-wall-end); }
+.w-skirt { fill: var(--w-skirt); }
+.w-night .w-wall-l { fill: oklch(from var(--w-wall-l) calc(l - 0.1) c h); }
+.w-night .w-wall-r { fill: oklch(from var(--w-wall-r) calc(l - 0.1) c h); }
+.w-night .w-wall-top { fill: oklch(from var(--w-wall-top) calc(l - 0.1) c h); }
+.w-band-face { fill: var(--band); }
+.w-band-edge { fill: oklch(from var(--band) calc(l - 0.14) c h); }
+.w-night .w-band-face { fill: oklch(from var(--band) calc(l - 0.1) c h); }
+.w-night .w-band-edge { fill: oklch(from var(--band) calc(l - 0.24) c h); }
+.w-mesh-line { fill: none; stroke: oklch(0.55 0.012 252); stroke-width: 0.5; }
+.w-post { fill: oklch(0.5 0.012 252); }
+.w-tray { fill: oklch(0.45 0.012 252); }
+
+/* Each tone class sets the top, left and right face of a box and the edge between them. */
+.w-tone-wood { --top: oklch(0.76 0.06 70); --left: oklch(0.68 0.065 65); --right: oklch(0.6 0.065 60); --edge: oklch(0.54 0.06 60); }
+.w-tone-wood-dark { --top: oklch(0.6 0.06 60); --left: oklch(0.54 0.06 58); --right: oklch(0.47 0.055 55); --edge: oklch(0.42 0.05 55); }
+.w-tone-shelf { --top: oklch(0.86 0.008 250); --left: oklch(0.78 0.01 250); --right: oklch(0.7 0.012 250); --edge: oklch(0.62 0.012 250); }
+.w-tone-rack { --top: oklch(0.46 0.01 255); --left: var(--metal-2); --right: var(--metal); --edge: var(--metal-line); }
+.w-tone-pc { --top: oklch(0.93 0.008 90); --left: oklch(0.86 0.008 90); --right: oklch(0.76 0.008 90); --edge: oklch(0.68 0.008 90); }
+.w-tone-paper { --top: oklch(0.95 0.005 250); --left: oklch(0.85 0.006 250); --right: oklch(0.75 0.008 250); --edge: oklch(0.66 0.008 250); }
+.w-tone-cool { --top: oklch(0.92 0.008 230); --left: oklch(0.85 0.01 230); --right: oklch(0.76 0.012 230); --edge: oklch(0.68 0.012 230); }
+.w-tone-card { --top: oklch(0.74 0.075 70); --left: oklch(0.66 0.08 65); --right: oklch(0.58 0.075 60); --edge: oklch(0.52 0.07 60); }
+.w-tone-red { --top: oklch(0.62 0.19 27); --left: oklch(0.55 0.19 27); --right: oklch(0.47 0.17 27); --edge: oklch(0.4 0.14 27); }
+.w-tone-enamel { --top: oklch(0.97 0.004 90); --left: oklch(0.92 0.005 90); --right: oklch(0.84 0.006 90); --edge: oklch(0.76 0.008 90); }
+.w-tone-beige { --top: oklch(0.89 0.03 88); --left: oklch(0.84 0.035 85); --right: oklch(0.75 0.035 82); --edge: oklch(0.67 0.035 80); }
+.w-tone-copper { --top: oklch(0.74 0.1 55); --left: oklch(0.66 0.11 50); --right: oklch(0.57 0.1 48); --edge: oklch(0.5 0.09 45); }
+.w-tone-pipe { --top: oklch(0.88 0.006 80); --left: oklch(0.8 0.008 80); --right: oklch(0.71 0.01 80); --edge: oklch(0.63 0.01 80); }
+.w-tone-fabric { --top: oklch(0.44 0.03 260); --left: oklch(0.37 0.03 260); --right: oklch(0.31 0.03 260); --edge: oklch(0.26 0.03 260); }
+.w-tone-bottle { --top: oklch(0.82 0.04 85); --left: oklch(0.42 0.08 60); --right: oklch(0.35 0.07 58); --edge: oklch(0.3 0.06 55); }
+.w-tone-dark { --top: oklch(0.36 0.01 255); --left: oklch(0.3 0.01 255); --right: oklch(0.25 0.01 255); --edge: oklch(0.2 0.01 255); }
+.w-box polygon { stroke: var(--edge); stroke-width: 0.6; stroke-linejoin: round; }
+.w-face-t { fill: var(--top); }
+.w-face-l { fill: var(--left); }
+.w-face-r { fill: var(--right); }
+
+.w-obj { cursor: pointer; }
+.w-obj:hover, .w-lit { filter: drop-shadow(0 0 1.5px var(--accent)); }
+.w-screen { fill: oklch(0.5 0.1 250); }
+.w-lid { fill: oklch(0.4 0.02 250); }
+
+.w-frame { fill: oklch(0.95 0.008 250); stroke: oklch(0.82 0.01 250); stroke-width: 0.5; }
+.w-reveal { fill: oklch(0.78 0.012 252); }
+.w-sill { fill: oklch(0.86 0.008 250); stroke: oklch(0.74 0.01 250); stroke-width: 0.5; }
+.w-glass { fill: oklch(0.86 0.05 230); }
+.w-glass-grey { fill: oklch(0.74 0.02 245); }
+.w-sky-grey { fill: oklch(0.74 0.02 245); }
+.w-rain { fill: none; stroke: oklch(0.5 0.05 245); stroke-width: 0.6; stroke-linecap: round; }
+.w-rain-night { stroke: oklch(0.7 0.04 250); }
+.w-snow { fill: oklch(1 0 0); }
+.w-snow-fill { fill: oklch(0.98 0.005 240); stroke: oklch(0.86 0.02 240); stroke-width: 0.5; paint-order: stroke; }
+.w-cloud-body { fill: oklch(0.97 0.005 240); }
+.w-cloud-under { fill: oklch(0.88 0.01 240); }
+.w-cloud-grey .w-cloud-body { fill: oklch(0.84 0.012 245); }
+.w-cloud-grey .w-cloud-under { fill: oklch(0.76 0.014 245); }
+.w-cloud-night .w-cloud-body { fill: oklch(0.34 0.02 255); }
+.w-cloud-night .w-cloud-under { fill: oklch(0.28 0.02 255); }
+.w-plate-text { font: 700 18px var(--font-ui, sans-serif); fill: oklch(0.3 0.01 90); }
+.w-set-a { animation: w-set 0.6s steps(1) infinite; }
+.w-set-b { animation: w-set 0.6s steps(1) infinite 0.3s; opacity: 0; }
+.w-precip-slow .w-set-a, .w-precip-slow .w-set-b { animation-duration: 1.6s; }
+.w-precip-slow .w-set-b { animation-delay: 0.8s; }
+@keyframes w-set { 0% { opacity: 1; } 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .w-set-a, .w-set-b { animation: none; opacity: 1; } }
+.w-glass-night { fill: oklch(0.32 0.04 260); }
+.w-glint { fill: none; stroke: oklch(1 0 0 / 0.75); stroke-width: 0.8; stroke-linecap: round; }
+.w-fan-box { fill: oklch(0.88 0.006 250); stroke: oklch(0.72 0.01 250); stroke-width: 0.5; }
+.w-fan-hole { fill: oklch(0.3 0.02 255); }
+.w-fan-blade { fill: oklch(0.72 0.01 250); stroke: oklch(0.6 0.012 250); stroke-width: 0.3; }
+.w-fan-hub { fill: oklch(0.55 0.012 250); }
+.w-fan-ring { fill: none; stroke: oklch(0.85 0.006 250); stroke-width: 0.45; }
+.w-fan-rotor { transform-box: fill-box; transform-origin: center; }
+.w-fan-rotor.on { animation: w-spin 0.9s linear infinite; }
+.w-shimmer path { fill: none; stroke: var(--w-skirt); stroke-width: 1.6; stroke-linecap: round; opacity: 0; animation: w-shimmer 3.3s ease-in-out infinite; }
+@keyframes w-shimmer { 0% { opacity: 0; transform: translateY(0); } 40% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-10px); } }
+@keyframes w-spin { to { transform: rotate(360deg); } }
+.w-lcd { fill: oklch(0.26 0.03 250); }
+.w-hygro { fill: oklch(0.97 0.004 90); stroke: oklch(0.8 0.008 90); stroke-width: 0.6; }
+.w-hygro-lcd { fill: oklch(0.82 0.03 130); stroke: oklch(0.7 0.03 130); stroke-width: 0.4; }
+.w-num-lcd { fill: oklch(0.25 0.02 130); }
+.w-fuse-in { fill: oklch(0.8 0.008 250); }
+.w-meter { fill: oklch(0.3 0.01 255); }
+.w-disc-win { fill: oklch(0.88 0.03 220); stroke: oklch(0.2 0.01 255); stroke-width: 0.4; }
+.w-disc { fill: oklch(0.7 0.01 250); }
+.w-disc-mark { fill: oklch(0.55 0.19 27); animation: w-disc 6s linear infinite; }
+@keyframes w-disc { from { transform: translateX(0); } to { transform: translateX(10px); } }
+.w-rail { fill: oklch(0.6 0.01 250); }
+.w-breaker { fill: oklch(0.97 0.004 90); stroke: oklch(0.78 0.006 90); stroke-width: 0.3; }
+.w-toggle { fill: oklch(0.35 0.012 255); }
+.w-screw { fill: oklch(0.6 0.01 250); }
+.w-fuse-door { fill: oklch(0.74 0.01 250); stroke: oklch(0.64 0.012 250); stroke-width: 0.5; }
+.w-fuse-door-in { fill: oklch(0.79 0.009 250); }
+.w-plate-label { fill: oklch(0.97 0.004 90); stroke: oklch(0.82 0.006 90); stroke-width: 0.3; }
+.w-handle { fill: oklch(0.3 0.01 255); }
+.w-hinge { fill: oklch(0.55 0.01 250); }
+.w-conduit { fill: oklch(0.84 0.006 250); stroke: oklch(0.72 0.01 250); stroke-width: 0.4; }
+.w-clip { fill: oklch(0.62 0.01 250); }
+.w-socket { fill: oklch(0.97 0.004 90); stroke: oklch(0.8 0.006 90); stroke-width: 0.5; }
+.w-socket-in { fill: oklch(0.92 0.004 90); stroke: oklch(0.82 0.006 90); stroke-width: 0.3; }
+.w-socket-hole { fill: oklch(0.35 0.01 255); }
+.w-duct { fill: oklch(0.9 0.004 250); stroke: oklch(0.76 0.008 250); stroke-width: 0.4; }
+.w-duct-seam { fill: none; stroke: oklch(0.8 0.006 250); stroke-width: 0.3; }
+.w-rocker { fill: oklch(0.97 0.004 90); stroke: oklch(0.78 0.006 90); stroke-width: 0.3; }
+.w-strip { fill: oklch(0.86 0.006 90); stroke: oklch(0.76 0.008 90); stroke-width: 0.4; }
+.w-dial { fill: oklch(0.62 0.01 250); stroke: oklch(0.5 0.01 250); stroke-width: 0.4; }
+.w-drawer { fill: oklch(0.9 0.005 90); stroke: oklch(0.72 0.008 90); stroke-width: 0.4; }
+.w-flame-win { fill: oklch(0.72 0.17 55); stroke: oklch(0.45 0.05 50); stroke-width: 0.5; }
+.w-porthole { fill: oklch(0.8 0.008 250); stroke: oklch(0.66 0.01 250); stroke-width: 0.6; }
+.w-port-glass { fill: oklch(0.45 0.05 240); }
+.w-towel { fill: oklch(0.62 0.12 235); }
+.w-towel-band { fill: oklch(0.85 0.04 235); }
+.w-towel-fold { fill: oklch(0.55 0.11 235); }
+.w-dry-tube { fill: none; stroke: oklch(0.66 0.01 80); stroke-width: 1.2; stroke-linecap: square; }
+.w-dry-wire { fill: none; stroke: oklch(0.6 0.01 80); stroke-width: 0.6; }
+.w-bay { fill: oklch(0.8 0.03 85); stroke: oklch(0.66 0.035 80); stroke-width: 0.3; }
+.w-pled { fill: var(--ok); }
+.w-keys { fill: none; stroke: oklch(0.7 0.008 250); stroke-width: 0.5; }
+.w-lamp-arm { fill: none; stroke: oklch(0.3 0.01 255); stroke-width: 1.1; stroke-linejoin: round; }
+.w-lamp-shade { fill: oklch(0.45 0.08 160); stroke: oklch(0.36 0.07 160); stroke-width: 0.4; }
+.w-bulb { fill: oklch(0.96 0.09 90); }
+.w-bulb-off { fill: oklch(0.88 0.01 90); }
+.w-chair-leg { fill: none; stroke: oklch(0.3 0.01 255); stroke-width: 1.4; stroke-linecap: round; }
+.w-caster { fill: oklch(0.22 0.01 255); }
+.w-mat { fill: oklch(0.55 0.06 65); }
+.w-mat-in { fill: oklch(0.62 0.07 70); }
+.w-damp { fill: oklch(0.6 0.014 250 / 0.25); }
+.w-drain { fill: oklch(0.42 0.01 255); stroke: oklch(0.34 0.01 255); stroke-width: 0.5; }
+.w-drain-slot { fill: none; stroke: oklch(0.25 0.01 255); stroke-width: 0.9; }
+.w-cord { fill: none; stroke: oklch(0.3 0.01 255); stroke-width: 0.9; }
+.w-shade { fill: oklch(0.95 0.006 90); stroke: oklch(0.78 0.008 90); stroke-width: 0.5; }
+.w-shade-in { fill: oklch(0.82 0.01 90); }
+.w-blotch { fill: oklch(0.82 0.01 250 / 0.16); }
+.w-dark { fill: oklch(0.2 0.04 262); transition: opacity 400ms; }
+.w-night .w-led-on { filter: drop-shadow(0 0 1.2px var(--ok)); }
+.w-night .w-led-fault { filter: drop-shadow(0 0 1.2px var(--bad)); }
+.w-num { font-family: var(--font-ui); font-size: 6.5px; font-weight: 500; font-variant-numeric: tabular-nums; text-anchor: end; fill: oklch(0.95 0.02 220); }
+.w-num-sm { font-size: 4.6px; }
+.w-num-xs { font-size: 3.8px; }
+.w-num-dim { fill: oklch(0.75 0.03 220); }
+.w-num-tag { text-anchor: middle; paint-order: stroke; stroke: oklch(0.2 0.02 258); stroke-width: 2.5px; }
+.w-fuse { fill: oklch(0.72 0.01 250); stroke: oklch(0.6 0.012 250); stroke-width: 0.6; }
+.w-switch { fill: oklch(0.45 0.015 250); }
+.w-letter { fill: oklch(0.98 0.005 90); stroke: oklch(0.82 0.01 90); stroke-width: 0.5; }
+.w-brass { fill: oklch(0.76 0.1 85); stroke: oklch(0.66 0.1 80); stroke-width: 0.6; }
+.w-slot { fill: oklch(0.35 0.03 70); }
+.w-jamb { fill: oklch(0.68 0.065 65); stroke: oklch(0.58 0.06 60); stroke-width: 0.6; }
+.w-doorway { fill: oklch(0.18 0.02 262); }
+.w-panel { fill: oklch(0.6 0.065 60); stroke: oklch(0.52 0.06 58); stroke-width: 0.6; }
+.w-panel-in { fill: oklch(0.56 0.065 58); stroke: oklch(0.5 0.06 56); stroke-width: 0.5; }
+.w-knob { fill: oklch(0.84 0.09 85); }
+.w-cage-frame { fill: none; stroke: oklch(0.45 0.012 252); stroke-width: 2; }
+.w-cage-lock { fill: oklch(0.76 0.1 85); }
+
+.w-cable { fill: none; stroke-width: 1.2; stroke-linecap: round; }
+.w-dock-frame { fill: oklch(0.5 0.012 252); }
+.w-dock { fill: oklch(0.78 0.01 250); }
+.w-dock-slat { fill: oklch(0.68 0.012 250); }
+.w-bumper { fill: oklch(0.25 0.01 255); }
+.w-grille { fill: oklch(0.7 0.012 230); }
+.w-sign { fill: oklch(0.55 0.19 27); }
+.w-tape { fill: oklch(0.82 0.05 80); }
+.w-parcel-label { fill: oklch(0.97 0.005 90); }
+.w-parcel-brand { font-family: var(--font-ui); font-size: 3.2px; font-weight: 600; text-anchor: middle; fill: oklch(0.25 0.02 258); }
+
+
+.w-led { fill: oklch(0.35 0.01 255); }
+.w-led-on { fill: var(--ok); }
+.w-led-fault { fill: var(--bad); }
+.w-blink .w-led-on { opacity: 0.35; }
+.w-led-flood { fill: var(--ok); animation: w-flood 0.14s steps(2) infinite; }
+@keyframes w-flood { 50% { opacity: 0.2; } }
+@media (prefers-reduced-motion: reduce) { .w-led-flood { animation: none; fill: var(--warn); } }
+
+.w-clock {
+  position: absolute; top: 12px; left: 12px; z-index: 60;
+  display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 4px;
+  background: oklch(0.24 0.022 255); color: oklch(0.95 0.01 250);
+  border: 1px solid oklch(0.4 0.02 252); box-shadow: 0 3px 0 oklch(0.17 0.02 258);
+  font-family: var(--font-num); font-size: 12px;
+  --menubar-text: oklch(0.95 0.01 250);
+}
+.world .w-clock .speed { border-radius: 0; padding: 0; gap: 0; border: 0; background: none; }
+.world .w-clock .speed button { border-radius: 0; height: 24px; color: inherit; }
+.world .w-clock .speed button[aria-pressed="true"] { background: oklch(0.4 0.02 252); color: inherit; }
+
+/* Cables between racks along the tray, and the racks that take the cable in hand. */
+.w-cable { cursor: pointer; }
+.w-cable-line { fill: none; stroke-width: 1.4; stroke-linejoin: round; opacity: 0.85; pointer-events: none; }
+.w-cables, .w-cable { pointer-events: none; }
+.w-cable-hit { fill: none; stroke: transparent; stroke-width: 8; pointer-events: stroke; }
+.w-cable:hover .w-cable-line { stroke-width: 2.6; opacity: 1; }
+.w-glow { filter: drop-shadow(0 0 4px var(--accent)) drop-shadow(0 0 8px var(--accent)); }
+.w-link { fill: none; stroke: oklch(0.62 0.13 150); stroke-width: 2; stroke-linecap: round; }
+
+/* Datacenter: mesh rack doors, neighbours' racks, tray cables, tubes. */
+.w-rack-mesh-line { fill: none; stroke: oklch(0.86 0.008 250); stroke-width: 0.9; }
+.w-rack-mesh { opacity: 0.32; }
+.w-rack-door { fill: none; stroke: oklch(0.36 0.01 255); stroke-width: 4; }
+.w-rack-handle { fill: oklch(0.72 0.008 250); }
+.w-neighbour { filter: saturate(0.5) brightness(0.66); }
+.w-reader { fill: oklch(0.3 0.01 255); }
+.w-steel-jamb { fill: oklch(0.62 0.01 252); stroke: oklch(0.52 0.012 252); stroke-width: 0.6; }
+.w-steel .w-panel { fill: oklch(0.74 0.008 250); stroke: oklch(0.62 0.01 252); }
+.w-steel .w-panel-in { fill: oklch(0.58 0.01 252); stroke: none; }
+.w-castor { fill: oklch(0.3 0.01 255); }
+.w-tone-tube { --top: oklch(0.99 0.01 220); --left: oklch(0.96 0.02 220); --right: oklch(0.88 0.012 230); --edge: oklch(0.8 0.012 230); }
+.w-strand-a { fill: oklch(0.7 0.15 230); }
+.w-strand-b { fill: oklch(0.8 0.15 85); }
+.w-strand-c { fill: oklch(0.62 0.16 145); }
+.w-strip { fill: oklch(0.24 0.01 255); }
+.w-strip-led { fill: oklch(0.72 0.15 55); }
+.w-bundle { fill: oklch(0.55 0.1 240); opacity: 0.55; }
+.w-phone { fill: oklch(0.86 0.035 85); stroke: oklch(0.7 0.04 80); stroke-width: 0.6; }
+.w-phone-handset { fill: oklch(0.82 0.04 82); stroke: oklch(0.66 0.04 78); stroke-width: 0.6; }
+.w-phone-key { fill: oklch(0.95 0.01 90); stroke: oklch(0.7 0.02 80); stroke-width: 0.3; }
+.w-phone-cord { stroke: oklch(0.72 0.04 80); stroke-width: 1; }
+.w-phone-base { fill: oklch(0.32 0.01 250); stroke: oklch(0.22 0.01 250); stroke-width: 0.6; }
+.w-phone-cordless { fill: oklch(0.42 0.012 250); stroke: oklch(0.26 0.01 250); stroke-width: 0.6; }
+.w-phone-screen { fill: oklch(0.78 0.08 140); }
+.w-ringing { animation: w-ring 0.12s linear infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes w-ring { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .w-ringing { animation: none; } }
+
+.w-orders {
+  position: absolute; top: 52px; left: 12px; z-index: 60; margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 3px; font-family: var(--font-num); font-size: 12px;
+}
+.w-orders li {
+  display: flex; align-items: center; gap: 8px; padding: 3px 4px 3px 10px;
+  background: oklch(0.24 0.022 255); color: oklch(0.95 0.01 250);
+  border: 1px solid oklch(0.4 0.02 252); box-shadow: 0 2px 0 oklch(0.17 0.02 258);
+}
+.w-orders li:first-child { border-left: 3px solid oklch(0.72 0.14 150); }
+.w-orders-x { border: 0; background: none; color: inherit; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
+.w-orders-x:hover { color: oklch(0.75 0.15 25); }
+
+/* World controls are square: the shared focus style rounds its corners. */
+.world button:not(.wp-go), .world :focus-visible:not(.wp-go) { border-radius: 0; }
+.world :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.w-alert-chip {
+  position: fixed; top: 52px; left: 12px; z-index: 61; display: flex; align-items: center; gap: 6px; padding: 3px 8px;
+  border: 2px solid oklch(0.8 0.16 75); border-radius: 0; background: oklch(0.24 0.022 255); color: oklch(0.95 0.01 250);
+  font-family: var(--font-num); font-size: 12px; cursor: pointer; box-shadow: 0 2px 0 oklch(0.17 0.02 258);
+  animation: w-alert-pulse 1.2s ease-in-out infinite;
+}
+.w-alert-chip svg { width: 16px; height: 16px; color: oklch(0.8 0.16 75); }
+.w-alert-chip ~ .w-orders, body:has(.w-alert-chip) .w-orders { top: 92px; }
+@keyframes w-alert-pulse { 50% { border-color: oklch(0.8 0.16 75 / 0.25); } }
+@media (prefers-reduced-motion: reduce) { .w-alert-chip { animation: none; } }

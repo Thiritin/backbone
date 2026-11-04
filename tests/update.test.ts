@@ -7,6 +7,12 @@ import { deserialize, serialize } from "../src/sim/91-save/save";
 import { shouldOffer, SNOOZE_MS } from "../src/ui/update";
 
 describe("update offer", () => {
+  it("merges repeated day headings into one day", () => {
+    const days = parseChangelog("## 2026-10-29\n- A.\n\n## 2026-10-28\n- B.\n\n## 2026-10-29\n- C.\n");
+    expect(days.map((d) => d.date)).toEqual(["2026-10-29", "2026-10-28"]);
+    expect(days[0].items).toEqual(["A.", "C."]);
+  });
+
   it("offers only when the served build differs", () => {
     expect(shouldOffer("abc", "abc", null, 0)).toBe(false);
     expect(shouldOffer("abc", "def", null, 0)).toBe(true);

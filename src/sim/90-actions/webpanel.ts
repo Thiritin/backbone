@@ -198,7 +198,7 @@ export function rollbackSite(s: GameState, serviceId: string): ActionResult {
 }
 
 // WHM Transfer Tool: the player copies a flagged account from its old host; a failed move is run again the same way.
-export function startTransfer(s: GameState, hostId: string, serviceId: string): ActionResult {
+export function startWebTransfer(s: GameState, hostId: string, serviceId: string): ActionResult {
   const c = s.clusters.find((x) => x.id === hostId);
   if (!isCpanic(c)) return fail("error.notCpanic");
   const v = accountsOf(s, hostId).find((x) => x.id === serviceId);

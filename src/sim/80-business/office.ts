@@ -15,6 +15,12 @@ export function officeOpen(hour: number): boolean {
   return day >= 1 && day <= 5 && h >= OFFICE_OPEN && h < OFFICE_CLOSE;
 }
 
+// First hour at or after the given hour in which the online service is open.
+export function nextOfficeOpen(hour: number): number {
+  while (!officeOpen(hour)) hour++;
+  return hour;
+}
+
 export const registerNumber = (seed: number): number => 10000 + (seed % 90000);
 
 export const legacyRegistration = (seed: number): Registration => ({ hour: 0, owner: "", form: "sole", number: registerNumber(seed) });
