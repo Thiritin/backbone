@@ -12,4 +12,7 @@ export default {
   "providers.hetzler.from": (p) => `da ${p.price} al mese`,
   "providers.hetzler.orderNow": () => "Ordina ora",
   "providers.hetzler.footer": (p) => `© ${p.year} Hetzler Online GmbH, Gunzenhausen`,
+  "providers.hetzler.hosting": () => "Hosting",
+  "providers.hetzler.product": () => "Prodotto",
+  "providers.hetzler.spec": () => "Caratteristiche",
 } satisfies Dict;

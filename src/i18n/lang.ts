@@ -4,7 +4,7 @@ export type Dict = Record<string, (p: Params) => string>;
 export const LANGS = { en: "English", de: "Deutsch", fr: "Français", es: "Español", it: "Italiano", pt: "Português" } as const;
 export type Lang = keyof typeof LANGS;
 const LOCALES: Record<Lang, string> = { en: "en-GB", de: "de-DE", fr: "fr-FR", es: "es-ES", it: "it-IT", pt: "pt-PT" };
-const KEY = "backbone.lang";
+const KEY = "raid0.lang";
 
 function stored(): Lang {
   try {

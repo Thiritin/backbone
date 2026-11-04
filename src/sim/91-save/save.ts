@@ -77,6 +77,15 @@ const learned = (id: string): string[] => {
 };
 const INFRA = ["nextId", "locations", "racks", "devices", "cables"] as const;
 
+// The rival Hetzna became Hetzler: its id and name in the rivals, the share log, the awards and the news.
+function renameHetzna(data: Partial<GameState>): void {
+  const id = (x: string) => (x === "hetzna" ? "hetzler" : x);
+  if (data.competitors) data.competitors = data.competitors.map((r) => ({ ...r, id: id(r.id), name: r.name === "Hetzna" ? "Hetzler" : r.name }));
+  if (data.shareLog) data.shareLog = data.shareLog.map((e) => ({ ...e, rivals: Object.fromEntries(Object.entries(e.rivals).map(([k, v]) => [id(k), v])) }));
+  if (data.hosttoast?.awards) data.hosttoast = { ...data.hosttoast, awards: data.hosttoast.awards.map((a) => ({ ...a, id: id(a.id) })) };
+  if (data.news) data.news = data.news.map((n) => (n.startsWith("rival.") ? n.replace(/\.hetzna(?=[.@])/g, ".hetzler") : n));
+}
+
 // Old saves keep loading: every field missing from a save takes its new-game default.
 // A version 1 save (no rack in the basement, or no infrastructure at all) gets the version 2 starting infrastructure.
 export function deserialize(raw: string): GameState {
@@ -85,6 +94,7 @@ export function deserialize(raw: string): GameState {
   // Machines saved before operating systems.
   const bare = new Set([...(data.devices ?? []), ...(data.workloads ?? [])].filter((m) => m.os === undefined).map((m) => m.id));
   const base = newGame(data.seed);
+  renameHetzna(data);
   if ((data.version ?? 1) < 2) for (const k of INFRA) delete data[k];
   // Hardware insurance is gone; repairs cost what they cost.
   delete (data as { insurance?: unknown }).insurance;

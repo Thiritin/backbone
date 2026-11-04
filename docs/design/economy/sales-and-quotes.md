@@ -56,7 +56,7 @@ One mail server per company, on a server or in a VM. Its address is the host's p
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Ionose | IONOS, the budget giant | 55 | 60 | 70 | 0.8 | Web hosting, domains, SSL, DNS, VPS | Everyone |
 | OVHeat | OVH, the wholesale provider | 70 | 65 | 50 | 0.75 | Everything | Everyone |
-| Hetzna | Hetzner, the developer cloud | 85 | 70 | 40 | 0.7 | VPS, dedicated, storage, cloud, colocation | Everyone |
+| Hetzler | Hetzner, the developer cloud | 85 | 70 | 40 | 0.7 | VPS, dedicated, storage, cloud, colocation | Everyone |
 | Rackspice | Rackspace, the premium host | 80 | 90 | 75 | 1.3 | Everything | Everyone |
 | Nitradoh | A game server host | 75 | 60 | 60 | 0.9 | Game servers | Gamers |
 | WP Engyne | A managed WordPress host | 70 | 80 | 85 | 1.4 | Web hosting | Sole proprietors, small businesses, offices, agencies |

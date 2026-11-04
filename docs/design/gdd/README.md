@@ -1,4 +1,4 @@
-# Backbone game design document
+# raid0 game design document
 
 You start as a one-person "basement hoster" and grow into a datacenter operator by automating your own company. At first you answer every ticket, send every payment reminder and plug in every cable yourself. Then you hire people, and later AI bots, to do it for you.
 

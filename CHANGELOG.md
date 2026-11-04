@@ -27,44 +27,15 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - Port tags on the rack back, the captions in the opened server and the place names on the travel map no longer overlap or run off, the router card on the corkboard tells you to cable the router on the shelf, and the add-location table and its button fit the dialog.
 - The street scenes before and after a drive are now drawn in the same clean style as the rooms.
 - Drawing too much power for an hour trips the breaker and the room goes dark until you reset it in the fuse box with less load, while at a datacenter the provider resets it for a remote hands fee; the room also warms with its draw and the window fan spins when it gets warm.
+- The main menu has a button that opens the raid0 Discord server.
+- The game is now called raid0.
+- The game has a new red and black logo with a command prompt mark.
+- Backbone can be installed as a desktop app for macOS, Windows and Linux that offers new versions on launch and installs them with one click.
+- The rival hosting company Hetzna is now called Hetzler, the same company as the colocation provider.
+- The Hetzler website lists its VPS, dedicated server, storage, cloud and GPU products with specifications and monthly prices.
 
 ## 2026-11-03
 
-- Technicians and the datacenter's remote hands are now seen standing at the rack while they work there, and the rack close-up shows a paper tag with who is working, on what and until when.
-- The getting-started steps hang on a corkboard in the basement and the office, ticked off as you do them, and the current card points you to the object in the room or the app on the computer.
-- A failed part now shows a red light on its rack from across the room, and in the opened server it is marked on its slot with the date it failed, a swap from stored parts and an order from the Shop.
-- Connections between racks are made by dragging from one rack to another in the room or with a right-click, the provider's patch panel shows on the rack back with every jack labelled, and provider cables and uplinks are ordered right there.
-- An office section can now become a server closet holding one rack, an office server room or closet can book a business line from the city's provider, and post addressed before a move still reaches the basement for a month.
-- The wall phone by the door rings when something breaks at night and nobody else is on call, and answering it shows on a notepad what happened, where and when.
-- Trips across the sea now fly: a taxi takes you to the airport, a plane crosses the map along its arc, and a taxi drops you at the far end; the map marks those places with a plane and shows each trip's hours and fare on hover.
-- In the room a server opens pulled out of the rack on its rails with the lid off, and its parts are checked, swapped and installed on paper tags beside it.
-- Rented racks now come with the provider's patch panel in their top unit, where uplinks and cross-connects land; uplinks are booked by speed as the years allow, with a second line as an option; and cables between racks in rented space are ordered from the provider.
-- Every hands-on action now offers doing it yourself or remote hands as separate buttons, and choosing yourself starts the drive there and does the job on arrival.
-- The rack close-up carries its name plate on the rack's top, the rack turns on a turntable under it, the wall socket sits beside the rack with its cable rising straight to it, the shelf is drawn as a plain metal shelf, and the Locations app no longer has a room button.
-- Evening and morning now fade in and out with the season instead of switching, and the light switch by the door turns the room's lights on.
-- Every site now has its own spot in its city, and the drive starts and ends on real streets with a zoom out over the motorways in between.
-- The rented office is a room of its own with desks, a reception and a server room, the staff come in during office hours and sit at them, and the post now arrives in the office letterbox.
-- The fuse box, letterbox, scanner and shelf now open as themselves, drawn large with their breakers, sheets of paper, buttons and boards to use, and the rack carries its name on a label plate with a turn arrow at its corner.
-- The trash can in the dock and the room icon on the desktop now change with the OS era like the other icons.
-- The rack opens as a scene in the middle of the screen with depth and a paper tag for the picked unit, cables are dragged from port to port and vanish into the duct, and the map shows Europe only for now.
-- Colocation sites now look like the floor you rent on: your racks stand among other tenants' mesh-fronted racks, a cage appears only when you rent one, and halls have hot and cold aisles where the site has them.
-- A new company starts with a metal shelf for its servers, with the router on its top board, and racks are bought later, with room for two of them in the basement.
-- The company can rent sections in an office building or buy one, new staff need a free desk there, and the company address moves with the office.
-- The basement walls have cable ducts and a light switch, the drying rack folds like a real one, the room drops its light beams and simply darkens at night with the lamps lit, parcels install straight from the rack view, and datacenters show their logos on arrival and on the map.
-- The basement is smaller and full of life, with cellar windows that let daylight in, a real fuse box, a chair at the desk, and the family's boiler and washing machine.
-- The rack and the other room views now open as a large popup in the middle of the screen.
-- Hands-on work on the desktop goes through remote hands when you are not on site, priced on its button and done after the datacenter's response time, and the basement's hardware waits until you are home.
-- Racks now have a back side in the room where you plug cables by hand, port to port, and cables between racks run along the trays.
-- The game now opens in the basement, where a clock in the corner pauses and speeds up time, and clicking the PC on the desk opens the desktop.
-- The rooms are drawn in a clean isometric style again and you act on them directly, with no figure to walk around.
-- Deliveries to your own place now arrive at the room's door, where you pick up each parcel and carry it to the shelf or straight to a rack to install it.
-- Letters now wait in the basement letterbox until you walk over and fetch them, and the scanner beside the desk files a fetched letter into DocuWhere.
-- Colocation sites are rooms of their own now, with a cage door, a cross-connect panel showing the carriers on site and a cold aisle in front of the racks, and the trip back starts from their door.
-- Clicking a rack in the room now opens a close-up of it right there, where you install devices from storage, remove them and open their lids without leaving the room.
-- The basement is now seen from above at a three-quarter angle, drawn with datacenter pixel art and placeholder art for the few things it does not have yet.
-- Leaving through the door now shows the drive: you get into the company car in front of the building, follow the route on a dark map while the clock runs ahead, and arrive at the other site before walking in.
-- The basement is drawn in a pixel hotel style with walls on the two far sides, a tile cursor and a walking avatar you can steer with the arrow keys, and a menu bar button and desktop icon take you there.
-- You can stand up from the desk and walk around the basement, where the racks, the storage shelf, the letterbox and the scanner open their apps and the door opens the way out.
 - The bookkeeping program opens its setup wizard from the app menu, and the web version shows it only on the overview page.
 - Mail server names in Pear Mail's account setup and record values in the PowerDNZ and cPanic zone editors are now picked from a list, with Other for typing a value by hand.
 - Every bookkeeping program now has a screen of its own: GnuCache's account tree with registers, Kontomix's form for booking a payment by document number, EightDesk's list that lines payments up with the invoices they match, Rexoffice's bank feed by day and Thyme 50's chart of accounts with account sheets.
@@ -80,6 +51,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The server inspector shows each CPU's cores and threads, and panel host settings show the host's compute next to its vCPU.
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
+
+## 2026-11-03
+
 - The bookkeeping categories now follow a standard chart of accounts: bank and payment charges, interest, fees and dues, travel, licences, domains, credits and other operating expenses each get their own line, and a trade registration no longer counts as a ransom.
 
 ## 2026-11-02

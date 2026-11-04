@@ -330,7 +330,7 @@ Pear Mail registers like every app: an `AppDef` in `src/ui/apps/registry.ts` (na
 - `useSelection(rows)`: single, range and toggle selection with arrow-key handling, and the rule that a message is marked read once opened, one `markMessages` per opened thread.
 - `useMessage(accountId, id)`: `view(s, message)` with the attachments resolved.
 - `useMailActions(accountId)`: bound wrappers for `moveMessages`, `deleteMessages`, `restoreMessages`, `markMessages`, `reportJunk`, `labelMessages` and the folder actions, each going through the store's `act` and returning the error key.
-- `useMailDrag(ids)` and `useFolderDrop(accountId, folderId)`: the HTML5 drag source for rows and the drop target for folders, with the type `application/x-backbone-mail`, moving within one mailbox.
+- `useMailDrag(ids)` and `useFolderDrop(accountId, folderId)`: the HTML5 drag source for rows and the drop target for folders, with the type `application/x-raid0-mail`, moving within one mailbox.
 - `useDraft(accountId, draftId?)`: creates a draft through `saveDraft`, saves edits on a debounce, discards an empty draft on close and exposes `send()` over `sendMessage` with its error.
 - `TicketSlot`: mounts support-desk's `ReplyPanel`/`TicketPane` for a message that has a ticket, and shows a note with an Open link when `channelOf` says a desk imported the mailbox.
 

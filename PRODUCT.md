@@ -16,7 +16,7 @@ Tech people first: sysadmins, hosters and network engineers who enjoy recognizin
 
 ## Product Purpose
 
-Backbone is a management game about running a whole hosting company, from a basement in 2005 to an own datacenter. Every department (support, billing, infrastructure, network, marketing) starts as clicks the player makes by hand, and the game is about automating yourself out of each job by hiring staff and later AI bots. Success is a player who feels the pressure of a growing company and the relief of each automation.
+raid0 is a management game about running a whole hosting company, from a basement in 2005 to an own datacenter. Every department (support, billing, infrastructure, network, marketing) starts as clicks the player makes by hand, and the game is about automating yourself out of each job by hiring staff and later AI bots. Success is a player who feels the pressure of a growing company and the relief of each automation.
 
 ## Positioning
 

@@ -64,19 +64,21 @@ export default {
   "desktop.update.title": () => "Atualização disponível",
   "desktop.update.text": () => "Há uma versão mais recente do jogo online. Recarrega para a usar; o teu jogo e as janelas abertas são mantidos.",
   "desktop.update.reload": () => "Recarregar",
+  "desktop.update.appText": () => "Há uma versão mais recente do jogo. A instalação reinicia a aplicação; o teu jogo é mantido.",
+  "desktop.update.install": () => "Instalar e reiniciar",
   "desktop.news.title": () => "Atualização do Pear OS",
   "desktop.changes.version": (p) => `Versão ${p.version}`,
   "desktop.changes.more": (p) => `mais ${p.n} ${Number(p.n) === 1 ? "alteração" : "alterações"}`,
 
   "desktop.early.title": () => "Acesso antecipado",
-  "desktop.early.text": () => "O Backbone está em acesso antecipado e ainda não está terminado. Conta com bugs, funcionalidades em falta e mudanças de equilíbrio. Deixa o teu feedback no GitHub ou no Discord.",
+  "desktop.early.text": () => "O raid0 está em acesso antecipado e ainda não está terminado. Conta com bugs, funcionalidades em falta e mudanças de equilíbrio. Deixa o teu feedback no GitHub ou no Discord.",
 
   "desktop.over.title": (p) => `${p.company} está falida`,
   "desktop.over.text": (p) => `A empresa ficou insolvente em ${p.day} com um saldo de ${p.cash}.`,
   "desktop.over.load": () => "Carregar exportação",
 
-  "desktop.mobile.title": () => "O Backbone é um jogo para computador",
-  "desktop.mobile.text": () => "O Backbone não pode ser jogado num telemóvel ou tablet. Abre-o num computador para jogar.",
+  "desktop.mobile.title": () => "O raid0 é um jogo para computador",
+  "desktop.mobile.text": () => "O raid0 não pode ser jogado num telemóvel ou tablet. Abre-o num computador para jogar.",
   "desktop.mobile.discord": () => "Entrar no Discord",
 
   "desktop.icon.newNote": () => "Nova nota",
@@ -91,8 +93,8 @@ export default {
 
   "desktop.menu.settings": () => "Definições…",
   "desktop.menu.intro": () => "Introdução…",
-  "desktop.menu.github": () => "Backbone no GitHub",
-  "desktop.menu.discord": () => "Backbone no Discord",
+  "desktop.menu.github": () => "raid0 no GitHub",
+  "desktop.menu.discord": () => "raid0 no Discord",
   "desktop.menu.report": () => "Comunicar um problema",
   "desktop.menu.restoreGuide": () => "Restaurar Primeiros passos",
   "desktop.menu.whatsNew": () => "Novidades",
@@ -101,6 +103,7 @@ export default {
   "desktop.menu.mainMenu": () => "Menu principal",
   "desktop.start.news": () => "Novidades",
   "desktop.start.settings": () => "Definições",
+  "desktop.start.discord": () => "Entrar no Discord",
   "desktop.start.back": () => "Voltar",
   "desktop.start.new": () => "Novo",
   "desktop.start.vms": () => "Máquinas virtuais",

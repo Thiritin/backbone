@@ -2,7 +2,7 @@ import { t } from "../../i18n/en";
 import { FlaskConical } from "lucide-react";
 import { useState } from "react";
 
-const SEEN_KEY = "backbone.earlyAccessSeen";
+const SEEN_KEY = "raid0.earlyAccessSeen";
 
 const seen = () => { try { return !!localStorage.getItem(SEEN_KEY); } catch { return true; } };
 
@@ -20,7 +20,7 @@ export function EarlyAccess() {
         <h2 id="ea-title">{t("desktop.early.title")}</h2>
         <p id="ea-text">{t("desktop.early.text")}</p>
         <div className="alert-actions">
-          <a className="btn" href="https://github.com/Thiritin/backbone/issues" target="_blank" rel="noopener">GitHub</a>
+          <a className="btn" href="https://github.com/Thiritin/raid0/issues" target="_blank" rel="noopener">GitHub</a>
           <a className="btn" href="https://discord.gg/e8nTAV8Yk7" target="_blank" rel="noopener">Discord</a>
         </div>
         <div className="alert-actions single">

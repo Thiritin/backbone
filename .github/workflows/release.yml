@@ -1,11 +1,12 @@
 name: Release
 
-# A push to main that adds CHANGELOG.md bullets creates or updates that day's GitHub release (the date is the version,
-# for example 2026.10.31) and posts the new bullets to the #changelog channel.
+# Every 12 hours (00:00 and 12:00 UTC) the CHANGELOG.md bullets added during the previous 12-hour window are posted to
+# the #changelog channel as one summary, and each affected day's GitHub release (the date is the version, for example
+# 2026.10.31) is created or updated.
 on:
-  push:
-    branches: [main]
-    paths: ["CHANGELOG.md"]
+  schedule:
+    - cron: "0 0,12 * * *"
+  workflow_dispatch:
 
 concurrency: release
 
@@ -14,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,7 +23,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/discord-changelog.mjs --since "${{ github.event.before }}"
+      - name: Post the last 12-hour window
+        run: |
+          end=$(date -u -d "$(date -u +%Y-%m-%d) $(( $(date -u +%-H) / 12 * 12 )):00" +%s)
+          until=$(git rev-list -1 --before="@$end" origin/main)
+          since=$(git rev-list -1 --before="@$((end - 43200))" origin/main)
+          node scripts/discord-changelog.mjs --since "$since" --until "$until"
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
+      - run: gh workflow run desktop.yml
+        env:
+          GH_TOKEN: ${{ github.token }}

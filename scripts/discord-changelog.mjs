@@ -1,6 +1,6 @@
 // Publishes CHANGELOG.md bullets: one GitHub release per day (tag 2026.10.31) and a post to the Discord #changelog channel.
 // node scripts/discord-changelog.mjs --all          every day, oldest first
-// node scripts/discord-changelog.mjs --since <rev>  only bullets added after <rev>
+// node scripts/discord-changelog.mjs --since <rev> [--until <rev>]  only bullets added after <rev> (up to <rev> of --until)
 // --dry prints nothing to Discord and creates no release.
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -10,6 +10,7 @@ const dry = args.includes('--dry');
 const webhook = process.env.DISCORD_CHANGELOG_WEBHOOK;
 if (!webhook && !dry) throw new Error('DISCORD_CHANGELOG_WEBHOOK missing');
 const LIMIT = 2000;
+const SITE = 'https://raid0.dev';
 
 function parse(text) {
   const days = [];
@@ -21,7 +22,8 @@ function parse(text) {
 }
 
 const rev = args[args.indexOf('--since') + 1];
-const all = parse(readFileSync('CHANGELOG.md', 'utf8'));
+const until = args.includes('--until') ? args[args.indexOf('--until') + 1] : null;
+const all = parse(until ? execFileSync('git', ['show', `${until}:CHANGELOG.md`], { encoding: 'utf8' }) : readFileSync('CHANGELOG.md', 'utf8'));
 let days = all;
 let announced = new Set();
 if (args.includes('--since')) {
@@ -45,7 +47,7 @@ const version = (day) => day.date.replaceAll('-', '.');
 
 function chunks(day) {
   const out = [];
-  let cur = announced.has(day.date) ? '' : `## Version ${version(day)}`;
+  let cur = announced.has(day.date) ? '' : `## [raid0 ${version(day)}](${SITE})`;
   for (const b of day.bullets) {
     if (cur.length + b.length + 1 > LIMIT) { out.push(cur); cur = ''; }
     cur += (cur ? '\n' : '') + b;
@@ -56,10 +58,10 @@ function chunks(day) {
 // One release per day: created with the day's first bullets, its notes rewritten as more land.
 function release(day) {
   const tag = version(day);
-  const notes = all.find((d) => d.date === day.date).bullets.join('\n');
+  const notes = `${all.find((d) => d.date === day.date).bullets.join('\n')}\n\n${SITE}`;
   let exists = true;
   try { execFileSync('gh', ['release', 'view', tag], { stdio: 'ignore' }); } catch { exists = false; }
-  const cmd = exists ? ['edit', tag] : ['create', tag, '--target', process.env.GITHUB_SHA ?? 'main', '--title', tag];
+  const cmd = exists ? ['edit', tag, '--title', `raid0 ${tag}`] : ['create', tag, '--target', until ?? process.env.GITHUB_SHA ?? 'main', '--title', `raid0 ${tag}`];
   execFileSync('gh', ['release', ...cmd, '--notes', notes], { stdio: 'inherit' });
 }
 
@@ -68,7 +70,7 @@ async function post(content) {
     const res = await fetch(`${webhook}?wait=true`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+      body: JSON.stringify({ content, username: 'raid0', allowed_mentions: { parse: [] } }),
     });
     if (res.status === 429) {
       const { retry_after } = await res.json();

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "raid0",
+  "version": "0.1.0",
+  "identifier": "com.raid0.game",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      { "label": "main", "title": "raid0", "width": 1440, "height": 900, "minWidth": 1024, "minHeight": 700 }
+    ],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFGMzQ4RDMwMDI3MTlFODQKUldTRW5uRUNNSTAwcjVqVEtLMkNtYTROS05jWCtXZ2YvWU0wcXp6UTlrSW14MXVaU053TmdVT0MK",
+      "endpoints": ["https://github.com/Thiritin/raid0/releases/latest/download/latest.json"]
+    }
+  }
+}

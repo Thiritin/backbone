@@ -7,7 +7,7 @@ import { versionLabel } from "../changelog";
 import { EMBEDDED } from "../embedded";
 import { twistLabel } from "../leaderboard";
 import { isNew, loadSeen, markRead, saveSeen } from "../news-seen";
-import { uiSound, useStore, type Theme } from "../store";
+import { DISCORD_URL, uiSound, useStore, type Theme } from "../store";
 import { Intro } from "./Intro";
 import { canImmerse, immerse, useImmersive } from "./immersive";
 import { MenuBackdrop } from "./MenuBackdrop";
@@ -94,7 +94,7 @@ export function StartScreen() {
   return (
     <main className="menu">
       <MenuBackdrop />
-      <h1 className="menu-title"><img className="menu-logo" src="favicon.svg" alt="" width={56} height={56} />Backbone</h1>
+      <h1 className="menu-title"><img className="menu-logo" src="favicon.svg" alt="" width={56} height={56} />raid0</h1>
       {page === "settings" ? <SettingsPage onBack={() => setPage("main")} /> :
         page === "immersive" ? <ImmersivePage onBack={() => setPage("main")} onPlay={() => immerse().catch(() => {}).then(canContinue ? continueGame : startGame)} /> :
         <nav className="menu-bars">
@@ -105,6 +105,7 @@ export function StartScreen() {
           <button className="btn" {...hear} onClick={choose(() => file.current?.click())}>{t("desktop.start.import")}</button>
           <button className="btn" {...hear} onClick={choose(() => setIntro(true))}>{t("desktop.start.intro")}</button>
           <button className="btn" {...hear} onClick={choose(() => setPage("settings"))}>{t("desktop.start.settings")}</button>
+          <button className="btn" {...hear} onClick={choose(() => { window.open(DISCORD_URL, "_blank", "noopener"); })}>{t("desktop.start.discord")}</button>
         </nav>}
       <News />
       {intro && <Intro onClose={() => setIntro(false)} />}

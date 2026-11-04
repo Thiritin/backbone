@@ -84,7 +84,7 @@ export const en: Record<string, (p: Params) => string> = {
   "save.imported.title": () => "Save imported",
   "save.imported.text": () => "You continue from the imported save.",
   "save.importFailed.title": () => "Import failed",
-  "save.importFailed.text": () => "The file is not a Backbone save.",
+  "save.importFailed.text": () => "The file is not a raid0 save.",
   "action.failed.title": () => "That didn't work",
   "event.bills.title": () => "Monthly bills",
   "event.bills.text": (p) => {

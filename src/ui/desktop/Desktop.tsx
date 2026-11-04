@@ -68,10 +68,10 @@ export function Desktop() {
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   const { windows, speed, setSpeed, advance, save, clearUnseen, news, explain, setExplain, alert } = useStore();
   const gameOver = useStore((s) => s.game.gameOver), surface = useStore((s) => s.surface), desk = surface === "desktop";
-  const [update, setUpdate] = useState<ChangelogDay[] | null>(null);
+  const [update, setUpdate] = useState<{ changes: ChangelogDay[]; install?: () => Promise<void> } | null>(null);
   const dismissed = useRef<number | null>(null);
 
-  useEffect(() => watchUpdates((changes) => setUpdate(changes), () => dismissed.current), []);
+  useEffect(() => watchUpdates((changes, install) => setUpdate({ changes, install }), () => dismissed.current), []);
   const [center, setCenter] = useState(false);
   const carry = clockCarry;
 
@@ -130,7 +130,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       {alert && <AlertSheet alert={alert} />}
       {gameOver !== null && <GameOver hour={gameOver} />}
       {desk && gameOver === null && <OsUpdateSheet />}
-      {desk && update && <UpdateSheet changes={update} onLater={() => { dismissed.current = Date.now(); setUpdate(null); }} />}
+      {desk && update && <UpdateSheet changes={update.changes} install={update.install} onLater={() => { dismissed.current = Date.now(); setUpdate(null); }} />}
       {explain && <SkillSheet key={explain} id={explain} onClose={() => setExplain(null)} />}
       <ContextMenuHost />
       <Searchlight />

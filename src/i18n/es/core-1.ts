@@ -20,7 +20,7 @@ export default {
   "save.imported.title": () => "Partida importada",
   "save.imported.text": () => "Continúas desde la partida importada.",
   "save.importFailed.title": () => "Error al importar",
-  "save.importFailed.text": () => "El archivo no es una partida de Backbone.",
+  "save.importFailed.text": () => "El archivo no es una partida de raid0.",
   "action.failed.title": () => "Eso no ha funcionado",
   "event.bills.title": () => "Facturas del mes",
   "event.bills.text": (p) => {

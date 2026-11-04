@@ -1,4 +1,4 @@
-# Backbone economy model
+# raid0 economy model
 
 This doc turns the systems in the [game design document](../gdd/README.md) into formulas and starting numbers. Every value is a starting point to tune, and all of them live as data in `src/sim/10-catalog`.
 

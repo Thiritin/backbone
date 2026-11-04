@@ -20,7 +20,7 @@ export default {
   "save.imported.title": () => "Jogo importado",
   "save.imported.text": () => "Continuas a partir do jogo importado.",
   "save.importFailed.title": () => "Falha na importação",
-  "save.importFailed.text": () => "O ficheiro não é um jogo guardado do Backbone.",
+  "save.importFailed.text": () => "O ficheiro não é um jogo guardado do raid0.",
   "action.failed.title": () => "Isso não funcionou",
   "event.bills.title": () => "Contas do mês",
   "event.bills.text": (p) => {

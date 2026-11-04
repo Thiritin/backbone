@@ -26,7 +26,7 @@ import { shopActive } from "../sim/80-business/shop";
 
 export const DISCORD_URL = "https://discord.gg/e8nTAV8Yk7";
 
-export const SAVE_KEY = "backbone.save";
+export const SAVE_KEY = "raid0.save";
 
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 // inner: the focus a page opened at this url applies, as Books inside a browser program.
@@ -57,12 +57,12 @@ const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
 export const prefOf = (prefs: Record<string, Partial<NotifyPref>>, app: string): NotifyPref => ({ allow: true, sound: true, ...prefs[app] });
 export interface SoundPref { on: boolean; volume: number; ambience: number }
 const SOUND_DEFAULT: SoundPref = { on: true, volume: 0.6, ambience: 0.5 };
-const PREFS_KEY = "backbone.prefs";
+const PREFS_KEY = "raid0.prefs";
 export type Theme = "light" | "dark" | "auto";
-const THEME_KEY = "backbone.theme";
+const THEME_KEY = "raid0.theme";
 // "os" follows the installed Pear OS, "map" is the night map, a release id pins that release's photo, "custom" is the player's own image.
 export interface WallpaperPref { pick: string; custom: string | null }
-const WALLPAPER_KEY = "backbone.wallpaper";
+const WALLPAPER_KEY = "raid0.wallpaper";
 
 export interface Store {
   game: GameState;
@@ -184,9 +184,9 @@ function savePrefs(notify: Record<string, Partial<NotifyPref>>, sound: SoundPref
 // A new game starts from nothing stored but the sound settings and the one-time zsh setup.
 function wipeLocal(sound: SoundPref) {
   try {
-    const shell = localStorage.getItem("backbone.shell");
+    const shell = localStorage.getItem("raid0.shell");
     localStorage.clear();
-    if (shell) localStorage.setItem("backbone.shell", shell);
+    if (shell) localStorage.setItem("raid0.shell", shell);
     sessionStorage.clear();
   } catch {
     // Storage blocked; nothing was kept.
