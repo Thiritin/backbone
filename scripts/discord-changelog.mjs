@@ -1,6 +1,6 @@
 // Publishes CHANGELOG.md bullets: one GitHub release per day (tag 2026.10.31) and a post to the Discord #changelog channel.
 // node scripts/discord-changelog.mjs --all          every day, oldest first
-// node scripts/discord-changelog.mjs --since <rev>  only bullets added after <rev>
+// node scripts/discord-changelog.mjs --since <rev> [--until <rev>]  only bullets added after <rev> (up to <rev> of --until)
 // --dry prints nothing to Discord and creates no release.
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -21,7 +21,8 @@ function parse(text) {
 }
 
 const rev = args[args.indexOf('--since') + 1];
-const all = parse(readFileSync('CHANGELOG.md', 'utf8'));
+const until = args.includes('--until') ? args[args.indexOf('--until') + 1] : null;
+const all = parse(until ? execFileSync('git', ['show', `${until}:CHANGELOG.md`], { encoding: 'utf8' }) : readFileSync('CHANGELOG.md', 'utf8'));
 let days = all;
 let announced = new Set();
 if (args.includes('--since')) {
@@ -59,7 +60,7 @@ function release(day) {
   const notes = all.find((d) => d.date === day.date).bullets.join('\n');
   let exists = true;
   try { execFileSync('gh', ['release', 'view', tag], { stdio: 'ignore' }); } catch { exists = false; }
-  const cmd = exists ? ['edit', tag] : ['create', tag, '--target', process.env.GITHUB_SHA ?? 'main', '--title', tag];
+  const cmd = exists ? ['edit', tag] : ['create', tag, '--target', until ?? process.env.GITHUB_SHA ?? 'main', '--title', tag];
   execFileSync('gh', ['release', ...cmd, '--notes', notes], { stdio: 'inherit' });
 }
 
