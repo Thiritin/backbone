@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 
 const API = 'https://discord.com/api/v10';
-const GAME_URL = 'https://raid0.dev/';
+const GAME_URL = 'https://raid0.dev';
 const token = process.env.DISCORD_TOKEN;
 if (!token) throw new Error('DISCORD_TOKEN missing');
 
@@ -105,14 +105,14 @@ raid0 is a browser management game where you grow a hosting company from a basem
 4. Do not post anything illegal or NSFW.`;
 
 const guilds = await api('GET', '/users/@me/guilds');
-const g = guilds.find((x) => x.name === 'raid0') ?? guilds[0];
+const g = guilds.find((x) => ['raid0', 'Backbone'].includes(x.name)) ?? guilds[0];
 if (!g) throw new Error('Bot is in no server; invite it first');
 let guild = await api('GET', `/guilds/${g.id}`);
 const me = await api('GET', '/users/@me');
 console.log(`Server: ${guild.name} (${guild.id})`);
 
 const icon = readFileSync(new URL('../docs/brand/logo-512.png', import.meta.url)).toString('base64');
-guild = await api('PATCH', `/guilds/${guild.id}`, { icon: `data:image/png;base64,${icon}` });
+guild = await api('PATCH', `/guilds/${guild.id}`, { name: 'raid0', icon: `data:image/png;base64,${icon}` });
 if (!me.avatar) await api('PATCH', '/users/@me', { avatar: `data:image/png;base64,${icon}` });
 console.log('Icon set');
 
@@ -267,6 +267,7 @@ for (const [channel, post] of Object.entries(START_HERE)) {
 await api('PATCH', `/guilds/${guild.id}`, {
   system_channel_id: find('general', TEXT).id,
   description: 'Grow a hosting company from a 2005 basement to your own datacenter.',
+  preferred_locale: 'en-US',
 });
 
 const invite = await api('POST', `/channels/${welcome.id}/invites`, { max_age: 0, max_uses: 0, unique: false });
