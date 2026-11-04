@@ -1,37 +1,86 @@
 name: Release
 
-# Every 12 hours (00:00 and 12:00 UTC) the CHANGELOG.md bullets added during the previous 12-hour window are posted to
-# the #changelog channel as one summary, and each affected day's GitHub release (the date is the version, for example
-# 2026.10.31) is created or updated.
+# Starts when a GitHub release is published (npm run release, or gh release create vX.Y.Z). Merging to main deploys nothing.
+# To retry a failed run on an existing release: gh workflow run release.yml -f tag=vX.Y.Z
+# The steps are described in docs/release.md.
 on:
-  schedule:
-    - cron: "0 0,12 * * *"
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v1.0.0
+        required: true
 
-concurrency: release
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ inputs.tag || github.event.release.tag_name }}
 
 jobs:
-  release:
+  gate:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
+    outputs:
+      tag: ${{ env.TAG }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: refs/tags/${{ env.TAG }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Post the last 12-hour window
+          cache: npm
+      - run: node scripts/release-notes.mjs check "$TAG"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # A release created without notes gets the CHANGELOG.md bullets added since the previous release.
+      - name: Fill empty notes
         run: |
-          end=$(date -u -d "$(date -u +%Y-%m-%d) $(( $(date -u +%-H) / 12 * 12 )):00" +%s)
-          until=$(git rev-list -1 --before="@$end" origin/main)
-          since=$(git rev-list -1 --before="@$((end - 43200))" origin/main)
-          node scripts/discord-changelog.mjs --since "$since" --until "$until"
+          if [ -z "$(gh release view "$TAG" --json body --jq .body | tr -d '[:space:]')" ]; then
+            node scripts/release-notes.mjs notes "$TAG" > "$RUNNER_TEMP/notes.md"
+            gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  desktop:
+    needs: gate
+    permissions:
+      contents: write
+    uses: ./.github/workflows/desktop.yml
+    with:
+      tag: ${{ needs.gate.outputs.tag }}
+    secrets: inherit
+
+  pages:
+    needs: gate
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+    with:
+      tag: ${{ needs.gate.outputs.tag }}
+
+  discord:
+    needs: [gate, desktop, pages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.gate.outputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/release-notes.mjs discord "$TAG"
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
-      - run: gh workflow run desktop.yml
-        env:
-          GH_TOKEN: ${{ github.token }}

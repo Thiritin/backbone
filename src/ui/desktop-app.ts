@@ -1,15 +1,17 @@
 // Hooks for the Tauri desktop app. Every export is inert in a normal browser, and the plugins load only inside the app.
-import type { ChangelogDay } from "./changelog";
+import { parseChangelog, type ChangelogDay } from "./changelog";
 
 export const isDesktopApp = (w: object = globalThis): boolean => "__TAURI_INTERNALS__" in w;
 
 export interface AppUpdate { changes: ChangelogDay[]; install: () => Promise<void> }
 
-// The release notes hold the day's bullets; the update version is the date without leading zeros (2026.11.4).
-export function releaseChanges(version: string, notes: string | null | undefined): ChangelogDay[] {
-  const items = (notes ?? "").split("\n").filter((l) => /^\s*[-*]\s/.test(l)).map((l) => l.replace(/^\s*[-*]\s+/, "").trim());
-  const date = version.split(".").map((p) => p.padStart(2, "0")).join("-");
-  return items.length ? [{ date, items }] : [];
+// The release notes group their bullets under "## YYYY-MM-DD" days; bullets without a day are shown under today.
+export function releaseChanges(notes: string | null | undefined, today: string = new Date().toISOString().slice(0, 10)): ChangelogDay[] {
+  const text = notes ?? "";
+  const days = parseChangelog(text).filter((d) => d.items.length > 0);
+  if (days.length) return days.map(({ date, items }) => ({ date, items }));
+  const items = text.split("\n").filter((l) => /^\s*[-*]\s/.test(l)).map((l) => l.replace(/^\s*[-*]\s+/, "").trim());
+  return items.length ? [{ date: today, items }] : [];
 }
 
 export async function checkAppUpdate(): Promise<AppUpdate | null> {
@@ -17,7 +19,7 @@ export async function checkAppUpdate(): Promise<AppUpdate | null> {
   const update = await check();
   if (!update) return null;
   return {
-    changes: releaseChanges(update.version, update.body),
+    changes: releaseChanges(update.body),
     install: async () => {
       await update.downloadAndInstall();
       const { relaunch } = await import("@tauri-apps/plugin-process");
