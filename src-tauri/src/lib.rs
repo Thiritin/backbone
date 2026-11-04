@@ -6,5 +6,5 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .run(tauri::generate_context!())
-        .expect("error while running Backbone");
+        .expect("error while running raid0");
 }
