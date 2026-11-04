@@ -11,7 +11,7 @@ import { UpgradeCompose } from "../support/CustomOrder";
 import { specText } from "../../../sim/30-market/spec";
 import { customerSpots, zoneSpots } from "../../../sim/20-world/properties";
 import type { Hall } from "../../../sim/50-state";
-import { goingRate, setColoRate } from "../../../sim/90-actions/hall";
+import { goingHandsRate, goingRate, setColoRate, setHandsRate } from "../../../sim/90-actions/hall";
 import { PriceField } from "./PriceField";
 import "../support/support.css";
 import "./sales.css";
@@ -118,6 +118,7 @@ export function ColoListing() {
           <div key={h.locationId} className="colo-card">
             <div className="sup-list-h"><strong>{loc.name}</strong><span className="num">{t("hall.spare", { n: spare })}</span></div>
             <PriceField value={h.rate ?? going} reference={going} onChange={(v) => act(setColoRate, loc.id, v || null)} />
+            {goingHandsRate(loc.city) > 0 && <PriceField label={t("figures.handsRate")} value={h.handsRate ?? goingHandsRate(loc.city)} reference={goingHandsRate(loc.city)} onChange={(v) => act(setHandsRate, loc.id, v || null)} />}
             <div className="loc-row">
               {h.rate === null
                 ? <button className="btn primary" onClick={() => act(setColoRate, loc.id, going)}>{t("hall.list")}</button>

@@ -27,6 +27,9 @@ import {
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { useFigures } from "./figures";
+import { OrderChip } from "./OrderChip";
+import { visitThen } from "./visit";
+import { frontOf, seatOf } from "../../sim/90-actions/work-orders";
 import { PairPanel } from "./rack/PairPanel";
 import { menuOn } from "../desktop/ContextMenu";
 import { RoomCables } from "./rack/Cables";
@@ -54,6 +57,8 @@ const KEYS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0],
 };
 // How each room was zoomed and panned and whether its lights were on, per location, so the room resumes there.
+// Objects whose close-up opens after the figure walked to them.
+const STANDS = new Set<Use>(["storage", "power", "post", "scan", "board", "phone", "mainboard", "meetme"]);
 const looked: Record<string, { zoom: number | null; org: Pt | null; lights: boolean }> = {};
 
 export const roomOf = (game: GameState): Location =>
@@ -213,13 +218,23 @@ export function World() {
   };
   const click = (fn: () => void) => (e: MouseEvent) => { e.stopPropagation(); if (!dragged.current) fn(); };
   // Clicking an object uses it at once.
-  const use = (id: string, run: () => void) => click(() => {
+  const use = (id: string, run: () => void, stand?: () => Pt | null, label = "") => click(() => {
     setLit(id);
     setTimeout(() => setLit((v) => (v === id ? null : v)), FLASH_MS);
-    run();
+    visit(run, stand, label);
   });
+  // A close-up or the desktop opens once the player's figure stands at it.
+  const visit = (run: () => void, stand?: () => Pt | null, label = "") => visitThen(loc.id, stand?.() ?? null, label, run);
+  // Free floor beside an object, nearest to the figure; walls and the like clamp into the room.
+  const beside = (f: Fixture): Pt | null => {
+    const busy = new Set([...Object.values(tiles).map((t) => `${t.x},${t.y}`), ...Object.entries(fx).filter(([id, x]) => !artOf(id, x)?.wall).map(([, x]) => x).flatMap((x) => Array.from({ length: (x.w ?? 1) * (x.h ?? 1) }, (_, i) => `${x.x + (i % (x.w ?? 1))},${x.y + Math.floor(i / (x.w ?? 1))}`))]);
+    const at = (x: number, y: number) => ({ x: Math.min(w - 1, Math.max(0, x)), y: Math.min(h - 1, Math.max(0, y)) });
+    const c = [at(f.x, f.y), at(f.x, f.y + 1), at(f.x, f.y - 1), at(f.x + 1, f.y), at(f.x - 1, f.y)].filter((p) => !busy.has(`${p.x},${p.y}`));
+    return c[0] ?? null;
+  };
+  const seat = (): Pt | null => seatOf(useStore.getState().game, loc.id, "player");
 
-  const staff = useFigures(game, loc, plan);
+  const staff = useFigures(game, loc, plan, tiles, speed);
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const waiting = boxAt(game, loc.id).length;
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
@@ -245,7 +260,7 @@ export function World() {
       depth: tile.x + tile.y,
       node: (
         <g key={r.id} className={`w-obj w-rack${lit === r.id ? " w-lit" : ""}${glow || hint === r.id ? " w-glow" : ""}`} data-rack={r.id} role="button" aria-label={r.name}
-          onClick={use(r.id, () => { if (from && from.rack !== r.id) { setPair({ a: from.rack, b: r.id, from: from.device }); setFrom(null); } else setRackOpen({ id: r.id }); })}
+          onClick={use(r.id, () => { if (from && from.rack !== r.id) { setPair({ a: from.rack, b: r.id, from: from.device }); setFrom(null); } else setRackOpen({ id: r.id }); }, () => frontOf(tile), r.name)}
           onPointerDown={(e) => { if (!e.button && r.model !== "shelf") { e.stopPropagation(); link.current = r.id; dragged.current = false; } }}
           onContextMenu={menuOn(() => [{ label: t("world.newConnection"), run: () => setFrom({ rack: r.id }) }])}>
           {r.model === "shelf"
@@ -356,7 +371,7 @@ export function World() {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
     if (loc.tripped && (["fan", "window", "owindow"].includes(f.kind ?? id) || (lights && ["lamp", "tube"].includes(f.kind ?? id)))) bright.push(<g key={`b${id}`} pointerEvents="none" aria-hidden>{art}</g>);
     const node = a.use && a.label && art
-      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}${hint === id ? " w-glow" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use])}>{art}</g>
+      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}${hint === id ? " w-glow" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use], a.use === "desktop" ? seat : STANDS.has(a.use) ? () => beside(f) : undefined, t(a.label))}>{art}</g>
       : <g key={id} aria-label={a.label && t(a.label)} aria-hidden={!a.label || undefined} pointerEvents="none">{art}</g>;
     if (a.wall) back.push(node);
     else if (a.top) over.push(node);
@@ -373,7 +388,8 @@ export function World() {
 
   return (
     <div className="world" aria-label={loc.name}>
-      <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`} viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
+      <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`}
+        viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
         <Defs />
         <Walls w={w} h={h} dc={!home && !office} color={game.company.color} />
@@ -391,6 +407,7 @@ export function World() {
           return <path className="w-link" d={`M${top.x} ${top.y}L${linkAt.x} ${linkAt.y}`} pointerEvents="none" />;
         })()}
       </svg>
+      <OrderChip game={game} loc={loc} />
       <div className="w-clock">
         <SpeedControl speed={speed} setSpeed={setSpeed} />
         <span className="num">{formatClock(game.hour, game.minute)}</span>

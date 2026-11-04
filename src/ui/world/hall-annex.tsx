@@ -7,7 +7,9 @@ import { HALL, isHalle, zoneSpots } from "../../sim/20-world/properties";
 import type { GameState, HallItem, Location } from "../../sim/50-state";
 import { rackAlarms } from "../../sim/60-infra/alarms";
 import { hallAt } from "../../sim/90-actions/hall";
+import { seatOf } from "../../sim/90-actions/work-orders";
 import { useStore } from "../store";
+import { visitThen } from "./visit";
 import { Prism, WALL } from "./draw";
 import { ART } from "./rooms";
 import { aisleTiles, key, runsOf, wallPieces, type Pt } from "./hall-edit-geom";
@@ -111,7 +113,7 @@ export function annexScene(game: GameState, loc: Location, plan: OfficePlan, til
     const depth = body ? c.x + ex.w - 1 + c.y + ex.h - 1 + 0.5 : i.kind === "screen" ? -39 : c.x + c.y - 1.9;
     const art = <ItemArt i={i} areas={areas} halle={halle} tripped={loc.tripped} alarm={alarm} hall={hall} />;
     // A NOC desk is a PC of the company: pressing it opens the desktop.
-    if (i.kind === "nocdesk") push(depth, <g key={`i${i.id}`} className="w-obj" role="button" aria-label={t(ART.nocdesk.label!)} onClick={(e) => { e.stopPropagation(); useStore.getState().setSurface("desktop"); }}>{art}</g>);
+    if (i.kind === "nocdesk") push(depth, <g key={`i${i.id}`} className="w-obj" role="button" aria-label={t(ART.nocdesk.label!)} onClick={(e) => { e.stopPropagation(); visitThen(loc.id, seatOf(game, loc.id, "player"), t(ART.nocdesk.label!), () => useStore.getState().setSurface("desktop")); }}>{art}</g>);
     else push(depth, <g key={`i${i.id}`} role="img" aria-label={t(`hall.item.${i.kind}`)} pointerEvents="none"><title>{t(`hall.item.${i.kind}`)}</title>{art}</g>);
   }
 

@@ -1,15 +1,18 @@
 // People in every room, drawn to docs/design/world-art.md: seated at desks, standing at a rack, walking from the door.
-import { useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { dateOf } from "../../sim/00-core/time";
-import { entryTile, officeSeats, officeWalk, type Facing, type OfficePlan } from "../../sim/20-world/layout";
+import { rackUnits } from "../../sim/20-world/datacenters";
+import { type Facing, type OfficePlan, type Tile } from "../../sim/20-world/layout";
 import type { GameState, Location } from "../../sim/50-state";
-import { figuresIn, type Figure } from "../../sim/60-infra/figures";
+import { figuresIn, pathOf, type Figure } from "../../sim/60-infra/figures";
+import { present } from "../../sim/60-infra/handwork";
+import { nowMin, seatOf } from "../../sim/90-actions/work-orders";
 import { brandColor } from "../art/logos";
-import { at3 } from "./draw";
+import { at3, rackHeight } from "./draw";
 import { iso, type Pt } from "./grid";
-import { DESK_Z } from "./office";
+import { useVisit, walkSeconds } from "./visit";
 // A rounded figure in flat colours, head a little large.
 const SKIN = ["oklch(0.82 0.06 60)", "oklch(0.72 0.08 55)", "oklch(0.58 0.08 50)", "oklch(0.45 0.06 45)"];
 const HAIR = ["oklch(0.3 0.03 50)", "oklch(0.5 0.08 60)", "oklch(0.75 0.1 85)", "oklch(0.25 0.01 260)", "oklch(0.55 0.12 40)"];
@@ -78,11 +81,11 @@ function Standing({ l, facing, busy }: { l: Look; facing: Facing; busy: boolean 
   );
 }
 
-function Walking({ l, step }: { l: Look; step: number }) {
-  const s = step ? 2 : -2;
+// Two-frame leg swing: the mirrored legs swap places every few frames while the figure walks.
+function Walking({ l }: { l: Look }) {
   return (
     <>
-      <path stroke={l.pants} strokeWidth="5" strokeLinecap="round" d={`M-3,-24 L${-3 + s},-2 M3,-24 L${3 - s},-2`} />
+      <path className="w-fig-stride" stroke={l.pants} strokeWidth="5" strokeLinecap="round" d="M-3,-24 L-5,-2 M3,-24 L5,-2" />
       <rect x="-7" y="-44" width="14" height="22" rx="6" fill={l.shirt} />
       <Badge l={l} y={-40} />
       <Head l={l} y={-51} front />
@@ -90,89 +93,117 @@ function Walking({ l, step }: { l: Look; step: number }) {
   );
 }
 
-// Minutes of the day each person arrives and leaves, spread over the first and last half hour of the 9 to 17 shift, and how long the walk takes.
-const WALK_MIN = 6, ARRIVE = 9 * 60, LEAVE = 17 * 60 - 30, SPREAD = 30 - WALK_MIN;
-
-function along(path: Pt[], t: number): Pt {
-  const seg = path.slice(1).map((p, i) => Math.abs(p.x - path[i].x) + Math.abs(p.y - path[i].y)), total = seg.reduce((a, b) => a + b, 0);
-  let d = t * total;
-  for (let i = 0; i < seg.length; i++) {
-    if (d <= seg[i]) { const k = seg[i] ? d / seg[i] : 0; return { x: path[i].x + (path[i + 1].x - path[i].x) * k, y: path[i].y + (path[i + 1].y - path[i].y) * k }; }
-    d -= seg[i];
-  }
-  return path[path.length - 1];
-}
-
-// The name on a small plate on the floor at the figure's feet.
-function FloorTag({ at, name }: { at: Pt; name: string }) {
-  const w = name.length * 2.6 + 4;
+// The name and the job on a small plate on the floor at the figure's feet.
+function FloorTag({ at, text }: { at: Pt; text: string }) {
+  const w = text.length * 2.6 + 4;
   return (
     <g pointerEvents="none" transform={`translate(${at.x} ${at.y})`}>
       <rect className="w-tent" x={-w / 2} y="1" width={w} height="7" rx="1" />
-      <text className="w-num w-num-sm w-tent-text" x={-w / 2 + 2} y="6">{name}</text>
+      <text className="w-num w-num-sm w-tent-text" x={-w / 2 + 2} y="6">{text}</text>
     </g>
   );
 }
 
-// The people in this room as depth-sorted things: office staff at their desks, technicians and the provider's people at racks.
-export function useFigures(game: GameState, loc: Location, plan: OfficePlan | undefined): { depth: number; node: ReactNode }[] {
+// Two flat tones over a rack top (or a head) while someone works.
+function Progress({ at, f }: { at: Pt; f: number }) {
+  return (
+    <g pointerEvents="none" transform={`translate(${at.x} ${at.y})`} data-progress={f.toFixed(2)}>
+      <rect className="w-prog-bg" x="-13" y="-3" width="26" height="5" rx="1.5" />
+      <rect className="w-prog-fill" x="-12" y="-2" width={Math.max(0, Math.min(1, f)) * 24} height="3" rx="1" />
+    </g>
+  );
+}
+
+// A figure that glides along tile points over ms real milliseconds; the position is set once per segment and the browser animates it.
+function Mover({ pts, ms, onDone, depth, children, ...rest }: { pts: Pt[]; ms: number; onDone?: () => void; depth?: number; children: ReactNode } & Record<string, unknown>) {
+  const ref = useRef<SVGGElement>(null), s = iso(pts[0].x, pts[0].y);
+  const sig = `${pts.map((p) => `${p.x},${p.y}`).join(";")}@${Math.round(ms)}`;
+  const done = useRef(onDone);
+  done.current = onDone;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || pts.length < 2 || ms < 60 || typeof el.animate !== "function") { done.current?.(); return; }
+    const dist = pts.map((_, i) => pts.slice(1, i + 1).reduce((a, p, j) => a + Math.abs(p.x - pts[j].x) + Math.abs(p.y - pts[j].y), 0)), total = dist[dist.length - 1] || 1;
+    const a = el.animate(pts.map((p, i) => { const q = iso(p.x, p.y); return { transform: `translate(${q.x}px, ${q.y}px)`, offset: dist[i] / total }; }), { duration: ms, fill: "forwards", easing: "linear" });
+    a.onfinish = () => done.current?.();
+    return () => a.cancel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig]);
+  return <g ref={ref} {...rest} style={{ transform: `translate(${s.x}px, ${s.y}px)` }}>{children}</g>;
+}
+
+const centre = (p: Pt): Pt => ({ x: p.x + 0.5, y: p.y + 0.5 });
+const key = (p: Pt) => `${p.x},${p.y}`;
+// Where a seated person is drawn: in the chair, which in the office rooms is the column beside the desk.
+const sitAt = (p: Pt, facing: Facing | undefined, office: boolean): Pt => office ? { x: p.x + 1, y: p.y + (facing === "s" ? 0.55 : 0.45) } : centre(p);
+
+// The people in this room as depth-sorted things: seated at their seat, walking to a rack, working there and back. Every position comes from the saved
+// work orders at the game minute; the next minute's position sets where the browser glides to, so no frame state is kept.
+export function useFigures(game: GameState, loc: Location, plan: OfficePlan | undefined, tiles: Record<string, Tile>, speed: number): { depth: number; node: ReactNode }[] {
   const [hover, setHover] = useState<string | null>(null);
-  const floor = plan?.floor ?? 1, m = dateOf(game.hour).getUTCHours() * 60 + game.minute, out: { depth: number; node: ReactNode }[] = [];
-  const seats = plan ? new Map(officeSeats(plan).map((x) => [`${x.x},${x.y},${x.floor}`, x])) : new Map();
-  const door = entryTile(loc, plan), from = { x: door.x + 0.5, y: door.y + 0.5 };
-  for (const f of figuresIn(game, loc.id, game.hour) as Figure[]) {
+  const walk = useVisit((v) => v.walk), at = useVisit((v) => v.at), set = useVisit((v) => v.set);
+  const floor = plan?.floor ?? 1, office = loc.space === "office", m = nowMin(game), out: { depth: number; node: ReactNode }[] = [];
+  const msPerMin = speed > 0 ? 1000 / speed : 0, here = present(game, loc.id), seat = here ? seatOf(game, loc.id, "player") : null;
+  const busy = game.orders.some((o) => o.worker === "player" && o.locationId === loc.id && !o.applied);
+  const pending = useVisit((v) => v.pending);
+  const walkHere = walk?.locationId === loc.id ? walk : null;
+
+  // Starts the waiting visit once the player's own orders are done; a visit to where the figure already stands opens at once.
+  useEffect(() => {
+    if (busy) { if (at) set({ at: null }); return; }
+    if (!pending || pending.locationId !== loc.id || walk) return;
+    const from = at?.locationId === loc.id ? at.pt : seatOf(game, loc.id, "player");
+    if (!from) { set({ pending: null }); pending.run(); return; }
+    const path = pathOf(game, loc, from, pending.to), seconds = walkSeconds(path);
+    set({ pending: null });
+    if (seconds === 0) { set({ at: { locationId: loc.id, pt: pending.to } }); pending.run(); }
+    else set({ walk: { ...pending, path, seconds } });
+  }, [busy, pending, walk, at, loc, game, set]);
+
+  const now = figuresIn(game, loc.id, m), next = msPerMin ? figuresIn(game, loc.id, m + 1) : [];
+  const list: Figure[] = now.slice();
+  if (seat && !list.some((f) => f.id === "player")) {
+    const p = at?.locationId === loc.id ? at.pt : seat, sitting = key(p) === key(seat);
+    list.push({ id: "player", name: "", role: "player", tile: { x: p.x, y: p.y, facing: (seat as Tile).facing ?? "n" }, facing: (seat as Tile).facing ?? "n", colour: null, busy: false, seated: sitting, pose: sitting ? "sit" : "stand", path: [p], progress: 0 });
+  }
+  for (const f of list) {
     if ((f.tile.floor ?? 1) !== floor) continue;
-    const l = look(f.id, f.colour), seat = f.seated ? seats.get(`${f.tile.x},${f.tile.y},${f.tile.floor}`) : undefined;
-    let t: number, path: Pt[], end: Pt, depth: number;
-    if (seat && plan) {
-      const h = hash(f.id), arrive = ARRIVE + (h % SPREAD), leave = LEAVE + ((h >>> 4) % SPREAD);
-      if (m < arrive || m >= leave + WALK_MIN) continue;
-      t = m < arrive + WALK_MIN ? (m - arrive) / WALK_MIN : m >= leave ? 1 - (m - leave) / WALK_MIN : 1;
-      end = { x: seat.x + 1, y: seat.y + (seat.facing === "s" ? 0.55 : 0.45) };
-      path = officeWalk(plan, seat);
-      // Seated facing the wall, the chair's backrest is drawn over the person; facing the room, the person over the chair.
-      depth = seat.x + seat.y + (seat.facing === "s" ? 0.001 : -0.001);
-    } else {
-      // A job's hour: in from the door over the first minutes, back out over the last.
-      const k = m % 60;
-      t = k < WALK_MIN ? k / WALK_MIN : k >= 60 - WALK_MIN ? (60 - k) / WALK_MIN : 1;
-      end = { x: f.tile.x + 0.5, y: f.tile.y + 0.5 };
-      path = [from, { x: from.x, y: end.y }, end];
-      depth = f.tile.x + f.tile.y + 0.5;
+    const player = f.id === "player", l = look(f.id, f.colour), name = player ? t("figures.you") : f.name;
+    const walking = player && walkHere && f.pose !== "work" && f.pose !== "walk" ? walkHere : null;
+    const other = next.find((x) => x.id === f.id);
+    // The points to glide along this minute: the path between where the figure is now and next minute.
+    let pts: Pt[] | null = null, ms = msPerMin;
+    if (walking) { pts = walking.path.map(centre); ms = walking.seconds * 1000; }
+    else if (other && f.pose === "walk") {
+      const i = f.path.findIndex((p) => key(p) === key(f.tile)), j = f.path.findIndex((p) => key(p) === key(other.tile));
+      if (i >= 0 && j > i) pts = f.path.slice(i, j + 1).map(centre);
     }
-    const pos = t >= 1 ? end : along(path, t), s = iso(pos.x, pos.y);
+    const sitting = f.pose === "sit" && !walking, pos = sitting ? sitAt(f.tile, f.tile.facing, office) : centre(f.tile), p0 = pts ? pts[0] : pos;
+    const mid = pts ? pts[Math.floor(pts.length / 2)] : pos;
+    const depth = sitting ? f.tile.x + f.tile.y + (f.facing === "s" ? 0.001 : -0.001) : Math.floor(mid.x) + Math.floor(mid.y) + 0.5;
+    const pose = walking ? "walk" : f.pose, s = iso(p0.x, p0.y);
     const enter = () => setHover(f.id), exit = () => setHover((v) => (v === f.id ? null : v));
-    out.push({
-      depth: t >= 1 ? depth : Math.floor(pos.x) + Math.floor(pos.y) + 0.5,
-      node: (
-        <g key={f.id} className="w-person" data-person={f.id} aria-label={f.name} style={{ transform: `translate(${s.x}px, ${s.y}px)` }} onPointerEnter={enter} onPointerLeave={exit}>
-          {t < 1 ? <Walking l={l} step={m % 2} /> : seat ? <Seated l={l} facing={seat.facing === "s" ? "s" : "n"} /> : <Standing l={l} facing={f.facing} busy={f.busy} />}
-        </g>
-      ),
-    });
+    const body = pose === "sit" ? <Seated l={l} facing={toViewer(f.facing) ? "s" : "n"} /> : pose === "walk" ? <Walking l={l} /> : <Standing l={l} facing={f.facing} busy={pose === "work"} />;
+    const done = walking ? () => { set({ walk: null, at: { locationId: loc.id, pt: walking.to } }); walking.run(); } : undefined;
+    out.push({ depth, node: <Mover key={f.id} pts={pts && pts.length > 1 ? pts : [p0]} ms={ms} onDone={done} className="w-person" data-person={f.id} data-pose={pose} aria-label={name} onPointerEnter={enter} onPointerLeave={exit}>{body}</Mover> });
     // A rack row in front would hide someone in the aisle, so a faint outline shows through.
-    if (!seat) out.push({ depth: 1e9, node: <g key={`x-${f.id}`} className="w-person w-xray" aria-hidden onPointerEnter={enter} onPointerLeave={exit} style={{ transform: `translate(${s.x}px, ${s.y}px)` }}>{t < 1 ? <Walking l={l} step={m % 2} /> : <Standing l={l} facing={f.facing} busy={false} />}</g> });
-    if (hover !== f.id || t < 1) continue;
-    if (seat) {
-      // A tent card at the desk's left corner, toward the person.
-      const c = at3(seat.x + 0.18, seat.y + (seat.facing === "s" ? 1.3 : -0.3), DESK_Z);
-      out.push({
-        depth: seat.x + seat.y + 3,
-        node: (
-          <g key={`tag-${f.id}`} pointerEvents="none" transform={`translate(${c.x} ${c.y})`}>
-            <rect className="w-tent" x="-1" y="-7" width={f.name.length * 2.6 + 4} height="7" />
-            <text className="w-num w-num-sm w-tent-text" x="1" y="-2">{f.name}</text>
-          </g>
-        ),
-      });
-    } else out.push({ depth: 1e9 + 1, node: <FloorTag key={`tag-${f.id}`} at={s} name={f.name} /> });
+    if (!sitting) out.push({ depth: 1e9, node: <Mover key={`x-${f.id}`} pts={pts && pts.length > 1 ? pts : [p0]} ms={ms} className="w-person w-xray" aria-hidden>{pose === "walk" ? <Walking l={l} /> : <Standing l={l} facing={f.facing} busy={false} />}</Mover> });
+    if (pose === "work") {
+      const tile = f.job?.rackId ? tiles[f.job.rackId] : undefined, rack = f.job?.rackId ? game.racks.find((r) => r.id === f.job!.rackId) : undefined;
+      const top = tile && rack ? at3(tile.x + 0.5, tile.y + 0.5, rackHeight(rackUnits(rack.model)) + 10) : { x: s.x, y: s.y - 64 };
+      out.push({ depth: 1e9 + 2, node: <Progress key={`p-${f.id}`} at={top} f={f.progress} /> });
+    }
+    if (hover === f.id) {
+      const job = f.job ? t(`world.work.${f.job.what}`) : "";
+      out.push({ depth: 1e9 + 1, node: <FloorTag key={`tag-${f.id}`} at={s} text={job ? t("figures.hover", { name, job }) : name} /> });
+    }
   }
   return out;
 }
 
 // The paper tag on a rack's side while someone works at it: who, what, until when.
 export function WorkTag({ game, rackId }: { game: GameState; rackId: string }) {
-  const loc = game.racks.find((r) => r.id === rackId)?.locationId, f = loc ? figuresIn(game, loc, game.hour).find((x) => x.job?.rackId === rackId) : undefined;
+  const loc = game.racks.find((r) => r.id === rackId)?.locationId, f = loc ? figuresIn(game, loc, nowMin(game)).find((x) => x.job?.rackId === rackId) : undefined;
   if (!f?.job) return null;
   const time = dateOf(f.job.until).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
   return (

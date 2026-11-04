@@ -247,3 +247,16 @@
 .w-ringing { animation: w-ring 0.12s linear infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
 @keyframes w-ring { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
 @media (prefers-reduced-motion: reduce) { .w-ringing { animation: none; } }
+
+.w-orders {
+  position: absolute; top: 52px; left: 12px; margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 3px; font-family: var(--font-num); font-size: 12px;
+}
+.w-orders li {
+  display: flex; align-items: center; gap: 8px; padding: 3px 4px 3px 10px;
+  background: oklch(0.24 0.022 255); color: oklch(0.95 0.01 250);
+  border: 1px solid oklch(0.4 0.02 252); box-shadow: 0 2px 0 oklch(0.17 0.02 258);
+}
+.w-orders li:first-child { border-left: 3px solid oklch(0.72 0.14 150); }
+.w-orders-x { border: 0; background: none; color: inherit; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
+.w-orders-x:hover { color: oklch(0.75 0.15 25); }

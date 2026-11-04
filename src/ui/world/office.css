@@ -64,7 +64,10 @@
 .w-ladder { fill: none; stroke: oklch(0.72 0.01 250); stroke-width: 1.4; stroke-linecap: round; }
 .w-dropcloth { fill: oklch(0.92 0.01 90); opacity: 0.8; }
 
-.w-person { transition: transform 0.8s linear; }
+.w-fig-stride { animation: w-stride 0.4s steps(1) infinite; }
+@keyframes w-stride { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
+.w-prog-bg { fill: oklch(0.28 0.02 255); }
+.w-prog-fill { fill: oklch(0.72 0.14 150); }
 .w-fig { fill: none; }
 .w-fig-head { animation: w-tilt 6s ease-in-out infinite; }
 .w-fig-hands { animation: w-type 0.5s steps(2) infinite; }
@@ -74,8 +77,7 @@
 .world .w-tent-text { fill: oklch(0.28 0.02 255); text-anchor: start; }
 
 @media (prefers-reduced-motion: reduce) {
-  .w-person { transition: none; }
-  .w-fig-head, .w-fig-hands { animation: none; }
+  .w-fig-head, .w-fig-hands, .w-fig-stride { animation: none; }
 }
 .w-fig-work { animation: w-reach 4s ease-in-out infinite; }
 @keyframes w-reach { 0%, 70%, 100% { transform: translate(0, 0); } 78% { transform: translate(1.5px, -2px); } 86% { transform: translate(-0.5px, 0.5px); } }
