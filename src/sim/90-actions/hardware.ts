@@ -206,12 +206,16 @@ function placeError(s: GameState, locationId: string, model: RackModel, position
   return null;
 }
 
-export function buyRack(s: GameState, locationId: string, model: RackModel, position: number): ActionResult {
+export function buyRackError(s: GameState, locationId: string, model: RackModel, position: number): string | null {
   const spec = RACK_MODELS.find((m) => m.id === model);
-  if (!spec) return fail("error.unknownRackModel");
-  const error = placeError(s, locationId, model, position);
+  if (!spec) return "error.unknownRackModel";
+  return placeError(s, locationId, model, position) ?? (s.cash < spec.price ? "error.noCash" : null);
+}
+
+export function buyRack(s: GameState, locationId: string, model: RackModel, position: number): ActionResult {
+  const error = buyRackError(s, locationId, model, position);
   if (error) return fail(error);
-  if (s.cash < spec.price) return fail("error.noCash");
+  const spec = RACK_MODELS.find((m) => m.id === model)!;
   const name = model === "shelf" ? t("rack.shelf") : nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
   const at = s.locations.find((l) => l.id === locationId)!, tile = freeRackTiles(at, s.racks, officePlan(s, at))[0];
   const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null }, tile };

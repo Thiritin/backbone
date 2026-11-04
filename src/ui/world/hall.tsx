@@ -80,6 +80,7 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
   Object.assign(draw, {
     xfmrdoor: (f: Fixture) => <ServiceDoor f={f} label={t("hall.room.transformer")} />,
     meetmedoor: (f: Fixture) => <ServiceDoor f={f} label={t("hall.room.meetme")} />,
+    planboard: () => null,
     camera: (f: Fixture) => <Camera f={f} />,
   });
   const taken = new Set(Object.values(tiles).map(key)), customers = customerTiles(loc, plan);
@@ -107,7 +108,7 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
   for (const c of customers)
     things.push({ depth: c.tile.x + c.tile.y, node: <g key={`colo${c.id}`} aria-label={c.name}><RackBox tile={c.tile} units={42} items={[]} leds={[]} zoomed={false} mesh neighbour /><Lock tile={c.tile} /></g> });
   // Positions past the cooled count shimmer while the hall carries heat.
-  const cooled = hall.cooling * HALL.cooling.positions, all = hall.rows.flatMap(rowTiles);
+  const cooled = hall.coolers.length * HALL.cooling.positions, all = hall.rows.flatMap(rowTiles);
   if ((game.ops.heat[loc.id] ?? 0) > 0.5)
     all.slice(cooled).filter((tl) => taken.has(key(tl))).forEach((tl) => things.push({ depth: tl.x + tl.y + 0.9, node: <Shimmer key={`hot${key(tl)}`} tile={tl} z={rackHeight(42)} /> }));
   const trays = (

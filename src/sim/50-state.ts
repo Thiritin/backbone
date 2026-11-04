@@ -83,10 +83,10 @@ export interface Property {
 export interface HallRow { id: string; x: number; y: number; length: number; facing: "n" | "e" | "s" | "w" }
 // A colocation customer's rack on one of the hall's positions, paying monthly from since.
 export interface ColoCustomer { id: string; name: string; position: number; monthly: number; since: number }
-// cooling counts the cooling units on the walls; carriers the ids of carriers built into the meet-me room; rate the monthly
+// coolers are the wall slots holding a cooling unit; transformers the extra transformers bought (at most one per floor); carriers the ids of carriers built into the meet-me room; rate the monthly
 // price per position offered to colocation customers, null while no position is listed.
 export interface Hall {
-  locationId: string; rows: HallRow[]; cooling: number; feedB: boolean; ups: boolean; generator: boolean;
+  locationId: string; rows: HallRow[]; coolers: number[]; transformers: number; feedB: boolean; ups: boolean; generator: boolean;
   carriers: string[]; rate: number | null; customers: ColoCustomer[];
 }
 // One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.

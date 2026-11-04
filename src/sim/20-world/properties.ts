@@ -33,7 +33,11 @@ export const HALL_POSITIONS = { office: 20, halle: 60 } as const;
 // floor, cooling units on the walls each cooling `positions` positions, and the upgrades with their one-time price and monthly cost.
 export const HALL = {
   kwPerPosition: 6, transformerKw: { office: 100, halle: 300 },
-  cooling: { price: 18_000, monthly: 150, positions: 8, kw: 40 },
+  cooling: { price: 18_000, monthly: 150, positions: 8, kw: 40, refund: 0.5 },
+  // One extra transformer per hall floor, bought in the transformer room: it adds the floor's base limit again.
+  transformer: { price: 80_000, monthly: 400 },
+  // Hours a moved rack is dark.
+  moveHours: 2,
   // Colocation customers: at the city's going rate a spare position finds a customer in a month with chance `signs`, which
   // falls to nothing at twice the going rate and climbs by half again at half of it; each customer leaves in a month with chance `leaves`.
   colo: { signs: 0.5, leaves: 0.04 },
@@ -43,7 +47,7 @@ export const HALL = {
 } as const;
 export type HallUpgrade = keyof typeof HALL.upgrades;
 export const hallKw = (p: Property): number =>
-  new Set(p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size * HALL.transformerKw[isHalle(p.buildingId) ? "halle" : "office"];
+  (new Set(p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size + (p.hall?.transformers ?? 0)) * HALL.transformerKw[isHalle(p.buildingId) ? "halle" : "office"];
 export const hallBackup = (h: Hall): "none" | "ups" | "ups+generator" => (h.ups && h.generator ? "ups+generator" : h.ups ? "ups" : "none");
 // Default rows a new hall floor gets: rows of HALL_ROW positions, facing each other in pairs.
 export const HALL_ROW = 10;

@@ -7,7 +7,7 @@ export type Facing = "n" | "e" | "s" | "w";
 export interface Tile { x: number; y: number; facing: Facing; floor?: number }
 export interface RoomSize { w: number; h: number }
 // A fixed object on tile (x, y), w tiles wide; kind defaults to its id, so a room can hold two of a kind.
-export interface Fixture { x: number; y: number; w?: number; kind?: string }
+export interface Fixture { x: number; y: number; w?: number; h?: number; kind?: string }
 type Rented = Exclude<SpaceKind, "basement" | "hall">;
 // A rented room's hall: rack rows at y from x0 to x1, each with the way it faces in a hall with aisles; without aisles every row faces the near side. Without `mine` every rack tile is the player's (a suite); with it, the player's tiles are cut from the given rows and the rest hold neighbours' racks. The player's rows are the nearest, so no neighbour hides them.
 interface Hall { size: RoomSize; fixtures: Record<string, Fixture>; rows: [number, Facing][]; x0: number; x1: number; mine?: (positions: number) => { x0: number; cols: number; rows: number[] } }
@@ -86,7 +86,7 @@ export function roomSize(loc: Location, plan?: OfficePlan): RoomSize {
 
 // Every tile a fixture covers.
 export function fixtureTiles(loc: Location, plan?: OfficePlan): { x: number; y: number }[] {
-  return Object.values(fixtures(loc, plan)).flatMap((f) => Array.from({ length: f.w ?? 1 }, (_, i) => ({ x: f.x + i, y: f.y })));
+  return Object.values(fixtures(loc, plan)).flatMap((f) => Array.from({ length: (f.w ?? 1) * (f.h ?? 1) }, (_, i) => ({ x: f.x + (i % (f.w ?? 1)), y: f.y + Math.floor(i / (f.w ?? 1)) })));
 }
 
 // The tile inside the door, where the player stands on arriving.
@@ -291,10 +291,39 @@ export function rowTiles(r: HallRow): Tile[] {
   return Array.from({ length: r.length }, (_, i) => ({ x: r.x + (along ? i : 0), y: r.y + (along ? 0 : i), facing: r.facing }));
 }
 
-// The far wall's two-tile cooling slots, left to right, short of the dock.
+// The cooling slots: two tiles each along the far wall, left to right short of the dock, then down the right wall from the
+// second row to the near margin. A unit stored by slot index stays on its slot when the room grows.
 export function coolingSlots(size: RoomSize, dock = false): Fixture[] {
-  return Array.from({ length: Math.floor((size.w - 4 - (dock ? 3 : 0)) / 2) }, (_, i) => ({ x: 3 + 2 * i, y: 0, w: 2 }));
+  const far = Array.from({ length: Math.floor((size.w - 4 - (dock ? 3 : 0)) / 2) }, (_, i) => ({ x: 3 + 2 * i, y: 0, w: 2 }));
+  const right = Array.from({ length: Math.floor((size.h - 4) / 2) }, (_, i) => ({ x: size.w - 1, y: 2 + 2 * i, h: 2 }));
+  return [...far, ...right];
 }
+
+const step = (t: { x: number; y: number }, f: HallRow["facing"], k: number) => ({ x: t.x + (f === "e" ? k : f === "w" ? -k : 0), y: t.y + (f === "s" ? k : f === "n" ? -k : 0) });
+// The aisle lines of a row: the tiles one step in front of its racks and one step behind them.
+export const rowFront = (r: HallRow) => rowTiles(r).map((t) => step(t, r.facing, 1));
+export const rowBack = (r: HallRow) => rowTiles(r).map((t) => step(t, r.facing, -1));
+
+// GDD, Own datacenter, Cooling: whether each position (index = position - 1) is covered. Units take their 8 nearest free
+// positions in slot order, ties by position number; every position of a row whose front aisle is another row's back aisle runs hot.
+export function hallCoverage(hall: OwnHall, size: RoomSize, dock: boolean, perUnit: number): boolean[] {
+  const tiles = hall.rows.flatMap(rowTiles), slots = coolingSlots(size, dock), covered = tiles.map(() => false);
+  for (const slot of [...hall.coolers].sort((a, b) => a - b)) {
+    const c = slots[slot];
+    if (!c) continue;
+    const cx = c.x + ((c.w ?? 1) - 1) / 2, cy = c.y + ((c.h ?? 1) - 1) / 2;
+    tiles.map((t, i) => ({ i, d: (t.x - cx) ** 2 + (t.y - cy) ** 2 })).filter((e) => !covered[e.i]).sort((a, b) => a.d - b.d || a.i - b.i)
+      .slice(0, perUnit).forEach((e) => { covered[e.i] = true; });
+  }
+  let start = 0;
+  for (const r of hall.rows) {
+    const front = new Set(rowFront(r).map(tk));
+    if (hall.rows.some((q) => q !== r && rowBack(q).some((t) => front.has(tk(t))))) for (let i = 0; i < r.length; i++) covered[start + i] = false;
+    start += r.length;
+  }
+  return covered;
+}
+const tk = (t: { x: number; y: number }) => `${t.x},${t.y}`;
 
 function hallRoom(hall: OwnHall, capacity: number, dock: boolean): OfficeRoom {
   const size = hallSize(capacity, dock), f: Record<string, Fixture> = {};
@@ -304,9 +333,11 @@ function hallRoom(hall: OwnHall, capacity: number, dock: boolean): OfficeRoom {
   f.meetme = { x: 0, y: 3, kind: "meetmedoor" };
   f.extinguisher = { x: 0, y: 5, kind: "extinguisher" };
   f.camera = { x: 1, y: 0, kind: "camera" };
+  f.plan = { x: 0, y: size.h - 2, kind: "planboard" };
   f.noc = { x: 6, y: size.h - 1, w: 3, kind: "noc" };
   if (dock) f.dock = { x: size.w - 4, y: 0, w: 3, kind: "dock" };
-  coolingSlots(size, dock).slice(0, hall.cooling).forEach((c, i) => { f[`cooling${i}`] = { ...c, kind: "cooling" }; });
+  const slots = coolingSlots(size, dock);
+  hall.coolers.forEach((slot) => { if (slots[slot]) f[`cooling${slot}`] = { ...slots[slot], kind: "cooling" }; });
   const racks = hall.rows.flatMap(rowTiles);
   // walkways() reads a row's front one tile below its y, so a row facing north sits two above its rack tiles.
   const rows = hall.rows.filter((r) => r.facing === "n" || r.facing === "s").map((r) => ({ y: r.facing === "s" ? r.y : r.y - 2, x0: r.x, x1: r.x + r.length - 1 }));

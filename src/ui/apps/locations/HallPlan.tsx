@@ -51,8 +51,8 @@ export function HallPlan({ game, p }: { game: GameState; p: Property }) {
         })}
       </div>
       <Facts rows={[
-        [t("hall.cooling"), <span className="num">{hall.cooling}</span>],
-        [t("hall.cooled"), <span className="num">{`${Math.min(cap, hall.cooling * HALL.cooling.positions)} / ${cap}`}</span>],
+        [t("hall.cooling"), <span className="num">{hall.coolers.length}</span>],
+        [t("hall.cooled"), <span className="num">{`${Math.min(cap, hall.coolers.length * HALL.cooling.positions)} / ${cap}`}</span>],
         [t("hall.transformer"), <span className="num">{t("hall.kw", { used: (roomPower(game, loc).watts / 1000).toFixed(1), kw: hallKw(p) })}</span>],
       ]} />
       <div className="loc-row prop-actions">

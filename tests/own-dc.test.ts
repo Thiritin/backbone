@@ -95,22 +95,22 @@ describe("own datacenter: rows", () => {
     expect(layRow(s, hallId, { x: 10, y: 4, length: 5, facing: "s" })).toEqual({ ok: false, error: "error.rowsFull" });
     expect(layRow(s, hallId, { x: 3, y: 2, length: 4, facing: "s" })).toEqual({ ok: false, error: "error.rowOverlap" });
     expect(layRow(s, hallId, { x: 0, y: 6, length: 4, facing: "s" })).toEqual({ ok: false, error: "error.rowOutside" });
-    expect(layRow(s, hallId, { x: 13, y: 2, length: 3, facing: "w" }).ok).toBe(true);
+    expect(layRow(s, hallId, { x: 14, y: 2, length: 3, facing: "w" }).ok).toBe(true);
     expect(loc().positions).toBe(hall().rows.reduce((n, r) => n + r.length, 0));
     expect(wallTiles(loc(), officePlan(s, loc())).filter((t) => t.facing === "w")).toHaveLength(3);
   });
 
-  it("a row with racks cannot be moved or removed, and racks keep their tile when an earlier row goes", () => {
+  it("a row with racks cannot be removed, moves with its racks, and racks keep their tile when an earlier row goes", () => {
     const { s, propertyId, hallId } = ownHall();
     const [a, b] = s.properties.find((x) => x.id === propertyId)!.hall!.rows, loc = () => s.locations.find((l) => l.id === hallId)!;
     const rackId = ok(buyRack(s, hallId, "rack-42", a.length + 2));
     const tile = rackTiles(loc(), s.racks, officePlan(s, loc()))[rackId];
     expect(tile).toMatchObject({ y: b.y, facing: b.facing });
     expect(removeRow(s, hallId, b.id)).toEqual({ ok: false, error: "error.rowInUse" });
-    expect(layRow(s, hallId, { ...b, x: 4 })).toEqual({ ok: false, error: "error.rowInUse" });
+    expect(layRow(s, hallId, { ...b, x: 4 }).ok).toBe(true);
     expect(removeRow(s, hallId, a.id).ok).toBe(true);
     expect(s.racks.find((r) => r.id === rackId)!.position).toBe(2);
-    expect(rackTiles(loc(), s.racks, officePlan(s, loc()))[rackId]).toEqual(tile);
+    expect(rackTiles(loc(), s.racks, officePlan(s, loc()))[rackId]).toEqual({ ...tile, x: tile.x + 1 });
   });
 
   it("rack tiles are distinct", () => {
@@ -241,7 +241,7 @@ describe("own datacenter: the room", () => {
     const { s: big, hallId: halle } = ownHall("fechenhalle");
     const room = big.locations.find((l) => l.id === halle)!, plan = officePlan(big, room)!;
     expect(fixtures(room, plan).dock).toBeDefined();
-    for (let i = 0; i < 8; i++) ok(addCooling(big, halle));
+    for (let i = 0; i < 14; i++) ok(addCooling(big, halle));
     expect(addCooling(big, halle)).toEqual({ ok: false, error: "error.wallsFull" });
   });
 });

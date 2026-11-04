@@ -38,6 +38,14 @@ import { fillDaemons } from "../60-infra/daemons";
 import { fillGames } from "../60-infra/games";
 import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
+
+// Halls from before placed cooling units hold a count: the first slots.
+const fillHall = (p: GameState["properties"][number]): GameState["properties"][number] => {
+  const h = p.hall as (typeof p.hall & { cooling?: number }) | undefined;
+  if (!h) return p;
+  const { cooling, ...rest } = h;
+  return { ...p, hall: { ...rest, coolers: h.coolers ?? Array.from({ length: cooling ?? 0 }, (_, i) => i), transformers: h.transformers ?? 0 } };
+};
 import { seededPassword } from "../42-mail/new";
 
 // ponytail: plain JSON in localStorage; compress once saves approach the ~5 MB limit.
@@ -118,7 +126,7 @@ export function deserialize(raw: string): GameState {
   const fill = data.ips ? (x: GameState) => x : fillAddresses;
   const s = fillMachines(dropGone(gone, fillRegistrar(fill(fillLaunch(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
-    properties: data.properties ?? [basementProperty(locations.find((l) => l.space === "basement")?.id ?? null)],
+    properties: data.properties?.map(fillHall) ?? [basementProperty(locations.find((l) => l.space === "basement")?.id ?? null)],
     billingRules: { ...base.billingRules, ...data.billingRules },
     // Quotes from before the shop wrote its own were all written in Books.
     quotes: (data.quotes ?? []).map((q) => ({ ...q, origin: q.origin ?? "books" })),

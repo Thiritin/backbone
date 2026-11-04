@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Cooling units in your own hall now cool the racks nearest to them, rows need an aisle, and a moved rack is dark for two hours.
 - The corkboard, wall phone and rack close-up are drawn cleaner: no stray cable loops, one handset on the hook and labels that fit.
 - App and city names now appear in your language, and storage notices name the location.
 - The desktop stays usable while the game is paused, and new windows no longer cover the desktop icons.
