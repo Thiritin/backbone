@@ -7,7 +7,7 @@ Leaving the room is a trip, and a trip is something to watch. The sim already de
 ## The sequence
 
 1. **The door.** Using the door in the world opens the map with the current location marked and every reachable location as a pin. Picking one starts the trip through the existing travel action.
-2. **Getting in.** A side-view scene in the same pixel style as the room: the street outside the current building, the company car at the kerb. The avatar walks to the car, the door opens, the avatar gets in, the door shuts, the engine starts, the car drives off, and the scene fades to black. Each beat has a sound. The scene plays in about four seconds and any key or click skips it.
+2. **Getting in.** A side-view scene drawn in the art direction of the rooms ([World art direction](../world-art.md)): the street outside the current building, the company car at the kerb. The avatar walks to the car, the door opens, the avatar gets in, the door shuts, the engine starts, the car drives off, and the scene fades to black. Each beat has a sound. The scene plays in about four seconds and any key or click skips it.
 3. **On the road.** The map, dark and gamey. The route from origin to destination is drawn along real roads and a car marker drives it. The game clock in the corner runs ahead, with the speed multiplier shown, so the player sees how much game time the trip eats. The sim ticks at that speed and everything that happens in the meantime happens: mail arrives, tickets come in, money moves. The animation lasts a fixed stretch of real time scaled gently with distance, roughly six to twelve seconds, and arrives exactly at the game time the sim chose. Any key or click skips to arrival.
 4. **Arrival.** Fade from black into the side-view scene at the destination: the car pulls up, the door opens, the avatar gets out and walks through the building door. Then the destination room in the world.
 
@@ -32,6 +32,6 @@ Car door, engine start, engine running, engine stop; for a flight a lighter taxi
 ## Pieces
 
 - Data: the roads file, the routes file, the script that builds them, and the credits entry for the data sources.
-- Scenes: the two side-view scenes drawn in code, with the avatar and car as sprites.
+- Scenes: the two side-view scenes drawn in code, with the avatar in the style of the room figures and the car drawn flat.
 - Map: the dark map, the route, the marker, the clock readout.
 - Flow: door, map, scene, map, scene, room, with skip on every stage and the existing travel action and arrival time driving all of it.
