@@ -1,3 +1,4 @@
+import { cityName } from "../cityName";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
@@ -46,7 +47,7 @@ function TravelMap() {
     return [...spots.map((x) => pin(x, "street")), ...[...cities].map(([city, g]): Marker => {
       const c = cityNamed(city)!;
       return g.length === 1 ? { ...pin(g[0], "region"), id: `region:${g[0].l.id}` }
-        : { id: `city:${city}`, lon: c.lon, lat: c.lat, label: city, zoom: "region", kind: "location", count: g.length, plane: g.some((x) => x.d?.by === "fly"), selected: g.some((x) => x.l.id === here.id) };
+        : { id: `city:${city}`, lon: c.lon, lat: c.lat, label: cityName(city), zoom: "region", kind: "location", count: g.length, plane: g.some((x) => x.d?.by === "fly"), selected: g.some((x) => x.l.id === here.id) };
     })];
   }, [spots, here.id]);
   const inFocus = spots.filter((x) => x.l.city === focus), lons = inFocus.map((x) => x.lon), lats = inFocus.map((x) => x.lat);

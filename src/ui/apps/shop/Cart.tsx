@@ -49,7 +49,7 @@ export function Cart() {
     if (!r.ok) return;
     clearCart();
     setPay("prepay");
-    notify("Shop", wait ? t("shop.orderedFor", { az: dest.az }) : t("shop.addedToStorage", { az: dest.az }), t("shop.units", { n: units }));
+    notify("Shop", wait ? t("shop.orderedFor", { az: dest.name }) : t("shop.addedToStorage", { az: dest.name }), t("shop.units", { n: units }));
   };
 
   return (

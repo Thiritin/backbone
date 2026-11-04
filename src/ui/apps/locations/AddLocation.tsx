@@ -6,6 +6,7 @@ import type { GameState, SpaceKind } from "../../../sim/50-state";
 import { dcAvailability, fits } from "../../../sim/60-infra/status";
 import { orderUrl } from "../../../sim/80-business/browser";
 import { Logo } from "../../art/logos";
+import { cityName } from "../../cityName";
 import { cityNamed, WorldMap, type Bounds, type Marker } from "../../map/WorldMap";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -85,7 +86,7 @@ export function AddLocation({ onClose }: { onClose: () => void }) {
         <div className="loc-cities">
           <div className="seg" role="group" aria-label={t("locations-1.city")}>
             <button aria-pressed={!city} onClick={() => setCity(null)}>{t("locations-1.all")}</button>
-            {cities.map((c) => <button key={c} aria-pressed={city === c} onClick={() => setCity(c)}>{c}</button>)}
+            {cities.map((c) => <button key={c} aria-pressed={city === c} onClick={() => setCity(c)}>{cityName(c)}</button>)}
           </div>
         </div>
       </div>
@@ -100,7 +101,7 @@ export function AddLocation({ onClose }: { onClose: () => void }) {
       </div>
       <WorldMap key={area} className="wm-add" initial={AREAS.find((a) => a[0] === area)![2]} markers={markers(city, hot)} onMarkerClick={(c) => setCity(c === city ? null : c)} onCityClick={(c) => setCity(CITIES.includes(c.name) && c.name !== city ? c.name : null)}>
         {city && (
-          <div className="wm-panel" role="group" aria-label={city}>
+          <div className="wm-panel" role="group" aria-label={cityName(city)}>
             <h3>{city}</h3>
             {rows.map((d) => <button key={d.id} aria-pressed={d === dc} onClick={() => setDc(d.id)}><Logo provider={d.provider} size={16} />{d.name}</button>)}
           </div>
@@ -146,7 +147,7 @@ export function AddLocation({ onClose }: { onClose: () => void }) {
 // One marker per catalog city, counting its datacenters.
 const markers = (city: string | null, hot: string | null): Marker[] => CITIES.flatMap((name) => {
   const c = cityNamed(name), n = DATACENTERS.filter((d) => d.city === name).length;
-  return c ? [{ id: name, lon: c.lon, lat: c.lat, label: name, kind: "datacenter", count: n, selected: name === city || name === hot }] : [];
+  return c ? [{ id: name, lon: c.lon, lat: c.lat, label: cityName(name), kind: "datacenter", count: n, selected: name === city || name === hot }] : [];
 });
 
 // Free space as a value and a bar of competitors, the player (rented and held) and free positions.

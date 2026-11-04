@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- App and city names now appear in your language, and storage notices name the location.
 - The desktop stays usable while the game is paused, and new windows no longer cover the desktop icons.
 - The home router looks the same in the room as on the rack.
 - Routers, firewalls and switches now flicker wildly while a DDoS attack is hitting their location, and calm down once the traffic is blackholed or filtered.

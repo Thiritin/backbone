@@ -25,6 +25,7 @@ import { RackView, Upgrades } from "./RackView";
 import { Storage } from "./Storage";
 import { backupLabel, dcOf, exchangeLabel, feedsLabel, LocName, locationPower, PowerMeter, providerOf, RoomTemp, spaceLabel, Zone } from "./ui";
 import { REGIONS } from "../../../sim/20-world/datacenters";
+import { cityName } from "../../cityName";
 
 type Tab = "floor" | "cabling" | "storage" | "network" | "line";
 
@@ -79,8 +80,8 @@ export function LocationsApp() {
         {item("properties", view === "properties", <><Building2 />{t("properties.title")}</>, () => go("properties"))}
         {game.waitlist.length > 0 && item("waitlist", view === "waitlist", <><Hourglass />{t("locations-1.waitlist")}</>, () => go("waitlist"), game.waitlist.length)}
         {REGIONS.filter((r) => game.locations.some((l) => l.city === r.city)).map((r) => (
-          <div key={r.id} className="fin-side" role="group" aria-label={r.name}>
-            <div className="side-h">{r.name}</div>
+          <div key={r.id} className="fin-side" role="group" aria-label={cityName(r.city)}>
+            <div className="side-h">{cityName(r.city)}</div>
             {game.locations.filter((l) => l.city === r.city).flatMap((l) => [
               item(l.id, l.id === loc?.id && !rack, <><Logo provider={providerOf(l)} size={16} /><LocName loc={l} />
                 {l.readyAt > game.hour && <span className="side-count num">{readyIn(l.readyAt, game.hour)}</span>}</>, () => go(l.id), undefined, l.readyAt > game.hour),
@@ -165,7 +166,7 @@ function LocationHead({ game, locId }: { game: GameState; locId: string }) {
       <Logo provider={providerOf(loc)} size={28} />
       <div className="loc-head-name">
         <h2>{loc.name}<Zone loc={loc} /></h2>
-        <span className="loc-muted">{loc.city} · {spaceLabel(loc, game)}</span>
+        <span className="loc-muted">{cityName(loc.city)} · {spaceLabel(loc, game)}</span>
       </div>
       <span className="grow" />
       {loc.readyAt > game.hour && <span className="pill warn">{t("locations-1.readyIn")} <span className="num">{readyIn(loc.readyAt, game.hour)}</span></span>}

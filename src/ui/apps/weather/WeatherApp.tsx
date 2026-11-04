@@ -7,6 +7,7 @@ import { sky, temperature } from "../../../sim/20-world/weather";
 import { playerAt } from "../../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../../sim/90-actions/travel";
 import { useStore } from "../../store";
+import { cityName } from "../../cityName";
 import { SkyIcon } from "./SkyIcon";
 import "./weather.css";
 
@@ -22,7 +23,7 @@ export function WeatherApp() {
   return (
     <div className="weather">
       <section className="wx-now">
-        <h2>{here.city}</h2>
+        <h2>{cityName(here.city)}</h2>
         <SkyIcon kind={sky(here.city, game.hour)} />
         <strong>{degrees(here.city, game.hour)}</strong>
         <span>{t(`weather.sky.${sky(here.city, game.hour)}`)}</span>
@@ -33,7 +34,7 @@ export function WeatherApp() {
           return (
             <li key={l.id} className="wx-row">
               <SkyIcon kind={k} />
-              <div className="wx-place"><b>{l.name}</b><span>{l.city}, {t(`weather.sky.${k}`)}</span></div>
+              <div className="wx-place"><b>{l.name}</b><span>{cityName(l.city)}, {t(`weather.sky.${k}`)}</span></div>
               <strong>{degrees(l.city, game.hour)}</strong>
               {l.id === here.id ? <span className="wx-here">{t("weather.here")}</span> : d && (
                 <button className="wx-drive" onClick={() => act(travelTo, l.id)}>
@@ -49,7 +50,7 @@ export function WeatherApp() {
         {CITIES.filter((c) => c !== here.city).map((c) => (
           <li key={c} className="wx-row wx-city">
             <SkyIcon kind={sky(c, game.hour)} />
-            <div className="wx-place"><b>{c}</b><span>{t(`weather.sky.${sky(c, game.hour)}`)}</span></div>
+            <div className="wx-place"><b>{cityName(c)}</b><span>{t(`weather.sky.${sky(c, game.hour)}`)}</span></div>
             <strong>{degrees(c, game.hour)}</strong>
           </li>
         ))}
