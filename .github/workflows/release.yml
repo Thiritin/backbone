@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,3 +32,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
+      - run: gh workflow run desktop.yml
+        env:
+          GH_TOKEN: ${{ github.token }}

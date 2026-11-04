@@ -19,10 +19,10 @@ import { t } from "../../i18n/en";
 import { APPS, appFor, appTitle, listed } from "./registry";
 
 type Folder = "apps" | "desktop" | "downloads" | "usb" | "trash";
-const ISO = "application/x-backbone-iso";
-const INSTALLER = "application/x-backbone-installer";
+const ISO = "application/x-raid0-iso";
+const INSTALLER = "application/x-raid0-installer";
 // Set only for an app that can go to the Trash, so the Trash turns every other app away.
-export const APP = "application/x-backbone-app";
+export const APP = "application/x-raid0-app";
 // The stick's write speed in MB/s.
 const SPEED = 75;
 

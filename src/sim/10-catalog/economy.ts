@@ -65,7 +65,7 @@ const EVERYTHING: Product[] = ["webHosting", "domain", "ssl", "dns", "gameServer
 export const COMPETITORS: Competitor[] = [
   { name: "Ionose", template: "budget", priceFactor: 0.8, P: 55, R: 60, C: 70, sells: ["webHosting", "domain", "ssl", "dns", "vps"] },
   { name: "OVHeat", template: "wholesale", priceFactor: 0.75, P: 70, R: 65, C: 50, sells: EVERYTHING },
-  { name: "Hetzna", template: "devCloud", priceFactor: 0.7, P: 85, R: 70, C: 40, sells: ["vps", "dedicated", "storage", "cloud", "colocation", "gpu"] },
+  { name: "Hetzler", template: "devCloud", priceFactor: 0.7, P: 85, R: 70, C: 40, sells: ["vps", "dedicated", "storage", "cloud", "colocation", "gpu"] },
   { name: "Rackspice", template: "premium", priceFactor: 1.3, P: 80, R: 90, C: 75, sells: EVERYTHING },
   { name: "Nitradoh", template: "game", priceFactor: 0.9, P: 75, R: 60, C: 60, sells: ["gameServer"], targets: ["gamer"] },
   { name: "WP Engyne", template: "managed", priceFactor: 1.4, P: 70, R: 80, C: 85, sells: ["webHosting"], targets: ["sole", "small", "office", "agency"] },

@@ -1,4 +1,4 @@
-// Backbone mockups: renders the shared desktop (wallpaper, menu bar, dock) and code-drawn device fronts.
+// raid0 mockups: renders the shared desktop (wallpaper, menu bar, dock) and code-drawn device fronts.
 
 const APPS = [
   { name: "Locations", icon: "server", tile: "oklch(0.5 0.06 250)" },
@@ -57,7 +57,7 @@ function wallpaper() {
 function menubar({ app, speed = "2" }) {
   const speeds = [["pause", '<i data-lucide="pause"></i>'], ["1", "1×"], ["2", "2×"], ["4", "4×"], ["8", "8×"]];
   return `<header class="menubar" role="menubar">
-    <span class="mb-item mb-logo" title="Backbone"><i data-lucide="network"></i></span>
+    <span class="mb-item mb-logo" title="raid0"><i data-lucide="network"></i></span>
     <span class="mb-item mb-app">${app}</span>
     ${["File", "Edit", "View", "Window"].map((m) => `<span class="mb-item">${m}</span>`).join("")}
     <span class="mb-spacer"></span>

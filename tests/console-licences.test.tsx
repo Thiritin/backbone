@@ -48,7 +48,7 @@ describe("hypervisor licences", () => {
     expect(cluster(s, id).setupPending).toBe(true);
     expect(panelStatus(s, cluster(s, id))).toBe("trial");
     useStore.setState({ game: s });
-    sessionStorage.setItem("backbone.ui.browser.logins", JSON.stringify([HOST]));
+    sessionStorage.setItem("raid0.ui.browser.logins", JSON.stringify([HOST]));
     const View = () => {
       const game = useStore((x) => x.game);
       return <ConsolePage game={game} hostname={HOST} host={HOST} cluster={game.clusters.find((x) => x.id === id)} defaced={false} />;

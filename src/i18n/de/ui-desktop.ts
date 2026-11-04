@@ -64,19 +64,21 @@ export default {
   "desktop.update.title": () => "Update verfügbar",
   "desktop.update.text": () => "Eine neuere Version des Spiels ist online. Lade neu, um sie zu nutzen; dein Spiel und die offenen Fenster bleiben erhalten.",
   "desktop.update.reload": () => "Neu laden",
+  "desktop.update.appText": () => "Eine neuere Version des Spiels ist verfügbar. Die Installation startet die App neu; dein Spiel bleibt erhalten.",
+  "desktop.update.install": () => "Installieren und neu starten",
   "desktop.news.title": () => "Pear-OS-Update",
   "desktop.changes.version": (p) => `Version ${p.version}`,
   "desktop.changes.more": (p) => `${p.n} weitere ${Number(p.n) === 1 ? "Änderung" : "Änderungen"}`,
 
   "desktop.early.title": () => "Early Access",
-  "desktop.early.text": () => "Backbone befindet sich im Early Access und ist noch nicht fertig. Rechne mit Bugs, fehlenden Funktionen und Balance-Änderungen. Gib uns dein Feedback auf GitHub oder Discord.",
+  "desktop.early.text": () => "raid0 befindet sich im Early Access und ist noch nicht fertig. Rechne mit Bugs, fehlenden Funktionen und Balance-Änderungen. Gib uns dein Feedback auf GitHub oder Discord.",
 
   "desktop.over.title": (p) => `${p.company} ist pleite`,
   "desktop.over.text": (p) => `Das Unternehmen wurde am ${p.day} zahlungsunfähig, bei einem Kontostand von ${p.cash}.`,
   "desktop.over.load": () => "Export laden",
 
-  "desktop.mobile.title": () => "Backbone ist ein Desktop-Spiel",
-  "desktop.mobile.text": () => "Backbone lässt sich nicht auf einem Smartphone oder Tablet spielen. Öffne es auf einem Computer, um zu spielen.",
+  "desktop.mobile.title": () => "raid0 ist ein Desktop-Spiel",
+  "desktop.mobile.text": () => "raid0 lässt sich nicht auf einem Smartphone oder Tablet spielen. Öffne es auf einem Computer, um zu spielen.",
   "desktop.mobile.discord": () => "Dem Discord beitreten",
 
   "desktop.icon.newNote": () => "Neue Notiz",
@@ -91,8 +93,8 @@ export default {
 
   "desktop.menu.settings": () => "Einstellungen …",
   "desktop.menu.intro": () => "Einführung …",
-  "desktop.menu.github": () => "Backbone auf GitHub",
-  "desktop.menu.discord": () => "Backbone auf Discord",
+  "desktop.menu.github": () => "raid0 auf GitHub",
+  "desktop.menu.discord": () => "raid0 auf Discord",
   "desktop.menu.report": () => "Problem melden",
   "desktop.menu.restoreGuide": () => "Erste Schritte wiederherstellen",
   "desktop.menu.whatsNew": () => "Neuigkeiten",

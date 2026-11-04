@@ -15,7 +15,7 @@ import { bootedMachine, hypervisor, skipTo, withServer, isoOf, withImage, withSt
 // withServer: dev3 is a free server cabled to the desk's router. The console's login lives in the tab's session storage.
 const store = new Map<string, string>();
 Object.assign(globalThis, { sessionStorage: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v) } });
-const logIn = (m: { id: string; bootUntil?: number }) => store.set(`backbone.ui.console.${m.id}.login`, JSON.stringify(m.bootUntil ?? 0));
+const logIn = (m: { id: string; bootUntil?: number }) => store.set(`raid0.ui.console.${m.id}.login`, JSON.stringify(m.bootUntil ?? 0));
 
 function server(year: number, os: "lunix" | "windoors" | null = "lunix") {
   const s = withServer(newGame(5));

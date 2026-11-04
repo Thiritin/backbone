@@ -1,4 +1,4 @@
-# Backbone first hour
+# raid0 first hour
 
 This script follows a new player from the first second of a new game to the tenth customer, using the numbers in the [economy model](economy/README.md). At 1×, one game day lasts one real minute, so those ten customers arrive after about an hour of play, between 9 February and 16 March 2005.
 

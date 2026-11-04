@@ -6,7 +6,7 @@ import { uiSound, useFocus, useStore } from "../../store";
 import { useShell, type Line, type Open } from "./shell";
 import "./terminal.css";
 
-const SETUP_KEY = "backbone.shell";
+const SETUP_KEY = "raid0.shell";
 
 // The first Terminal ever opened installs zsh by itself: two typos and a fist on the desk, then completion.
 const INTRO: { cmd: string; out: string[]; thump?: boolean }[] = [

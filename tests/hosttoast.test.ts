@@ -20,7 +20,7 @@ describe("HOSTtoast", () => {
   it("seeds the majors on Premium, Rackspice on Diamond and small rivals as Registered, and fills old saves", () => {
     const s = newGame(5);
     expect(s.competitors.slice(0, 6).map((r) => [r.id, r.tier, r.badges])).toEqual([
-      ["ionose", "premium", 1], ["ovheat", "premium", 1], ["hetzna", "premium", 1], ["rackspice", "diamond", 1], ["nitradoh", "premium", 1], ["wp-engyne", "premium", 1],
+      ["ionose", "premium", 1], ["ovheat", "premium", 1], ["hetzler", "premium", 1], ["rackspice", "diamond", 1], ["nitradoh", "premium", 1], ["wp-engyne", "premium", 1],
     ]);
     expect(s.competitors.slice(6).every((r) => r.tier === "registered" && r.badges === 0)).toBe(true);
     // Their 2005 listing is what their scores were set with.
@@ -119,11 +119,11 @@ describe("HOSTtoast", () => {
   it("names a host of the year per product, seals clean years and counts badges as trust", () => {
     const s = newGame(5);
     const reviews = (stars: number) => Array.from({ length: 10 }, () => ({ stars: stars * 4, count: 4 }));
-    const list = s.competitors.slice(0, 6).map((r) => ({ ...r, reviews: reviews(r.id === "hetzna" ? 4.5 : 3) }));
+    const list = s.competitors.slice(0, 6).map((r) => ({ ...r, reviews: reviews(r.id === "hetzler" ? 4.5 : 3) }));
     list[0] = { ...list[0], down: [{ month: 20, hours: 3 }] };
     const won = yearAwards(list, 2006, null);
-    expect(won.filter((a) => a.kind === "host").map((a) => [a.product, a.id])).toEqual([["webHosting", "ionose"], ["vps", "hetzna"], ["gameServer", "ovheat"]]);
-    expect(won.filter((a) => a.kind === "uptime").map((a) => a.id)).toEqual(["ovheat", "hetzna", "rackspice", "nitradoh", "wp-engyne"]);
+    expect(won.filter((a) => a.kind === "host").map((a) => [a.product, a.id])).toEqual([["webHosting", "ionose"], ["vps", "hetzler"], ["gameServer", "ovheat"]]);
+    expect(won.filter((a) => a.kind === "uptime").map((a) => a.id)).toEqual(["ovheat", "hetzler", "rackspice", "nitradoh", "wp-engyne"]);
     const you = yearAwards(list, 2006, { score: 4.8, count: 30, sells: ["vps"], clean: true });
     expect(you.find((a) => a.product === "vps")?.id).toBe("you");
     expect(you.some((a) => a.kind === "uptime" && a.id === "you")).toBe(true);
