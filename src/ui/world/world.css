@@ -29,6 +29,13 @@
 .w-wall-top { fill: var(--w-wall-top); }
 .w-wall-end { fill: var(--w-wall-end); }
 .w-skirt { fill: var(--w-skirt); }
+.w-night .w-wall-l { fill: oklch(from var(--w-wall-l) calc(l - 0.1) c h); }
+.w-night .w-wall-r { fill: oklch(from var(--w-wall-r) calc(l - 0.1) c h); }
+.w-night .w-wall-top { fill: oklch(from var(--w-wall-top) calc(l - 0.1) c h); }
+.w-band-face { fill: var(--band); }
+.w-band-edge { fill: oklch(from var(--band) calc(l - 0.14) c h); }
+.w-night .w-band-face { fill: oklch(from var(--band) calc(l - 0.1) c h); }
+.w-night .w-band-edge { fill: oklch(from var(--band) calc(l - 0.24) c h); }
 .w-mesh-line { fill: none; stroke: oklch(0.55 0.012 252); stroke-width: 0.5; }
 .w-post { fill: oklch(0.5 0.012 252); }
 .w-tray { fill: oklch(0.45 0.012 252); }

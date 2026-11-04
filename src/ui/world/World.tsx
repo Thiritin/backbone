@@ -368,7 +368,7 @@ export function World() {
       <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`} viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
         <Defs />
-        <Walls w={w} h={h} dc={!home && !office} />
+        <Walls w={w} h={h} dc={!home && !office} color={game.company.color} />
         {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></>
           : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={w} h={h} />}
         {back}

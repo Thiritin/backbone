@@ -70,3 +70,7 @@
 .ha-threshold { --c: oklch(0.55 0.012 250); }
 .ha-door-panel { fill: oklch(0.7 0.02 250); stroke: oklch(0.5 0.02 250); stroke-width: 0.8; }
 .w-night .ha-door-panel { fill: oklch(0.6 0.02 250); stroke: oklch(0.4 0.02 250); }
+
+.ha-band-tone { --t: oklch(from var(--band) calc(l + 0.06) c h); --l: var(--band); --r: oklch(from var(--band) calc(l - 0.08) c h); --e: oklch(from var(--band) calc(l - 0.18) c h); }
+.ha-logo-glyph { color: var(--w-wall-top); }
+.w-night .ha-logo-glyph { color: oklch(from var(--w-wall-top) calc(l - 0.1) c h); }

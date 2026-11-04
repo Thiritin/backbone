@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Every room now has a coloured band around its walls in your company colour, and the NOC room shows your company logo.
 - Rain, snow and clouds now stay behind the glass of every window.
 - The basement shelf no longer covers the desk, office staff leave when their shift ends, and the map names your hall in your language.
 - Provider websites without an open datacenter show a short notice, and a broken web page shows an error page instead of freezing the game.

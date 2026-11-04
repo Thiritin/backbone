@@ -22,7 +22,7 @@ const Toaster = createLucideIcon("toaster", [
   ["path", { d: "M21 12h1.5", key: "lever" }],
 ]);
 
-const ICONS: Record<string, LucideIcon> = {
+export const ICONS: Record<string, LucideIcon> = {
   server: Server, cloud: Cloud, zap: Zap, globe: Globe, rocket: Rocket, database: Database,
   cpu: Cpu, shield: Shield, leaf: Leaf, mountain: Mountain, waves: Waves, flame: Flame,
   wolf: Wolf, fox: Fox, cat: Cat, toaster: Toaster,

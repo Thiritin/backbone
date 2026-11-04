@@ -1,6 +1,8 @@
-import { useId, type ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 import type { Facing } from "../../sim/20-world/layout";
-import { at3, onX, onY, pts, Prism } from "./draw";
+import type { Company } from "../../sim/50-state";
+import { ICONS } from "../apps/company";
+import { at3, onX, onY, pts, Prism, WallBand } from "./draw";
 import { iso, type Pt } from "./grid";
 import "./hall-art.css";
 
@@ -276,16 +278,28 @@ export function MainBoard({ x, y, axis = "y", ghost }: { x: number; y: number; a
 
 // The letters N, O and C on the left wall over `len` tiles from tile row y.
 const LETTERS = ["M0 0H6L14 16V0H20V28H14L6 12V28H0Z", "M0 0H20V28H0ZM6 6V22H14V6Z", "M0 0H20V6H6V22H20V28H0Z"];
-export function NocLettering({ y, len = 3, ghost }: { y: number; len?: number; ghost?: boolean }) {
-  const t = onX(0, y + len, 0), span = 20 * 3 + 2 * 8, x0 = (len * 32 - span) / 2, z = 40;
+export function NocLettering({ y, len = 3, ghost, company }: { y: number; len?: number; ghost?: boolean; company?: Company }) {
+  const t = onX(0, y + len, 0), z = 40, k = company ? 0.8 : 1, LOGO = 22, GAP = 6;
+  const span = 20 * 3 + 2 * 8, total = span * k + (company ? LOGO + GAP : 0), x0 = (len * 32 - total) / 2;
+  const Icon = company ? ICONS[company.logo] ?? ICONS.server : null;
+  const lx = x0 + (company ? LOGO + GAP : 0);
   return ghosted(ghost, (
-    <g transform={`${t} translate(${x0} ${-z - 28})`}>
-      {LETTERS.map((d, i) => (
-        <g key={i} transform={`translate(${i * 28} 0)`}>
-          <path className="ha-c ha-letter-shade" d={d} transform="translate(2.4 2.4)" fillRule="evenodd" />
-          <path className="ha-c ha-letter" d={d} fillRule="evenodd" />
+    <g transform={t}>
+      {company && Icon && (
+        <g transform={`translate(${x0} ${-z - 25})`} style={{ "--c": company.color } as CSSProperties}>
+          <rect className="ha-c ha-letter-shade" x={2} y={2} width={LOGO} height={LOGO} rx={4} />
+          <rect className="ha-c" x={0} y={0} width={LOGO} height={LOGO} rx={4} />
+          <Icon className="ha-logo-glyph" x={3.5} y={3.5} size={15} strokeWidth={2.2} />
         </g>
-      ))}
+      )}
+      <g transform={`translate(${lx} ${-z - 28 * k}) scale(${k})`}>
+        {LETTERS.map((d, i) => (
+          <g key={i} transform={`translate(${i * 28} 0)`}>
+            <path className="ha-c ha-letter-shade" d={d} transform="translate(2.4 2.4)" fillRule="evenodd" />
+            <path className="ha-c ha-letter" d={d} fillRule="evenodd" />
+          </g>
+        ))}
+      </g>
     </g>
   ));
 }
@@ -324,9 +338,19 @@ export function Hatch({ x, y, w, h, m = 0.3 }: { x: number; y: number; w: number
 }
 
 // A cut-away wall along an axis-aligned edge from grid point (x0, y0) to (x1, y1); about 10 px high.
-export function StubWall({ x0, y0, x1, y1 }: { x0: number; y0: number; x1: number; y1: number }) {
-  const t = 0.07;
-  return <Prism x0={Math.min(x0, x1) - t} x1={Math.max(x0, x1) + t} y0={Math.min(y0, y1) - t} y1={Math.max(y0, y1) + t} z1={10} tone="ha-t ha-stub" />;
+export function StubWall({ x0, y0, x1, y1, color }: { x0: number; y0: number; x1: number; y1: number; color?: string }) {
+  const t = 0.07, b = { x0: Math.min(x0, x1) - t, x1: Math.max(x0, x1) + t, y0: Math.min(y0, y1) - t, y1: Math.max(y0, y1) + t };
+  return (
+    <g style={color ? ({ "--band": color } as CSSProperties) : undefined}>
+      <Prism {...b} z1={10} tone="ha-t ha-stub" />
+      {color && <Prism {...b} x0={b.x0 - 0.005} y0={b.y0 - 0.005} x1={b.x1 + 0.005} y1={b.y1 + 0.005} z0={6} z1={10} tone="ha-t ha-band-tone" />}
+    </g>
+  );
+}
+
+// The company band along a full wall from grid point (x0, y0) to (x1, y1), for room walls built from prisms.
+export function RoomBand({ x0, y0, x1, y1, color }: { x0: number; y0: number; x1: number; y1: number; color: string }) {
+  return <g style={{ "--band": color } as CSSProperties}><WallBand a={iso(x0, y0)} b={iso(x1, y1)} /></g>;
 }
 
 // A gap in a wall at the tile (x, y) with the door panel standing open. axis "x" is a wall along x at the top of the

@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 import type { Cage, Fixture, Tile } from "../../sim/20-world/layout";
 import type { Sky } from "../../sim/20-world/weather";
 import { RackFront, type RackItem } from "../art/RackFront";
@@ -34,17 +34,25 @@ export function Prism({ x0, y0, x1, y1, z0 = 0, z1, tone }: { x0: number; y0: nu
   );
 }
 
+// The company-colour band around the walls: a face with a darker line above and below, at the same height in every room.
+export const BAND_Z = 22;
+export function WallBand({ a, b }: { a: Pt; b: Pt }) {
+  const strip = (z0: number, z1: number, c: string) => <polygon className={c} points={pts(up(a, z0), up(b, z0), up(b, z1), up(a, z1))} />;
+  return <g className="w-band">{strip(BAND_Z, BAND_Z + 5, "w-band-face")}{strip(BAND_Z - 1, BAND_Z, "w-band-edge")}{strip(BAND_Z + 5, BAND_Z + 6, "w-band-edge")}</g>;
+}
+
 // The two far walls with a lit top edge and skirting; a datacenter hangs a cable tray with cables along both.
-export function Walls({ w, h, dc }: { w: number; h: number; dc: boolean }) {
+export function Walls({ w, h, dc, color }: { w: number; h: number; dc: boolean; color?: string }) {
   const O = iso(0, 0), X = iso(w, 0), Y = iso(0, h), top = up(O, WALL), OUT_L = iso(-0.25, 0), OUT_R = iso(0, -0.25);
   return (
-    <g className="w-walls" pointerEvents="none">
+    <g className="w-walls" pointerEvents="none" style={color ? ({ "--band": color } as CSSProperties) : undefined}>
       <defs>
         <pattern id="w-mesh" width="5" height="5" patternUnits="userSpaceOnUse"><path className="w-mesh-line" d="M0,0 L5,5 M5,0 L0,5" /></pattern>
         <pattern id="w-rack-mesh" width="7" height="7" patternUnits="userSpaceOnUse"><path className="w-rack-mesh-line" d="M0,0 L7,7 M7,0 L0,7" /></pattern>
       </defs>
       <polygon className="w-wall-l" points={pts(O, Y, up(Y, WALL), top)} />
       <polygon className="w-wall-r" points={pts(O, X, up(X, WALL), top)} />
+      {color && [Y, X].map((E, i) => <WallBand key={i} a={O} b={E} />)}
       <polygon className="w-skirt" points={pts(O, Y, up(Y, 3), up(O, 3))} />
       <polygon className="w-skirt" points={pts(O, X, up(X, 3), up(O, 3))} />
       <polygon className="w-wall-end" points={pts(Y, add(Y, OUT_L), up(add(Y, OUT_L), WALL), up(Y, WALL))} />
