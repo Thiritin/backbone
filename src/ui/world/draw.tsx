@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import type { Cage, Fixture, Tile } from "../../sim/20-world/layout";
 import type { Sky } from "../../sim/20-world/weather";
 import { RackFront, type RackItem } from "../art/RackFront";
@@ -203,6 +203,17 @@ export function CellarWindow({ f, fan, spin, night, sky }: { f: Fixture; fan?: b
   );
 }
 
+// Clips sky content to the glass rectangle, with an id unique per window instance.
+export function Pane({ x, y, w, h, children }: { x: number; y: number; w: number; h: number; children: ReactNode }) {
+  const id = `pane${useId().replace(/\W/g, "")}`;
+  return (
+    <>
+      <clipPath id={id}><rect x={x} y={y} width={w} height={h} /></clipPath>
+      <g clipPath={`url(#${id})`}>{children}</g>
+    </>
+  );
+}
+
 // Flat clouds in the sky layer: two on partly cloudy days, three on grey ones, all inside the pane.
 export function Clouds({ sky, night, x, y, w, h }: { sky: Sky; night: boolean; x: number; y: number; w: number; h: number }) {
   if (sky !== "partly" && sky !== "cloud") return null;
@@ -210,7 +221,7 @@ export function Clouds({ sky, night, x, y, w, h }: { sky: Sky; night: boolean; x
   const spots = grey ? [[0.28, 0.3], [0.62, 0.5], [0.5, 0.18]] : [[0.3, 0.32], [0.7, 0.55]];
   const cls = night ? "w-cloud-night" : grey ? "w-cloud-grey" : "w-cloud";
   return (
-    <g>
+    <Pane x={x} y={y} w={w} h={h}>
       {spots.map(([fx, fy]) => {
         const cx = x + w * fx, base = y + h * fy + r;
         return (
@@ -223,7 +234,7 @@ export function Clouds({ sky, night, x, y, w, h }: { sky: Sky; night: boolean; x
           </g>
         );
       })}
-    </g>
+    </Pane>
   );
 }
 
@@ -241,10 +252,12 @@ export function Precip({ sky, night, x, y, w, h }: { sky: Sky; night: boolean; x
   const shift = (a: number[][]) => a.map(([u, v]) => [(u + 0.5) % 1, (v + 0.5) % 1]);
   const set = rain ? DROPS : FLAKES;
   return (
-    <g className={rain ? "w-precip" : "w-precip w-precip-slow"}>
-      <g className="w-set-a">{set.map(mark)}</g>
-      <g className="w-set-b">{shift(set).map(mark)}</g>
-    </g>
+    <Pane x={x} y={y} w={w} h={h}>
+      <g className={rain ? "w-precip" : "w-precip w-precip-slow"}>
+        <g className="w-set-a">{set.map(mark)}</g>
+        <g className="w-set-b">{shift(set).map(mark)}</g>
+      </g>
+    </Pane>
   );
 }
 

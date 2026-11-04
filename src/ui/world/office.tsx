@@ -1,7 +1,7 @@
 // The office room's fixtures, drawn to docs/design/world-art.md.
 import { SECTION_W, type Fixture } from "../../sim/20-world/layout";
 import type { Sky } from "../../sim/20-world/weather";
-import { at3, Clouds, Corkboard, Desk, DeskLamp, Monitor, onX, onY, Precip, Prism, pts, Tower, WALL } from "./draw";
+import { at3, Clouds, Corkboard, Desk, DeskLamp, Monitor, onX, onY, Pane, Precip, Prism, pts, Tower, WALL } from "./draw";
 import { iso } from "./grid";
 import "./office.css";
 
@@ -72,6 +72,7 @@ export function OfficeWindow({ f, night, sky }: { f: Fixture; night: boolean; sk
       <rect className="w-reveal" x="3" y="-1" width={len - 6} height={H + 1} />
       <rect className={night ? "w-sky-night" : sky === "sun" || sky === "partly" ? "w-sky" : "w-sky-grey"} x="6" y="2" width={len - 12} height={H - 4} />
       <Clouds sky={sky} night={night} x={6} y={2} w={len - 12} h={H - 4} />
+      <Pane x={6} y={2} w={len - 12} h={H - 4}>
       {towers.filter(([x]) => x < len - 12).map(([x, h], i) => (
         <g key={x}>
           <rect className={night ? "w-city-night" : "w-city"} x={6 + x} y={H - 2 - h} width="6" height={h} />
@@ -79,6 +80,7 @@ export function OfficeWindow({ f, night, sky }: { f: Fixture; night: boolean; sk
           {sky === "snow" && <rect className="w-snow-fill" x={6 + x} y={H - 2 - h} width="6" height="1.5" />}
         </g>
       ))}
+      </Pane>
       <Precip sky={sky} night={night} x={6} y={2} w={len - 12} h={H - 4} />
       <rect className="w-frame-in" x="4" y="0" width={len - 8} height="2" />
       <rect className="w-frame-in" x="4" y={H - 2} width={len - 8} height="2" />
