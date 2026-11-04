@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The travel map fades the street detail smoothly into the regional map when you zoom out, and city names on the map follow your language.
 - You and your staff now walk to the racks you work on and show your progress over the rack, and the order list by the clock lets you cancel what is still waiting.
 - Hands-on work in the basement, offices and every datacenter now takes game time: you queue the job, the work happens over minutes, and the checklist ticks when it is done.
 - Build and furnish a NOC room in your own hall, and use the terminal desk in rented datacenter rooms to reach your desktop on site; the main distribution board is now drawn as a real switchgear panel.

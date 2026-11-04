@@ -114,3 +114,4 @@
 .wm:not([data-z="4"]) .geo-major-case { stroke-width: 2.2px; }
 .wm:not([data-z="4"]) .geo-major { stroke-width: 1.2px; }
 .wm:not([data-z="4"]) .tr-streets { stroke: oklch(0.8 0.015 80); stroke-width: 0.8px; }
+.geo-patch { opacity: clamp(0, calc((0.008 - var(--k, 0)) / 0.006), 1); }

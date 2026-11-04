@@ -4,6 +4,7 @@ import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { hasMark, Logo } from "../art/logos";
 import { CABLES, CITIES, COAST, type City } from "./world-data";
+import { cityName } from "../cityName";
 import "./map.css";
 
 export type { City };
@@ -284,7 +285,7 @@ const Base = memo(function Base({ onCity }: { onCity: (c: City) => void }) {
       <g className="wm-cities">
         {CITIES.map((c) => (
           <g key={c.code} className={`wm-city wm-t${c.tier}`} transform={`translate(${X(c.lon)} ${Y(c.lat)})`} onClick={() => onCity(c)}>
-            <g className="wm-s"><circle r="2.2" /><text x="5" y="3.5">{c.name}</text></g>
+            <g className="wm-s"><circle r="2.2" /><text x="5" y="3.5">{cityName(c.name)}</text></g>
           </g>
         ))}
       </g>

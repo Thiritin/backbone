@@ -22,3 +22,20 @@ describe("map geo data", () => {
     }
   });
 });
+
+describe("map names", () => {
+  it("every map city with a region shows through cityName", async () => {
+    const { cityName } = await import("../src/ui/cityName");
+    const { REGIONS } = await import("../src/sim/20-world/datacenters");
+    for (const c of CITIES.filter((c) => REGIONS.some((r) => r.city === c.name))) expect(cityName(c.name)).toBeTruthy();
+  });
+  it("loading a save renames the basement in the current language", async () => {
+    const { newGame } = await import("../src/sim/50-state");
+    const { serialize, deserialize } = await import("../src/sim/91-save/save");
+    const s = newGame(1);
+    const b = s.locations.find((l) => l.space === "basement")!;
+    const name = b.name;
+    b.name = "stale name";
+    expect(deserialize(serialize(s)).locations.find((l) => l.space === "basement")!.name).toBe(name);
+  });
+});
