@@ -5,14 +5,13 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { discordChunks, isReleaseTag, notesSince, previousRelease } from './release-lib.mjs';
+import { discordChunks, isReleaseTag, notesSince, previousTag } from './release-lib.mjs';
 
 const run = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
 
-/** The bullets of CHANGELOG.md in the working tree that the previous published release lacks. Throws when there are none. */
+/** The bullets of CHANGELOG.md in the working tree that the previous release lacks. Throws when there are none. */
 export function releaseNotes(tag) {
-  const releases = JSON.parse(run('gh', ['release', 'list', '--json', 'tagName,publishedAt,isDraft', '--limit', '100'])).filter((r) => !r.isDraft);
-  const prev = previousRelease(releases, tag);
+  const prev = previousTag(run('git', ['tag', '--list', 'v*']).split('\n'), tag);
   const old = prev ? run('git', ['show', `${prev}:CHANGELOG.md`]) : null;
   const notes = notesSince(old, readFileSync('CHANGELOG.md', 'utf8'));
   if (!notes) throw new Error(`CHANGELOG.md has no bullets added since ${prev ?? 'the start'}. Add bullets on main before cutting a release.`);

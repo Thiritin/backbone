@@ -1,7 +1,7 @@
 // Pure helpers for cutting a release: tags, versions, notes and Discord chunks. No IO, so tests/release.test.ts covers them.
 export const SITE = 'https://raid0.dev';
 export const DISCORD_LIMIT = 2000;
-export const FIRST_VERSION = '1.0.0';
+export const STABLE_VERSION = '1.0.0';
 
 const SEMVER = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
@@ -20,14 +20,10 @@ export const latestTag = (tags) => tags.filter(isReleaseTag).sort(compare).at(-1
 
 /**
  * The tag a new release is cut as. `bump` is patch, minor, major or an explicit X.Y.Z. A raised major number needs
- * `approvedMajor`. Without any semver tag the only accepted version is the first one, 1.0.0.
+ * `approvedMajor`, except the explicit first stable version 1.0.0 while the latest release is still 0.x.
  */
 export function nextTag(tags, bump, approvedMajor = false) {
-  const latest = latestTag(tags);
-  if (!latest) {
-    if (bump !== FIRST_VERSION) throw new Error(`No v*.*.* release exists yet. The first release must be cut as ${FIRST_VERSION}.`);
-    return `v${FIRST_VERSION}`;
-  }
+  const latest = latestTag(tags) ?? 'v0.0.0';
   const [major, minor, patch] = parseTag(latest);
   let next;
   if (bump === 'patch') next = [major, minor, patch + 1];
@@ -37,22 +33,15 @@ export function nextTag(tags, bump, approvedMajor = false) {
   else throw new Error(`Bump must be patch, minor, major or X.Y.Z, got "${bump}".`);
   const tag = `v${next.join('.')}`;
   if (compare(tag, latest) <= 0) throw new Error(`${tag} is not newer than the latest release ${latest}.`);
-  if (next[0] > major && !approvedMajor) {
+  const firstStable = major === 0 && bump === STABLE_VERSION;
+  if (next[0] > major && !approvedMajor && !firstStable) {
     throw new Error(`${tag} raises the major version. Only the user may decide that: ask them, and pass --user-approved-major only when they explicitly asked for a major release in this conversation.`);
   }
   return tag;
 }
 
-/**
- * The release whose CHANGELOG.md the new notes are measured against: the highest semver release below `tag`, or when
- * there is none, the most recently published other release. `releases` is [{ tagName, publishedAt }].
- */
-export function previousRelease(releases, tag) {
-  const others = releases.filter((r) => r.tagName !== tag);
-  const semver = others.map((r) => r.tagName).filter((t) => isReleaseTag(t) && (!isReleaseTag(tag) || compare(t, tag) < 0));
-  if (semver.length) return latestTag(semver);
-  return others.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0]?.tagName ?? null;
-}
+/** The highest release tag below `tag`, whose CHANGELOG.md the new notes are measured against; null for the first release. */
+export const previousTag = (tags, tag) => latestTag(tags.filter((t) => isReleaseTag(t) && compare(t, tag) < 0));
 
 /** [{ date, bullets }] in file order (newest first) from CHANGELOG.md text. */
 export function parseDays(text) {
