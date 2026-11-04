@@ -12,6 +12,7 @@ export default {
   "orderSteps.field.city": () => "Ville",
   "orderSteps.field.email": () => "E-mail",
   "orderSteps.saveCustomer": () => "Enregistrer le client",
+  "orderSteps.waitingAccount": () => "En attente du compte",
   "orderSteps.createQuote": () => "Créer un devis",
   "orderSteps.noQuotes": () => "Aucun devis pour l'instant.",
   "orderSteps.quote": (p) => `Devis ${p.number}`,

@@ -94,6 +94,7 @@
 .cx-form { display: flex; flex-direction: column; gap: 10px; max-width: 460px; }
 .cx-form select, .cx-form input { width: 100%; }
 .cx-group { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); }
+.cx-card { margin-bottom: 20px; padding: 14px; }
 .cx-group legend { padding: 0 6px; font-weight: 600; font-size: 12px; }
 .cx-summary { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; font-size: 12px; }
 .cx-summary dt { color: var(--muted); }

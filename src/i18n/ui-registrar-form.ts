@@ -6,5 +6,6 @@ export default {
   "registrarForm.customer": () => "Customer record",
   "registrarForm.submitted": () => "Submitted",
   "error.ownerMismatch": () => "The owner does not match the customer record.",
+  "error.ownerField": (p) => `${p.field} differs: account "${p.account}", registrar "${p.registrar}".`,
   "error.authCode": () => "The auth code is wrong.",
 } satisfies Dict;

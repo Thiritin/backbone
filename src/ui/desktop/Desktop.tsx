@@ -28,6 +28,7 @@ import { watchUpdates } from "../update";
 import { Travel } from "../travel/Travel";
 import { useTrip } from "../travel/route";
 import type { ChangelogDay } from "../changelog";
+import { escapeStep } from "./escape";
 
 const AUTOSAVE_MS = 15_000;
 
@@ -99,6 +100,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
   // Space pauses; 1 to 3 pick 1×, 2× and 4×, and 4 skips ahead.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return void escapeStep(e, useStore.getState());
       if (useStore.getState().game.player.until > useStore.getState().game.hour) return;
       if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog], [role=menu]")) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }

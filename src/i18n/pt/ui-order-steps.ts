@@ -12,6 +12,7 @@ export default {
   "orderSteps.field.city": () => "Cidade",
   "orderSteps.field.email": () => "E-mail",
   "orderSteps.saveCustomer": () => "Guardar cliente",
+  "orderSteps.waitingAccount": () => "A aguardar a conta",
   "orderSteps.createQuote": () => "Criar orçamento",
   "orderSteps.noQuotes": () => "Ainda não há orçamentos.",
   "orderSteps.quote": (p) => `Orçamento ${p.number}`,

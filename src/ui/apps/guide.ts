@@ -27,7 +27,8 @@ const firstServer = (s: GameState) => s.devices.find((d) => modelById(d.model).k
 // Where each tutorial step happens and what the Open button shows there.
 export function stepOf(s: GameState, id: StepId): Step {
   const home = basement(s), server = firstServer(s);
-  const mailApp = supportApp(s).name;
+  // Customer mail is read in the support desk, or the provider's inbox for an external mail plan; otherwise in Pear Mail.
+  const mail = supportApp(s), inSupport = !!s.desk || s.company.mail.kind === "external", mailApp = s.desk ? mail.name : inSupport ? mail.brand : "Pear Mail", mailWin = inSupport ? "Support" : "Pear Mail";
   switch (id) {
     case "bank":
       return { title: t("guide.step.bank"), text: t("apps.guide.step.bank"), app: "Browser", focus: { kind: "url", id: HOME_URL } };
@@ -83,7 +84,15 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "flyers":
       return { title: t("guide.step.flyers"), text: t("apps.guide.step.flyers"), app: "Browser", focus: { kind: "url", id: `${displayHost(FLYER_HOST)}/` } };
     case "firstCustomer":
-      return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: s.desk ? mailApp : "Pear Mail" }), app: s.desk ? "Support" : "Pear Mail" };
+      return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: mailApp }), app: mailWin };
+    case "orderAccount":
+    case "orderProvision":
+    case "orderAccess":
+      return { title: t(`guide.step.${id}`), text: t(`apps.guide.step.${id}`, { app: mailApp }), app: mailWin };
+    case "orderDomain":
+      return { title: t("guide.step.orderDomain"), text: t("apps.guide.step.orderDomain", { app: mailApp }), app: "Browser", focus: { kind: "url", id: s.registrar ? registrarUrl(s) : `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}` } };
+    case "sendInvoice":
+      return { title: t("guide.step.sendInvoice"), text: t("apps.guide.step.sendInvoice"), app: "Books" };
     case "loan":
       return { title: t("guide.step.loan"), text: t("apps.guide.step.loan"), app: "Browser", focus: { kind: "url", id: s.bank ? `${bankUrl(s.bank.id)}banking/loans` : HOME_URL } };
     case "tenCustomers":

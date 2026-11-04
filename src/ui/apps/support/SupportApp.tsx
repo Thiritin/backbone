@@ -232,7 +232,8 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           <span>{r.city}</span>
           <span>{t("support.slaLine", { sla: SLA_LABEL[r.sla], uptime: (SLAS[r.sla].uptime * 100).toFixed(SLAS[r.sla].uptime >= 0.999 ? 2 : 1), h: SLAS[r.sla].responseHours })}</span>
           <InvoicePill r={r} />
-          {tk.status === "open" && gates.slaTimers
+          {r.status === "accepted" && <span className={`pill ${r.deadline - game.hour <= 24 ? "warn" : ""}`}><Timer /><span>{t("support.orderLeft", { h: Math.max(0, r.deadline - game.hour) })}</span></span>}
+          {tk.status === "open" && gates.slaTimers && r.status !== "accepted"
             ? <span className={`pill ${left < 0 ? "bad" : left <= (tk.dueAt - tk.createdAt) / 4 ? "warn" : ""}`}><Timer /><span>{t("support.toRespond", { h: Math.max(0, left) })}</span></span>
             : <span className="pill">{statusOf(tk)}</span>}
         </div>
@@ -254,6 +255,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
         </ul>
       )}
 
+      <div className={r.spec ? "order-split" : "order-flat"}>
       <div className="thread">
         {r.thread.map((m, i) => (
           <div key={i} className={`msg${m.from === "you" ? " you" : ""}`}>
@@ -276,6 +278,7 @@ function OrderThread({ tk, r, gates }: { tk: Ticket; r: SalesRequest; gates: Gat
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

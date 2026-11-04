@@ -211,6 +211,7 @@ export default {
   "support.busyUntil": (p) => `Busy until ${p.time}`,
   "support.received": (p) => `Received ${p.time}`,
   "support.toRespond": (p) => `${p.h} h to respond`,
+  "support.orderLeft": (p) => `Due in ${p.h} h`,
   "support.slaLine": (p) => `${p.sla} SLA · ${p.uptime}% · ${p.h} h response`,
   "support.revenue": (p) => `Revenue ${p.amount} a month`,
   "support.met": () => "Met",

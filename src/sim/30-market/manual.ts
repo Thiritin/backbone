@@ -257,9 +257,9 @@ function settle(s: GameState, r: SalesRequest): SimEvent | null {
 export function acceptQuote(s: GameState, r: SalesRequest, events: SimEvent[]): void {
   const due = s.hour + REQUEST_HOURS;
   editRequest(s, r.id, () => ({ status: "accepted", replyAt: null, deadline: due }));
+  events.push({ app: "Support", key: "event.orderAccepted", params: { name: requestName(r) } });
   if (!r.ticketId) return;
   setTicket(s, r.ticketId, { status: "open", unread: true, dueAt: due, updatedAt: s.hour });
-  events.push({ app: "Support", key: "event.orderAccepted", params: { name: requestName(r) } });
   if (!s.autoOrders || !canAutomate(s) || reviewing(s, r.product)) return;
   editRequest(s, r.id, () => ({ route: "auto" }));
   for (const step of ORDER_STEPS.slice(1)) {

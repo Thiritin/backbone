@@ -1,7 +1,7 @@
 .custom-steps { display: grid; gap: 10px; max-height: 55%; overflow: auto; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .steps .step { display: grid; grid-template-columns: 18px 150px minmax(0, 1fr); align-items: center; gap: 4px 8px; padding: 8px 10px; border-radius: var(--ar-pane); border: var(--ar-bw) solid var(--line); font-size: 12.5px; }
-.steps .step.now { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 6%, transparent); }
+.steps .step.now { border-color: var(--line-strong); background: color-mix(in oklch, var(--text) 3%, transparent); }
 .steps .step.done .step-k, .steps .step.done .step-v { color: var(--text-2); }
 .steps .step-i svg.lucide { width: 14px; height: 14px; color: var(--ok); }
 .steps .step-k { font-weight: 600; }
@@ -57,3 +57,14 @@
 .attach-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border: var(--ar-bw, 1px) solid var(--line); border-radius: 4px; background: var(--field); font: inherit; color: var(--text); }
 .attach-chip svg { width: 14px; height: 14px; }
 .custom-steps .step-wait { margin: 0 0 8px; color: var(--text-2); }
+
+.order-flat { display: contents; }
+.order-split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.order-split > .thread { min-height: 0; border-right: 1px solid var(--line); }
+.order-split > :not(.thread) { min-height: 0; overflow: auto; }
+.order-split .custom-steps { max-height: none; }
+.order-split > :not(.thread) { align-self: start; }
+/* A disabled primary button keeps its label readable and shows hatching instead of fading. */
+.steps .btn.primary:disabled {
+  opacity: 1; color: var(--text) !important; background-color: var(--win, #fff) !important; background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--text) 10%, transparent) 0 4px, transparent 4px 8px) !important; border: 1px dashed var(--line-strong); text-shadow: none; box-shadow: none;
+}

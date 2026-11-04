@@ -114,3 +114,6 @@
 .books-markpaid-from { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* A row reached with the arrow keys scrolls clear of the sticky header. */
 .books tbody tr { scroll-margin-top: 32px; }
+.books-new-form .btn.primary:disabled {
+  opacity: 1; color: var(--text) !important; background-color: var(--win, #fff) !important; background-image: repeating-linear-gradient(135deg, color-mix(in oklch, var(--text) 10%, transparent) 0 4px, transparent 4px 8px) !important; border: 1px dashed var(--line-strong); text-shadow: none; box-shadow: none;
+}

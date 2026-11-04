@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- After your first quote is accepted the guide walks you through creating the customer, registering the domain, setting up hosting and sending the access data and the first invoice, the customer form is prefilled from the order, and Escape closes the front window.
 - Two jobs can no longer work on the same server or rack slot at the same time: the second one shows Belegt until the first one is done or cancelled.
 - Alerts no longer pop up over a close-up you have open: a small chip with a count waits under the clock, and the alert appears when you close the close-up or press the chip.
 - The rack close-up has no VORNE and HINTEN labels and no round turntable any more: it stands on a flat floor, turns with a key, and zooms with the wheel, the plus and minus keys and a minimap for tall racks.

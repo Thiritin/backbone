@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 // The steps of a custom order, domain renewals and upgrades of custom services (30-market/manual.ts).
 import { shopActive } from "../80-business/shop";
 import { authCode, domainFee, domainOf, extend } from "../30-customers/registry";
@@ -56,7 +57,9 @@ export function registerOrderDomain(s: GameState, ticketId: string, owner?: Addr
   if (error) return fail(error);
   const r = orderOf(s, f.t)!, c = s.customers.find((x) => x.id === r.customerId)!;
   if (!shopRegisters(s, r)) {
-    if (!owner || OWNER_FIELDS.some((k) => (owner[k] ?? "").trim() !== (c.address[k] ?? ""))) return fail("error.ownerMismatch");
+    if (!owner) return fail("error.ownerMismatch");
+    const differs = OWNER_FIELDS.find((k) => (owner[k] ?? "").trim() !== (c.address[k] ?? ""));
+    if (differs) return { ok: false, error: "error.ownerField", params: { field: t(`orderSteps.field.${differs}`), account: c.address[differs] ?? "", registrar: (owner[differs] ?? "").trim() } };
     if (r.owned && auth?.trim().toUpperCase() !== authCode(s.seed, r.id)) return fail("error.authCode");
   }
   return step(s, ticketId, "domain");

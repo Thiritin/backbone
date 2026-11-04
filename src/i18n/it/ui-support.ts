@@ -195,6 +195,7 @@ export default {
   "support.queued": () => "In coda",
   "support.slaLine": (p) => `SLA ${p.sla} · ${p.uptime}% · risposta in ${p.h} h`,
   "support.toRespond": (p) => `${p.h} h per rispondere`,
+  "support.orderLeft": (p) => `Scadenza ${p.h} h`,
   "support.received": (p) => `Ricevuto ${p.time}`,
   "support.met": () => "Rispettato",
   "support.missing": () => "Mancante",

@@ -12,6 +12,7 @@ export default {
   "orderSteps.field.city": () => "Ort",
   "orderSteps.field.email": () => "E-Mail",
   "orderSteps.saveCustomer": () => "Kunde speichern",
+  "orderSteps.waitingAccount": () => "Wartet auf Konto",
   "orderSteps.createQuote": () => "Angebot erstellen",
   "orderSteps.noQuotes": () => "Noch keine Angebote.",
   "orderSteps.quote": (p) => `Angebot ${p.number}`,

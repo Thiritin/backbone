@@ -14,6 +14,12 @@ export function accountChoices(game: GameState) {
   return orderChoices(game, products).filter((o) => o.next === "account").map((o) => ({ ...o, error: stepError(game, game.tickets.find((x) => x.id === o.ticketId)!, "account") }));
 }
 
+// The form of an order, filled from the address its email carries.
+export function prefill(game: GameState, ticketId: string): Address {
+  const r = game.sales.requests.find((x) => x.ticketId === ticketId);
+  return r ? { ...EMPTY, ...mailedAddress(game.seed, r) } : EMPTY;
+}
+
 // A customers focus that opens New customer, followed by the order ticket.
 export const NEW = "new:";
 
@@ -26,7 +32,7 @@ const EMPTY: Address = { contact: "", company: "", street: "", zip: "", city: ""
 export function NewCustomer({ game, initial, onDone }: { game: GameState; initial?: string | null; onDone: () => void }) {
   const act = useStore((s) => s.act), choices = accountChoices(game);
   const [ticket, setTicket] = useState(choices.some((o) => o.ticketId === initial) ? initial! : choices.length === 1 ? choices[0].ticketId : "");
-  const [form, setForm] = useState<Address>(EMPTY), [focus, setFocus] = useState<Field>("contact");
+  const [form, setForm] = useState<Address>(() => (ticket ? prefill(game, ticket) : EMPTY)), [focus, setFocus] = useState<Field>("contact");
   const refs = useRef<Partial<Record<Field, HTMLInputElement | null>>>({});
   const o = choices.find((x) => x.ticketId === ticket), r = o && game.sales.requests.find((x) => x.id === o.requestId);
   const tk = game.tickets.find((x) => x.id === ticket);
@@ -42,7 +48,7 @@ export function NewCustomer({ game, initial, onDone }: { game: GameState; initia
     <form className="books-new" onSubmit={(e) => { e.preventDefault(); if (o && act(createAccount, o.ticketId, form).ok) onDone(); }}>
       <div className="books-new-head">
         <h2>{t("pkg.newCustomer")}</h2>
-        <OrderPicker choices={choices} value={ticket} onChange={(id) => { setTicket(id); setForm(EMPTY); setFocus("contact"); }} className="books-pick" />
+        <OrderPicker choices={choices} value={ticket} onChange={(id) => { setTicket(id); setForm(id ? prefill(game, id) : EMPTY); setFocus("contact"); }} className="books-pick" />
       </div>
       <div className="books-new-split">
         <section className="books-mail" aria-label={t("orderSteps.orderEmail")}>
@@ -62,7 +68,7 @@ export function NewCustomer({ game, initial, onDone }: { game: GameState; initia
             </label>
           ))}
           <div className="actions-row">
-            <button className="btn primary" type="submit" disabled={!o || !!o.error || !!tk?.work}><Save />{t("orderSteps.saveCustomer")}</button>
+            <button className="btn primary" type="submit" disabled={!o || !!o.error || !!tk?.work}><Save />{tk?.work ? t("orderSteps.waitingAccount") : t("orderSteps.saveCustomer")}</button>
             <button className="btn" type="button" onClick={onDone}>{t("pkg.cancel")}</button>
           </div>
         </fieldset>
