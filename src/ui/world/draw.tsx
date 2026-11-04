@@ -752,7 +752,7 @@ export function Tubes({ tiles }: { tiles: { x: number; y: number }[] }) {
 // The basement's metal shelf: four uprights, a board per unit from the floor up, each device lying on its board with an LED
 // on its front, and the loose cables hanging behind the boards.
 const SHELF_BOARDS_Z = 18, SHELF_U = 4.5;
-export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number; devices: { id: string; slot: number; height: number; on: boolean; flood?: boolean }[] }) {
+export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number; devices: { id: string; slot: number; height: number; on: boolean; flood?: boolean; light?: boolean }[] }) {
   const x0 = tile.x + 0.1, x1 = tile.x + 0.9, y0 = tile.y + 0.12, y1 = tile.y + 0.88, post = 0.05, tone = "w-tone-shelf";
   const zOf = (slot: number) => 3 + (slot - 1) * SHELF_BOARDS_Z, top = zOf(units) + BOARD;
   const posts = (y: number) => [x0, x1 - post].map((x) => <Prism key={`${x}-${y}`} x0={x} y0={y} x1={x + post} y1={y + post} z1={top + 2} tone={tone} />);
@@ -771,7 +771,7 @@ export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number;
         return (
           <g key={k}>
             <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={z} z1={z + BOARD} tone={tone} />
-            {d && <Prism x0={x0 + 0.08} y0={y0 + 0.1} x1={x1 - 0.08} y1={y1 - 0.06} z0={z + BOARD} z1={z + BOARD + dz} tone="w-tone-rack" />}
+            {d && <Prism x0={x0 + 0.08} y0={y0 + 0.1} x1={x1 - 0.08} y1={y1 - 0.06} z0={z + BOARD} z1={z + BOARD + dz} tone={d.light ? "w-tone-pc" : "w-tone-rack"} />}
             {led && <rect className={d.on && d.flood ? "w-led w-led-flood" : d.on ? "w-led w-led-on" : "w-led"} x={led.x - 2} y={led.y - 1} width="4" height="2" rx="1" />}
           </g>
         );
