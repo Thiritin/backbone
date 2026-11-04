@@ -34,8 +34,6 @@ export function chassisSlots(model: DeviceModel, parts: Component[]): Slot[] {
 interface R { x: number; y: number; w: number; h: number }
 const box = (r: R) => ({ x: r.x, y: r.y, width: r.w, height: r.h });
 const L = 832, W = 344, X0 = 24, Y0 = 30;
-// The widest a caption's glyph runs on average in any language, and the gap kept between two captions on one line.
-const CAP_CH = 7.2, CAP_GAP = 12;
 export const VIEW = { w: 880, h: 414 };
 
 // Where each zone and slot sits inside the chassis, by line: bays at the front, then the fan wall, the board with a band per
@@ -93,17 +91,6 @@ interface Props {
   onPick: (id: string | null) => void;
 }
 
-// Each caption starts over its section; one running past the lid ends at its edge, and one that would run into a caption already placed moves up a line.
-function capLines(caps: [number, string][]) {
-  const ends: number[] = [];
-  return caps.map(([at, c]) => {
-    const w = c.length * CAP_CH, end = X0 + at + w > X0 + L, x0 = end ? X0 + L - w : X0 + at;
-    const free = ends.findIndex((e) => x0 >= e + CAP_GAP), line = free < 0 ? ends.length : free;
-    ends[line] = x0 + w;
-    return { x: end ? X0 + L : X0 + at, c, end, line };
-  });
-}
-
 // The fault mark on a failed part: a red warning triangle with an exclamation mark.
 function Fault({ x, y }: { x: number; y: number }) {
   return (
@@ -118,7 +105,6 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
   const slots = chassisSlots(model, parts), { at, bayLen, boardX, rearLen, board } = layout(model, slots);
   const tall = model.height >= 2, gpu = !!lineOf(model)?.startsWith("gpu");
   const boardPart = slots.find((s) => s.group === "board")?.part, boardWear = boardPart ? wear(boardPart) : "ok";
-  const caps: [number, string][] = [[0, t("art.cap.bays")], [boardX + 6, t("art.cap.cpuRam")], [L - rearLen + 6, gpu ? t("art.cap.gpu") : t("art.cap.pcie")]];
 
   const slot = (s: Slot, label: string, body: ReactNode, pad = 2) => {
     const r = at[s.id], w = s.part ? wear(s.part) : null;
@@ -148,9 +134,12 @@ export function TopDown({ model, brand, name, parts, wear, open, ms, sel, onPick
         <pattern id="lid-pins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill={CAVITY} /><circle cx="2" cy="2" r="0.9" fill={GOLD} opacity="0.7" /></pattern>
         <pattern id="lid-fins" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill={ALU} /><rect width="1.6" height="4" fill="oklch(0.55 0.01 255)" /></pattern>
       </defs>
-      {capLines(caps).map(({ x, c, end, line }) => <text key={c} className="lid-cap" x={x} y={Y0 - 10 - line * 13} textAnchor={end ? "end" : undefined}>{c}</text>)}
-      <text className="lid-cap dim" x={X0} y={Y0 + W + 20}>Front</text>
-      <text className="lid-cap dim" x={X0 + L} y={Y0 + W + 20} textAnchor="end">Rear</text>
+      {/* The board's caption sits a line above the two edge captions, which grow inward from the lid's ends, so none can meet. */}
+      <text className="lid-cap" x={X0} y={Y0 - 6}>{t("art.cap.bays")}</text>
+      <text className="lid-cap" x={X0 + boardX + 6} y={Y0 - 20}>{t("art.cap.cpuRam")}</text>
+      <text className="lid-cap" x={X0 + L} y={Y0 - 6} textAnchor="end">{gpu ? t("art.cap.gpu") : t("art.cap.pcie")}</text>
+      <text className="lid-cap dim" x={X0} y={Y0 + W + 20}>{t("locations-2.front")}</text>
+      <text className="lid-cap dim" x={X0 + L} y={Y0 + W + 20} textAnchor="end">{t("locations-2.back")}</text>
 
       <g transform={`translate(${X0} ${Y0})`}>
         <rect x="0" y="0" width={L} height={W} rx="6" className="lid-tub" />

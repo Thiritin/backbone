@@ -141,9 +141,9 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
     const move = (e: PointerEvent) => {
       const p = pts.get(e.pointerId);
       if (!p) {
-        const c = (e.target as Element).closest<SVGElement>("[data-cable]");
+        const c = (e.target as Element).closest<SVGElement>("[data-cable], [data-tip]");
         t.hidden = !c;
-        if (c) { const r = el.getBoundingClientRect(); t.textContent = c.dataset.cable!; t.style.transform = `translate(${e.clientX - r.left + 12}px, ${e.clientY - r.top + 12}px)`; }
+        if (c) { const r = el.getBoundingClientRect(); t.textContent = c.dataset.cable ?? c.dataset.tip!; t.style.transform = `translate(${e.clientX - r.left + 12}px, ${e.clientY - r.top + 12}px)`; }
         return;
       }
       if (!dragged.current && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 4) return;
@@ -210,20 +210,41 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
   );
 }
 
-// Hides city names that a pin or its label covers; the names keep their size, so they are measured while hidden.
+const meets = (a: DOMRect) => (b: DOMRect) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+// Moves a pin's label to its left side when the right side runs into another pin or label, then hides city names that a pin
+// or its label covers; the names keep their size, so they are measured while hidden.
 function declutter(s: SVGSVGElement) {
-  const pins = [...s.querySelectorAll(".wm-pin")].map((p) => p.getBoundingClientRect());
-  const cities = [...s.querySelectorAll<SVGGElement>(".wm-city")].map((c) => [c, c.querySelector("text")!.getBoundingClientRect()] as const);
-  for (const [c, r] of cities) {
-    c.classList.toggle("wm-covered", r.width > 0 && pins.some((p) => r.left < p.right && r.right > p.left && r.top < p.bottom && r.bottom > p.top));
+  const all = [...s.querySelectorAll<SVGGElement>(".wm-pin")], labels: DOMRect[] = [];
+  const dots = all.map((p) => p.querySelector("circle")!.getBoundingClientRect());
+  all.forEach((p, i) => {
+    const l = p.querySelector<SVGTextElement>(".wm-plabel")!;
+    const free = (r: DOMRect) => !labels.some(meets(r)) && !dots.some((d, j) => j !== i && d.width > 0 && meets(r)(d));
+    flip(p, false);
+    let r = l.getBoundingClientRect();
+    if (r.width === 0) return;
+    if (!free(r)) { flip(p, true); const left = l.getBoundingClientRect(); if (free(left)) r = left; else flip(p, false); }
+    labels.push(r);
+  });
+  const pins = all.map((p) => p.getBoundingClientRect());
+  for (const c of s.querySelectorAll<SVGGElement>(".wm-city")) {
+    const r = c.querySelector("text")!.getBoundingClientRect();
+    c.classList.toggle("wm-covered", r.width > 0 && pins.some(meets(r)));
   }
+}
+
+function flip(p: SVGGElement, left: boolean) {
+  const l = p.querySelector(".wm-plabel")!, plane = p.querySelector(".wm-plane"), x = plane ? 29 : 15;
+  l.setAttribute("x", String(left ? -x : x));
+  l.setAttribute("text-anchor", left ? "end" : "start");
+  plane?.setAttribute("transform", `translate(${left ? -21 : 21} 0)${left ? " scale(-1 1)" : ""}`);
 }
 
 function Pin({ m, y, onClick }: { m: Marker; y: number; onClick: () => void }) {
   return (
-    <g className={`wm-pin wm-${m.kind}${m.selected ? " sel" : ""}`} transform={`translate(0 ${y})`} role="button" tabIndex={0} aria-label={m.label} aria-pressed={m.selected}
+    <g className={`wm-pin wm-${m.kind}${m.selected ? " sel" : ""}`} transform={`translate(0 ${y})`} role="button" tabIndex={0} aria-label={m.label} data-tip={m.hint} aria-pressed={m.selected}
       onClick={onClick} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}>
-      <title>{m.hint ?? m.label}</title>
+      {!m.hint && <title>{m.label}</title>}
       <circle r="10" />
       <g transform="translate(-7 -7)">
         {m.kind === "datacenter" && !(m.provider && hasMark(m.provider)) ? <Warehouse width={14} height={14} strokeWidth={1.75} /> : <Logo provider={m.kind === "basement" ? null : m.provider ?? null} size={14} />}

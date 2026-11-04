@@ -250,7 +250,7 @@ export default {
   "apps.guide.step.payBill": () => "La oficina de comercio envía la tasa de registro por carta. Recógela del buzón junto a la puerta y págala.",
   "apps.guide.step.buyServer": () => "Compra tu primer servidor en la tienda.",
   "apps.guide.step.mountServer": () => "Llévalo al rack, móntalo y enciéndelo.",
-  "apps.guide.step.mountRouter": () => "Pon la Fritz!Bocks de la estantería del almacén en el rack y conecta su puerto DSL a la toma de línea y el servidor a uno de sus puertos LAN.",
+  "apps.guide.step.mountRouter": () => "Conecta la Fritz!Bocks de la estantería: su puerto DSL a la toma de pared y uno de sus puertos LAN al servidor.",
   "apps.guide.step.findAddress": () => "Inicia sesión en fritz.bocks con la contraseña de la etiqueta del router y busca el servidor en Red doméstica, Dispositivos de red.",
   "apps.guide.step.shareWeb": () => "Comparte el puerto del servidor web con el servidor en Internet, Permitir acceso de Fritz!OZ.",
   "apps.guide.step.internet": () => "Contrata una línea de internet en Ubicaciones, en Línea de internet.",

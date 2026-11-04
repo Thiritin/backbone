@@ -250,7 +250,7 @@ export default {
   "apps.guide.step.payBill": () => "Das Gewerbeamt schickt die Anmeldegebühr per Brief. Hol ihn aus dem Briefkasten an der Tür und bezahle ihn.",
   "apps.guide.step.buyServer": () => "Kaufe deinen ersten Server im Shop.",
   "apps.guide.step.mountServer": () => "Trag ihn zum Rack, bau ihn ein und schalte ihn ein.",
-  "apps.guide.step.mountRouter": () => "Bau die Fritz!Bocks aus dem Lagerregal ins Rack ein und verbinde ihren DSL-Anschluss mit der Anschlussdose und den Server mit einem ihrer LAN-Anschlüsse.",
+  "apps.guide.step.mountRouter": () => "Verkabel die Fritz!Bocks auf dem Regal: ihren DSL-Anschluss mit der Wanddose und einen ihrer LAN-Anschlüsse mit dem Server.",
   "apps.guide.step.findAddress": () => "Melde dich auf fritz.bocks mit dem Kennwort vom Etikett des Routers an und suche den Server unter Heimnetz, Netzwerkgeräte.",
   "apps.guide.step.shareWeb": () => "Gib in Fritz!OZ unter Internet, Freigaben den Webserver-Port für den Server frei.",
   "apps.guide.step.internet": () => "Bestelle eine Internetleitung unter Standorte bei Internetleitung.",

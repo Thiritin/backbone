@@ -250,7 +250,7 @@ export default {
   "apps.guide.step.payBill": () => "The trade office sends its registration fee by letter. Fetch it from the letterbox by the door and pay it.",
   "apps.guide.step.buyServer": () => "Buy your first server in the Shop.",
   "apps.guide.step.mountServer": () => "Carry it to the rack, mount it and power it on.",
-  "apps.guide.step.mountRouter": () => "Put the Fritz!Bocks from the storage shelf into the rack, then cable its DSL port to the line jack and the server to one of its LAN ports.",
+  "apps.guide.step.mountRouter": () => "Cable the Fritz!Bocks on the shelf: its DSL port to the wall socket and one of its LAN ports to the server.",
   "apps.guide.step.findAddress": () => "Log in at fritz.bocks with the password on the router's label and look the server up under Home network, Network devices.",
   "apps.guide.step.shareWeb": () => "Share the web server port with the server under Internet, Permit access in Fritz!OZ.",
   "apps.guide.step.internet": () => "Order an internet line in Locations under Internet line.",

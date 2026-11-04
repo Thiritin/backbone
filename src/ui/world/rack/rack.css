@@ -75,6 +75,16 @@
 .wr-line:disabled { opacity: 0.45; cursor: default; }
 .wr-tag .loc-card { background: none; }
 .wr-tag .wr-acts { padding: 8px 0 0; }
+/* A cabled port's tag stacks header, path and colours in one column so every language fits the paper. */
+.wr-tag-body .loc-card-h { flex-wrap: wrap; padding: 0 0 8px; min-height: 0; }
+.wr-tag-body .loc-card-h .grow { flex-basis: 100%; height: 0; }
+.wr-tag-body .loc-card-h .btn { max-width: 100%; white-space: normal; text-align: left; height: auto; min-height: 28px; }
+.wr-tag-body .loc-path { flex-direction: column; align-items: stretch; padding: 10px 0; }
+.wr-tag-body .loc-node .k, .wr-tag-body .loc-node strong { white-space: normal; overflow-wrap: anywhere; }
+.wr-tag-body .loc-wire { flex: none; width: 3px; min-width: 0; height: auto; min-height: 36px; margin-left: 18px; }
+.wr-tag-body .loc-wire > span { left: 12px; top: 50%; bottom: auto; translate: 0 -50%; white-space: normal; width: max-content; max-width: 190px; }
+.wr-tag-body .loc-row { flex-direction: column; align-items: flex-start; padding: 8px 0; }
+.wr-tag-body .loc-swatch-default { white-space: nowrap; }
 .wr-frame { fill: var(--metal-2); stroke: var(--metal-line); stroke-width: 1; }
 .wr-frame-top { fill: oklch(0.46 0.01 255); }
 .wr-vent { fill: var(--metal); }
