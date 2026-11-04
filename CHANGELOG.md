@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Provider websites without an open datacenter show a short notice, and a broken web page shows an error page instead of freezing the game.
 - Paint colocation, cage and meet-me areas on your own hall's floor, and buy transformers, backup power and carrier connections at the hall's service doors.
 - Clouds show in the windows on partly cloudy days, snow shows on the office sill, and your own rack stands out in a shared hall.
 - In your own hall you can click the floor plan on the wall to lay out rows, racks and cooling units by dragging them, and sell them by dropping them on the parts strip.

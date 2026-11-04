@@ -214,3 +214,5 @@
 :root[data-os="aqua"] .br-error h1, :root[data-os="leopard"] .br-error h1 { font-size: 16px; font-weight: 700; }
 :root[data-os="yosemite"] .br-error h1 { font-size: 28px; font-weight: 300; }
 :root[data-os="tahoe"] .br-error h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+.web-page-error { padding: 48px 32px; font: 14px/1.5 Verdana, Geneva, sans-serif; color: #222; }
+.web-page-error h1 { font-size: 20px; margin: 0 0 8px; }

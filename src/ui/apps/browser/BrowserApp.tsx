@@ -28,6 +28,7 @@ import { VaultOffer } from "../../vault";
 import { Favicon } from "./Favicon";
 import { ConsolePage } from "./consoles/ConsolePage";
 import { PageError } from "./pageAct";
+import { PageBoundary } from "./PageBoundary";
 import { bmcTitle, IpmiPage } from "./ipmi/IpmiPage";
 import { FritzOz } from "./mgmt/FritzOz";
 import { KvmPage, kvmTitle } from "./ipmi/KvmPage";
@@ -224,7 +225,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
       {waiting && <div className="web-load" aria-hidden />}
       <div className={`web-view${paper ? " white" : ""}`}>
         {error && <div className="web-error" role="alert">{t(error)}</div>}
-        <PageError.Provider value={setError}>{body}</PageError.Provider>
+        <PageError.Provider value={setError}><PageBoundary key={`${r.host}${r.path}`}>{body}</PageBoundary></PageError.Provider>
       </div>
     </>
   );

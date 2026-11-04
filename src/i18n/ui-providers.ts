@@ -60,4 +60,7 @@ export default {
   "providers.contactUs": () => "Contact",
   "providers.imprint": () => "Imprint",
   "providers.terms": () => "Terms",
+  "browser.pageError.title": () => "Page error",
+  "browser.pageError.body": () => "This page could not be displayed.",
+  "providers.noSites": () => "This provider has no datacenter open for orders.",
 } satisfies Dict;

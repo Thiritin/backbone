@@ -58,4 +58,7 @@ export default {
   "providers.contactUs": () => "Kontakt",
   "providers.imprint": () => "Impressum",
   "providers.terms": () => "AGB",
+  "browser.pageError.title": () => "Seitenfehler",
+  "browser.pageError.body": () => "Diese Seite konnte nicht angezeigt werden.",
+  "providers.noSites": () => "Dieser Anbieter hat kein Rechenzentrum, das Bestellungen annimmt.",
 } satisfies Dict;

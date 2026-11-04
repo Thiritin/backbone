@@ -58,4 +58,7 @@ export default {
   "providers.contactUs": () => "Contatti",
   "providers.imprint": () => "Note legali",
   "providers.terms": () => "Condizioni",
+  "browser.pageError.title": () => "Errore di pagina",
+  "browser.pageError.body": () => "Impossibile visualizzare questa pagina.",
+  "providers.noSites": () => "Questo fornitore non ha alcun data center aperto agli ordini.",
 } satisfies Dict;

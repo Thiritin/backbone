@@ -10,6 +10,7 @@ import { siteIndex } from "../src/sim/80-business/index";
 import { contractNo, PortalShell } from "../src/ui/apps/browser/sites/providers/portal/Portal";
 import { OrderForm, routeOf } from "../src/ui/apps/browser/sites/providers/ProviderSite";
 import { useStore } from "../src/ui/store";
+import { PageBoundary } from "../src/ui/apps/browser/PageBoundary";
 import { ProviderSite } from "../src/ui/apps/browser/sites/providers/registry";
 import { freeFloor, newGame, skipTo } from "./fixtures";
 
@@ -44,7 +45,12 @@ describe("colocation provider sites", () => {
     skipTo(s, year);
     for (const p of PROVIDERS) {
       const dc = DATACENTERS.find((d) => d.provider === p.id);
-      if (!dc) continue;
+      if (!dc) {
+        for (const path of ["/", "/sites", "/order", "/account"]) {
+          expect(renderToString(<ProviderSite game={s} id={p.id} path={path} go={() => {}} />)).toContain(t("providers.noSites"));
+        }
+        continue;
+      }
       for (const path of ["/", "/sites", `/sites/${dc.id}`, `/order?dc=${dc.id}&space=share&size=2`, "/account"]) {
         const html = renderToString(<ProviderSite game={s} id={p.id} path={path} go={() => {}} />);
         expect(html).toContain(path === "/" ? "ps ps-" : path === "/account" ? "password" : dc.name);
@@ -103,5 +109,17 @@ describe("colocation order and customer portal", () => {
     expect(html).toContain(FR5.name);
     expect(html).toContain(t("accounts.pay.transfer"));
     expect(html).toContain(t("accounts.pay.debit"));
+  });
+});
+
+describe("page boundary", () => {
+  it("shows a plain error page when a site throws", () => {
+    const Boom = (): never => { throw new Error("boom"); };
+    const quiet = console.error;
+    console.error = () => {};
+    try {
+      render(<PageBoundary><Boom /></PageBoundary>);
+    } finally { console.error = quiet; }
+    expect(screen.getByRole("alert").textContent).toContain(t("browser.pageError.title"));
   });
 });

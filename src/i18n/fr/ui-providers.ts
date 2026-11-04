@@ -58,4 +58,7 @@ export default {
   "providers.contactUs": () => "Contact",
   "providers.imprint": () => "Mentions légales",
   "providers.terms": () => "CGV",
+  "browser.pageError.title": () => "Erreur de page",
+  "browser.pageError.body": () => "Cette page n'a pas pu être affichée.",
+  "providers.noSites": () => "Ce fournisseur n'a aucun centre de données ouvert aux commandes.",
 } satisfies Dict;
