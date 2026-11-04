@@ -33,7 +33,7 @@ function BuildingCard({ game, l, year }: { game: GameState; l: Listing; year: nu
   const floors = [...new Set(ids.map((x) => x.floor))].reverse();
   const cell = (id: string) => {
     const x = mine?.sections.find((k) => k.id === id);
-    if (x) return { cls: "mine", label: x.refitUntil > game.hour ? t("properties.refitUntil", { date: day(x.refitUntil) }) : x.fit ? t(`properties.state.${x.fit}`) : t("properties.state.empty") };
+    if (x) return { cls: "mine", label: x.refitUntil > game.hour ? t("properties.refitUntil", { date: day(x.refitUntil) }) : x.fit ? t(x.fit === "closet" || x.fit === "desks" ? `properties.tile.${x.fit}` : `properties.state.${x.fit}`) : t("properties.state.empty") };
     return taken.has(id) ? { cls: "taken", label: t("properties.state.taken") } : { cls: "free", label: t("properties.state.free") };
   };
   const refit = (fit: SectionFit) => own && own.fit !== fit && (

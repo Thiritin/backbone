@@ -244,6 +244,9 @@ button.loc-node:hover { background: var(--hover); }
 
 /* Zone chip next to a location name. */
 .loc-name { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.side-item { min-width: 0; }
+.side-item .loc-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-item .side-count { flex-shrink: 0; white-space: nowrap; }
 .loc-az { display: inline-flex; align-items: center; height: 17px; padding: 0 5px; border-radius: 4px; background: var(--hover); color: var(--text-2); font-size: 11px; font-weight: 500; letter-spacing: 0.02em; }
 h2 .loc-az, h3 .loc-az { margin-left: 8px; vertical-align: middle; }
 .loc-card-h .loc-az { margin-left: 2px; }
@@ -491,7 +494,7 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .prop-floor { display: flex; align-items: stretch; gap: 4px; }
 .prop-floor .loc-k { align-self: center; }
 .prop-sec { flex: 1; min-width: 0; display: grid; gap: 1px; padding: 5px 6px; text-align: left; border-radius: 5px; border: var(--ar-bw) solid var(--line-strong); background: var(--field); color: var(--text); font-size: 11.5px; cursor: pointer; }
-.prop-sec small { font-size: 10.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prop-sec small { font-size: 10.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .prop-sec.taken { cursor: default; background: color-mix(in oklch, var(--text) 8%, transparent); color: var(--text-3); }
 .prop-sec.mine { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 14%, var(--field)); }
 .prop-sec[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }

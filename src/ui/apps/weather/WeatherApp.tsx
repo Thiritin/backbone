@@ -14,7 +14,7 @@ import "./weather.css";
 export const degrees = (city: string, hour: number): string =>
   t("weather.degrees", { value: new Intl.NumberFormat(LOCALE).format(temperature(city, hour)) });
 
-const CITIES = [...new Set(DATACENTERS.map((d) => d.city))].sort();
+const CITIES = [...new Set(DATACENTERS.map((d) => d.city))].sort((a, b) => cityName(a).localeCompare(cityName(b), LOCALE));
 
 export function WeatherApp() {
   const game = useStore((s) => s.game);

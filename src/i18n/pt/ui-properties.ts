@@ -36,6 +36,8 @@ export default {
   "properties.state.servers": () => "Sala de servidores",
   "properties.state.closet": () => "Armário de servidores",
   "properties.state.empty": () => "Sem adaptação",
+  "properties.tile.closet": () => "Servidores",
+  "properties.tile.desks": () => "Escritório",
   "properties.refitUntil": (p) => `Em obras até ${p.date}`,
   "properties.rent": (p) => `Arrendar (${p.cost})`,
   "properties.expand": (p) => `Expandir (${p.cost})`,
