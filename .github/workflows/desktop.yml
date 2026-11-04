@@ -1,0 +1,80 @@
+name: Desktop
+
+# Builds the installers for a GitHub release and attaches them with the updater manifest (latest.json).
+# release.yml starts it after it creates or edits the day's release, because releases made with the workflow token
+# do not fire the release event; a release published by hand starts it directly.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: desktop
+  cancel-in-progress: false
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, args: "--target aarch64-apple-darwin", rust-targets: "aarch64-apple-darwin" }
+          - { os: macos-latest, args: "--target x86_64-apple-darwin", rust-targets: "x86_64-apple-darwin" }
+          - { os: windows-latest, args: "", rust-targets: "" }
+          - { os: ubuntu-22.04, args: "", rust-targets: "" }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install Linux libraries
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: npm ci
+      # The tag is the release tag, or the newest CHANGELOG.md day (2026-11-04 becomes 2026.11.04). The app version
+      # drops the leading zeros (2026.11.4) because semver forbids them.
+      - name: Set version
+        id: v
+        shell: bash
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          [ -n "$tag" ] || tag=$(sed -n 's/^## \([0-9-]*\)$/\1/p' CHANGELOG.md | head -1 | tr - .)
+          version=$(node -e 'console.log(process.argv[1].split(".").map(Number).join("."))' "$tag")
+          node -e '
+            const fs = require("fs");
+            const c = JSON.parse(fs.readFileSync("src-tauri/tauri.conf.json", "utf8"));
+            c.version = process.argv[1];
+            fs.writeFileSync("src-tauri/tauri.conf.json", JSON.stringify(c, null, 2));
+            const t = fs.readFileSync("src-tauri/Cargo.toml", "utf8").replace(/^version = ".*"$/m, `version = "${process.argv[1]}"`);
+            fs.writeFileSync("src-tauri/Cargo.toml", t);
+          ' "$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ steps.v.outputs.tag }}
+          releaseName: ${{ steps.v.outputs.tag }}
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

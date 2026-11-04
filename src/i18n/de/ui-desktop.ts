@@ -64,6 +64,8 @@ export default {
   "desktop.update.title": () => "Update verfügbar",
   "desktop.update.text": () => "Eine neuere Version des Spiels ist online. Lade neu, um sie zu nutzen; dein Spiel und die offenen Fenster bleiben erhalten.",
   "desktop.update.reload": () => "Neu laden",
+  "desktop.update.appText": () => "Eine neuere Version des Spiels ist verfügbar. Die Installation startet die App neu; dein Spiel bleibt erhalten.",
+  "desktop.update.install": () => "Installieren und neu starten",
   "desktop.news.title": () => "Pear-OS-Update",
   "desktop.changes.version": (p) => `Version ${p.version}`,
   "desktop.changes.more": (p) => `${p.n} weitere ${Number(p.n) === 1 ? "Änderung" : "Änderungen"}`,

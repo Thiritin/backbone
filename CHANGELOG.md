@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Backbone can be installed as a desktop app for macOS, Windows and Linux that offers new versions on launch and installs them with one click.
 - The rival hosting company Hetzna is now called Hetzler, the same company as the colocation provider.
 - The Hetzler website lists its VPS, dedicated server, storage, cloud and GPU products with specifications and monthly prices.
 

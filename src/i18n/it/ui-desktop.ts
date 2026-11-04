@@ -64,6 +64,8 @@ export default {
   "desktop.update.title": () => "Aggiornamento disponibile",
   "desktop.update.text": () => "È online una versione più recente del gioco. Ricarica per usarla; la tua partita e le finestre aperte vengono mantenute.",
   "desktop.update.reload": () => "Ricarica",
+  "desktop.update.appText": () => "È disponibile una versione più recente del gioco. L'installazione riavvia l'app; la tua partita viene mantenuta.",
+  "desktop.update.install": () => "Installa e riavvia",
   "desktop.news.title": () => "Aggiornamento di Pear OS",
   "desktop.changes.version": (p) => `Versione ${p.version}`,
   "desktop.changes.more": (p) => `${p.n} ${Number(p.n) === 1 ? "modifica in più" : "modifiche in più"}`,
