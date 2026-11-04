@@ -228,6 +228,7 @@ function UplinkCard({ game, u, carried }: { game: GameState; u: Uplink; carried:
   const monthly = (u.kind === "transit" ? transitBill(game, u).amount : 0) + linesMonthly(u, year) + crossConnects(game, u);
   const last = u.links.at(-1);
   const lastRack = last?.jack && game.devices.find((d) => d.id === last.jack!.device)?.rackId;
+  const jackPanel = (id: string) => { const rack = game.racks.find((r) => r.id === game.devices.find((x) => x.id === id)?.rackId); return `${rack ? `${rack.name} · ` : ""}${t("locations-1.carrierPanel")}`; };
   const device = (id: string) => { const d = game.devices.find((x) => x.id === id); return d?.label ?? d?.name ?? id; };
   return (
     <div className="shop-card">
@@ -235,7 +236,7 @@ function UplinkCard({ game, u, carried }: { game: GameState; u: Uplink; carried:
       <ul className="net-links">
         {u.links.map((l) => (
           <li key={l.id}><span className="num">{speed(l.gbit)}</span><span>{t("locations-2.devicePort", { device: device(l.device), port: l.port + 1 })}</span>
-            {l.jack && <span>{t("locations-2.jack", { panel: device(l.jack.device), jack: l.jack.port + 1 })}</span>}<span className="num">{t("locations-2.perMonth", { amount: euro(uplinkPrice(l.gbit, year)) })}</span><span className="grow" />
+            {l.jack && <span>{t("locations-2.jack", { panel: jackPanel(l.jack.device), jack: l.jack.port + 1 })}</span>}<span className="num">{t("locations-2.perMonth", { amount: euro(uplinkPrice(l.gbit, year)) })}</span><span className="grow" />
             {l.readyAt > game.hour ? <span className="pill warn">{t("locations-2.readyIn", { time: readyIn(l.readyAt, game.hour) })}</span> : <span className="pill ok">{t("locations-2.up")}</span>}</li>
         ))}
       </ul>

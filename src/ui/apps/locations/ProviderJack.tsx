@@ -42,7 +42,7 @@ export function ProviderJack({ game, device, port }: { game: GameState; device: 
 
   return (
     <div className="loc-card">
-      <div className="loc-card-h"><h3><EthernetPort />{t("locations-2.jack", { panel: device.name, jack: port + 1 })}</h3><span className={`pill${role === "free" ? "" : " ok"}`}>{roleName(role)}</span></div>
+      <div className="loc-card-h"><h3><EthernetPort />{t("locations-2.jack", { panel: t("locations-1.carrierPanel"), jack: port + 1 })}</h3><span className={`pill${role === "free" ? "" : " ok"}`}>{roleName(role)}</span></div>
       <dl className="loc-facts">
         {line && <div><dt>{roleName("uplink")}</dt><dd>{partner(line.u.partner)} <span className="num">{speed(line.l.gbit)}</span></dd></div>}
         {xc && <div><dt>{roleName("xconnect")}</dt><dd>{partner(xc.to)}</dd></div>}

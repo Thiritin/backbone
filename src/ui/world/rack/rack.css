@@ -42,7 +42,8 @@
 .wr-cab.shelf { background: none; }
 .wr-cab.shelf::before { background: oklch(0.8 0.008 80); box-shadow: inset 0 -1px 0 oklch(0.62 0.01 80); }
 .wr-cab.shelf::after { background: oklch(0.6 0.008 80); box-shadow: inset 1px 0 0 oklch(0.5 0.01 80); }
-.wr-face > svg { display: block; width: auto; height: min(calc((100cqh - var(--depth) - 72px - var(--pp, 0px)) * var(--z)), calc(var(--units) * 34px * var(--z) + 80px)); }
+/* A tall rack keeps 20px per unit so every unit number stays readable; the stage scrolls. */
+.wr-face > svg { display: block; width: auto; height: max(min(calc((100cqh - var(--depth) - 72px - var(--pp, 0px)) * var(--z)), calc(var(--units) * 34px * var(--z) + 80px)), calc(var(--units) * 20px * var(--z))); }
 .wr-face.out { position: absolute; inset: 0; z-index: 1; pointer-events: none; animation: wr-turn-out 150ms ease-in forwards; }
 .wr-face.in { animation: wr-turn-in 150ms ease-out 150ms backwards; }
 @keyframes wr-turn-out { to { transform: scaleX(0); } }

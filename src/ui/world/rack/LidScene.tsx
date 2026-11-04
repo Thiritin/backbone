@@ -91,14 +91,14 @@ function SlotTag({ device, slot, wear, hand }: { device: Device; slot: Slot; wea
         <div className="wr-tag-h"><span className={`wr-led ${w}`} role="img" aria-label={state} /><strong>{partLabel(c)}</strong></div>
         <div className={`wr-model${w === "bad" ? " wr-fault" : ""}`}>{slotName(slot)} · {state}</div>
         {c.failedAt !== null && <div className="wr-model">{t("locations-1.failedOn", { day: formatDay(c.failedAt) })}</div>}
-        <div className="wr-model">{age === null ? t("locations-1.unknown") : t("locations-1.ageOf", { age: age.toFixed(1), life: COMPONENTS[c.kind].life })}</div>
+        <div className="wr-model">{age === null ? t("locations-1.unknown") : `${t("locations-1.age")} ${t("locations-1.ageOf", { age: age.toFixed(1), life: COMPONENTS[c.kind].life })}`}</div>
         <div className="wr-model">{euro(partPrice(c.kind, c.size, c.ff, yearOf(game.hour), c))}</div>
         <div className="wr-lines">
           {busy ? note(t("locations-1.workUnderWay")) : cold ? note(t("locations-1.powerOffFirst")) : <>
             <HandsButtons ways={rep} className="wr-line" disabled={!set} onRun={(how) => hand.start(game, { title: set > 1 ? t("locations-1.replaceCpus", { n: set }) : t("locations-1.replacePart", { part: partLabel(c) }), deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id }, how })}>{t("locations-1.replace")}</HandsButtons>
             {removable && <HandsButtons ways={rem} className="wr-line" onRun={(how) => hand.start(game, { title: t("locations-1.removePart", { part: partLabel(c) }), deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id }, how })}>{t("locations-1.remove")}</HandsButtons>}
           </>}
-          {w !== "ok" && at && <OrderLine c={c} order={(line) => act(buyDevice, line.model, line.brand, 1, at, { part: line.part })} />}
+          {w !== "ok" && at && <OrderLine c={c} at={at} order={(line) => act(buyDevice, line.model, line.brand, 1, at, { part: line.part })} />}
         </div>
       </div>
     );
@@ -127,8 +127,10 @@ function SlotTag({ device, slot, wear, hand }: { device: Device; slot: Slot; wea
 }
 
 // A failed or worn part can be ordered from the Shop at its price; a part the Shop no longer sells says so.
-function OrderLine({ c, order }: { c: Component; order: (line: { model: string; brand: string; part: PartSpec }) => void }) {
+function OrderLine({ c, at, order }: { c: Component; at: string; order: (line: { model: string; brand: string; part: PartSpec }) => void }) {
   const game = useStore((s) => s.game), year = yearOf(game.hour), want = specOf(c);
+  const due = game.devices.find((d) => d.model === `part-${c.kind}` && d.arriveAt !== null && (d.transitTo === at || d.store === at) && samePart(spareSpec(d), want));
+  if (due) return note(t("locations-1.partOrdered", { day: formatDay(due.arriveAt!) }));
   const part = partOffers(year).find((o) => samePart(o, want));
   if (!part) return note(t("error.notInShop"));
   const line = { model: `part-${c.kind}`, brand: "Generic", qty: 1, part };

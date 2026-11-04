@@ -84,7 +84,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
-  const pad = 30, fs = Math.max(7, u * 0.4), at = new Map<number, RackItem>();
+  const pad = 30, fs = Math.max(7, u * 0.5), at = new Map<number, RackItem>();
   // A board is tall enough for a 2U device; a device takes one board whatever its height.
   const pitch = shelf ? shelfPitch(u) : u, span = (it: RackItem) => (shelf ? 1 : it.model.height);
   for (const it of items) for (let k = 0; k < span(it); k++) at.set(it.slot + k, it);

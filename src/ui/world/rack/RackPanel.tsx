@@ -235,7 +235,7 @@ function JackTag({ game, panel, jack }: { game: GameState; panel: Device; jack: 
   const j = jacksOf(game, panel)[jack], items = tidy(jackEntries(game, panel, jack));
   return (
     <div className="wr-tag-body" data-jack-tag={jack}>
-      <div className="wr-tag-h"><strong>{t("locations-2.jack", { panel: panel.name, jack: jack + 1 })}</strong></div>
+      <div className="wr-tag-h"><strong>{t("locations-2.jack", { panel: t("locations-1.carrierPanel"), jack: jack + 1 })}</strong></div>
       <div className="wr-model">{jackText(j)}</div>
       {j.due !== undefined && <div className="wr-model">{t("locations-1.dueOn", { day: formatDay(j.due) })}</div>}
       {items.length > 0 && <div className="wr-lines">{items.map((e, i) => (e === null ? <hr key={i} /> : <Act key={i} e={e} />))}</div>}

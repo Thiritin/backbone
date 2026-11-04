@@ -147,6 +147,7 @@ export default {
   "locations-1.age": () => "Âge",
   "locations-1.unknown": () => "Inconnu",
   "locations-1.ageOf": (p) => `${p.age} / ${p.life} ans`,
+  "locations-1.partOrdered": (p) => `Commandée, livraison le ${p.day}`,
   "locations-1.price": () => "Prix",
   "locations-1.empty": () => "Vide",
   "locations-1.installPart": (p) => `Installer ${p.part}`,

@@ -42,7 +42,7 @@ export function jacksOf(game: GameState, panel: Device): Jack[] {
 }
 
 export const jackText = (j: Jack) => (j.role === "free" ? j.label : `${roleName(j.role)} ${j.label}`);
-export const jackTitle = (panel: Device, i: number, j: Jack) => `${panel.name} ${i + 1}: ${jackText(j)}`;
+export const jackTitle = (i: number, j: Jack) => `${t("locations-1.carrierPanel")} ${i + 1}: ${jackText(j)}`;
 
 // The top unit's provider side, 24 duplex jacks above their label strips; a queued cable order hangs its due tag under the strip.
 // A click picks a jack; a drag from one ends wherever the pointer lets go on another port or jack.
@@ -68,10 +68,10 @@ export function ProviderPanel({ game, panel, picked = null, hand = null, onJack,
     const x = M + i * PITCH, end = { device: panel.id, port: i }, on = picked === i || (hand?.device === panel.id && hand.port === i);
     const text = j.label.length > CHARS ? `${j.label.slice(0, CHARS - 1)}…` : j.label;
     out.push(
-      <g key={i} className={`pp-jack ${j.role}${on ? " on" : ""}`} data-end={`${panel.id}:${i}`} data-jack={i} role="button" aria-label={jackTitle(panel, i, j)}
+      <g key={i} className={`pp-jack ${j.role}${on ? " on" : ""}`} data-end={`${panel.id}:${i}`} data-jack={i} role="button" aria-label={jackTitle(i, j)}
         onPointerDown={(e) => { if (!e.button) drag.current = end; }}
         onClick={(e) => { e.stopPropagation(); onJack(end); }}>
-        <title>{jackTitle(panel, i, j)}</title>
+        <title>{jackTitle(i, j)}</title>
         <rect className="pp-hit" x={x} y={0} width={PITCH} height={FACE + PLATE + (j.due !== undefined ? DUE : 0)} />
         <text className="pp-no" x={x + PITCH / 2} y={8}>{i + 1}</text>
         <rect className="pp-sock" x={x + 2} y={11} width={PITCH - 4} height={14} />
@@ -109,7 +109,7 @@ export function jackEntries(game: GameState, panel: Device, i: number): MenuEntr
   const dc = loc?.dc ? datacenterById(loc.dc) : undefined, year = yearOf(game.hour);
   const price = (g: number) => `${speed(g)} · ${t("locations-2.perMonth", { amount: euro(uplinkPrice(g, year)) })}`;
   const x = dc && exchangeAt(dc);
-  const lines: MenuEntry[] = dc ? [
+  const lines: MenuEntry[] = dc && game.unlocks.includes("network") ? [
     ...carriersAt(dc).map((c) => ({ label: c.name, items: uplinkOffers(year).map((g) => ({ label: price(g), run: () => act(orderTransit, rack, c.id, g, COMMITS[0].share, i) })) })),
     x && game.network.memberships.includes(x.id) && { label: x.name, items: uplinkOffers(year).map((g) => ({ label: price(g), run: () => act(orderExchangePort, rack, g, i) })) },
   ] : [];
