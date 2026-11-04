@@ -52,12 +52,13 @@ const learned = (id: string): string[] => {
 const INFRA = ["nextId", "locations", "racks", "devices", "cables"] as const;
 
 // The rival Hetzna became Hetzler: its id and name in the rivals, the share log, the awards and the news.
+// Absent fields stay absent so the new-game default fills them.
 function renameHetzna(data: Partial<GameState>): void {
   const id = (x: string) => (x === "hetzna" ? "hetzler" : x);
-  data.competitors = data.competitors?.map((r) => ({ ...r, id: id(r.id), name: r.name === "Hetzna" ? "Hetzler" : r.name }));
-  data.shareLog = data.shareLog?.map((e) => ({ ...e, rivals: Object.fromEntries(Object.entries(e.rivals).map(([k, v]) => [id(k), v])) }));
+  if (data.competitors) data.competitors = data.competitors.map((r) => ({ ...r, id: id(r.id), name: r.name === "Hetzna" ? "Hetzler" : r.name }));
+  if (data.shareLog) data.shareLog = data.shareLog.map((e) => ({ ...e, rivals: Object.fromEntries(Object.entries(e.rivals).map(([k, v]) => [id(k), v])) }));
   if (data.hosttoast?.awards) data.hosttoast = { ...data.hosttoast, awards: data.hosttoast.awards.map((a) => ({ ...a, id: id(a.id) })) };
-  data.news = data.news?.map((n) => (n.startsWith("rival.") ? n.replace(/\.hetzna(?=[.@])/g, ".hetzler") : n));
+  if (data.news) data.news = data.news.map((n) => (n.startsWith("rival.") ? n.replace(/\.hetzna(?=[.@])/g, ".hetzler") : n));
 }
 
 // Old saves keep loading: every field missing from a save takes its new-game default.
