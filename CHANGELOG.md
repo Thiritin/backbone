@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Alerts no longer pop up over a close-up you have open: a small chip with a count waits under the clock, and the alert appears when you close the close-up or press the chip.
 - The rack close-up has no VORNE and HINTEN labels and no round turntable any more: it stands on a flat floor, turns with a key, and zooms with the wheel, the plus and minus keys and a minimap for tall racks.
 - Cabling in the rack back view now shows which ports to connect, lights the valid targets while you drag a cable, needs a deliberate pull to unplug a power cord, and a server without a plugged power cord shows Kein Strom and refuses to start.
 - The first-steps guide now tells you exactly how to pay for a server, boot the installer from the USB stick and read the router password, and the quote and credit card steps explain themselves.

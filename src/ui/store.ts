@@ -84,6 +84,14 @@ export interface Store {
   closeNews: () => void;
   // The alert sheet an alert event opens; the event pauses the game and resume is the speed to return to.
   alert: Banner | null;
+  // Alerts that fired while one was open, shown in order.
+  alertQueue: Banner[];
+  // A world close-up or edit mode is open: alerts wait behind a chip until it closes or the chip is clicked.
+  closeup: boolean;
+  setCloseup: (open: boolean) => void;
+  // The chip was clicked: the open alert shows over the close-up.
+  alertNow: boolean;
+  showAlert: () => void;
   resume: Speed;
   closeAlert: (resume: boolean) => void;
   // The skill whose How it works sheet is open.
@@ -144,7 +152,7 @@ export const sameLine = (a: CartLine, b: CartLine): boolean =>
   a.model === b.model && a.brand === b.brand && a.vendor === b.vendor && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null, surface: "world" as Surface });
+const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null, alertQueue: [] as Banner[], alertNow: false, surface: "world" as Surface });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -256,8 +264,13 @@ export const useStore = create<Store>((set, get) => ({
   openNews: (news) => set({ news }),
   closeNews: () => set({ news: null }),
   alert: null,
+  alertQueue: [],
+  closeup: false,
+  alertNow: false,
+  setCloseup: (closeup) => set({ closeup }),
+  showAlert: () => set({ alertNow: true }),
   resume: 0,
-  closeAlert: (resume) => set(({ resume: speed }) => (resume ? { alert: null, speed } : { alert: null })),
+  closeAlert: (resume) => set(({ resume: speed, alertQueue: [next, ...rest] }) => (next ? { alert: next, alertQueue: rest, alertNow: false } : resume ? { alert: null, speed, alertNow: false } : { alert: null, alertNow: false })),
   explain: null,
   setExplain: (explain) => set({ explain }),
   started: initial.loaded,
@@ -293,7 +306,7 @@ export const useStore = create<Store>((set, get) => ({
       if (game.gameOver !== null || alert || (skip && happened)) break;
     }
     if (game.gameOver !== null) set({ game, speed: 0 });
-    else if (alert) set(({ speed, alert: open, resume }) => ({ game, alert: open ?? alert, speed: 0, resume: open ? resume : speed === SKIP ? 1 : speed }));
+    else if (alert) set(({ speed, alert: open, resume, alertQueue }) => ({ game, alert: open ?? alert, alertQueue: open ? [...alertQueue, alert!] : alertQueue, speed: 0, resume: open ? resume : speed === SKIP ? 1 : speed }));
     else if (skip && happened) set({ game, speed: 1 });
     else set({ game });
   },

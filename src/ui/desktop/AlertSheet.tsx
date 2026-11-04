@@ -84,3 +84,16 @@ export function AlertSheet({ alert }: { alert: Banner }) {
     document.querySelector(".desktop")!,
   );
 }
+
+// The sheet where it may show; over a world close-up or edit mode it waits as a chip by the clock.
+export function AlertGate() {
+  const { alert, alertQueue, alertNow, closeup, showAlert } = useStore();
+  const over = useStore((s) => s.game.gameOver !== null), desk = useStore((s) => s.surface === "desktop");
+  if (!alert) return null;
+  if (over || desk || !closeup || alertNow) return <AlertSheet alert={alert} />;
+  return (
+    <button className="w-alert-chip" aria-label={t("desktop.alert.chip")} onClick={showAlert}>
+      <TriangleAlert aria-hidden /><span className="num">{1 + alertQueue.length}</span>
+    </button>
+  );
+}

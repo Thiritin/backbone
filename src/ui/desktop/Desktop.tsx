@@ -16,7 +16,7 @@ import { EarlyAccess } from "./EarlyAccess";
 import { latestOs } from "../../sim/10-catalog/os";
 import { wallpaperSvg } from "./wallpaper";
 import { Widgets } from "./Widgets";
-import { AlertSheet } from "./AlertSheet";
+import { AlertGate } from "./AlertSheet";
 import { WhatsNew } from "./WhatsNew";
 import { ContextMenuHost } from "./ContextMenu";
 import { Searchlight } from "../search/Searchlight";
@@ -66,7 +66,7 @@ export function Desktop() {
 }
 
 function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
-  const { windows, speed, setSpeed, advance, save, clearUnseen, news, explain, setExplain, alert } = useStore();
+  const { windows, speed, setSpeed, advance, save, clearUnseen, news, explain, setExplain } = useStore();
   const gameOver = useStore((s) => s.game.gameOver), surface = useStore((s) => s.surface), desk = surface === "desktop";
   const [update, setUpdate] = useState<{ changes: ChangelogDay[]; install?: () => Promise<void> } | null>(null);
   const dismissed = useRef<number | null>(null);
@@ -127,7 +127,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       )}
       {desk && <EarlyAccess />}
       {desk && news && <WhatsNew changes={news} />}
-      {alert && <AlertSheet alert={alert} />}
+      <AlertGate />
       {gameOver !== null && <GameOver hour={gameOver} />}
       {desk && gameOver === null && <OsUpdateSheet />}
       {desk && update && <UpdateSheet changes={update.changes} install={update.install} onLater={() => { dismissed.current = Date.now(); setUpdate(null); }} />}

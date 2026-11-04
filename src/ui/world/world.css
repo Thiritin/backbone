@@ -265,3 +265,14 @@
 /* World controls are square: the shared focus style rounds its corners. */
 .world button:not(.wp-go), .world :focus-visible:not(.wp-go) { border-radius: 0; }
 .world :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.w-alert-chip {
+  position: fixed; top: 52px; left: 12px; z-index: 61; display: flex; align-items: center; gap: 6px; padding: 3px 8px;
+  border: 2px solid oklch(0.8 0.16 75); border-radius: 0; background: oklch(0.24 0.022 255); color: oklch(0.95 0.01 250);
+  font-family: var(--font-num); font-size: 12px; cursor: pointer; box-shadow: 0 2px 0 oklch(0.17 0.02 258);
+  animation: w-alert-pulse 1.2s ease-in-out infinite;
+}
+.w-alert-chip svg { width: 16px; height: 16px; color: oklch(0.8 0.16 75); }
+.w-alert-chip ~ .w-orders, body:has(.w-alert-chip) .w-orders { top: 92px; }
+@keyframes w-alert-pulse { 50% { border-color: oklch(0.8 0.16 75 / 0.25); } }
+@media (prefers-reduced-motion: reduce) { .w-alert-chip { animation: none; } }

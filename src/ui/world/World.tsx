@@ -110,6 +110,9 @@ export function World() {
   const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board" | "mainboard" | "meetme" | "tickets"; title: string; id?: string; call?: Call | null } | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
+  // Alerts wait behind a chip while a close-up or edit mode is open.
+  const covered = !!(editing || panel || rackOpen || pair), setCloseup = useStore((s) => s.setCloseup);
+  useEffect(() => { setCloseup(covered); return () => setCloseup(false); }, [covered, setCloseup]);
 
   // The default view fits the room with its walls and fills the window.
   const [size, setSize] = useState({ w: 1024, h: 768 });

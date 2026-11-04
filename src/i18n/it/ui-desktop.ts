@@ -18,6 +18,7 @@ export default {
 
   "desktop.alert.affectedNodes": () => "Nodi interessati",
   "desktop.alert.compromised": () => "Compromessi",
+  "desktop.alert.chip": () => "Avvisi",
   "desktop.alert.balance": () => "Saldo",
   "desktop.alert.openLoans": () => "Prestiti aperti",
   "desktop.alert.host": () => "Host",
