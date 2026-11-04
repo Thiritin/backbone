@@ -47,7 +47,7 @@ const version = (day) => day.date.replaceAll('-', '.');
 
 function chunks(day) {
   const out = [];
-  let cur = announced.has(day.date) ? '' : `## [RAID0 ${version(day)}](${SITE})`;
+  let cur = announced.has(day.date) ? '' : `## [raid0 ${version(day)}](${SITE})`;
   for (const b of day.bullets) {
     if (cur.length + b.length + 1 > LIMIT) { out.push(cur); cur = ''; }
     cur += (cur ? '\n' : '') + b;
@@ -61,7 +61,7 @@ function release(day) {
   const notes = `${all.find((d) => d.date === day.date).bullets.join('\n')}\n\n${SITE}`;
   let exists = true;
   try { execFileSync('gh', ['release', 'view', tag], { stdio: 'ignore' }); } catch { exists = false; }
-  const cmd = exists ? ['edit', tag, '--title', `RAID0 ${tag}`] : ['create', tag, '--target', until ?? process.env.GITHUB_SHA ?? 'main', '--title', `RAID0 ${tag}`];
+  const cmd = exists ? ['edit', tag, '--title', `raid0 ${tag}`] : ['create', tag, '--target', until ?? process.env.GITHUB_SHA ?? 'main', '--title', `raid0 ${tag}`];
   execFileSync('gh', ['release', ...cmd, '--notes', notes], { stdio: 'inherit' });
 }
 
@@ -70,7 +70,7 @@ async function post(content) {
     const res = await fetch(`${webhook}?wait=true`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, username: 'RAID0', allowed_mentions: { parse: [] } }),
+      body: JSON.stringify({ content, username: 'raid0', allowed_mentions: { parse: [] } }),
     });
     if (res.status === 429) {
       const { retry_after } = await res.json();
