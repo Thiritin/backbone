@@ -5,6 +5,7 @@ import { euro } from "../../sim/00-core/money";
 import { yearOf } from "../../sim/00-core/time";
 import { RACK_MODELS } from "../../sim/20-world/datacenters";
 import { HALL, hallCapacity, hallKw, hallSpots, isHalle } from "../../sim/20-world/properties";
+import { airflow } from "../../sim/60-infra/airflow";
 import { roomPower } from "../../sim/60-infra/status";
 import type { HallItemKind, Location } from "../../sim/50-state";
 import { hallAt } from "../../sim/90-actions/hall";
@@ -40,7 +41,9 @@ function ItemArt({ kind, halle }: { kind: HallItemKind; halle: boolean }) {
   }
 }
 
-const STRIP_H = 52;
+// Height of the strip below the room: the tabs, the part art, its label and price, and the padding.
+export const STRIP_H = 150;
+const ART_H = 52;
 // The parts strip along the bottom edge of the room: parts to hold, the hall's meters, and the way out of edit mode.
 export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }) {
   const game = useStore((s) => s.game), { hold, onStrip, tab } = useEdit();
@@ -49,7 +52,7 @@ export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }
   const halle = isHalle(h.p.buildingId), year = yearOf(game.hour);
   const n = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
   const cap = hallCapacity(h.p), used = hallSpots(h.hall, Object.fromEntries(game.racks.filter((r) => r.locationId === loc.id).map((r) => [r.id, r.tile ?? null])));
-  const heat = roomPower(game, loc).watts / 1000, cracs = h.hall.items.filter((i) => i.kind === "crac").length;
+  const heat = roomPower(game, loc).watts / 1000, air = airflow(game, loc);
   const delivered = game.racks.filter((r) => r.locationId === loc.id && !r.tile);
   const tabs = TABS.filter((k) => k !== "delivered" || delivered.length > 0);
   const active: Tab = tabs.includes(tab) ? tab : "racks";
@@ -88,13 +91,16 @@ export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }
       <div className="w-parts-row">
         {parts[active].map((p) => (
           <div key={p.id} className={`w-parts-item${hold && !hold.moving && JSON.stringify(hold.entries[0].spec) === JSON.stringify(p.spec) ? " w-parts-on" : ""}`} onPointerDown={pick(p)} role="button" aria-label={p.label}>
-            <svg className="w-parts-art" height={STRIP_H} viewBox={p.box} aria-hidden>{p.art}</svg>
+            <svg className="w-parts-art" height={ART_H} viewBox={p.box} aria-hidden>{p.art}</svg>
             <span>{p.label}</span>{p.price !== null && <b className="num">{euro(p.price)}</b>}
           </div>
         ))}
         <div className="w-parts-meters num">
           <span>{t("hall.edit.kw", { used: n(heat), max: n(hallKw(h.p)) })}</span>
-          <span>{t("hall.edit.cooling", { cool: n(cracs * Number(HALL.items.crac.kw)), heat: n(heat) })}</span>
+          <span>{t("hall.edit.cooling", { cool: n(air.effective), heat: n(heat) })}</span>
+          <span>{t("hall.edit.efficiency", { v: n(air.efficiency * 100) })}</span>
+          <span>{t("hall.edit.pue", { v: air.pue.toFixed(2) })}</span>
+          {air.hot > 0 && <span>{t("hall.edit.hot", { n: air.hot })}</span>}
           <span>{t("hall.edit.places", { used: n(used), cap: n(cap) })}</span>
         </div>
         <button className="w-parts-done" onClick={onDone}>{t("hall.edit.done")}</button>

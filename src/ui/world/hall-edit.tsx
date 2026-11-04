@@ -4,6 +4,7 @@
 import { useEffect, type ReactNode } from "react";
 import { create } from "zustand";
 import { t } from "../../i18n/en";
+import { airTones, type AirTone } from "../../sim/60-infra/airflow";
 import { areaAt, fixtures, footprint, exhaust, siteAreas, customerTiles, type Area, type Facing, type OfficePlan } from "../../sim/20-world/layout";
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { HALL, isHalle, zoneSpots } from "../../sim/20-world/properties";
@@ -307,6 +308,7 @@ export function editThings(game: GameState, loc: Location, plan: OfficePlan, pus
     for (let j = 0; j <= h; j++) lines.push(`M${pts(iso(x, y + j))} L${pts(iso(x + w, y + j))}`);
   }
   push(-3, <path key="egrid" className="w-edit-grid" d={lines.join(" ")} pointerEvents="none" />);
+  push(-1.4, <EditFloor key="efloor" game={game} loc={loc} plan={plan} />);
   push(1e8, <EditLayer key="elayer" game={game} loc={loc} plan={plan} />);
 }
 
@@ -328,8 +330,86 @@ function GhostArt({ e, halle, ok }: { e: Entry; halle: boolean; ok: boolean }) {
   }
 }
 
+const centre = (q: Pt) => iso(q.x + 0.5, q.y + 0.5);
+
+interface View { v: Verdict | null; bad: boolean; footprintTiles: Pt[]; fronts: Pt[]; exh: Pt[]; cut: Set<string>; pathD: string; blockedKey: string | null; selTiles: Pt[]; boxTiles: Pt[]; ghostAir: [Pt, AirTone][] }
+
+// The air the hall would have after the drop: the edit runs on a copy of the state, never the store's.
+let airCache: { game: GameState; sig: string; tones: [Pt, AirTone][] } | null = null;
+function ghostTones(c: Ctx, edit: HallEdit): [Pt, AirTone][] {
+  const sig = JSON.stringify(edit);
+  if (airCache && airCache.game === c.game && airCache.sig === sig) return airCache.tones;
+  const copy = structuredClone(c.game), loc = copy.locations.find((l) => l.id === c.loc.id);
+  let tones: [Pt, AirTone][] = [];
+  if (loc && editHall(copy, loc.id, edit).ok) {
+    const was = airTones(c.game, c.loc), now = airTones(copy, loc);
+    tones = Object.entries(now).filter(([k, v]) => was[k] !== v && v !== "room" && v !== "ventIdle").map(([k, v]) => { const [x, y] = k.split(",").map(Number); return [{ x, y }, v] as [Pt, AirTone]; });
+  }
+  airCache = { game: c.game, sig, tones };
+  return tones;
+}
+
+// Everything the edit state draws on the floor: footprint, fronts, the way from the door, selection and the air the drop would give.
+function useView(c: Ctx | null, objs: Obj[]): View {
+  const { hold, sel, at, onStrip, line, box } = useEdit();
+  const none: View = { v: null, bad: false, footprintTiles: [], fronts: [], exh: [], cut: new Set(), pathD: "", blockedKey: null, selTiles: [], boxTiles: [], ghostAir: [] };
+  if (!c) return none;
+  const v = hold && at && !onStrip ? verdictOf(c, hold, at, line) : null;
+  const bad = !!v?.error;
+  const footprintTiles = v ? v.entries.flatMap((e) => tilesOf(e)) : [];
+  // Service fronts, exhaust tiles and the way from the door to every front.
+  const fronts: Pt[] = [], exh: Pt[] = [], edges = new Set<string>(), cut = new Set<string>();
+  if (v) {
+    const skip = new Set(v.entries.flatMap((e) => (e.ref ? [e.ref] : []))), blocked = blockedOf(c, skip), entry = entryTile(c);
+    const bodies = v.entries.filter((e) => bodyKind(e.spec) && e.spec.kind !== "screen");
+    for (const e of bodies) for (const q of tilesOf(e)) blocked.add(key(q));
+    blocked.delete(key(entry));
+    for (const a of c.areas) for (const q of a.passages) blocked.delete(key(q.tile));
+    const seen = new Set<string>();
+    for (const e of bodies) {
+      for (const f of frontOf(tilesOf(e), e.facing)) {
+        if (seen.has(key(f))) continue;
+        seen.add(key(f)); fronts.push(f);
+        const path = walkPath(c.areas, blocked, entry, f);
+        if (!path || blocked.has(key(f))) cut.add(key(f));
+        else path.forEach((q, i) => { if (i) edges.add(`${path[i - 1].x},${path[i - 1].y}>${q.x},${q.y}`); });
+      }
+      if (e.spec.kind === "rack") for (const q of tilesOf(e)) exh.push(exhaust({ ...q, facing: e.facing }));
+    }
+  }
+  const blockedKey = v?.error && (v.error.key === "error.blocked" || v.error.key === "error.noPath") ? v.error.key : null;
+  const pathD = [...edges].map((k) => { const [a, b] = k.split(">").map((s) => s.split(",").map(Number)); const p = centre({ x: a[0], y: a[1] }), q = centre({ x: b[0], y: b[1] }); return `M${p.x} ${p.y}L${q.x} ${q.y}`; }).join("");
+  const selTiles = objs.filter((o) => sel.includes(o.ref)).flatMap((o) => o.tiles);
+  const boxTiles: Pt[] = [];
+  if (box) for (let x = Math.min(box.from.x, box.to.x); x <= Math.max(box.from.x, box.to.x); x++) for (let y = Math.min(box.from.y, box.to.y); y <= Math.max(box.from.y, box.to.y); y++) boxTiles.push({ x, y });
+  const ghostAir = v && !v.error ? ghostTones(c, v.edit) : [];
+  return { v, bad, footprintTiles, fronts, exh, cut, pathD, blockedKey, selTiles, boxTiles, ghostAir };
+}
+
+// The floor pieces of edit mode sit among the room's depth-sorted things, so racks and items stand over them.
+function EditFloor({ game, loc, plan }: { game: GameState; loc: Location; plan: OfficePlan }) {
+  const a = hallAt(game, loc.id), c: Ctx | null = a ? { game, loc, plan, areas: siteAreas(game, loc), halle: isHalle(a.p.buildingId) } : null;
+  const view = useView(c, c ? objectsOf(c) : []);
+  if (!c) return null;
+  const { v, bad, fronts, exh, cut, blockedKey, footprintTiles, pathD, selTiles, boxTiles, ghostAir } = view;
+  return (
+    <g pointerEvents="none">
+      {selTiles.map((q) => <Quad key={`s${key(q)}`} p={q} cls="w-edit-sel" />)}
+      {boxTiles.map((q) => <Quad key={`b${key(q)}`} p={q} cls="w-edit-box" />)}
+      {ghostAir.map(([q, tone]) => <Quad key={`a${key(q)}`} p={q} cls={`w-air-${tone}`} />)}
+      {v && <>
+        {exh.map((q) => <Quad key={`x${key(q)}`} p={q} cls="w-edit-exhaust" />)}
+        {fronts.map((q) => <Quad key={`f${key(q)}`} p={q} cls={cut.has(key(q)) || (blockedKey && v.error?.at && key(v.error.at) === key(q)) ? "w-edit-clear-bad" : "w-edit-clear"} />)}
+        {blockedKey && v.error?.at && !fronts.some((q) => key(q) === key(v.error!.at!)) && <Quad p={v.error.at} cls="w-edit-clear-bad" />}
+        {pathD && <path className="w-edit-path" d={pathD} />}
+        {footprintTiles.map((q) => <Quad key={`g${key(q)}`} p={q} cls={bad ? "w-edit-bad" : "w-edit-ok"} />)}
+      </>}
+    </g>
+  );
+}
+
 function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: OfficePlan }) {
-  const { hold, sel, at, onStrip, line, box, msg } = useEdit();
+  const { msg } = useEdit();
   useEffect(() => {
     useEdit.setState({ loc: loc.id });
     const menu = (e: Event) => { if (document.querySelector(".world-svg")?.contains(e.target as Node) || useEdit.getState().hold) { e.preventDefault(); turnHold(); } };
@@ -366,35 +446,7 @@ function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: 
     else gesture = { kind: "bg", x: e.clientX, y: e.clientY, shift: false };
   };
 
-  const v = hold && at && !onStrip ? verdictOf(c, hold, at, line) : null;
-  const bad = !!v?.error;
-  const footprintTiles = v ? v.entries.flatMap((e) => tilesOf(e)) : [];
-  // Service fronts, exhaust tiles and the way from the door to every front.
-  const fronts: Pt[] = [], exh: Pt[] = [], edges = new Set<string>(), cut = new Set<string>();
-  if (v) {
-    const skip = new Set(v.entries.flatMap((e) => (e.ref ? [e.ref] : []))), blocked = blockedOf(c, skip), entry = entryTile(c);
-    const bodies = v.entries.filter((e) => bodyKind(e.spec) && e.spec.kind !== "screen");
-    for (const e of bodies) for (const q of tilesOf(e)) blocked.add(key(q));
-    blocked.delete(key(entry));
-    for (const a of c.areas) for (const q of a.passages) blocked.delete(key(q.tile));
-    const seen = new Set<string>();
-    for (const e of bodies) {
-      for (const f of frontOf(tilesOf(e), e.facing)) {
-        if (seen.has(key(f))) continue;
-        seen.add(key(f)); fronts.push(f);
-        const path = walkPath(c.areas, blocked, entry, f);
-        if (!path || blocked.has(key(f))) cut.add(key(f));
-        else path.forEach((q, i) => { if (i) edges.add(`${path[i - 1].x},${path[i - 1].y}>${q.x},${q.y}`); });
-      }
-      if (e.spec.kind === "rack") for (const q of tilesOf(e)) exh.push(exhaust({ ...q, facing: e.facing }));
-    }
-  }
-  const blockedKey = v?.error && (v.error.key === "error.blocked" || v.error.key === "error.noPath") ? v.error.key : null;
-  const centre = (q: Pt) => iso(q.x + 0.5, q.y + 0.5);
-  const pathD = [...edges].map((k) => { const [a, b] = k.split(">").map((s) => s.split(",").map(Number)); const p = centre({ x: a[0], y: a[1] }), q = centre({ x: b[0], y: b[1] }); return `M${p.x} ${p.y}L${q.x} ${q.y}`; }).join("");
-  const selTiles = objs.filter((o) => sel.includes(o.ref)).flatMap((o) => o.tiles);
-  const boxTiles: Pt[] = [];
-  if (box) for (let x = Math.min(box.from.x, box.to.x); x <= Math.max(box.from.x, box.to.x); x++) for (let y = Math.min(box.from.y, box.to.y); y <= Math.max(box.from.y, box.to.y); y++) boxTiles.push({ x, y });
+  const { v, bad } = useView(c, objs);
   const bounds = c.areas.map((a) => a.rect);
 
   return (
@@ -404,14 +456,7 @@ function EditLayer({ game, loc, plan }: { game: GameState; loc: Location; plan: 
         {/* Units on the far wall stand taller than the floor, so a press on their upper body lands on the wall. */}
         {r.y === 0 && <polygon points={pts(iso(r.x, 0), iso(r.x + r.w, 0), { x: iso(r.x + r.w, 0).x, y: iso(r.x + r.w, 0).y - 100 }, { x: iso(r.x, 0).x, y: iso(r.x, 0).y - 100 })} fill="rgba(0,0,0,0)" onPointerDown={press} />}
       </g>)}
-      {selTiles.map((q) => <Quad key={`s${key(q)}`} p={q} cls="w-edit-sel" />)}
-      {boxTiles.map((q) => <Quad key={`b${key(q)}`} p={q} cls="w-edit-box" />)}
       {v && <>
-        {exh.map((q) => <Quad key={`x${key(q)}`} p={q} cls="w-edit-exhaust" />)}
-        {fronts.map((q) => <Quad key={`f${key(q)}`} p={q} cls={cut.has(key(q)) || (blockedKey && v.error?.at && key(v.error.at) === key(q)) ? "w-edit-clear-bad" : "w-edit-clear"} />)}
-        {blockedKey && v.error?.at && !fronts.some((q) => key(q) === key(v.error!.at!)) && <Quad p={v.error.at} cls="w-edit-clear-bad" />}
-        {pathD && <path className="w-edit-path" d={pathD} pointerEvents="none" />}
-        {footprintTiles.map((q) => <Quad key={`g${key(q)}`} p={q} cls={bad ? "w-edit-bad" : "w-edit-ok"} />)}
         <g className="w-edit-ghost" pointerEvents="none">
           {[...v.entries].sort((a, b) => a.x + a.y - b.x - b.y).map((e, i) => <g key={i}><GhostArt e={e} halle={c.halle} ok={!bad} /></g>)}
         </g>

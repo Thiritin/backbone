@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The datacenter floor shows how air flows around your racks, the main distribution board and the meet-me room open as close-ups, and the hall plan shows every room.
 - Your own hall can have a NOC with seats for technicians, and a technician on shift resets a tripped breaker after 30 minutes, or 10 with a wall screen.
 - All maps are now light and colourful, with rivers, lakes, parks, country borders and named countries, and the street maps show water, parks, motorways and rail.
 - In edit mode you now place, turn, select, move, copy and sell racks, vents, cooling units and power equipment anywhere in your hall and its power rooms.

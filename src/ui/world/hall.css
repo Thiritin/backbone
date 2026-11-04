@@ -30,7 +30,7 @@
 .w-parts-drop { background: oklch(0.38 0.1 25); }
 .w-parts-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: grab; touch-action: none; user-select: none; }
 .w-parts-art { display: block; width: auto; }
-.w-parts-meters { display: flex; flex-direction: column; gap: 2px; margin-left: auto; }
+.w-parts-meters { display: grid; grid-template-columns: auto auto; gap: 2px 14px; margin-left: auto; }
 .w-parts-done { background: oklch(0.36 0.02 250); color: oklch(0.95 0.005 250); border: 0; border-radius: 4px; padding: 6px 14px; font: inherit; cursor: pointer; }
 
 /* Zones: open colocation is a grey band, the cage and the meet-me area add a fence; the meet-me area has a hatched yellow edge. */
@@ -54,25 +54,8 @@
 
 /* The service door close-ups. */
 .hd-room { gap: 28px; }
-.hd-row { display: flex; align-items: flex-end; justify-content: center; flex-wrap: wrap; gap: 36px; }
+.hd-row { display: flex; align-items: flex-start; justify-content: center; flex-wrap: wrap; gap: 28px 36px; }
 .hd-spot { position: relative; }
-.hd-plinth { fill: oklch(0.55 0.01 250); }
-.hd-spotline { fill: none; stroke: oklch(0.6 0.01 250); stroke-width: 1.5; stroke-dasharray: 5 4; }
-.hd-xf { fill: oklch(0.62 0.04 235); }
-.hd-xf-top { fill: oklch(0.5 0.04 235); }
-.hd-fin { fill: oklch(0.52 0.04 235); }
-.hd-insul { fill: oklch(0.82 0.04 60); }
-.hd-cab { fill: oklch(0.6 0.02 250); }
-.hd-feedB { fill: oklch(0.6 0.08 60); }
-.hd-ups { fill: oklch(0.55 0.08 150); }
-.hd-cab-door { fill: oklch(0.46 0.015 250); }
-.hd-frame { fill: oklch(0.45 0.015 250); }
-.hd-sky { fill: oklch(0.8 0.05 230); }
-.hd-yard { fill: oklch(0.55 0.05 140); }
-.hd-gen { fill: oklch(0.62 0.12 80); }
-.hd-gen-top { fill: oklch(0.5 0.1 80); }
-.hd-pipe { fill: oklch(0.38 0.01 250); }
-.hd-mullion { fill: oklch(0.45 0.015 250); }
 .hd-wall { fill: oklch(0.36 0.01 250); }
 .hd-collar { fill: oklch(0.7 0.01 250); }
 .hd-cap { fill: oklch(0.3 0.01 250); }
@@ -85,3 +68,28 @@
 .w-parts-tab { background: transparent; color: oklch(0.8 0.01 250); border: 0; border-bottom: 2px solid transparent; padding: 3px 10px; font: inherit; cursor: pointer; }
 .w-parts-tab-on { color: oklch(0.97 0.005 250); border-bottom-color: oklch(0.78 0.12 90); }
 .w-parts-row { display: flex; align-items: center; gap: 14px; width: 100%; }
+
+/* Air tones: flat floor paint under the rack fronts and backs. */
+.w-air-fed { fill: oklch(0.82 0.05 235 / 0.8); }
+.w-air-exhaust { fill: oklch(0.8 0.05 55 / 0.7); }
+.w-air-recirc { fill: oklch(0.66 0.16 28 / 0.75); }
+.w-hall-unm polygon { fill: oklch(0.82 0.15 85); stroke: oklch(0.45 0.1 70); stroke-width: 1; stroke-linejoin: round; }
+.w-hall-unm rect { fill: oklch(0.3 0.04 70); }
+
+/* Meet-me: a duct per carrier; leads run from the duct down a trunk to a tag for each customer. */
+.hd-spot { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 132px; }
+.hd-name { max-width: 132px; }
+.hd-leads { list-style: none; margin: 0; padding: 0 0 0 10px; display: flex; flex-direction: column; gap: 8px; width: 100%; border-left: 3px solid oklch(0.66 0.15 var(--h)); }
+.hd-lead { position: relative; display: flex; }
+.hd-lead::before { content: ""; position: absolute; left: -10px; top: 50%; width: 10px; height: 3px; background: oklch(0.66 0.15 var(--h)); }
+.hd-tag { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 3px 6px; background: oklch(0.96 0.02 90); color: oklch(0.3 0.02 60); border-left: 3px solid oklch(0.66 0.15 var(--h)); font-size: 11px; line-height: 1.2; }
+
+/* Main board: a dark cabinet face with a row per breaker. */
+.hd-board { display: grid; gap: 10px; min-width: 340px; padding: 18px 20px; background: oklch(0.34 0.012 250); color: oklch(0.95 0.005 250); border-radius: 4px; font-size: 12px; }
+.hd-brow { display: grid; grid-template-columns: 12px minmax(110px, auto) 1fr auto; align-items: center; gap: 10px; }
+.hd-brow > b { font-weight: 600; }
+.hd-main { padding-top: 10px; border-top: 1px solid oklch(0.46 0.012 250); grid-template-columns: 12px auto 1fr auto; }
+.hd-lamp { width: 10px; height: 10px; border-radius: 50%; background: oklch(0.45 0.01 250); }
+.hd-lamp-on { background: var(--ok); }
+.hd-meter { height: 8px; background: oklch(0.26 0.012 250); border-radius: 2px; overflow: hidden; }
+.hd-meter-fill { display: block; height: 100%; background: oklch(0.72 0.12 150); }

@@ -3,10 +3,13 @@
 // rows, positions beyond the cooled count shimmer while the hall runs hot, and a tripped hall goes dark.
 import type { ReactNode } from "react";
 import { t } from "../../i18n/en";
-import { customerTiles, zoneTiles, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
+import { customerTiles, siteAreas, zoneTiles, type Fixture, type OfficePlan, type Tile } from "../../sim/20-world/layout";
+import { isHalle } from "../../sim/20-world/properties";
+import { airTones } from "../../sim/60-infra/airflow";
 import type { GameState, Location } from "../../sim/50-state";
+import { hallAt, unmaintained } from "../../sim/90-actions/hall";
 import { editThings, PlanBoard } from "./hall-edit";
-import { annexScene } from "./hall-annex";
+import { annexScene, corner, itemTiles } from "./hall-annex";
 import { Hatch, MainBoard } from "./hall-art";
 import { at3, cageFence, Door, Night, onX, onY, pts, rackHeight, RackBox, WALL } from "./draw";
 import { hueOf } from "./hall-doors";
@@ -28,6 +31,17 @@ const Lock = ({ tile }: { tile: Tile }) => {
     <g className="w-hall-lock" transform={`translate(${c.x} ${c.y})`}>
       <path d="M-3,-2 v-3 a3,3 0 0 1 6,0 v3" />
       <rect x="-4.5" y="-2" width="9" height="7" rx="1.2" />
+    </g>
+  );
+};
+
+// A flat marker over a rack or an item that has no way to its service front.
+const Unmaintained = ({ tile, z }: { tile: { x: number; y: number }; z: number }) => {
+  const c = at3(tile.x + 0.5, tile.y + 0.5, z);
+  return (
+    <g className="w-hall-unm" transform={`translate(${c.x} ${c.y})`}>
+      <title>{t("hall.unmaintained")}</title>
+      <polygon points="0,-6 7,6 -7,6" /><rect x="-0.8" y="-2" width="1.6" height="4.5" /><rect x="-0.8" y="3.4" width="1.6" height="1.6" />
     </g>
   );
 };
@@ -72,6 +86,22 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
     noc: (f: Fixture) => <polygon points={pts(iso(f.x, f.y), iso(f.x + (f.w ?? 1), f.y), iso(f.x + (f.w ?? 1), f.y + 1), iso(f.x, f.y + 1))} fill="rgba(0,0,0,0)" />,
   });
   annexScene(game, loc, plan, tiles, (depth, node) => things.push({ depth, node }));
+  // Air tones are floor paint: a rack's intake and exhaust tiles in the tone of the air they get.
+  for (const [k, tone] of Object.entries(airTones(game, loc))) {
+    if (tone === "room" || tone === "ventIdle") continue;
+    const [x, y] = k.split(",").map(Number);
+    things.push({ depth: -1.9, node: <polygon key={`air${k}`} className={`w-air-${tone}`} pointerEvents="none" points={pts(iso(x, y), iso(x + 1, y), iso(x + 1, y + 1), iso(x, y + 1))} /> });
+  }
+  const own = hallAt(game, loc.id), bad = new Set(unmaintained(game, loc.id));
+  for (const r of game.racks) if (r.locationId === loc.id && r.tile && bad.has(`rack:${r.id}`)) things.push({ depth: r.tile.x + r.tile.y + 0.6, node: <Unmaintained key={`um${r.id}`} tile={r.tile} z={rackHeight(42) + 14} /> });
+  if (own) {
+    const areas = siteAreas(game, loc), halle = isHalle(own.p.buildingId);
+    for (const i of own.hall.items) {
+      if (!bad.has(`item:${i.id}`)) continue;
+      const tl = itemTiles(i, areas, halle);
+      if (tl.length) { const c = corner(tl); things.push({ depth: c.x + c.y + 1.5, node: <Unmaintained key={`um${i.id}`} tile={c} z={70} /> }); }
+    }
+  }
   const taken = new Set(Object.values(tiles).map(key)), customers = customerTiles(loc, plan);
   for (const c of customers) taken.add(key(c.tile));
   // Zones are floor paint: a grey band for open colocation; cages and the meet-me area carry the fence as well.

@@ -41,8 +41,8 @@ import {
 import { Closet } from "./office";
 import { hallScene } from "./hall";
 import { useEdit } from "./hall-edit";
-import { HallStrip } from "./hall-parts";
-import { MeetMeRoom } from "./hall-doors";
+import { HallStrip, STRIP_H } from "./hall-parts";
+import { MainBoardRoom, MeetMeRoom } from "./hall-doors";
 import "./world.css";
 
 // How dark a tripped room is drawn, darker than a night with the lights off.
@@ -89,7 +89,7 @@ export function World() {
   const link = useRef<string | null>(null);
   const [linkAt, setLinkAt] = useState<Pt | null>(null);
   // The panel open over the room: storage, the post or the power of a fixture.
-  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board" | "xfmr" | "meetme"; title: string; id?: string; call?: Call | null } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board" | "mainboard" | "meetme"; title: string; id?: string; call?: Call | null } | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
 
@@ -107,9 +107,11 @@ export function World() {
   }, [loc]);
   useEffect(() => { if (shown.current === loc.id) looked[loc.id] = { zoom: zoomSet, org, lights }; }, [loc.id, zoomSet, org, lights]);
   const box = { x: iso(0, h).x - 8, y: -WALL - 12, w: (w + h) * 32 + 16, h: (w + h) * 16 + WALL + 12 };
-  const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, (size.h - (editing ? 110 : 0)) * 0.94 / box.h);
+  // The parts strip covers the bottom of the room in edit mode; the room is fitted and centred above it.
+  const room = size.h - (editing ? STRIP_H : 0);
+  const fit = Math.min(ZOOM_MAX, size.w * 0.94 / box.w, room * 0.94 / box.h);
   const zoom = zoomSet ?? fit;
-  const o = org ?? { x: box.x + box.w / 2 - size.w / 2 / zoom, y: box.y + box.h / 2 - size.h / 2 / zoom };
+  const o = org ?? { x: box.x + box.w / 2 - size.w / 2 / zoom, y: box.y + box.h / 2 - room / 2 / zoom };
   const view = useRef({ zoom, o, fit });
   view.current = { zoom, o, fit };
   const zoomed = zoom >= 2;
@@ -277,7 +279,7 @@ export function World() {
     light: () => setLights((v) => !v),
     board: () => setPanel({ kind: "board", title: t(label) }),
     edit: () => setEditing((v) => !v),
-    mainboard: () => {},
+    mainboard: () => setPanel({ kind: "mainboard", title: t(label) }),
     meetme: () => setPanel({ kind: "meetme", title: t(label) }),
     phone: () => {
       const g = useStore.getState().game, c = g.calls.find((x) => x.answeredAt === null) ?? g.calls[g.calls.length - 1] ?? null;
@@ -392,6 +394,7 @@ export function World() {
       {editing && loc.space === "hall" && <HallStrip loc={loc} onDone={() => setEditing(false)} />}
       {panel?.kind === "storage" && <StoragePanel loc={loc} onClose={() => setPanel(null)} />}
       {panel?.kind === "power" && <PowerPanel loc={loc} title={panel.title} kind={panel.id ?? ""} onClose={() => setPanel(null)} />}
+      {panel?.kind === "mainboard" && <MainBoardRoom loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "meetme" && <MeetMeRoom loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "post" && <PostPanel title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "phone" && <PhonePanel title={panel.title} call={panel.call ?? null} cordless={cordless} onOpenRack={(id) => { setPanel(null); setRackOpen({ id }); }} onClose={() => setPanel(null)} />}
