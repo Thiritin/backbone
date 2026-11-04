@@ -13,7 +13,7 @@ type Tri = { p: [V3, V3, V3]; rgb: string; mat: string; cell: string };
 interface Rule { m: string; name?: string; cell?: string[]; L?: [number, number]; C?: [number, number]; H?: [number, number] }
 interface Cfg {
   kits: Record<string, { rules: Rule[] }>;
-  models: { id: string; kit: string; src: string; yaw: number; size: [number, number, number]; dirs: ("x" | "y")[]; rules?: Rule[] }[];
+  models: { id: string; kit: string; src: string; yaw: number; size: [number, number, number]; dirs: ("x" | "y")[]; rules?: Rule[]; bare?: boolean }[];
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -34,7 +34,7 @@ function nodeMat(n: { matrix?: number[]; translation?: number[]; rotation?: numb
 }
 
 // Triangles of a GLB in glTF space, each with the colour its colormap texel or material factor gives.
-function loadGlb(file: string): Tri[] {
+export function loadGlb(file: string): Tri[] {
   const raw = fs.readFileSync(file), jl = raw.readUInt32LE(12);
   const j = JSON.parse(raw.subarray(20, 20 + jl).toString()), bin = raw.subarray(20 + jl + 8);
   let tex: PNG | null = null;
@@ -77,13 +77,15 @@ function loadGlb(file: string): Tri[] {
 }
 
 // glTF (X right, Y up, -Z forward) to world (x, y on the ground, z up) after a yaw; a proper rotation, so winding holds. Scaled to the real size and set on the origin.
-function place(tris: Tri[], yaw: number, size: V3, dir: "x" | "y"): Tri[] {
+export function place(tris: Tri[], yaw: number, size: V3, dir: "x" | "y"): Tri[] {
   const c = Math.cos((yaw * Math.PI) / 180), s = Math.sin((yaw * Math.PI) / 180);
   const w = (p: V3): V3 => [p[0] * c - p[2] * s, -(p[0] * s + p[2] * c), p[1]];
   const T = tris.map((t) => ({ ...t, p: t.p.map(w) as Tri["p"] }));
   const all = T.flatMap((t) => t.p);
   const lo = [0, 1, 2].map((i) => Math.min(...all.map((p) => p[i]))), hi = [0, 1, 2].map((i) => Math.max(...all.map((p) => p[i])));
-  const k = [0, 1, 2].map((i) => size[i] / (hi[i] - lo[i]));
+  // A zero length or width means: scale uniformly to the given height.
+  const k = [0, 1, 2].map((i) => (size[i] ? size[i] : size[2]) / (size[i] ? hi[i] - lo[i] : hi[2] - lo[2]));
+  if (!size[0]) size = [(hi[0] - lo[0]) * k[0], (hi[1] - lo[1]) * k[1], size[2]];
   const sc = (p: V3): V3 => [(p[0] - lo[0]) * k[0], (p[1] - lo[1]) * k[1], (p[2] - lo[2]) * k[2]];
   // Facing y is a quarter turn about z (x, y) -> (W - y, x), which keeps the origin at the footprint's near-left corner.
   const q = (p: V3): V3 => (dir === "x" ? p : [size[1] - p[1], p[0], p[2]]);
@@ -112,7 +114,21 @@ function simplify(r: Ring, tol: number): Ring {
   return [...res, res[0]];
 }
 
-const MATERIALS = new Set(["paint", "glass", "tyre", "rim", "trim", "lamp", "leaf", "needle", "trunk", "wall", "roof", "window", "door", "frame", "metal", "concrete", "brick", "solar"]);
+// Flat upward faces in the upper half of any other material frost too, except these.
+const NOSNOW = new Set(["glass", "window", "tyre", "rim", "lamp", "solar", "trunk"]);
+const SNOW = new Set(["roof", "paint", "leaf", "shrub", "needle", "metal", "concrete", "brick"]);
+// The part of a polygon above (side 1) or below (-1) the height zc.
+function clipZ(poly: V3[], zc: number, side: 1 | -1): V3[] {
+  const out: V3[] = [];
+  poly.forEach((p, i) => {
+    const q = poly[(i + 1) % poly.length], dp = (p[2] - zc) * side, dq = (q[2] - zc) * side;
+    if (dp >= 0) out.push(p);
+    if (dp * dq < 0) { const k = dp / (dp - dq); out.push([p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k, zc]); }
+  });
+  return out;
+}
+
+const MATERIALS = new Set(["paint", "glass", "tyre", "rim", "trim", "lamp", "leaf", "shrub", "needle", "trunk", "wall", "roof", "window", "door", "frame", "metal", "concrete", "brick", "solar"]);
 
 const cellRgb = new Map<string, string>();
 export interface BakedModel { id: string; w: number; h: number; ox: number; oy: number; paths: [string, string][] }
@@ -130,8 +146,44 @@ function material(rules: Rule[], t: Tri): string {
   return "?";
 }
 
-export function bakeOne(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect = false): BakedModel {
-  const tris = place(loadGlb(path.join(artDir, m.src)), m.yaw, m.size, dir);
+// Bare-season branches: a spine and six arms of two tapered boxes, in the placed model's space, seeded by the id.
+function branches(id: string, tris: Tri[]): Tri[] {
+  const all = tris.flatMap((t) => t.p), lo = [0, 1, 2].map((i) => Math.min(...all.map((p) => p[i]))), hi = [0, 1, 2].map((i) => Math.max(...all.map((p) => p[i])));
+  let seed = [...id].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  const cx = (lo[0] + hi[0]) / 2, cy = (lo[1] + hi[1]) / 2, H = hi[2], R = Math.min(hi[0] - lo[0], hi[1] - lo[1]) / 2;
+  const out: Tri[] = [];
+  const box = (a: V3, b: V3, th: number) => {
+    const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], ln = Math.hypot(...d), e = d.map((q) => q / ln);
+    const up: V3 = Math.abs(e[2]) > 0.9 ? [1, 0, 0] : [0, 0, 1];
+    const cr = (p: number[], q: number[]): V3 => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
+    const u = cr(e, up), un = Math.hypot(...u), uu = u.map((q) => (q / un) * th) as V3, vv = cr(e, uu).map((q) => q) as V3, vn = Math.hypot(...vv), v2 = vv.map((q) => (q / vn) * th) as V3;
+    const c = (end: V3, su: number, sv: number): V3 => [end[0] + uu[0] * su + v2[0] * sv, end[1] + uu[1] * su + v2[1] * sv, end[2] + uu[2] * su + v2[2] * sv];
+    const ring = (end: V3, k: number) => [c(end, -k, -k), c(end, k, -k), c(end, k, k), c(end, -k, k)];
+    const A = ring(a, 1), B = ring(b, 0.6), mid: V3 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+    const quad = (q: V3[]) => {
+      const n = cr([q[1][0] - q[0][0], q[1][1] - q[0][1], q[1][2] - q[0][2]], [q[2][0] - q[0][0], q[2][1] - q[0][1], q[2][2] - q[0][2]]), g = [0, 1, 2].map((i) => (q[0][i] + q[2][i]) / 2 - mid[i]);
+      const f = n[0] * g[0] + n[1] * g[1] + n[2] * g[2] < 0 ? [q[0], q[3], q[2], q[1]] : q;
+      for (const k of [[0, 1, 2], [0, 2, 3]]) out.push({ p: k.map((i) => f[i]) as Tri["p"], rgb: "#f2be9e", mat: "woodBark", cell: "" });
+    };
+    for (let i = 0; i < 4; i++) quad([A[i], A[(i + 1) % 4], B[(i + 1) % 4], B[i]]);
+    quad(A); quad(B);
+  };
+  const z0 = H * 0.16;
+  box([cx, cy, z0], [cx + (rnd() - 0.5) * R * 0.2, cy + (rnd() - 0.5) * R * 0.2, H * 0.82], 0.22);
+  const arms = 4 + (seed % 5), rise = 0.04 + 0.12 * rnd(), lean = 0.2 + 0.8 * rnd();
+  for (let k = 0; k < arms; k++) {
+    const a = (k / arms) * Math.PI * 2 + rnd() * 0.6, zs = z0 + H * (0.16 + 0.34 * rnd()), l1 = R * (0.4 + 0.15 * rnd()), l2 = R * (0.35 + 0.25 * rnd());
+    const p0: V3 = [cx, cy, zs], p1: V3 = [cx + Math.cos(a) * l1, cy + Math.sin(a) * l1, zs + H * rise], p2: V3 = [p1[0] + Math.cos(a + lean) * l2, p1[1] + Math.sin(a + lean) * l2, p1[2] + H * (rise + 0.04)];
+    box(p0, p1, 0.17); box(p1, p2, 0.12);
+  }
+  return out;
+}
+
+function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: boolean, bare: boolean) {
+  const placed = place(loadGlb(path.join(artDir, m.src)), m.yaw, m.size, dir);
+  const top = Math.max(...placed.flatMap((t) => t.p.map((p) => p[2])));
+  const tris = bare ? [...placed.filter((t) => material(rules, t) === "trunk"), ...branches(m.id, placed)] : placed;
   type Item = { d: number; poly: Ring; key: string; rgb: string };
   const items: Item[] = [];
   cellRgb.clear();
@@ -140,10 +192,19 @@ export function bakeOne(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[],
     const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], ln = Math.hypot(n[0], n[1], n[2]) || 1;
     const nn = n.map((q) => q / ln);
     if (nn[0] + nn[1] + nn[2] <= 0) continue;
-    const poly = t.p.map(proj).map(([x, y]) => [Math.round(x * 8) / 8, Math.round(y * 8) / 8]) as Ring;
-    if (Math.abs(area(poly)) < 0.6) continue;
     const face = nn[2] > 0.6 ? "t" : nn[1] >= nn[0] ? "l" : "r";
-    items.push({ d: -(a[0] + a[1] + a[2] + b[0] + b[1] + b[2] + c[0] + c[1] + c[2]), poly: [...poly, poly[0]], key: `${inspect ? (t.cell || t.mat) : material(rules, t)}|${face}`, rgb: t.rgb });
+    const mat = inspect ? (t.cell || t.mat) : material(rules, t), d = -(a[0] + a[1] + a[2] + b[0] + b[1] + b[2] + c[0] + c[1] + c[2]);
+    // Snow lies on the upward-leaning part of these materials: the whole face when it faces up, the upper part of a steep one.
+    if (mat === "drop" || (mat === "needle" && face === "t" && Math.max(a[2], b[2], c[2]) < top * 0.12)) continue;
+    const flat = !inspect && !bare && nn[2] > 0.9 && Math.min(a[2], b[2], c[2]) > top * 0.3 && !NOSNOW.has(mat), crown = mat === "leaf" || mat === "needle", snowy = flat || !inspect && !bare && SNOW.has(mat) && nn[2] > (crown ? 0.04 : 0.25) && (!crown || Math.max(a[2], b[2], c[2]) > top * 0.25);
+    const zlo = Math.min(a[2], b[2], c[2]), zc = zlo + (Math.max(a[2], b[2], c[2]) - zlo) * 0.45;
+    const pieces: [V3[], string][] = !snowy ? [[t.p, ""]] : face === "t" || mat === "roof" || mat === "paint" || mat === "metal" || mat === "concrete" || mat === "brick" ? [[t.p, "|s"]] : [[clipZ(t.p, zc, 1), "|s"], [clipZ(t.p, zc, -1), ""]];
+    for (const [pp, sn] of pieces) {
+      if (pp.length < 3) continue;
+      const poly = pp.map(proj).map(([x, y]) => [Math.round(x * 8) / 8, Math.round(y * 8) / 8]) as Ring;
+      if (Math.abs(area(poly)) < 0.6) continue;
+      items.push({ d, poly: [...poly, poly[0]], key: `${mat}|${face}${sn}`, rgb: t.rgb });
+    }
     cellRgb.set(t.cell || t.mat, t.rgb);
   }
   items.sort((p, q) => p.d - q.d);
@@ -179,11 +240,17 @@ export function bakeOne(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[],
       }
     }
     if (!d) continue;
-    const [mat, face] = key.split("|");
+    const [mat, face, tag] = key.split("|");
     if (!inspect && !MATERIALS.has(mat)) throw new Error(`${m.id}: colour rule missing, material ${mat}`);
-    paths.push([inspect ? `${mat}|${face}` : `m-${mat} f-${face}`, d]);
+    paths.push([inspect ? `${mat}|${face}` : `m-${mat} f-${face}${bare ? " bare" : tag ? " snow" : ""}`, d]);
   }
-  return { id: dir === "x" && m.dirs.length === 1 ? m.id : `${m.id}-${dir}`, w: Math.ceil(x1 - x0), h: Math.ceil(y1 - y0), ox: Math.floor(x0), oy: Math.floor(y0), paths };
+  return { paths, x0, y0, x1, y1 };
+}
+
+export function bakeOne(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect = false): BakedModel {
+  const main = pass(m, dir, rules, inspect, false), bare = m.bare && !inspect ? pass(m, dir, rules, false, true) : null;
+  const [x0, y0, x1, y1] = [Math.min(main.x0, bare?.x0 ?? Infinity), Math.min(main.y0, bare?.y0 ?? Infinity), Math.max(main.x1, bare?.x1 ?? -Infinity), Math.max(main.y1, bare?.y1 ?? -Infinity)];
+  return { id: dir === "x" && m.dirs.length === 1 ? m.id : `${m.id}-${dir}`, w: Math.ceil(x1 - x0), h: Math.ceil(y1 - y0), ox: Math.floor(x0), oy: Math.floor(y0), paths: [...main.paths, ...(bare?.paths ?? [])] };
 }
 
 export const bakeConfig = cfg;

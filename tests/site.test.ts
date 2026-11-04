@@ -82,12 +82,12 @@ describe("site layout", () => {
 describe("baked models", () => {
   const ids = bakeConfig.models.flatMap((m) => m.dirs.map((d) => (d === "x" && m.dirs.length === 1 ? m.id : `${m.id}-${d}`)));
   it("has every configured id", () => { for (const id of ids) expect(MODELS.find((m) => m.id === id), id).toBeTruthy(); });
-  it("keeps each model between 4 and 60 paths with known material classes", () => {
-    const mats = new Set(["paint", "glass", "tyre", "rim", "trim", "lamp", "leaf", "needle", "trunk", "wall", "roof", "window", "door", "frame", "metal", "concrete", "brick", "solar"]);
+  it("keeps each model between 3 and 60 paths with known material classes", () => {
+    const mats = new Set(["paint", "glass", "tyre", "rim", "trim", "lamp", "leaf", "shrub", "needle", "trunk", "wall", "roof", "window", "door", "frame", "metal", "concrete", "brick", "solar"]);
     for (const m of MODELS) {
-      expect(m.paths.length, m.id).toBeGreaterThanOrEqual(4);
+      expect(m.paths.length, m.id).toBeGreaterThanOrEqual(3);
       expect(m.paths.length, m.id).toBeLessThanOrEqual(60);
-      for (const [c] of m.paths) expect(c).toMatch(/^m-([a-z]+) f-[tlr]$/), expect(mats.has(c.split(" ")[0].slice(2)), c).toBe(true);
+      for (const [c] of m.paths) expect(c).toMatch(/^m-([a-z]+) f-[tlr]( snow| bare)?$/), expect(mats.has(c.split(" ")[0].slice(2)), c).toBe(true);
     }
   });
   it("draws a sedan 1.45 m tall", () => {

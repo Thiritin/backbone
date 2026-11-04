@@ -6,6 +6,7 @@
 .m-trim { --t: var(--trim-t, oklch(0.60 0.015 255)); --l: var(--trim-l, oklch(0.52 0.015 255)); --r: var(--trim-r, oklch(0.43 0.015 255)); }
 .m-lamp { --t: var(--lamp-t, oklch(0.82 0.09 90)); --l: var(--lamp-l, oklch(0.74 0.09 90)); --r: var(--lamp-r, oklch(0.65 0.09 90)); }
 .m-leaf { --t: var(--leaf-t, oklch(0.76 0.16 140)); --l: var(--leaf-l, oklch(0.67 0.16 140)); --r: var(--leaf-r, oklch(0.57 0.16 140)); }
+.m-shrub { --t: var(--shrub-t, oklch(0.72 0.15 145)); --l: var(--shrub-l, oklch(0.63 0.15 145)); --r: var(--shrub-r, oklch(0.53 0.15 145)); }
 .m-needle { --t: var(--needle-t, oklch(0.52 0.12 150)); --l: var(--needle-l, oklch(0.44 0.12 150)); --r: var(--needle-r, oklch(0.36 0.12 150)); }
 .m-trunk { --t: var(--trunk-t, oklch(0.56 0.05 55)); --l: var(--trunk-l, oklch(0.48 0.05 55)); --r: var(--trunk-r, oklch(0.39 0.05 55)); }
 .m-wall { --t: var(--wall-t, oklch(0.93 0.015 85)); --l: var(--wall-l, oklch(0.85 0.015 85)); --r: var(--wall-r, oklch(0.76 0.015 85)); }
@@ -22,11 +23,6 @@
 .f-l { fill: var(--l); stroke: var(--l); }
 .f-r { fill: var(--r); stroke: var(--r); }
 .f-c { fill: color-mix(in oklch, var(--t) 55%, var(--l)); stroke: none; }
-/* Snow: top faces of roofs, paint, leaves, needles, metal and concrete turn white. Set as variables because a baked model is a shadow tree and takes inherited values only. */
-.w-snow { --roof-t: oklch(0.97 0.006 240); --paint-t: oklch(0.97 0.006 240); --leaf-t: oklch(0.97 0.006 240); --needle-t: oklch(0.97 0.006 240); --metal-t: oklch(0.97 0.006 240); --concrete-t: oklch(0.97 0.006 240); }
-.w-snow .f-c { fill: var(--t); }
-.w-snow .w-f-lawn, .w-snow .w-f-apron { fill: oklch(0.95 0.008 240); }
-.w-snow .w-f-lawn-far { fill: oklch(0.9 0.01 240); }
 .w-tone-car-1 { --paint-t: oklch(0.62 0.18 28); --paint-l: oklch(0.54 0.18 28); --paint-r: oklch(0.45 0.18 28); }
 .w-tone-car-2 { --paint-t: oklch(0.6 0.15 245); --paint-l: oklch(0.52 0.15 245); --paint-r: oklch(0.43 0.15 245); }
 .w-tone-car-3 { --paint-t: oklch(0.92 0.005 250); --paint-l: oklch(0.84 0.005 250); --paint-r: oklch(0.75 0.005 250); }
@@ -35,8 +31,29 @@
 .w-tone-car-6 { --paint-t: oklch(0.56 0.13 150); --paint-l: oklch(0.48 0.13 150); --paint-r: oklch(0.39 0.13 150); }
 .w-tone-plaster-a { --top: oklch(0.95 0.02 85); --left: oklch(0.9 0.035 85); --right: oklch(0.8 0.04 80); --edge: oklch(0.7 0.04 80); --wall-t: oklch(0.95 0.02 85); --wall-l: oklch(0.9 0.03 85); --wall-r: oklch(0.8 0.035 85); }
 .w-tone-plaster-b { --wall-t: oklch(0.93 0.03 30); --wall-l: oklch(0.88 0.04 30); --wall-r: oklch(0.78 0.045 30); }
-.w-pine-cap { display: none; }
-.w-snow .w-pine-cap { display: inline; }
-.w-pine-cap-l polygon { fill: oklch(0.97 0.006 240); }
-.w-pine-cap-r polygon { fill: oklch(0.88 0.01 240); }
 .w-tone-plaster-c { --top: oklch(0.93 0.03 215); --left: oklch(0.88 0.04 215); --right: oklch(0.78 0.045 215); --edge: oklch(0.68 0.045 215); --wall-t: oklch(0.93 0.03 215); --wall-l: oklch(0.88 0.04 215); --wall-r: oklch(0.78 0.045 215); }
+/* Snow: the upward-leaning part of roofs, paint, leaves, needles, metal and concrete is baked as a path tagged snow; a cover class sets its three tones. A baked model is a shadow tree and takes inherited values only, so everything here is a variable. */
+.snow.f-t { fill: var(--sn-t, var(--t)); stroke: var(--sn-t, var(--t)); }
+.snow.f-l { fill: var(--sn-l, var(--l)); stroke: var(--sn-l, var(--l)); }
+.snow.f-r { fill: var(--sn-r, var(--r)); stroke: var(--sn-r, var(--r)); }
+.ws-snow { --sn-t: oklch(0.97 0.006 240); --sn-l: oklch(0.9 0.008 240); --sn-r: oklch(0.8 0.01 240); }
+.ws-snow .f-c { fill: var(--t); }
+.ws-snow .w-f-lawn, .ws-snow .w-f-apron { fill: oklch(0.95 0.008 240); }
+.ws-snow .w-f-lawn-far { fill: oklch(0.9 0.01 240); }
+/* Leaves: a season class on a common ancestor sets the three leaf tones; bare hides the leaves and leaves trunk and branches. */
+.m-leaf { fill-opacity: var(--leaf-o, 1); stroke-opacity: var(--leaf-o, 1); }
+.ws-spring { --leaf-t: oklch(0.82 0.15 128); --leaf-l: oklch(0.73 0.15 128); --leaf-r: oklch(0.63 0.15 128); }
+.ws-summer { --leaf-t: oklch(0.76 0.16 140); --leaf-l: oklch(0.67 0.16 140); --leaf-r: oklch(0.57 0.16 140); }
+.ws-autumn { --leaf-t: oklch(0.76 0.15 70); --leaf-l: oklch(0.67 0.15 65); --leaf-r: oklch(0.57 0.14 60); }
+.ws-bare { --leaf-o: 0; }
+.ws-autumn .w-tone-fall-a { --leaf-t: oklch(0.72 0.17 50); --leaf-l: oklch(0.63 0.17 48); --leaf-r: oklch(0.53 0.16 45); }
+.ws-autumn .w-tone-fall-b { --leaf-t: oklch(0.82 0.15 90); --leaf-l: oklch(0.73 0.15 88); --leaf-r: oklch(0.63 0.14 85); }
+.ws-autumn .w-tone-fall-c { --leaf-t: oklch(0.62 0.18 32); --leaf-l: oklch(0.54 0.18 30); --leaf-r: oklch(0.45 0.17 28); }
+.ws-snow .w-f-patch-a { fill: oklch(0.93 0.008 240); }
+.ws-snow .w-f-patch-b { fill: oklch(0.97 0.006 240); }
+.bare { fill-opacity: var(--bare-o, 0); stroke-opacity: var(--bare-o, 0); }
+.ws-bare { --bare-o: 1; }
+/* Warehouse roofs: the hall models draw their roof in the roof slot. */
+.w-tone-hall-1 { --roof-t: oklch(0.72 0.06 215); --roof-l: oklch(0.64 0.06 215); --roof-r: oklch(0.55 0.06 215); }
+.w-tone-hall-2 { --roof-t: oklch(0.86 0.05 85); --roof-l: oklch(0.78 0.05 85); --roof-r: oklch(0.69 0.05 85); }
+.w-tone-hall-3 { --roof-t: oklch(0.7 0.1 150); --roof-l: oklch(0.62 0.1 150); --roof-r: oklch(0.53 0.1 150); }

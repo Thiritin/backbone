@@ -6,6 +6,10 @@
 .w-f-soil-l { fill: oklch(0.46 0.06 58); stroke: oklch(0.34 0.05 55); stroke-width: 0.6; }
 .w-f-lawn { fill: oklch(0.74 0.14 140); }
 .w-f-lawn-far { fill: oklch(0.64 0.11 140); }
+.w-f-patch-a { fill: oklch(0.77 0.14 140); }
+.w-f-patch-b { fill: oklch(0.71 0.14 140); }
+.w-f-tar-a { fill: oklch(0.45 0.01 255); }
+.w-f-tar-b { fill: oklch(0.39 0.01 255); }
 .w-f-slab-l { fill: oklch(0.7 0.01 250); stroke: oklch(0.58 0.012 250); stroke-width: 0.6; }
 .w-f-slab-r { fill: oklch(0.6 0.012 250); stroke: oklch(0.5 0.012 250); stroke-width: 0.6; }
 .w-f-beyond { fill: oklch(0.6 0.025 85); }

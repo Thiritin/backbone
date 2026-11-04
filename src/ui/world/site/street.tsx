@@ -1,5 +1,6 @@
 import { at3, Prism } from "../draw";
 import { flat } from "./geo";
+import { Patches } from "./ground";
 import { Model } from "./Model";
 import { fnv1a, KERB, type Item } from "./layout";
 import { CAR_TONES } from "./palette";
@@ -12,6 +13,7 @@ export function Street({ i, seed }: { i: Item; seed: number }) {
   return (
     <g pointerEvents="none">
       <polygon className="w-f-asphalt" points={flat(0, [x0, y0], [x1, y0], [x1, y1], [x0, y1])} />
+      <Patches seed={seed} tag={`st${x0}`} x0={x0 + 2} y0={y0 + 0.5} x1={x1 - 2} y1={y1 - 0.5} tone="w-f-tar" />
       <path className="w-f-line" d={centre} />
       <Prism x0={x0} y0={y0 - KERB} x1={x1} y1={y0} z1={5} tone="w-tone-kerb" />
       <Prism x0={x0} y0={y1} x1={x1} y1={y1 + KERB} z1={5} tone="w-tone-kerb" />
