@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Seasons now change the world outside: blossom in spring, golden autumn leaves that fall, bare winter trees, snow that settles and melts, rain, and a receptionist and seated staff in the lobby; clicking your car in its parking bay leaves for another location.
 - Server actions in the rack close-up are now keys on a small paper tag with a power button, a console key and a ports key, and selling or switching off something that takes other gear offline asks on a paper slip with a stamp.
 - Datacenters now sit in three kinds of surroundings, an industrial estate, open countryside with farms and fields, and a business park, each with its own fence, gate and utilities that grow with the size of the site.
 - Customers' remote-hands jobs appear as paper tickets on a board on the NOC wall, and the three providers without a datacenter have their own site pages.

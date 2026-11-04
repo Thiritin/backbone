@@ -1,4 +1,19 @@
 /* The site around a room: flat fills in two or three tones, the same upper left light as the room. */
+/* Season and weather tokens. */
+:root {
+  --lawn-spring: oklch(0.79 0.16 132); --lawn-spring-far: oklch(0.69 0.13 132);
+  --lawn-autumn: oklch(0.73 0.14 118); --lawn-autumn-far: oklch(0.63 0.12 118);
+  --lawn-bare: oklch(0.72 0.14 142); --lawn-bare-far: oklch(0.62 0.11 142);
+  --sn-top: oklch(0.97 0.006 240); --sn-left: oklch(0.9 0.008 240); --sn-right: oklch(0.8 0.01 240); --sn-patch-a: oklch(0.93 0.008 240); --sn-flake: oklch(0.98 0.004 240);
+  --wx-rain: oklch(0.5 0.05 245); --wx-rain-night: oklch(0.7 0.04 250);
+  --lf-fall-1: oklch(0.72 0.17 50); --lf-fall-2: oklch(0.82 0.15 90);
+  --lf-blossom-t: oklch(0.88 0.07 350); --lf-blossom-l: oklch(0.8 0.08 350); --lf-blossom-r: oklch(0.7 0.08 350);
+  --lf-fresh-t: oklch(0.82 0.15 128); --lf-fresh-l: oklch(0.73 0.15 128); --lf-fresh-r: oklch(0.63 0.15 128);
+  --lf-full-t: oklch(0.76 0.16 140); --lf-full-l: oklch(0.67 0.16 140); --lf-full-r: oklch(0.57 0.16 140);
+  --lf-autumn-t: oklch(0.76 0.15 70); --lf-autumn-l: oklch(0.67 0.15 65); --lf-autumn-r: oklch(0.57 0.14 60);
+  --lf-falling-t: oklch(0.66 0.1 55); --lf-falling-l: oklch(0.58 0.1 52); --lf-falling-r: oklch(0.5 0.09 50);
+  --car-hot-t: oklch(0.92 0.12 95); --car-hot-l: oklch(0.84 0.13 92); --car-hot-r: oklch(0.74 0.13 90);
+}
 .w-site, .w-site * { pointer-events: none; }
 .w-f-apron { fill: oklch(0.78 0.03 85); }
 .w-f-neutral { fill: oklch(0.5 0.012 150); }
@@ -62,3 +77,39 @@
 .w-mesh-line { stroke: oklch(0.5 0.012 252); stroke-width: 0.5; fill: none; }
 .w-coil { fill: none; stroke: oklch(0.52 0.012 252); stroke-width: 1.1; }
 .w-glass-fill { fill: oklch(0.4 0.035 245); }
+
+/* Seasons: snow steps (1 patches and model caps, 2 caps on every box top, 3 white ground), lawn tones and the weather sets. */
+.w-f-lawn, .w-f-lawn-far, .w-f-patch-a, .w-f-patch-b, .w-f-apron { transition: fill 400ms; }
+.ws-sn1, .ws-sn2 { --sn-t: var(--sn-top); }
+.ws-sn2 { --sn-l: var(--sn-left); --sn-r: var(--sn-right); }
+.ws-sn1 .w-f-patch-a, .ws-sn2 .w-f-patch-a { fill: var(--sn-patch-a); }
+.ws-sn1 .w-f-patch-b, .ws-sn2 .w-f-patch-b { fill: var(--sn-top); }
+.ws-sn2 .w-site .w-box .w-face-t, .ws-snow .w-site .w-box .w-face-t { fill: var(--sn-top); }
+.ws-spring:not(.ws-snow) .w-f-lawn { fill: var(--lawn-spring); }
+.ws-spring:not(.ws-snow) .w-f-lawn-far { fill: var(--lawn-spring-far); }
+.ws-autumn:not(.ws-snow) .w-f-lawn { fill: var(--lawn-autumn); }
+.ws-autumn:not(.ws-snow) .w-f-lawn-far { fill: var(--lawn-autumn-far); }
+.ws-bare:not(.ws-snow) .w-f-lawn { fill: var(--lawn-bare); }
+.ws-bare:not(.ws-snow) .w-f-lawn-far { fill: var(--lawn-bare-far); }
+.w-wx-rain { fill: none; stroke: var(--wx-rain); stroke-linecap: round; }
+.w-wx-night { stroke: var(--wx-rain-night); }
+.w-wx-flake { fill: var(--sn-flake); }
+.w-wx-leaf { fill: var(--leaf-l, var(--lf-autumn-l)); }
+.w-wx-leaf-1 { fill: var(--lf-fall-1); }
+.w-wx-leaf-2 { fill: var(--lf-fall-2); }
+.w-wx-a { animation: w-wx-a 1.2s steps(1) infinite; }
+.w-wx-b { animation: w-wx-b 1.2s steps(1) infinite; }
+@keyframes w-wx-a { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes w-wx-b { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .w-wx-a, .w-wx-b { animation: none; opacity: 1; } }
+/* The player's car: arrives into its bay and slides out on leaving; hovering tints the body flat. */
+.w-car { cursor: pointer; pointer-events: all; }
+.w-car * { pointer-events: all; }
+.w-car:focus { outline: none; }
+.w-car:hover use, .w-car:focus-visible use { --paint-t: var(--car-hot-t); --paint-l: var(--car-hot-l); --paint-r: var(--car-hot-r); }
+.w-car-in { animation: w-car-in 1.2s ease-out both; }
+.w-car-out { animation: w-car-out 0.7s ease-in both; }
+@keyframes w-car-in { from { transform: translate(120px, 60px); } to { transform: none; } }
+@keyframes w-car-out { from { transform: none; } to { transform: translate(120px, 60px); } }
+@media (prefers-reduced-motion: reduce) { .w-car-in, .w-car-out { animation: none; } }
+

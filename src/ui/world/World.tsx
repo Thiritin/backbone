@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { floodedDevice } from "../../sim/60-infra/network";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
@@ -48,7 +48,9 @@ import { hallScene } from "./hall";
 import { useEdit } from "./hall-edit";
 import { HallStrip, STRIP_H } from "./hall-parts";
 import { MainBoardRoom, MeetMeRoom } from "./hall-doors";
-import { GroundRect, SiteBack, SiteFront, SiteNight } from "./site/Site";
+import { GroundRect, SiteBack, SiteFront, SiteNight, SiteWeather, type Drive } from "./site/Site";
+import { leafPhase, leafVars, seasonClasses } from "./site/season";
+import { carDoor } from "../travel/sounds";
 import { siteOf } from "./site/layout";
 import "./world.css";
 
@@ -83,6 +85,13 @@ export function World() {
   const fx = fixtures(loc, plan);
 
   const [door, setDoor] = useState(0);
+  // The player's car: it slides into its bay when the trip ends and out of it on leaving. UI state only, never saved.
+  const [carAnim, setCarAnim] = useState<"" | "in" | "out">("");
+  const stage = useTrip((x) => x.stage), lastStage = useRef(stage);
+  useEffect(() => {
+    const was = lastStage.current; lastStage.current = stage;
+    if (was === "arrive" && stage === "room") { setCarAnim("in"); const id = setTimeout(() => setCarAnim("") , 1300); return () => clearTimeout(id); }
+  }, [stage]);
   const [lit, setLit] = useState<string | null>(null);
   // The object a corkboard card points at, glowing for a moment after the close-up closes.
   const [hint, setHint] = useState<string | null>(null);
@@ -126,7 +135,8 @@ export function World() {
   const o = org ?? { x: box.x + box.w / 2 - size.w / 2 / zoom, y: box.y + box.h / 2 - room / 2 / zoom };
   const view = useRef({ zoom, o, fit });
   // The player may zoom out to fit the whole site around the room.
-  const site = useMemo(() => siteOf(game, loc, w, h), [loc.id, game.properties, w, h]);
+  const staffHere = game.staff.length;
+  const site = useMemo(() => siteOf(game, loc, w, h), [loc.id, game.properties, staffHere, w, h]);
   const fitSite = Math.min(size.w * 0.98 / site.box.w, size.h * 0.98 / site.box.h) * (site.kind === "plot" ? (site.setting === "nowhere" ? 1 : 1.3) : 1);
   view.current = { zoom, o, fit: Math.min(fit, fitSite) };
   const port = { x: o.x, y: o.y, w: size.w / zoom, h: size.h / zoom };
@@ -260,7 +270,7 @@ export function World() {
 
 
   // Things standing on the floor, sorted by x + y so nearer ones overlap farther ones; a fixture sorts by its farthest tile.
-  const things: { depth: number; node: ReactNode }[] = racks.map((r) => {
+  const things: { depth: number; node: ReactNode; front?: boolean }[] = racks.map((r) => {
     const tile = tiles[r.id], glow = (cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id) || (from && from.rack !== r.id), leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on && !loc.tripped, fault: d.components.some((c) => c.failedAt !== null), flood: floodedDevice(game, d) && !loc.tripped, top: d.slot + modelById(d.model).height - 1 }));
     const p = rackPower(game, r.id), hot = !loc.tripped && p.limitWatts > 0 && p.watts >= 0.9 * p.limitWatts;
     return {
@@ -314,6 +324,7 @@ export function World() {
     },
   });
   const watts = `${n(power)}W`;
+  const day = Math.floor(game.hour / 24), seasons = useMemo(() => seasonClasses(loc.city, day * 24), [loc.city, day]), leaf = useMemo(() => leafVars(day * 24) as CSSProperties, [day]);
   const date = dateOf(game.hour), hd = date.getUTCHours() + game.minute / 60, month = date.getUTCMonth(), night = daylight(hd, month) < 0.5;
   // The meter disc turns once every few seconds at a kilowatt, faster as the draw grows.
   const turn = power > 0 ? Math.min(20, 4000 / power) : 0;
@@ -377,7 +388,7 @@ export function World() {
   for (const [id, f] of Object.entries(fx)) {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
     if (loc.tripped && (["fan", "window", "owindow"].includes(f.kind ?? id) || (lights && ["lamp", "tube"].includes(f.kind ?? id)))) bright.push(<g key={`b${id}`} pointerEvents="none" aria-hidden>{art}</g>);
-    const node = a.use && a.label && art
+    const node = a.use && !(a.use === "door" && site.bay) && a.label && art
       ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}${hint === id ? " w-glow" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use], a.use === "desktop" ? seat : STANDS.has(a.use) ? () => beside(f) : undefined, t(a.label))}>{art}</g>
       : <g key={id} aria-label={a.label && t(a.label)} aria-hidden={!a.label || undefined} pointerEvents="none">{art}</g>;
     if (a.wall) back.push(node);
@@ -387,6 +398,14 @@ export function World() {
   things.push(...staff);
   things.sort((a, b) => a.depth - b.depth);
 
+  const leaveRef = useRef<(e: MouseEvent) => void>(() => {});
+  const leaveCar = () => {
+    carDoor();
+    setCarAnim("out");
+    setTimeout(() => { setCarAnim(""); useTrip.getState().send("door"); }, 700);
+  };
+  leaveRef.current = use("car", leaveCar, () => (fx.door ? beside(fx.door) : null), t("world.site.car")) 
+  const drive: Drive = useMemo(() => ({ anim: carAnim, onLeave: (e) => leaveRef.current(e as MouseEvent) }), [carAnim]);
   const openDoor = () => {
     setDoor(1);
     setTimeout(() => setDoor(2), 150);
@@ -395,20 +414,22 @@ export function World() {
 
   return (
     <div className="world" aria-label={loc.name}>
-      <svg ref={svg} className={`world-svg${night ? " w-night" : ""}`}
+      <svg ref={svg} className={`world-svg ${seasons}${night ? " w-night" : ""}`} style={leaf}
         viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
         <GroundRect view={port} kind={site.kind} />
         <Defs />
-        <SiteBack s={site} name={game.company.name} band={game.company.color} month={month} year={date.getUTCFullYear()} />
+        <SiteBack s={site} name={game.company.name} band={game.company.color} month={month} year={date.getUTCFullYear()} drive={drive} />
         <Walls w={w} h={h} dc={!home && !office} color={game.company.color} />
         {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></>
           : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={hallRect?.w ?? w} h={hallRect?.h ?? h} />}
         {back}
-        {things.map((x) => x.node)}
-        <SiteFront s={site} name={game.company.name} band={game.company.color} year={date.getUTCFullYear()} />
+        {things.filter((x) => !x.front).map((x) => x.node)}
+        <SiteFront s={site} name={game.company.name} band={game.company.color} year={date.getUTCFullYear()} drive={drive} />
         {(home || office) && <Night w={w} h={h} opacity={loc.tripped ? TRIPPED_DARK : darkness(hd, month, lights)} />}
+        {things.filter((x) => x.front).map((x) => x.node)}
         <SiteNight s={site} view={port} opacity={darkness(hd, month)} />
+        <SiteWeather sky={sky(loc.city, game.hour)} night={night} falling={leafPhase(game.hour).now === "falling" || leafPhase(game.hour).now === "autumn"} view={port} />
         {bright}
         {!home && !office && loc.space !== "hall" && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />

@@ -4,10 +4,10 @@ import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { dateOf } from "../../sim/00-core/time";
 import { rackUnits } from "../../sim/20-world/datacenters";
-import { type Facing, type OfficePlan, seatsAt, type Tile } from "../../sim/20-world/layout";
+import { type Facing, type OfficePlan, roomSize, seatsAt, type Tile } from "../../sim/20-world/layout";
 import type { GameState, Location } from "../../sim/50-state";
 import { seatChairs, seatDepth } from "./chairs";
-import { figuresIn, pathOf, type Figure } from "../../sim/60-infra/figures";
+import { figuresIn, pathOf, receptionist, type Figure } from "../../sim/60-infra/figures";
 import { present } from "../../sim/60-infra/handwork";
 import { nowMin, seatOf } from "../../sim/90-actions/work-orders";
 import { brandColor } from "../art/logos";
@@ -141,10 +141,10 @@ const sitAt = (p: Pt, facing: Facing | undefined, office: boolean): Pt => office
 // The people in this room as depth-sorted things: seated at their seat, walking to a rack, working there and back. Every position comes from the saved
 // work orders at the game minute; the next minute's position sets where the browser glides to, so no frame state is kept.
 
-export function useFigures(game: GameState, loc: Location, plan: OfficePlan | undefined, tiles: Record<string, Tile>, speed: number): { depth: number; node: ReactNode }[] {
+export function useFigures(game: GameState, loc: Location, plan: OfficePlan | undefined, tiles: Record<string, Tile>, speed: number): { depth: number; node: ReactNode; front?: boolean }[] {
   const [hover, setHover] = useState<string | null>(null);
   const walk = useVisit((v) => v.walk), at = useVisit((v) => v.at), set = useVisit((v) => v.set);
-  const floor = plan?.floor ?? 1, office = loc.space === "office", m = nowMin(game), out: { depth: number; node: ReactNode }[] = [];
+  const floor = plan?.floor ?? 1, office = loc.space === "office", m = nowMin(game), out: { depth: number; node: ReactNode; front?: boolean }[] = [], lobbyY = loc.space === "hall" ? roomSize(loc).h : Infinity;
   const msPerMin = speed > 0 ? 1000 / speed : 0, here = present(game, loc.id), seat = here ? seatOf(game, loc.id, "player") : null;
   const busy = game.orders.some((o) => o.worker === "player" && o.locationId === loc.id && !o.applied);
   const pending = useVisit((v) => v.pending);
@@ -169,6 +169,8 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
     const p = at?.locationId === loc.id ? at.pt : seat, sitting = key(p) === key(seat);
     list.push({ id: "player", name: "", role: "player", tile: { x: p.x, y: p.y, facing: (seat as Tile).facing ?? "n" }, facing: (seat as Tile).facing ?? "n", colour: null, busy: false, seated: sitting, pose: sitting ? "sit" : "stand", path: [p], progress: 0 });
   }
+  const desk = receptionist(game, loc, Math.floor(m / 60));
+  if (desk) list.push({ id: "reception", name: t("figures.reception"), role: "provider", tile: { x: desk.x, y: desk.y, facing: desk.facing }, facing: desk.facing, colour: null, busy: false, seated: true, pose: "sit", path: [desk], progress: 0 });
   // Without a drawn seat in the room nobody sits: the figure stands where the sim parks it.
   const seated = seatsAt(game, loc).length > 0;
   for (const f of list) {
@@ -191,7 +193,7 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
     const enter = () => setHover(f.id), exit = () => setHover((v) => (v === f.id ? null : v));
     const body = pose === "sit" ? <Seated l={l} facing={toViewer(f.facing) ? "s" : "n"} /> : pose === "walk" ? <Walking l={l} /> : <Standing l={l} facing={f.facing} busy={pose === "work"} />;
     const done = walking ? () => { set({ walk: null, at: { locationId: loc.id, pt: walking.to } }); walking.run(); } : undefined;
-    out.push({ depth, node: <Mover key={f.id} pts={pts && pts.length > 1 ? pts : [p0]} ms={ms} onDone={done} className="w-person" data-person={f.id} data-pose={pose} aria-label={name} onPointerEnter={enter} onPointerLeave={exit}>{body}</Mover> });
+    out.push({ depth, front: f.tile.y >= lobbyY, node: <Mover key={f.id} pts={pts && pts.length > 1 ? pts : [p0]} ms={ms} onDone={done} className="w-person" data-person={f.id} data-pose={pose} aria-label={name} onPointerEnter={enter} onPointerLeave={exit}>{body}</Mover> });
     // A rack row in front would hide someone in the aisle, so a faint outline shows through.
     if (!sitting) out.push({ depth: 1e9, node: <Mover key={`x-${f.id}`} pts={pts && pts.length > 1 ? pts : [p0]} ms={ms} className="w-person w-xray" aria-hidden>{pose === "walk" ? <Walking l={l} /> : <Standing l={l} facing={f.facing} busy={false} />}</Mover> });
     if (pose === "work") {

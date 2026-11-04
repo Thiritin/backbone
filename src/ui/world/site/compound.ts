@@ -1,3 +1,4 @@
+import { lobbySlots } from "../../../sim/20-world/lobby";
 import { BAY, bounds, carItem, fenceLine, it, lotRow, M, pick, STREET, treeItem, type Item, type LotMix, type SiteClass, type SiteSpec } from "./layout";
 import { CAR_TONES, PLAYER_CAR } from "./palette";
 import { compoundOf, type Setting, type UtilKind } from "./setting";
@@ -28,7 +29,7 @@ function packUtil(kinds: UtilKind[], xs: number, xmax: (y1: number) => number, y
 }
 
 // A compound for an own hall, or the walled unit of a rented room when edge is set.
-export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: number, h: number, edge = false): SiteSpec {
+export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: number, h: number, edge = false, staff = 0): SiteSpec {
   const c = compoundOf(setting, cls, seed, edge), e = edge ? 0 : c.reach, gap = 4, dbl = c.fence === "double";
   const px0 = edge ? -4 : -9 - e, px1 = edge ? w + 16 : w + 13 + e, py0 = edge ? -8 : -14 - e, py1 = h + 9;
   const sy0 = py1 + 2.35, sy1 = sy0 + STREET, gateX0 = w + 3, gateX1 = w + 9, bayY = (k: number) => h + 1 - BAY.w * (k + 1);
@@ -39,7 +40,7 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     it("walk", -300, py1 + 0.4, w + 300, py1 + 0.4 + 1.8, 0, "front"),
     it("bays", w + 1, bayY(edge ? 1 : 3), w + 1 + BAY.l, bayY(-1), 0, "front", { count: edge ? 2 : 4 }),
     carItem("hatchback", w + 1.4, bayY(0) + 0.35, PLAYER_CAR, "front", { kind: "hatchback" }),
-    carItem("suv", w + 1.2, bayY(1) + 0.35, tone(5), "front", { kind: "suv" }),
+    ...Array.from({ length: edge ? 1 : Math.min(3, staff) }, (_, k) => carItem(["suv", "sedan", "van"][k], w + 1.2, bayY(k + 1) + 0.35, tone(5 + k), "front", { kind: ["suv", "sedan", "van"][k] })),
     it("gate", gateX0, py1 - 0.3, gateX1, py1 + 0.3, M, "front", { kind: setting !== "business" && c.slide ? "slide" : "barrier" }),
     it("booth", gateX1 + 1.1, py1 - 1.6, boothX1, py1 + 0.7, Math.round(2.8 * M), "front"),
     carItem(setting === "industrial" ? "delivery" : "coupe", -34, sy0 + 4.2, tone(7), "front", { kind: setting === "industrial" ? "delivery" : "coupe", moving: true }), carItem(setting === "industrial" ? "bintruck" : "suv", w + 16, sy0 + 1.4, tone(8), "front", { kind: setting === "industrial" ? "bintruck" : "suv", moving: true }),
@@ -116,6 +117,6 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     ].filter(free);
     items.push(...street.filter((i) => !edge || i.t !== "rack"));
   }
-  const seats = edge ? [] : [{ x: 4, y: h + 3, facing: "n" as const }, { x: 5, y: h + 3, facing: "n" as const }];
+  const seats = edge ? [] : lobbySlots(cls, h);
   return { kind: "plot", setting, cls, seed, w, h, lift: 0, plot: { x0: px0, y0: py0, x1: px1, y1: py1 }, items, bay: { x: w + 1.4, y: bayY(0) + 0.35, dir: "x" }, seats, box: bounds(items, 0, w, h) };
 }

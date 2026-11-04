@@ -8,7 +8,9 @@ import type { Role } from "../47-staff/staff";
 import { hallPath } from "../90-actions/hall";
 import { arriveAt, doneAt, seatOf, targetFront } from "../90-actions/work-orders";
 import { present } from "./handwork";
-import { whoIsIn } from "./properties";
+import { hallCapacity } from "../20-world/properties";
+import { lobbyClass, lobbySlots } from "../20-world/lobby";
+import { officeOpen, whoIsIn } from "./properties";
 
 // what is a Task of the operation or a remote hands job kind; until is the hour the work ends.
 export interface FigureJob { rackId: string; deviceId: string; what: string; until: number }
@@ -20,8 +22,20 @@ export interface Figure {
   pose: Pose; path: Pt[]; progress: number; job?: FigureJob;
 }
 
-// Standing places for people who find no seat: the site plan's lobby once it exists.
-export const lobbySeats = (_s: GameState, _loc: Location): Pt[] => [];
+// Figures are drawn at the middle of their tile, the lobby slots name the chair centres.
+const tileOf = (q: { x: number; y: number; facing: Facing }) => ({ ...q, x: q.x - 0.5, y: q.y - 0.5 });
+
+// The lobby chairs of an own hall, where people who find no seat in the room sit.
+export function lobbySeats(s: GameState, loc: Location): Pt[] {
+  const p = loc.space === "hall" ? s.properties.find((x) => x.locationId === loc.id || x.hall?.locationId === loc.id) : undefined;
+  return p ? lobbySlots(lobbyClass(hallCapacity(p)), roomSize(loc).h).slice(1).map(tileOf) : [];
+}
+
+// The receptionist of an own hall sits at the lobby counter in office hours once the company has staff.
+export function receptionist(s: GameState, loc: Location, hour: number): (Pt & { facing: Facing }) | null {
+  const p = loc.space === "hall" ? s.properties.find((x) => x.locationId === loc.id || x.hall?.locationId === loc.id) : undefined;
+  return p && s.staff.length >= 1 && officeOpen(hour) ? tileOf(lobbySlots(lobbyClass(hallCapacity(p)), roomSize(loc).h)[0]) : null;
+}
 
 // The seats at a location: a hire sits at the desk assigned to them; the player takes the first seat no hire has claimed; staff without a desk
 // fill the seats left, by hiring then id. Whoever finds no seat stands in the lobby or beside the entry.
@@ -40,7 +54,7 @@ export function seating(s: GameState, loc: Location, hour: number): { id: string
     const i = seat.get(e.id);
     if (i !== undefined) return { id: e.id, at: seats[i], seated: true };
     const k = out++;
-    return { id: e.id, at: lobby[k] ?? { x: entry.x, y: entry.y + 1 + k }, seated: false };
+    return { id: e.id, at: lobby[k] ?? { x: entry.x, y: entry.y + 1 + k }, seated: k < lobby.length };
   });
 }
 

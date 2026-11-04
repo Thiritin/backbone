@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { datacenterById } from "../src/sim/20-world/datacenters";
-import { entryTile, rackTiles } from "../src/sim/20-world/layout";
+import { rackTiles } from "../src/sim/20-world/layout";
 import { visibleCandidates, type Employee } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
-import { figuresIn, seating } from "../src/sim/60-infra/figures";
+import { figuresIn, lobbySeats, seating } from "../src/sim/60-infra/figures";
 import { failComponents, tick, tickMinute } from "../src/sim/88-tick/tick";
 import { addLocation, buyRack, mountDevice, type ActionResult } from "../src/sim/90-actions/hardware";
 import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
@@ -142,7 +142,7 @@ describe("work orders: figures", () => {
 });
 
 describe("work orders: seats", () => {
-  it("seats the hires at their desks and sends the player beside the entry when they fill every seat", () => {
+  it("seats the hires at their desks and sends the player to the first lobby chair when they fill every seat", () => {
     const e = ownHall();
     e.s.hour = at(2013, 3, 4, 10);
     const loc = e.s.locations.find((l) => l.id === e.hallId)!, seats = 3;
@@ -154,10 +154,9 @@ describe("work orders: seats", () => {
     expect(none).toHaveLength(seats);
     e.s.player = { ...e.s.player, at: e.hallId };
     const some = seating(e.s, loc, e.s.hour);
-    expect(some.find((x) => x.id === "player")).toMatchObject({ seated: false });
-    expect(some.filter((x) => x.seated)).toHaveLength(seats);
-    const door = entryTile(loc);
-    expect(some.find((x) => x.id === "player")!.at).toEqual({ x: door.x, y: door.y + 1 });
+    expect(some.find((x) => x.id === "player")).toMatchObject({ seated: true });
+    expect(some.filter((x) => x.seated)).toHaveLength(seats + 1);
+    expect(some.find((x) => x.id === "player")!.at).toEqual(lobbySeats(e.s, loc)[0]);
   });
 });
 

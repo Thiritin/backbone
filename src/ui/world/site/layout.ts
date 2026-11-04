@@ -1,3 +1,4 @@
+import { lobbyClass } from "../../../sim/20-world/lobby";
 import { hallCapacity } from "../../../sim/20-world/properties";
 import type { GameState, Location } from "../../../sim/50-state";
 import { iso } from "../grid";
@@ -29,8 +30,8 @@ export const pick = (seed: number, slot: number, n: number): number => fnv1a(`${
 
 export function siteClass(loc: Location, game: GameState): SiteClass {
   if (loc.space === "hall") {
-    const p = game.properties.find((x) => x.locationId === loc.id), n = p ? hallCapacity(p) : 0;
-    return n <= 20 ? "S" : n <= 48 ? "M" : "L";
+    const p = game.properties.find((x) => x.locationId === loc.id || x.hall?.locationId === loc.id), n = p ? hallCapacity(p) : 0;
+    return lobbyClass(n);
   }
   return loc.space === "basement" ? "S" : loc.space === "office" || loc.space === "cage" || loc.space === "suite" ? "M" : "S";
 }
@@ -132,6 +133,7 @@ export const bounds = (all: Item[], lift: number, w: number, h: number) => {
 
 // The site around a location. Only the basement and an own hall have one so far; every other space is a bare ground plane.
 export function siteOf(game: GameState, loc: Location, w: number, h: number): SiteSpec {
+  const home = game.properties.find((p) => p.locationId === loc.id || p.hall?.locationId === loc.id), staff = home ? game.staff.filter((e) => e.desk?.propertyId === home.id).length : 0;
   const cls = siteClass(loc, game), seed = fnv1a(`${loc.id}:${cls}`);
   const none = (): SiteSpec => ({ kind: "none", setting: "suburb", cls, seed, w, h, lift: 0, plot: { x0: 0, y0: 0, x1: w, y1: h }, items: [], bay: null, seats: [], box: bounds([], 0, w, h) });
   const tone = (slot: number) => CAR_TONES[pick(seed, slot, CAR_TONES.length)];
@@ -152,14 +154,14 @@ export function siteOf(game: GameState, loc: Location, w: number, h: number): Si
     ];
     return { kind: "garden", setting: "suburb", cls, seed, w, h, lift: WALL, plot: { x0: -16, y0: -34, x1: w + 14, y1: 0 }, items, bay: { x: 0.5, y: nearWalk - 1.85, dir: "x" }, seats: [], box: bounds(items, WALL, w, h) };
   }
-  if (loc.space === "hall" || loc.space === "office" || loc.space === "share" || loc.space === "cage" || loc.space === "suite") return buildSite(settingOf(loc, game), cls, seed, w, h, loc.space !== "hall");
+  if (loc.space === "hall" || loc.space === "office" || loc.space === "share" || loc.space === "cage" || loc.space === "suite") return buildSite(settingOf(loc, game), cls, seed, w, h, loc.space !== "hall", staff);
   return none();
 }
 
 // The tile and heading of the player's car.
 export const reservedBay = (s: SiteSpec) => s.bay;
 // The lobby's seat slots, the same shape as the office seats.
-export const lobbySeats = (s: SiteSpec): Seat[] => s.seats;
+export const lobbySeats = (s: SiteSpec): Seat[] => s.seats.slice(1);
 
 const SOLID = new Set<ItemType>(["tree", "pole", "light", "hedge", "fence", "gate", "booth", "bin", "car", "house", "box", "lobby", "yard", "sign", "cam", "lamp", "office", "tank", "cont", "pallet", "subst", "gen", "dock", "cooling", "planter", "rack", "busstop", "turbine", "solar", "landmark"]);
 const GROUND = new Set<ItemType>(["street", "walk", "path", "bays", "field", "rail"]);

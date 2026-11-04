@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FIXTURES, footprint, officePlan, roomSize, seatsAt, siteAreas } from "../src/sim/20-world/layout";
 import { isHalle } from "../src/sim/20-world/properties";
 import { at, edit, item, ownHall, place } from "./own-dc-hall";
-import { seating } from "../src/sim/60-infra/figures";
+import { lobbySeats, seating } from "../src/sim/60-infra/figures";
 import { seatOf } from "../src/sim/90-actions/work-orders";
 import { entryTile } from "../src/sim/20-world/layout";
 import { newGame } from "../src/sim/50-state";
@@ -83,11 +83,12 @@ describe("the player's seat", () => {
     expect(pt(at1.find((x) => x.id === "t0")!.at)).toBe(pt(seats[0]));
   });
 
-  it("stands at the entry when hires fill every seat", () => {
+  it("sits in the lobby when hires fill every seat", () => {
     const { e, loc, seats } = room(3);
     const mine = seating(e.s, loc, e.s.hour).find((x) => x.id === "player")!, entry = entryTile(loc, officePlan(e.s, loc));
     expect(seats).toHaveLength(3);
-    expect(mine.seated).toBe(false);
+    expect(mine.seated).toBe(true);
+    expect(pt(mine.at)).toBe(pt(lobbySeats(e.s, loc)[0]));
     expect(pt(seatOf(e.s, loc.id, "player")!)).toBe(pt(entry));
   });
 });
