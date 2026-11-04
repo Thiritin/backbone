@@ -71,14 +71,14 @@ export default {
   "desktop.changes.more": (p) => `${p.n} weitere ${Number(p.n) === 1 ? "Änderung" : "Änderungen"}`,
 
   "desktop.early.title": () => "Early Access",
-  "desktop.early.text": () => "Backbone befindet sich im Early Access und ist noch nicht fertig. Rechne mit Bugs, fehlenden Funktionen und Balance-Änderungen. Gib uns dein Feedback auf GitHub oder Discord.",
+  "desktop.early.text": () => "raid0 befindet sich im Early Access und ist noch nicht fertig. Rechne mit Bugs, fehlenden Funktionen und Balance-Änderungen. Gib uns dein Feedback auf GitHub oder Discord.",
 
   "desktop.over.title": (p) => `${p.company} ist pleite`,
   "desktop.over.text": (p) => `Das Unternehmen wurde am ${p.day} zahlungsunfähig, bei einem Kontostand von ${p.cash}.`,
   "desktop.over.load": () => "Export laden",
 
-  "desktop.mobile.title": () => "Backbone ist ein Desktop-Spiel",
-  "desktop.mobile.text": () => "Backbone lässt sich nicht auf einem Smartphone oder Tablet spielen. Öffne es auf einem Computer, um zu spielen.",
+  "desktop.mobile.title": () => "raid0 ist ein Desktop-Spiel",
+  "desktop.mobile.text": () => "raid0 lässt sich nicht auf einem Smartphone oder Tablet spielen. Öffne es auf einem Computer, um zu spielen.",
   "desktop.mobile.discord": () => "Dem Discord beitreten",
 
   "desktop.icon.newNote": () => "Neue Notiz",
@@ -93,8 +93,8 @@ export default {
 
   "desktop.menu.settings": () => "Einstellungen …",
   "desktop.menu.intro": () => "Einführung …",
-  "desktop.menu.github": () => "Backbone auf GitHub",
-  "desktop.menu.discord": () => "Backbone auf Discord",
+  "desktop.menu.github": () => "raid0 auf GitHub",
+  "desktop.menu.discord": () => "raid0 auf Discord",
   "desktop.menu.report": () => "Problem melden",
   "desktop.menu.restoreGuide": () => "Erste Schritte wiederherstellen",
   "desktop.menu.whatsNew": () => "Neuigkeiten",

@@ -1,12 +1,12 @@
-# Backbone
+# raid0
 
-Backbone is a browser management game in which you grow a hosting company from a 2005 basement to your own datacenter.
+raid0 is a browser management game in which you grow a hosting company from a 2005 basement to your own datacenter.
 
 Play it at [raid0.dev](https://raid0.dev/).
 
 ## Inspiration
 
-Backbone takes its inspiration from [Series of Tubes](https://github.com/fjaeckel/seriesoftubes) by Frederic Jung, a cartoon browser game about how the internet really works, from laying fiber and peering at exchanges to billing on the 95th percentile. Its routing model, its parody network names and its project layout shaped this game.
+raid0 takes its inspiration from [Series of Tubes](https://github.com/fjaeckel/seriesoftubes) by Frederic Jung, a cartoon browser game about how the internet really works, from laying fiber and peering at exchanges to billing on the 95th percentile. Its routing model, its parody network names and its project layout shaped this game.
 
 ## Running it locally
 
@@ -33,4 +33,4 @@ The server room recording in `public/sounds/server-room.mp3` is the binaural ser
 
 ## Licence
 
-Backbone is released under the [MIT licence](LICENSE).
+raid0 is released under the [MIT licence](LICENSE).

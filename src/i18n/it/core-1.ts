@@ -22,7 +22,7 @@ export default {
   "save.imported.title": () => "Salvataggio importato",
   "save.imported.text": () => "Continui dal salvataggio importato.",
   "save.importFailed.title": () => "Importazione non riuscita",
-  "save.importFailed.text": () => "Il file non è un salvataggio di Backbone.",
+  "save.importFailed.text": () => "Il file non è un salvataggio di raid0.",
   "action.failed.title": () => "Non ha funzionato",
   "event.bills.title": () => "Bollette del mese",
   "event.bills.text": (p) => {

@@ -1,4 +1,4 @@
-// Sets up the Backbone Discord server through a bot. Safe to re-run: channels
+// Sets up the raid0 Discord server through a bot. Safe to re-run: channels
 // and roles are matched by name and updated, never duplicated.
 // Usage: node --env-file=.env.local scripts/discord-setup.mjs
 import { readFileSync } from 'node:fs';
@@ -46,12 +46,12 @@ const status = [
 // `access`: 'readOnly' lets only Dev post, 'staff' hides the channel from everyone but Dev.
 const LAYOUT = [
   { name: 'Info', channels: [
-    { name: 'welcome', topic: 'Read this first to learn what Backbone is and where to play it.', access: 'readOnly' },
+    { name: 'welcome', topic: 'Read this first to learn what raid0 is and where to play it.', access: 'readOnly' },
     { name: 'announcements', type: NEWS, topic: 'New releases and news about the game are posted here.', access: 'readOnly' },
     { name: 'changelog', type: NEWS, topic: 'Every update to the game is listed here.', access: 'readOnly' },
   ] },
   { name: 'Community', rename: 'Text channels', channels: [
-    { name: 'general', topic: 'Talk about Backbone and anything around it.' },
+    { name: 'general', topic: 'Talk about raid0 and anything around it.' },
     { name: 'screenshots', topic: 'Show off your racks, your datacenter and your best runs.' },
     { name: 'off-topic', topic: 'Talk about anything that is not the game.' },
   ] },
@@ -85,9 +85,9 @@ const LAYOUT = [
   ] },
 ];
 
-const WELCOME = `# Welcome to Backbone
+const WELCOME = `# Welcome to raid0
 
-Backbone is a browser management game where you grow a hosting company from a basement in 2005 to your own datacenter. Buy hardware, rack it, wire the network and keep your customers online.
+raid0 is a browser management game where you grow a hosting company from a basement in 2005 to your own datacenter. Buy hardware, rack it, wire the network and keep your customers online.
 
 **Play now:** ${GAME_URL}
 
@@ -105,7 +105,7 @@ Backbone is a browser management game where you grow a hosting company from a ba
 4. Do not post anything illegal or NSFW.`;
 
 const guilds = await api('GET', '/users/@me/guilds');
-const g = guilds.find((x) => x.name === 'Backbone') ?? guilds[0];
+const g = guilds.find((x) => x.name === 'raid0') ?? guilds[0];
 if (!g) throw new Error('Bot is in no server; invite it first');
 let guild = await api('GET', `/guilds/${g.id}`);
 const me = await api('GET', '/users/@me');
@@ -199,7 +199,7 @@ console.log('Welcome message posted');
 const START_HERE = {
   'feature-requests': { name: 'Start here: how to request a feature', content: `# Start here: how to request a feature
 
-This forum collects ideas for Backbone, one post per idea. Search before you post. If your idea is already here, react with 👍 on that post instead of opening a new one, so the votes land in one place.
+This forum collects ideas for raid0, one post per idea. Search before you post. If your idea is already here, react with 👍 on that post instead of opening a new one, so the votes land in one place.
 
 ## How to write a good request
 - Give the post a title that names the idea, like "Let me rename racks" instead of "Suggestion".
@@ -229,9 +229,9 @@ One post per bug. Search first. If someone already reported it, reply in that po
 - Where you were in the game: the year and the app or window.
 - Your browser and device, like Chrome on Windows or Safari on iPhone.
 - A screenshot or a short recording, attached to the post.
-- For save problems, attach your save. The Backbone menu has "Export save…".
+- For save problems, attach your save. The raid0 menu has "Export save…".
 
-If you prefer GitHub, "Report an issue" in the Backbone menu opens an issue with the build id filled in.
+If you prefer GitHub, "Report an issue" in the raid0 menu opens an issue with the build id filled in.
 
 ## Tags
 💥 Crash when the game freezes or shows an error. 💾 Save when progress is lost or a save will not load. ⚖️ Balance when a number or price feels wrong. 🪟 UI when something looks wrong or is hard to use.

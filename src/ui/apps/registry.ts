@@ -107,7 +107,7 @@ export const appByName = (name: string): AppDef => APPS.find((a) => a.name === n
 export const listed = (s: GameState, a: AppDef): boolean => !a.hidden && s.installed.includes(a.name) && (a.name !== "Support" || !!s.desk);
 
 
-// Chat wears the messenger of the year; every one of them opens the Backbone Discord.
+// Chat wears the messenger of the year; every one of them opens the raid0 Discord.
 const CHATS = [{ from: 2016, name: "Diskord", tile: "oklch(0.55 0.16 275)" }, { from: 2008, name: "Skipe", tile: "oklch(0.62 0.13 230)" }, { from: 0, name: "ICU", tile: "oklch(0.62 0.17 140)" }];
 
 // The app as the player sees it: Support is Email, or the installed desk, with its own name, mark and tile.

@@ -22,7 +22,7 @@ export default {
   "save.imported.title": () => "Spielstand importiert",
   "save.imported.text": () => "Du machst mit dem importierten Spielstand weiter.",
   "save.importFailed.title": () => "Import fehlgeschlagen",
-  "save.importFailed.text": () => "Die Datei ist kein Backbone-Spielstand.",
+  "save.importFailed.text": () => "Die Datei ist kein raid0-Spielstand.",
   "action.failed.title": () => "Das hat nicht geklappt",
   "event.bills.title": () => "Monatsrechnungen",
   "event.bills.text": (p) => {

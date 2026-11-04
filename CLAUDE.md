@@ -1,4 +1,4 @@
-# Backbone
+# raid0
 
 Browser management game: grow a hosting company from a 2005 basement to an own datacenter. Static site, TypeScript + Vite + React + Zustand, simulation in plain TypeScript.
 

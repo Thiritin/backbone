@@ -94,7 +94,7 @@ export function StartScreen() {
   return (
     <main className="menu">
       <MenuBackdrop />
-      <h1 className="menu-title"><img className="menu-logo" src="favicon.svg" alt="" width={56} height={56} />Backbone</h1>
+      <h1 className="menu-title"><img className="menu-logo" src="favicon.svg" alt="" width={56} height={56} />raid0</h1>
       {page === "settings" ? <SettingsPage onBack={() => setPage("main")} /> :
         page === "immersive" ? <ImmersivePage onBack={() => setPage("main")} onPlay={() => immerse().catch(() => {}).then(canContinue ? continueGame : startGame)} /> :
         <nav className="menu-bars">

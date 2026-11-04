@@ -2,7 +2,7 @@ import { t } from "../../i18n/en";
 import { FlaskConical } from "lucide-react";
 import { useState } from "react";
 
-const SEEN_KEY = "backbone.earlyAccessSeen";
+const SEEN_KEY = "raid0.earlyAccessSeen";
 
 const seen = () => { try { return !!localStorage.getItem(SEEN_KEY); } catch { return true; } };
 
