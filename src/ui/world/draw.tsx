@@ -188,6 +188,7 @@ export function CellarWindow({ f, fan, spin, night, sky }: { f: Fixture; fan?: b
       <rect className="w-reveal" x="3" y="-1" width="26" height={WIN_H + 1} />
       <rect className="w-frame" x="4" y="0" width="24" height={WIN_H} />
       <rect className={glass} x="6" y="3" width="20" height={WIN_H - 6} />
+      <Clouds sky={sky} night={night} x={6} y={3} w={20} h={WIN_H - 6} />
       <Precip sky={sky} night={night} x={6} y={3} w={20} h={WIN_H - 6} />
       {sky === "snow" && <rect className="w-snow-fill" x="6" y={WIN_H - 6} width="20" height="3" />}
       {fan ? <Fan cx={16} cy={WIN_H / 2} r={6.2} spin={!!spin} /> : (
@@ -198,6 +199,30 @@ export function CellarWindow({ f, fan, spin, night, sky }: { f: Fixture; fan?: b
       )}
       <rect className="w-sill" x="2" y={WIN_H} width="28" height="2.5" />
       {sky === "snow" && <rect className="w-snow-fill" x="2" y={WIN_H - 0.8} width="28" height="1.6" />}
+    </g>
+  );
+}
+
+// Flat clouds in the sky layer: two on partly cloudy days, three on grey ones, all inside the pane.
+export function Clouds({ sky, night, x, y, w, h }: { sky: Sky; night: boolean; x: number; y: number; w: number; h: number }) {
+  if (sky !== "partly" && sky !== "cloud") return null;
+  const grey = sky === "cloud", r = Math.min(w, h) / 7;
+  const spots = grey ? [[0.28, 0.3], [0.62, 0.5], [0.5, 0.18]] : [[0.3, 0.32], [0.7, 0.55]];
+  const cls = night ? "w-cloud-night" : grey ? "w-cloud-grey" : "w-cloud";
+  return (
+    <g>
+      {spots.map(([fx, fy]) => {
+        const cx = x + w * fx, base = y + h * fy + r;
+        return (
+          <g key={fx} className={cls}>
+            <circle className="w-cloud-body" cx={cx - r} cy={base - r * 0.6} r={r * 0.8} />
+            <circle className="w-cloud-body" cx={cx} cy={base - r} r={r} />
+            <circle className="w-cloud-body" cx={cx + r} cy={base - r * 0.6} r={r * 0.8} />
+            <rect className="w-cloud-body" x={cx - r * 1.8} y={base - r * 0.6} width={r * 3.6} height={r * 0.6} />
+            <rect className="w-cloud-under" x={cx - r * 1.8} y={base - r * 0.25} width={r * 3.6} height={r * 0.25} />
+          </g>
+        );
+      })}
     </g>
   );
 }
@@ -672,7 +697,7 @@ export function Shimmer({ tile, z }: { tile: Tile; z: number }) {
 }
 
 // A rack is a dark box; a front facing the camera shows one LED per device, or from zoom 2 the rack front art scaled onto it. In a datacenter the face in view, front or rear, is a closed mesh door over that; a neighbour's rack is muted, its door shut on a few LEDs and a blank label plate. A share is the bottom section of a provider's cabinet of `cabinet` units.
-export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; fault?: boolean; flood?: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {
+export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, name, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; fault?: boolean; flood?: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; name?: string; cabinet?: number }) {
   const H = rackHeight(units), CH = rackHeight(cabinet), c = center(tile.x, tile.y), dx = 28, m = 1 / 16;
   const L = { x: c.x - dx, y: c.y }, B = { x: c.x, y: c.y + dx / 2 }, R = { x: c.x + dx, y: c.y };
   // The south face is the lower left, the east face the lower right; a north-facing rack shows its rear door on the south face.
@@ -691,7 +716,7 @@ export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cab
   ) : (
     <>
       <rect x="6" y="4" width={artW - 12} height={artH - 8} rx="3" fill="var(--rack)" />
-      {leds.map((d, i) => <rect key={d.id} className={d.fault ? "w-led w-led-fault" : d.on && d.flood ? "w-led w-led-flood" : d.on ? "w-led w-led-on" : "w-led"} style={d.flood ? { animationDelay: `${(i * 0.05) % 0.14}s` } : undefined} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
+      {leds.map((d, i) => <rect key={d.id} className={d.fault ? "w-led w-led-fault" : d.on && d.flood ? "w-led w-led-flood" : d.on ? "w-led w-led-on" : "w-led"} style={d.flood ? { animationDelay: `${(i * 0.05) % 0.14}s` } : undefined} x="12" y={4 + (units - d.top) * ART_U} width="24" height="8" rx="3" />)}
     </>
   ));
   const blink = (tile.x * 7 + tile.y * 3) % 5;
@@ -715,7 +740,9 @@ export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cab
             <rect className="w-rack-mesh" x="5" y="3" width={artW - 10} height={doorH - 6} fill="url(#w-rack-mesh)" />
             <rect className="w-rack-door" x="5" y="3" width={artW - 10} height={doorH - 6} />
             <rect className="w-rack-handle" x={artW - 18} y={doorH / 2 - 16} width="6" height="32" rx="1" />
-            {neighbour && <rect className="w-plate-label" x={artW / 2 - 18} y="8" width="36" height="10" />}
+            {neighbour && <rect className="w-plate-label" x={artW / 2 - 50} y="8" width="100" height="24" />}
+            {!neighbour && name && <><rect className="w-plate-label" x={artW / 2 - 50} y={doorH - 34} width="100" height="24" /><text className="w-plate-text" x={artW / 2} y={doorH - 17} textAnchor="middle" textLength={Math.min(90, name.length * 10)} lengthAdjust="spacingAndGlyphs">{name}</text></>}
+            {!neighbour && !front && leds.map((d) => <rect key={d.id} className={d.fault ? "w-led w-led-fault" : d.on ? "w-led w-led-on" : "w-led"} x="16" y={40 + ((units - d.top) * (doorH - 56)) / units} width="16" height="7" rx="3" />)}
           </g>
         )}
       </>}

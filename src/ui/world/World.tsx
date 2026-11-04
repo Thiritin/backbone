@@ -241,7 +241,7 @@ export function World() {
           onContextMenu={menuOn(() => [{ label: t("world.newConnection"), run: () => setFrom({ rack: r.id }) }])}>
           {r.model === "shelf"
             ? <ShelfUnit tile={tile} units={rackUnits(r.model)} devices={game.devices.filter((d) => d.rackId === r.id).map((d) => ({ id: d.id, slot: d.slot, height: modelById(d.model).height, light: isOfficeRouter(modelById(d.model)), on: d.on && !loc.tripped, flood: floodedDevice(game, d) && !loc.tripped }))} />
-            : <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} mesh={!home} cabinet={r.provided ? 42 : undefined} />}
+            : <RackBox tile={tile} units={rackUnits(r.model)} items={zoomed ? rackItems(game, r.id) : []} leds={leds} zoomed={zoomed} mesh={!home} name={home ? undefined : r.name} cabinet={r.provided ? 42 : undefined} />}
           {hot && <Shimmer tile={tile} z={rackHeight(rackUnits(r.model))} />}
         </g>
       ),
