@@ -2,9 +2,12 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
-## 2026-11-03
+## 2026-11-04
 
 - Drawing too much power for an hour trips the breaker and the room goes dark until you reset it in the fuse box with less load, while at a datacenter the provider resets it for a remote hands fee; the room also warms with its draw and the window fan spins when it gets warm.
+
+## 2026-11-03
+
 - Technicians and the datacenter's remote hands are now seen standing at the rack while they work there, and the rack close-up shows a paper tag with who is working, on what and until when.
 - The getting-started steps hang on a corkboard in the basement and the office, ticked off as you do them, and the current card points you to the object in the room or the app on the computer.
 - A failed part now shows a red light on its rack from across the room, and in the opened server it is marked on its slot with the date it failed, a swap from stored parts and an order from the Shop.
