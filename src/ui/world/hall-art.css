@@ -1,0 +1,72 @@
+/* Tones of the hall items and rooms. A box tone sets --t (top), --l, --r and --e; .ha-t turns them into the face
+   tones, one flat step darker at night. Fills set --c. */
+.ha-t { --top: var(--t); --left: var(--l); --right: var(--r); --edge: var(--e); }
+.w-night .ha-t {
+  --top: oklch(from var(--t) calc(l - 0.1) c h);
+  --left: oklch(from var(--l) calc(l - 0.1) c h);
+  --right: oklch(from var(--r) calc(l - 0.1) c h);
+  --edge: oklch(from var(--e) calc(l - 0.08) c h);
+}
+.ha-c { fill: var(--c); }
+.w-night .ha-c { fill: oklch(from var(--c) calc(l - 0.1) c h); }
+.ha-s { stroke: var(--c); fill: none; stroke-linecap: round; }
+.w-night .ha-s { stroke: oklch(from var(--c) calc(l - 0.1) c h); }
+.ha-ghost { opacity: 0.5; pointer-events: none; }
+
+.ha-crac { --t: oklch(0.8 0.02 240); --l: oklch(0.72 0.025 240); --r: oklch(0.64 0.03 240); --e: oklch(0.5 0.03 240); }
+.ha-xfmr { --t: oklch(0.66 0.012 250); --l: oklch(0.58 0.014 250); --r: oklch(0.5 0.016 250); --e: oklch(0.4 0.016 250); }
+.ha-gear { --t: oklch(0.8 0.008 250); --l: oklch(0.72 0.01 250); --r: oklch(0.64 0.012 250); --e: oklch(0.52 0.012 250); }
+.ha-gen { --t: oklch(0.66 0.045 150); --l: oklch(0.58 0.05 150); --r: oklch(0.5 0.05 150); --e: oklch(0.4 0.05 150); }
+.ha-ups { --t: oklch(0.44 0.02 255); --l: oklch(0.38 0.022 255); --r: oklch(0.32 0.024 255); --e: oklch(0.24 0.02 255); }
+.ha-batt { --t: oklch(0.88 0.008 215); --l: oklch(0.82 0.01 215); --r: oklch(0.74 0.012 215); --e: oklch(0.62 0.012 215); }
+.ha-desk { --t: oklch(0.6 0.02 250); --l: oklch(0.52 0.022 250); --r: oklch(0.44 0.024 250); --e: oklch(0.34 0.022 250); }
+.ha-screen { --t: oklch(0.3 0.02 250); --l: oklch(0.26 0.02 250); --r: oklch(0.22 0.02 250); --e: oklch(0.16 0.02 250); }
+.ha-screen-on { --t: oklch(0.3 0.02 250); --l: oklch(0.7 0.09 225); --r: oklch(0.6 0.09 225); --e: oklch(0.2 0.02 250); }
+.ha-crate { --t: oklch(0.78 0.07 75); --l: oklch(0.7 0.075 72); --r: oklch(0.62 0.075 68); --e: oklch(0.5 0.07 65); }
+.ha-stub { --t: var(--w-wall-top); --l: var(--w-wall-l); --r: var(--w-wall-r); --e: var(--w-wall-edge); }
+
+.ha-dark { --c: oklch(0.36 0.02 245); }
+.ha-slat { --c: oklch(0.58 0.025 245); stroke-width: 0.8; }
+.ha-mark { --c: oklch(0.5 0.04 245); }
+.ha-ventbase { --c: oklch(0.8 0.01 245); }
+.ha-ventdot { --c: oklch(0.45 0.02 245); }
+.ha-ventdot-off { --c: oklch(0.8 0.01 245); }
+.ha-rail { --c: oklch(0.45 0.02 245); stroke-width: 2.2; }
+.ha-post { --c: oklch(0.4 0.02 245); }
+.ha-door { fill: oklch(0.82 0.02 235 / 0.35); stroke: oklch(0.45 0.02 245); stroke-width: 1.2; }
+.w-night .ha-door { fill: oklch(0.7 0.02 235 / 0.35); stroke: oklch(0.36 0.02 245); }
+.ha-fin { --c: oklch(0.38 0.016 250); stroke-width: 1.2; }
+.ha-bushing { --c: oklch(0.58 0.08 55); }
+.ha-cap { --c: oklch(0.42 0.05 55); }
+.ha-plate { --c: oklch(0.86 0.15 95); }
+.ha-gearpanel { --c: oklch(0.66 0.01 250); }
+.ha-gearframe { --c: oklch(0.5 0.012 250); }
+.ha-mimic-a { --c: oklch(0.7 0.14 150); }
+.ha-mimic-b { --c: oklch(0.78 0.14 80); }
+.ha-mimic-c { --c: oklch(0.62 0.12 240); }
+.ha-genhood { --c: oklch(0.52 0.05 150); }
+.ha-pipe { --c: oklch(0.35 0.01 250); }
+.ha-pipecap { --c: oklch(0.2 0.01 250); }
+.ha-upswin { --c: oklch(0.2 0.02 255); }
+.ha-led-on { --c: oklch(0.76 0.18 150); }
+.ha-led-off { --c: oklch(0.45 0.02 255); }
+.ha-cell { --c: oklch(0.74 0.012 215); }
+.ha-screenframe { --c: oklch(0.2 0.02 250); }
+.ha-screenface { --c: oklch(0.28 0.025 250); }
+.ha-ok { --c: oklch(0.72 0.15 150); }
+.ha-okdim { --c: oklch(0.4 0.05 150); }
+.ha-alarm { --c: oklch(0.8 0.15 80); }
+.ha-trip { --c: oklch(0.6 0.2 25); }
+.ha-strap { --c: oklch(0.45 0.06 65); }
+.ha-letter { --c: var(--w-wall-top); }
+.ha-letter-shade { --c: oklch(0.45 0.03 252); }
+
+.ha-floor-concrete { --c: oklch(0.7 0.006 250); }
+.ha-floor-epoxy { --c: oklch(0.8 0.012 215); }
+.ha-floor-carpet { --c: oklch(0.42 0.03 255); }
+.ha-joint { --c: oklch(0.6 0.008 250); stroke-width: 0.5; }
+.ha-hatchbase { --c: oklch(0.3 0.01 250); }
+.ha-hatch { --c: oklch(0.85 0.16 95); stroke-width: 5; stroke-linecap: butt; }
+.ha-threshold { --c: oklch(0.55 0.012 250); }
+.ha-door-panel { fill: oklch(0.7 0.02 250); stroke: oklch(0.5 0.02 250); stroke-width: 0.8; }
+.w-night .ha-door-panel { fill: oklch(0.6 0.02 250); stroke: oklch(0.4 0.02 250); }
