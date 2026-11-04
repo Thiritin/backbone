@@ -6,7 +6,7 @@ import { type GameState } from "../src/sim/50-state";
 import { freeSlots, linkStatus, mountFrom, mountMax, portPeers, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { addLocation, buyCart as buyCartReal, buyDevice as buyReal, buyRack, connect, disconnect, sellDevice, setBond, setPortGroup, unmountDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, newGame, onSaleAt } from "./fixtures";
+import { buyDevice, newGame, onSaleAt, settle } from "./fixtures";
 import { mountDevice, mountStack } from "./plugged";
 import { withServer } from "./fixtures";
 import { newGame as blankGame } from "../src/sim/50-state";
@@ -165,10 +165,12 @@ describe("mounting", () => {
     ok(setBond(s, "dev3", "balance"));
     ok(setPortGroup(s, "dev4", [2, 3]));
     ok(unmountDevice(s, "dev4"));
+    settle(s);
     expect(dev(s, "dev4")).toMatchObject({ rackId: null, panel: null, name: "fra1-sw-01", groups: [[2, 3]] });
     expect(s.cables.map((c) => c.id)).toEqual(["cab-line"]);
     expect(linkStatus(s, "dev3").online).toBe(false);
     ok(unmountDevice(s, "dev3"));
+    settle(s);
     expect(dev(s, "dev3").bond).toBe("balance");
     expect(err(unmountDevice(s, "dev3"))).toBe("error.notMounted");
     expect(err(unmountDevice(s, "dev6"))).toBe("error.notMounted");
@@ -228,6 +230,7 @@ describe("connect", () => {
   it("disconnects", () => {
     const s = withServer(newGame(1));
     ok(disconnect(s, "cab6"));
+    settle(s);
     expect(linkStatus(s, "dev3").online).toBe(false);
     expect(err(disconnect(s, "cab6"))).toBe("error.unknownCable");
   });

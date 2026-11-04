@@ -3,7 +3,7 @@ import { rackTiles } from "../src/sim/20-world/layout";
 import { buyRack, mountDevice, stock } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { newGame } from "../src/sim/50-state";
-import { racked } from "./fixtures";
+import { racked, settle } from "./fixtures";
 import { err, ok } from "./pmx";
 
 const funded = (seed: number) => { const s = newGame(seed); s.cash = 50_000; return s; };
@@ -24,11 +24,14 @@ describe("shelf", () => {
     const s = funded(2);
     const one = stored(s, "g1-compute"), two = stored(s, "g1-memory");
     ok(mountDevice(s, one, "rack2", 1));
+    settle(s);
     ok(mountDevice(s, two, "rack2", 2));
+    settle(s);
     expect(s.devices.find((d) => d.id === two)).toMatchObject({ rackId: "rack2", slot: 2 });
     const three = stored(s, "g1-compute");
     expect(err(mountDevice(s, three, "rack2", 2))).toBe("error.slotTaken");
     ok(mountDevice(s, three, "rack2", 3));
+    settle(s);
   });
 
   it("refuses a patch panel", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GameState } from "../src/sim/50-state";
-import { buyDevice, newGame } from "./fixtures";
+import { buyDevice, newGame, settle } from "./fixtures";
 import { tidy, type MenuItem } from "../src/ui/desktop/menu";
 import { deviceMenu, type DeviceUi } from "../src/ui/apps/locations/deviceMenu";
 import { useStore } from "../src/ui/store";
@@ -49,6 +49,7 @@ describe("device menu", () => {
     useStore.setState({ game: g });
     const add = tidy(deviceMenu(g, g.devices.find((d) => d.id === "dev3")!, ui)).find((e) => e?.label.startsWith("Add second"));
     add!.run!();
+    settle(useStore.getState().game);
     expect(useStore.getState().game.devices.find((d) => d.id === "dev3")!.model).toBe("g1-compute-2psu");
   });
 });

@@ -10,7 +10,7 @@ import { shutdownBy } from "../src/sim/60-infra/ups";
 import { resolve } from "../src/sim/80-business/browser";
 import { setPlugged, setUpsAgent } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { BASEMENT_SERVER, buyDevice, readyGame, withNetwork } from "./fixtures";
+import { BASEMENT_SERVER, buyDevice, readyGame, settle, withNetwork } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => { expect(r.error).toBeUndefined(); return r.id!; };
@@ -31,9 +31,11 @@ describe("UPS power cords", () => {
     expect(pluggedIn(d)).toBe(true);
     expect(upsMinutes(s, "loc1")).toBeGreaterThan(0);
     ok(setPlugged(s, id, psusOf(d)[0].id, false));
+    settle(s);
     expect(pluggedIn(d)).toBe(false);
     expect(upsMinutes(s, "loc1")).toBe(0);
     ok(setPlugged(s, id, psusOf(d)[0].id, true));
+    settle(s);
     expect(upsMinutes(s, "loc1")).toBeGreaterThan(0);
   });
 

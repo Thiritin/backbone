@@ -22,3 +22,5 @@ Skip runs at 12 game hours a second until the simulation produces any event, the
 | 6 Datacenter Baron | Years 12–14 | 2017–2019 | ~40,000 | ~€1,000,000 |
 
 Level 6 lands before the cloud and GPU boom, so the late game still has new products to chase. Playing mostly at 60×, level 6 takes about 3 hours of real time.
+
+**Hand work takes game time.** Every hands-on action by the player is a work order in every location type, the basement included: a mount is 30 game minutes (30 seconds at 1x) plus a short walk, cabling 15 and parts 60. A first hour of buying, mounting and cabling therefore costs about two game hours of waiting at 1x, which the clock can be sped up through.

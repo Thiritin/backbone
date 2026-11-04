@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { moveInRack, setPlugged, setPower } from "../src/sim/90-actions/hardware";
-import { readyGame } from "./fixtures";
+import { readyGame, settle } from "./fixtures";
 
 describe("moving a device within its rack", () => {
   it("slides an unplugged server to a free position and refuses a plugged-in or blocked one", () => {
@@ -13,11 +13,14 @@ describe("moving a device within its rack", () => {
     setPower(s, srv.id, false);
     expect(moveInRack(s, srv.id, 10)).toEqual({ ok: false, error: "error.unplugFirst" });
     for (const c of srv.components.filter((c) => c.kind === "psu")) setPlugged(s, srv.id, c.id, false);
+    settle(s);
     expect(moveInRack(s, srv.id, other.slot)).toEqual({ ok: false, error: "error.slotTaken" });
     expect(moveInRack(s, srv.id, 99)).toEqual({ ok: false, error: "error.outOfBounds" });
-    expect(moveInRack(s, srv.id, 10)).toEqual({ ok: true });
+    expect(moveInRack(s, srv.id, 10)).toMatchObject({ ok: true });
+    settle(s);
     expect(srv.slot).toBe(10);
     expect(s.cables.filter((c) => c.a.device === srv.id || c.b.device === srv.id).length).toBe(cables);
-    expect(moveInRack(s, srv.id, 10)).toEqual({ ok: true });
+    expect(moveInRack(s, srv.id, 10)).toMatchObject({ ok: true });
+    settle(s);
   });
 });

@@ -10,7 +10,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { workloadsOf } from "../src/sim/60-infra/cluster";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, hypervisor, onSaleAt, skipTo, withServer, newGame } from "./fixtures";
+import { buyDevice, hypervisor, onSaleAt, settle, skipTo, withServer, newGame } from "./fixtures";
 import type { Listing } from "../src/sim/10-catalog/used";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
@@ -28,6 +28,7 @@ function game(): GameState {
 function twin(s: GameState) {
   const id = ok(buyDevice(s, "g2-twin", "SuperMacro", 1, "loc1"));
   ok(mountDevice(s, id, "rack2", 3));
+  settle(s);
   for (const c of s.devices.find((d) => d.id === id)!.components) if (c.kind === "psu") c.plugged = true;
   return { id, nodes: nodesOf(s, id).map((d) => d.id) };
 }
@@ -72,8 +73,10 @@ describe("Twin 2U purchase and mounting", () => {
     expect(err(sellDevice(s, nodes[0]))).toBe("error.inChassis");
     for (const c of dev(s, id).components) if (c.kind === "psu") c.plugged = false;
     ok(moveInRack(s, id, 8));
+    settle(s);
     expect(nodes.map((n) => dev(s, n).slot)).toEqual([8, 8, 8, 8]);
     ok(unmountDevice(s, id));
+    settle(s);
     expect(nodes.map((n) => dev(s, n).store)).toEqual(["loc1", "loc1", "loc1", "loc1"]);
     expect(err(shipStock(s, [nodes[1]], "loc1"))).toBe("error.inChassis");
     const cash = s.cash;
@@ -117,6 +120,7 @@ describe("Twin nodes as servers", () => {
   it("rents a node as a dedicated server", () => {
     const s = game(), { id, nodes } = twin(s), cus = addCustomer(s, "Ada Lang", "hobbyDev");
     ok(connect(s, { device: nodes[0], port: 0 }, { device: "dev4", port: 3 }));
+    settle(s);
     // The basement server may take the first one.
     const hosts = [ok(provisionService(s, cus, "dedicated", { label: "one" })), ok(provisionService(s, cus, "dedicated", { label: "two" }))]
       .flatMap((v) => workloadsOf(s, v).map((w) => w.deviceId));

@@ -31,6 +31,7 @@ describe("presence", () => {
     const a = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1")), b = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(hands(s, "loc1")).toBe("own");
     ok(mountDevice(s, a, "rack2", 10));
+    settle(s);
     expect(dev(s, a).rackId).toBe("rack2");
     s.player = { ...s.player, at: loc };
     expect(hands(s, "loc1")).toBe("none");

@@ -5,7 +5,7 @@ import { BUNDLE, partPrice, partsPrice, presetPrice } from "../src/sim/10-catalo
 import { type GameState } from "../src/sim/50-state";
 import { installedCores, installedRamGb, raidUsable } from "../src/sim/60-infra/status";
 import { replaceComponent, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyCart, buyDevice, newGame } from "./fixtures";
+import { buyCart, buyDevice, newGame, settle } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { withServer } from "./fixtures";
 
@@ -131,6 +131,7 @@ describe("Parts tab", () => {
     expect(err(replaceComponent(s, id, stick.id))).toBe("error.noPart");
     const big = ok(buyDevice(s, "part-ram", "Generic", 1, "loc1", { part: { kind: "ram", size: 4 } }));
     expect(err(replaceComponent(s, id, stick.id))).toBe("ok");
+    settle(s);
     expect(dev(s, id).maintenance).toMatchObject({ partId: big, spec: { kind: "ram", size: 4 } });
   });
 });

@@ -3,7 +3,7 @@ import { SELL_CAP, SELL_FINAL } from "../src/sim/10-catalog/used";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { deviceValue, resaleValue } from "../src/sim/60-infra/status";
 import { installPart, removePart, sellDevice } from "../src/sim/90-actions/hardware";
-import { buyDevice, withServer } from "./fixtures";
+import { buyDevice, settle, withServer } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 10_000_000 });
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
@@ -24,7 +24,10 @@ describe("resale", () => {
     const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     const whole = deviceValue(s, s.devices.find((d) => d.id === id)!);
     const before = new Set(s.devices.map((d) => d.id));
-    for (const c of [...s.devices.find((d) => d.id === id)!.components]) removePart(s, id, c.id);
+    for (const c of [...s.devices.find((d) => d.id === id)!.components]) {
+      removePart(s, id, c.id);
+      settle(s);
+    }
     const spares = s.devices.filter((d) => !before.has(d.id)).map((d) => d.id);
     expect(spares.length).toBeGreaterThan(0);
     const cash = s.cash;
@@ -38,8 +41,10 @@ describe("resale", () => {
     const d = s.devices.find((x) => x.id === id)!, price = d.price;
     const ram = d.components.find((c) => c.kind === "ram")!;
     ok(removePart(s, id, ram.id));
+    settle(s);
     const spare = s.devices.find((x) => x.model === "part-ram")!;
     ok(installPart(s, id, spare.id));
+    settle(s);
     expect(d.price).toBeLessThanOrEqual(price);
   });
 });

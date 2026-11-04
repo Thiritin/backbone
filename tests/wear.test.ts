@@ -9,7 +9,7 @@ import { failComponents, failureChance, rebuildHours, tick, type SimEvent } from
 import { addLocation, buyCircuit, buyRack, connect, replaceComponent, setCableColor, setFeed, setLabel, setPower, setRaid, setRebuildRate, unmountDevice } from "../src/sim/90-actions/hardware";
 import { datacenterById } from "../src/sim/20-world/datacenters";
 import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
-import { buyDevice, freeFloor, newGame } from "./fixtures";
+import { buyDevice, freeFloor, newGame, settle } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { provisionService } from "../src/sim/90-actions/clusters";
@@ -35,9 +35,11 @@ const run = (s: GameState, hours: number) => {
 // Replaces the starting server with a stored model in the basement rack, cabled to the switch.
 function server(s: GameState, model: string, brand = "Dwell"): string {
   ok(unmountDevice(s, "dev3"));
+  settle(s);
   const id = ok(buyDevice(s, model, brand, 1, "loc1"));
   ok(mountDevice(s, id, "rack2", 1));
   ok(connect(s, { device: id, port: 0 }, { device: "dev4", port: 0 }));
+  settle(s);
   return id;
 }
 const part = (s: GameState, kind: string, loc = "loc1") => ok(buyDevice(s, `part-${kind}`, "Generic", 1, loc));
@@ -76,6 +78,7 @@ describe("components and failure rates", () => {
     const play = (monitoring: boolean) => {
       const s = rich();
       ok(unmountDevice(s, "dev3"));
+      settle(s);
       const first = ok(buyDevice(s, "g1-archive", "Dwell", 5, "loc1"));
       // A hot history makes failures ninety times likelier.
       s.devices = s.devices.map((d) => ({ ...d, hotHours: 9000, components: d.components.map((c) => ({ ...c, installedAt: -10 * 8760 })) }));
@@ -142,14 +145,15 @@ describe("RAID", () => {
     expect(dev(s, id).dataLost).toBeNull();
     part(s, "hdd");
     ok(replaceComponent(s, id, drive.id));
+    settle(s);
     expect(deviceHealth(s, id).state).toBe("maintenance");
     expect(linkStatus(s, id).online).toBe(true);
     ok(setRebuildRate(s, id, "low"));
     run(s, 1);
     const fresh = dev(s, id).components[3];
-    expect(fresh).toMatchObject({ kind: "hdd", installedAt: 1, failedAt: null });
+    expect(fresh).toMatchObject({ kind: "hdd", installedAt: s.hour, failedAt: null });
     expect(fresh.id).not.toBe(drive.id);
-    expect(dev(s, id).rebuild).toEqual({ componentId: fresh.id, doneAt: 1 + rebuildHours(dev(s, id)) });
+    expect(dev(s, id).rebuild).toEqual({ componentId: fresh.id, doneAt: s.hour + rebuildHours(dev(s, id)) });
     expect(rebuildHours(dev(s, id))).toBeCloseTo((160 * 1000 * 0.7) / 50 / 3600, 9);
     expect(deviceHealth(s, id).state).toBe("rebuilding");
     run(s, 2);
@@ -167,6 +171,7 @@ describe("RAID", () => {
     expect(err(replaceComponent(s, "dev3", drive.id))).toBe("error.powerOffFirst");
     ok(setPower(s, "dev3", false));
     ok(replaceComponent(s, "dev3", drive.id));
+    settle(s);
     run(s, 1);
     ok(setPower(s, "dev3", true));
     s.hour += 1;
@@ -185,6 +190,7 @@ describe("power supplies, fans and power", () => {
     expect(linkStatus(s, id).online).toBe(true);
     part(s, "psu");
     ok(replaceComponent(s, id, a.id));
+    settle(s);
     run(s, 1);
     fail(s, id, b.id, dev(s, id).components.find((c) => c.kind === "psu" && c.id !== b.id)!.id);
     expect(deviceHealth(s, id).state).toBe("down");
@@ -202,6 +208,7 @@ describe("power supplies, fans and power", () => {
     expect(err(replaceComponent(s, "dev3", fan.id))).toBe("error.noPart");
     part(s, "fan");
     ok(replaceComponent(s, "dev3", fan.id));
+    settle(s);
     expect(err(replaceComponent(s, "dev3", fan.id))).toBe("error.busy");
     run(s, 1);
     expect(deviceHealth(s, "dev3").state).toBe("ok");
@@ -212,6 +219,7 @@ describe("power supplies, fans and power", () => {
     ok(setPower(s, "dev3", false));
     // Preventive: the RAM stick works, and the swap still goes through.
     ok(replaceComponent(s, "dev3", ram.id));
+    settle(s);
   });
   it("takes everything behind a switch down when the switch is powered off", () => {
     const s = rich();
@@ -270,6 +278,7 @@ describe("remote hands", () => {
     part(s, "fan");
     const before = s.cash;
     ok(replaceComponent(s, "dev3", comp(s, "dev3", "fan").id));
+    settle(s);
     expect(s.cash).toBe(before);
   });
 });

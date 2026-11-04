@@ -12,7 +12,7 @@ import { provisionService, upgradeNodePhp } from "../src/sim/90-actions/clusters
 import { panelServer, withServer, newGame } from "./fixtures";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, settle } from "./fixtures";
 import { mountDevice } from "./plugged";
 import { cleanUp, setSitesOffline } from "../src/sim/90-actions/security";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -38,6 +38,7 @@ function hosting(web = true) {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
+  settle(s);
   const a = panelServer(s, "dev3"), b = panelServer(s, second);
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   if (web) {

@@ -17,7 +17,7 @@ import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { addLocation, buyRack, connect, sellDevice, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
-import { hypervisor, readyGame, skipTo, startGame, withServer } from "./fixtures";
+import { hypervisor, readyGame, settle, skipTo, startGame, withServer } from "./fixtures";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { mrr } from "../src/sim/metrics";
@@ -43,6 +43,7 @@ function twoNodes() {
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));
+  settle(s);
   const cluster = hypervisor(s, ["dev3", second], "Web 1");
   const cus = addCustomer(s, "Ada Lang", "hobbyDev");
   return { s, cluster, second, cus };
@@ -288,6 +289,7 @@ describe("dedicated and colocation", () => {
     const third = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     ok(mountDevice(s, third, "rack2", 3));
     ok(connect(s, { device: third, port: 0 }, { device: "dev4", port: 2 }));
+    settle(s);
     const id = ok(provisionService(s, cus, "dedicated", { label: "ded" }));
     expect(workloadsOf(s, id)).toMatchObject([{ deviceId: third, clusterId: null }]);
     expect(serviceOnline(s, id)).toBe(true);

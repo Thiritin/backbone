@@ -4,7 +4,7 @@ import { linkStatus } from "../src/sim/60-infra/status";
 import { addLocation, connect, moveRack, unmountDevice } from "../src/sim/90-actions/hardware";
 import { installRouter } from "../src/sim/90-actions/routers";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, freeFloor, onSaleAt, withServer, newGame } from "./fixtures";
+import { buyDevice, freeFloor, onSaleAt, settle, withServer, newGame } from "./fixtures";
 
 const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   if (!r.ok) throw new Error(r.error);
@@ -23,9 +23,11 @@ describe("the router in the rack", () => {
     expect(err(connect(s, { device: "dev5", port: 3 }, { device: "dev6", port: 0 }))).toBe("error.mediaMismatch");
     expect(err(connect(s, { device: "dev4", port: 6 }, { device: "dev6", port: 0 }))).toBe("error.mediaMismatch");
     ok(connect(s, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
+    settle(s);
     expect(linkStatus(s, "dev3").online).toBe(true);
     expect(s.cables.find((c) => c.a.device === "dev5" && c.a.port === 4)?.kind).toBe("copper");
     ok(unmountDevice(s, "dev5"));
+    settle(s);
     expect(dev(s, "dev5").store).toBe("loc1");
     expect(linkStatus(s, "dev3").online).toBe(false);
   });

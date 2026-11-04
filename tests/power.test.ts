@@ -10,7 +10,7 @@ import { fanRuns, ROOM, roomTemperature } from "../src/sim/60-infra/sensors";
 import { mountStack as mountPlugged } from "./plugged";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { failComponents, powerPerHour, tick, tickMinute } from "../src/sim/88-tick/tick";
-import { runServers, withServer } from "./fixtures";
+import { runServers, settle, withServer } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(7)), cash: 1_000_000 });
 const ok = (r: ReturnType<typeof setPlugged>) => {
@@ -23,9 +23,12 @@ const run = (s: GameState, hours: number) => { for (let h = 0; h < hours; h++) t
 // Swaps the starting server for a freshly mounted one of the given model, cabled to the switch.
 function fresh(s: GameState, model: string): string {
   ok(unmountDevice(s, "dev3"));
+  settle(s);
   const id = ok(buyDevice(s, model, "Dwell", 1, "loc1"));
   ok(mountDevice(s, id, "rack2", 1));
+  settle(s);
   ok(connect(s, { device: id, port: 0 }, { device: "dev4", port: 0 }));
+  settle(s);
   return id;
 }
 
@@ -43,6 +46,7 @@ describe("power plugs", () => {
     expect(powered(s, id)).toBe(true);
     const before = rackPower(s, "rack2").watts;
     ok(setPlugged(s, id, psus(s, id)[0].id, false));
+    settle(s);
     expect(powered(s, id)).toBe(false);
     expect(deviceHealth(s, id).state).toBe("nopower");
     expect(rackPower(s, "rack2").watts).toBeLessThan(before);
@@ -52,6 +56,7 @@ describe("power plugs", () => {
     const s = rich();
     ok(buyDevice(s, "g1-compute", "Dwell", 2, "loc1"));
     ok(mountStack(s, "g1-compute", "Dwell", "rack2", 2));
+    settle(s);
     const mounted = s.devices.filter((d) => d.rackId === "rack2" && d.model === "g1-compute" && d.id !== "dev3");
     expect(mounted).toHaveLength(2);
     for (const d of mounted) expect(powered(s, d.id)).toBe(true);
@@ -61,7 +66,9 @@ describe("power plugs", () => {
     const s = rich();
     const id = fresh(s, "g1-compute");
     ok(setPlugged(s, id, psus(s, id)[0].id, false));
+    settle(s);
     ok(setPlugged(s, id, psus(s, id)[0].id, true));
+    settle(s);
     expect(powered(s, id)).toBe(true);
     expect(deviceHealth(s, id).state).toBe("booting");
     expect(working(s, id)).toBe(false);
@@ -69,6 +76,7 @@ describe("power plugs", () => {
     expect(working(s, id)).toBe(true);
     expect(linkStatus(s, id).online).toBe(true);
     ok(setPlugged(s, id, psus(s, id)[0].id, false));
+    settle(s);
     expect(working(s, id)).toBe(false);
   });
 
@@ -77,23 +85,30 @@ describe("power plugs", () => {
     const id = fresh(s, "g1-compute-2psu");
     const [a, b] = psus(s, id);
     ok(setPlugged(s, id, a.id, true));
+    settle(s);
     ok(setPlugged(s, id, b.id, true));
+    settle(s);
     run(s, 1);
     s.devices = s.devices.map((d) => (d.id === id ? failComponents(s, d, [a.id]) : d));
     expect(working(s, id)).toBe(true);
     // A second plug into an already running device does not reboot it.
     ok(setPlugged(s, id, b.id, false));
+    settle(s);
     expect(working(s, id)).toBe(false);
     ok(setPlugged(s, id, b.id, true));
+    settle(s);
     expect(deviceHealth(s, id).state).toBe("booting");
     run(s, 1);
     const one = rich();
     const solo = fresh(one, "g1-compute-2psu");
     const [x, y] = psus(one, solo);
     ok(setPlugged(one, solo, x.id, true));
+    settle(one);
     ok(setPlugged(one, solo, y.id, true));
+    settle(one);
     run(one, 1);
     ok(setPlugged(one, solo, y.id, false));
+    settle(one);
     expect(deviceHealth(one, solo).state).toBe("ok");
     one.devices = one.devices.map((d) => (d.id === solo ? failComponents(one, d, [x.id]) : d));
     expect(working(one, solo)).toBe(false);

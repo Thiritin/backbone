@@ -189,6 +189,7 @@ describe("world", () => {
       const before = g().cables.length;
       fireEvent.click(panel.querySelector(`[data-end="${a.getAttribute("data-end")}"]`)!);
       fireEvent.click(panel.querySelector(`[data-end="${b.getAttribute("data-end")}"]`)!);
+      settle(g());
       expect(g().cables.length).toBe(before + 1);
       expect(portPeers(g(), end(a).device)[end(a).port]).toEqual(end(b));
       expect(panel.querySelector("[data-hand]")).toBeNull();
@@ -227,6 +228,7 @@ describe("world", () => {
       expect(g().cables.length).toBe(before);
       expect(panel.querySelector("[data-hand]")).toBeNull();
       drag(b);
+      settle(g());
       expect(g().cables.length).toBe(before + 1);
       expect(portPeers(g(), end(a).device)[end(a).port]).toEqual(end(b));
     } finally {

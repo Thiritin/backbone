@@ -8,7 +8,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { takeLoan } from "../src/sim/90-actions/billing";
 
 import { connect, orderHomeLine } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, settle } from "./fixtures";
 import { research } from "../src/sim/90-actions/store";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { checkDone } from "../src/sim/checklist";
@@ -76,6 +76,7 @@ describe("early capacity (docs/design/economy/README.md, Home line)", () => {
     const id = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     ok(mountDevice(s, id, "rack2", 2));
     ok(connect(s, { device: id, port: 0 }, { device: "dev4", port: 1 }));
+    settle(s);
     expect(checkDone(s, "secondServer")).toBe(true);
     join(s, s.clusters[0].id, id);
     // The new node adds its full 8 GB; the control plane already sits on the first.

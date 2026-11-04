@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Hands-on work in the basement, offices and every datacenter now takes game time: you queue the job, the work happens over minutes, and the checklist ticks when it is done.
 - Build and furnish a NOC room in your own hall, and use the terminal desk in rented datacenter rooms to reach your desktop on site; the main distribution board is now drawn as a real switchgear panel.
 - Work in your own hall now takes game time: your technicians walk to the rack, do the job in minutes, and customers in your hall can book remote hands at a rate you set.
 - The datacenter floor shows how air flows around your racks, the main distribution board and the meet-me room open as close-ups, and the hall plan shows every room.

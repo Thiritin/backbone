@@ -11,7 +11,7 @@ import { addAllocation, removeAllocation, restartDaemon, updateDaemon } from "..
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { targetFor } from "../src/sim/30-market/sales";
-import { buyDevice, panelServer, skipTo, withServer } from "./fixtures";
+import { buyDevice, panelServer, settle, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: ActionResult) => {
@@ -24,6 +24,7 @@ function node(title = "blockcraft", year = 2018) {
   const two = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, two, "rack2", 2));
   ok(connect(s, { device: two, port: 0 }, { device: "dev4", port: 1 }));
+  settle(s);
   skipTo(s, year);
   const cluster = panelServer(s, two, "pterodaktyl"), customer = addCustomer(s, "Ada Lang", "hobbyDev");
   const add = (label: string, t = title) => ok(provisionService(s, customer, "gameServer", { label, spec: sizeSpec("gameServer", 0, year), clusterId: cluster, title: t }));

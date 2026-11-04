@@ -4,7 +4,7 @@ import { consoleBookmarks, consoleFeatures } from "../src/sim/80-business/consol
 import { resolve } from "../src/sim/80-business/browser";
 import type { GameState } from "../src/sim/50-state";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
-import { buyDevice, bootedMachine } from "./fixtures";
+import { buyDevice, bootedMachine, settle } from "./fixtures";
 import { createVm, PANEL_VM_SIZE } from "../src/sim/90-actions/clusters";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { readyGame, panelServer } from "./fixtures";
@@ -73,7 +73,9 @@ function lab() {
   s.cash = 100_000;
   const dev = must(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   expect(mountDevice(s, dev, "rack2", 2)).toMatchObject({ ok: true });
+  settle(s);
   expect(connect(s, { device: dev, port: 0 }, { device: "dev4", port: 1 }).ok).toBe(true);
+  settle(s);
   const barePanel = panelServer(s, dev, "pleskit");
   const mailVm = bootedMachine(s, must(createVm(s, s.clusters[0].id, PANEL_VM_SIZE)));
   expect(installSoftware(s, mailVm, "postfixit").ok).toBe(true);

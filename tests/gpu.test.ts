@@ -17,7 +17,7 @@ import { buyBare, buyDevice, newGame, onSaleAt } from "./fixtures";
 import { research } from "../src/sim/90-actions/store";
 import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { hypervisor, shareWith, skipTo, withServer } from "./fixtures";
+import { hypervisor, settle, shareWith, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 type R = { ok: boolean; id?: string; error?: string };
@@ -40,11 +40,15 @@ const cardsOf = (s: GameState, id: string) => s.devices.find((d) => d.id === id)
 function gpuServer(s: GameState, model = "g3-gpu", slot = 5): string {
   const id = ok(buyDevice(s, model, "Dwell", 1, "loc1"));
   ok(mountDevice(s, id, "rack2", slot));
+  settle(s);
   // The server's SFP port goes to an uplink switch, which is cabled to the basement switch.
   const sw = ok(buyDevice(s, "sw-48", "Sysko", 1, "loc1"));
   ok(mountDevice(s, sw, "rack2", 12));
+  settle(s);
   ok(connect(s, { device: sw, port: 0 }, { device: "dev4", port: 2 }));
+  settle(s);
   ok(connect(s, { device: id, port: 0 }, { device: sw, port: 48 }));
+  settle(s);
   return id;
 }
 
@@ -105,8 +109,10 @@ describe("GPU fit rules", () => {
     expect(err(installPart(s, id, spare))).toBe("error.noSlot");
     s.devices.find((d) => d.id === id)!.on = false;
     ok(removePart(s, id, cardsOf(s, id)[0].id));
+    settle(s);
     for (let h = 0; h < 2; h++) tick(s);
     ok(installPart(s, id, spare));
+    settle(s);
     expect(cardsOf(s, id)).toHaveLength(4);
   });
 });

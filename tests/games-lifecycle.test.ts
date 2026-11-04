@@ -14,7 +14,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { connect, type ActionResult } from "../src/sim/90-actions/hardware";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { buyDevice, panelServer, skipTo, withServer } from "./fixtures";
+import { buyDevice, panelServer, settle, skipTo, withServer } from "./fixtures";
 import { mountDevice } from "./plugged";
 
 const ok = (r: ActionResult) => {
@@ -27,6 +27,7 @@ function game(title: string, year = 2018, panel: "tcadmen" | "multikraft" = "tca
   const two = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, two, "rack2", 2));
   ok(connect(s, { device: two, port: 0 }, { device: "dev4", port: 1 }));
+  settle(s);
   skipTo(s, year);
   const cluster = panelServer(s, two, panel), customer = addCustomer(s, "Ada Lang", "hobbyDev");
   const id = ok(provisionService(s, customer, "gameServer", { label: "ada", spec: sizeSpec("gameServer", 0, year), clusterId: cluster, title }));

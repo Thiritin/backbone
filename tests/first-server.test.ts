@@ -10,7 +10,7 @@ import { createPanelVm, installPanel } from "../src/sim/90-actions/clusters";
 import { installSoftware } from "../src/sim/90-actions/software";
 import { connect, mountDevice, setPlugged } from "../src/sim/90-actions/hardware";
 import { setPortShare } from "../src/sim/90-actions/lan";
-import { buyDevice, bootedMachine, startGame } from "./fixtures";
+import { buyDevice, bootedMachine, settle, startGame } from "./fixtures";
 import { checkDone } from "../src/sim/checklist";
 import { skipTo } from "./fixtures";
 
@@ -26,12 +26,16 @@ function firstServer(s: GameState): string {
   const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   expect(s.cash).toBe(START_CASH - presetPrice(modelById("g1-compute"), yearOf(s.hour), "Dwell"));
   ok(mountDevice(s, srv, "rack2", 1));
+  settle(s);
   expect(linkStatus(s, srv).online).toBe(false);
   for (const c of s.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(setPlugged(s, srv, c.id, true));
+  settle(s);
   expect(checkDone(s, "mountRouter")).toBe(false);
   ok(connect(s, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
+  settle(s);
   expect(linkStatus(s, srv).online).toBe(false);
   ok(connect(s, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
+  settle(s);
   expect(checkDone(s, "mountRouter")).toBe(true);
   run(s, 1);
   expect(linkStatus(s, srv).online).toBe(true);

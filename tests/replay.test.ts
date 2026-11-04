@@ -25,6 +25,10 @@ const ok = (r: { ok: boolean; id?: string; error?: string }) => {
   return r.id!;
 };
 const store = useStore.getState;
+// Hand work is queued as work orders; plays on until the player has done them.
+const settleStore = () => {
+  for (let i = 0; i < 24 * 30 && store().game.orders.some((o) => !o.applied); i++) store().advance(1);
+};
 const play = (hours: number) => {
   const until = store().game.hour + hours;
   while (store().game.hour < until && store().game.gameOver === null) store().advance(until - store().game.hour);
@@ -38,9 +42,12 @@ function shortGame(): GameState {
   const srv = ok(store().act(buyDevice, "g1-compute", "Dwell", 1, "loc1"));
   play(24 * 6);
   ok(store().act(mountDevice, srv, "rack2", 1));
+  settleStore();
   for (const c of store().game.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(store().act(setPlugged, srv, c.id, true));
+  settleStore();
   ok(store().act(connect, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
   ok(store().act(connect, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
+  settleStore();
   ok(store().act(orderHomeLine, "dsl-16"));
   play(24 * 9);
   ok(store().act(installPanel, srv, "freepanel"));

@@ -7,7 +7,7 @@ import { ASK_FILL, backupFlows, diskFill, FULL_PENALTY, portLinks, usageOf, usag
 import { provisionService, setBackup } from "../src/sim/90-actions/clusters";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
-import { buyDevice } from "./fixtures";
+import { buyDevice, settle } from "./fixtures";
 import { named, panelServer, readyGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
@@ -115,6 +115,7 @@ describe("night jobs", () => {
     const third = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     ok(mountDevice(s, third, "rack2", 3));
     ok(connect(s, { device: third, port: 0 }, { device: "dev4", port: 2 }));
+    settle(s);
     const backup = named(s, panelServer(s, third, "backula"), "Backup 1");
     ok(setBackup(s, s.clusters[0].id, backup, "daily"));
     s.hour = at(TUE, 2);

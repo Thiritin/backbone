@@ -5,7 +5,7 @@ import { type GameState } from "../src/sim/50-state";
 import { connectError, storageStacks } from "../src/sim/60-infra/status";
 import { tick } from "../src/sim/88-tick/tick";
 import { buyOutLease, connect, mountStack, sellDevice, type CartLine } from "../src/sim/90-actions/hardware";
-import { buyCart, buyDevice, newGame } from "./fixtures";
+import { buyCart, buyDevice, newGame, settle } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { withServer } from "./fixtures";
 
@@ -133,6 +133,7 @@ describe("mountStack fromSlot and connectError", () => {
     expect(err(mountStack(s, "sw-8", "Sysko", "rack2", 3, 22))).toBe("error.noRoom");
     expect(err(mountStack(s, "sw-8", "Sysko", "rack2", 1, 1))).toBe("error.noRoom");
     ok(mountStack(s, "sw-8", "Sysko", "rack2", 3, 10));
+    settle(s);
     expect(s.devices.filter((d) => d.model === "sw-8" && d.id !== "dev4").map((d) => d.slot)).toEqual([10, 11, 12]);
   });
   it("reports the same errors connect returns", () => {

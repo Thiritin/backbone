@@ -65,7 +65,6 @@ export function hallDoer(s: GameState, locationId: string): string | null {
 export function viaHands(s: GameState, action: HandsAction, args: unknown[], locationId: string, how: How | boolean): How | boolean | ActionResult {
   if (how === true || how === "tech" || how === "friend" || how === "job") return how;
   const h = hands(s, locationId), self = how === "self" || h === "own";
-  if (h === "own" && s.locations.find((l) => l.id === locationId)?.space === "basement") return "self";
   const hall = s.properties.some((p) => p.hall?.locationId === locationId);
   if (h === "none" && !self) return { ok: false, error: "error.notThere" };
   // ponytail: validates on a full copy of the game; a per-action check function if this gets slow.
@@ -75,11 +74,12 @@ export function viaHands(s: GameState, action: HandsAction, args: unknown[], loc
   // The unit the order is about: a cable's first end, the first unit of a stack.
   const deviceId = action === "mountStack" ? trial.id! : typeof first === "object" ? (first as { device: string }).device : String(first);
   const target = { rackId: jobRack(s, deviceId, args) }, act = { name: action, args: JSON.parse(JSON.stringify(args)) as unknown[] };
+  const model = s.devices.find((d) => d.id === deviceId)?.model;
   const units = action === "mountStack" ? Number(args[3]) || 1 : 1;
   if (!self && hall) {
     const doer = hallDoer(s, locationId);
     if (!doer) return { ok: false, error: "error.queueFull" };
-    return orderWork(s, doer, locationId, target, act, { kind, workMin: workMinutes(s, doer, kind, units), deviceId });
+    return orderWork(s, doer, locationId, target, act, { kind, workMin: workMinutes(s, doer, kind, units, model), deviceId });
   }
   if (!self) {
     const q = jobQuote(s, locationId, kind)!;
@@ -92,7 +92,7 @@ export function viaHands(s: GameState, action: HandsAction, args: unknown[], loc
     if (!drove.ok) return drove;
   }
   const arrive = s.player.doing === "travel" && s.player.until > s.hour ? s.player.until * 60 - (s.hour * 60 + s.minute) : 0;
-  return orderWork(s, "player", locationId, target, act, { kind, workMin: workMinutes(s, "player", kind, units), waitMin: arrive, deviceId });
+  return orderWork(s, "player", locationId, target, act, { kind, workMin: workMinutes(s, "player", kind, units, model), waitMin: arrive, deviceId });
 }
 
 // What the Locations app lists as queued hand jobs: the provider's and the player's own, as hours and euros.

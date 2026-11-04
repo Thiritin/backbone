@@ -1,6 +1,7 @@
 // Work orders (docs/design/gdd/the-world.md, Work orders and figures): the player, technicians, NOC staff, the provider's remote hands and
 // customers' remote hands all do timed work through one saved queue. An order runs its action at the minute it is done.
 import { t } from "../../i18n/en";
+import { workFactor } from "../10-catalog/lifecycle";
 import { hashRng, rand } from "../00-core/rng";
 import { cents } from "../45-billing/billing";
 import { entryTile, officePlan, rackTiles, seatsAt, type Facing, type Pt, type Tile } from "../20-world/layout";
@@ -48,9 +49,11 @@ const manhattan = (a: Pt, b: Pt): number => Math.abs(a.x - b.x) + Math.abs(a.y -
 export const opensOf = (s: GameState, worker: string): WorkOrder[] => s.orders.filter((o) => o.worker === worker && !o.applied);
 
 // Work minutes of a job kind for a worker: the player and the provider take JOB_HOURS, staff 1.5 minus skill over 100 times that.
-export const workMinutes = (s: GameState, worker: string, kind: "mount" | "cable" | "parts", units = 1): number => {
+export const workMinutes = (s: GameState, worker: string, kind: "mount" | "cable" | "parts", units = 1, modelId?: string): number => {
   const e = s.staff.find((x) => x.id === worker);
-  return Math.round(JOB_HOURS[kind] * 60 * units * (e ? 1.5 - e.skill / 100 : 1));
+  // Parts work on a device out of support takes longer.
+  const old = modelId && kind === "parts" ? workFactor(modelId, s.hour) : 1;
+  return Math.round(JOB_HOURS[kind] * 60 * units * old * (e ? 1.5 - e.skill / 100 : 1));
 };
 
 // Chains a worker's orders first in, first out: each starts at the later of its queue time and the end of the one before. Started orders stay.
@@ -123,7 +126,9 @@ function finish(s: GameState, o: WorkOrder, events: SimEvent[]): void {
     return;
   }
   if (!o.action) return;
-  if (!runHands(s, o.action.name as HandsAction, o.action.args).ok || o.worker !== "provider") return;
+  if (!runHands(s, o.action.name as HandsAction, o.action.args).ok) return;
+  if (o.worker === "player") events.push({ app: "Locations", key: "event.workDone", params: { device } });
+  if (o.worker !== "provider") return;
   const fee = o.fee ?? 0, dc = s.locations.find((l) => l.id === o.locationId)?.dc ?? "";
   s.cash = cents(s.cash - fee);
   s.ledger = [...s.ledger, { hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device, hours, dc, done: Math.floor(doneAt(o) / 60) }, amount: -fee }];
