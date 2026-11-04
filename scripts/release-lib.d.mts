@@ -1,11 +1,11 @@
 export const SITE: string;
 export const DISCORD_LIMIT: number;
-export const FIRST_VERSION: string;
+export const STABLE_VERSION: string;
 export function isReleaseTag(tag: string): boolean;
 export function parseTag(tag: string): number[];
 export function latestTag(tags: string[]): string | null;
 export function nextTag(tags: string[], bump: string, approvedMajor?: boolean): string;
-export function previousRelease(releases: { tagName: string; publishedAt: string }[], tag: string): string | null;
+export function previousTag(tags: string[], tag: string): string | null;
 export function parseDays(text: string): { date: string; bullets: string[] }[];
 export function notesSince(oldText: string | null, newText: string): string;
 export function discordChunks(tag: string, notes: string, limit?: number): string[];

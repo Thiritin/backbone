@@ -10,7 +10,7 @@ Agents choose only `patch` or `minor`. An agent never chooses `major`, never pas
 - `minor`: the changes add features or content.
 - `major`: the user decides.
 
-The first release is `1.0.0`. Until a `vX.Y.Z` tag exists, only `1.0.0` is accepted. The old date-named releases (`2026.10.31` to `2026.11.04`) are history and are ignored when computing versions.
+The next version is computed from the highest `vX.Y.Z` tag. Tags that are not strict `vX.Y.Z` are ignored. The one exception to the major rule is the first stable release: the user chose `1.0.0`, and while the latest release is still `0.x` the explicit version `1.0.0` is accepted without the flag. Every other bump that raises the major number needs `--user-approved-major`.
 
 Versions are plain semver. The tag is `vX.Y.Z`, the release title is `raid0 X.Y.Z`, and the desktop app version is `X.Y.Z`.
 
@@ -30,7 +30,7 @@ Versions are plain semver. The tag is `vX.Y.Z`, the release title is `raid0 X.Y.
    npm run release -- patch --dry
    ```
 
-   Replace `patch` with `minor`, or with an explicit version such as `1.0.0` for the first release.
+   Replace `patch` with `minor`. The first stable release is cut with `npm run release -- 1.0.0 --dry` and then `npm run release -- 1.0.0`.
 
 2. Create it.
 
@@ -45,6 +45,8 @@ Versions are plain semver. The tag is `vX.Y.Z`, the release title is `raid0 X.Y.
    ```
    gh run watch $(gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
    ```
+
+Worked example. The latest release is `v0.5.0`. `npm run release -- 1.0.0` creates `v1.0.0` with the notes added since `v0.5.0`. After that, `npm run release -- patch` creates `v1.0.1` with the notes added since `v1.0.0`, and `npm run release -- minor` would create `v1.1.0`. `npm run release -- major` is refused with a message naming `--user-approved-major`.
 
 To write the notes by hand, put them in a file and add `--notes-file <path>` to the command. The notes are Markdown with the bullets under `## YYYY-MM-DD` day headings, newest day first; the desktop update sheet reads them in that shape.
 

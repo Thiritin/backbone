@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { discordChunks, isReleaseTag, latestTag, nextTag, notesSince, previousRelease } from "../scripts/release-lib.mjs";
+import { discordChunks, isReleaseTag, latestTag, nextTag, notesSince, previousTag } from "../scripts/release-lib.mjs";
 
 const old = "# Changelog\n\n## 2026-11-03\n\n- Older change.\n\n## 2026-11-02\n\n- Oldest change.\n";
 const now = "# Changelog\n\n## 2026-11-04\n\n- Newest change.\n\n## 2026-11-03\n\n- Added later.\n- Older change.\n\n## 2026-11-02\n\n- Oldest change.\n";
@@ -17,7 +17,7 @@ describe("release tags", () => {
 });
 
 describe("next version", () => {
-  const tags = ["2026.11.04", "v1.4.2"];
+  const tags = ["v0.5.0", "v1.4.2", "nightly"];
 
   it("bumps patch and minor", () => {
     expect(nextTag(tags, "patch")).toBe("v1.4.3");
@@ -39,28 +39,37 @@ describe("next version", () => {
     expect(() => nextTag(tags, "huge")).toThrow(/Bump must be/);
   });
 
-  it("starts at 1.0.0 and nothing else when no semver tag exists", () => {
-    expect(nextTag(["2026.11.04"], "1.0.0")).toBe("v1.0.0");
-    for (const bump of ["patch", "minor", "major", "0.1.0", "1.0.1"]) expect(() => nextTag(["2026.11.04"], bump)).toThrow(/first release/);
+  it("accepts the explicit 1.0.0 without approval while the latest release is 0.x", () => {
+    expect(nextTag(["v0.4.0", "v0.5.0"], "1.0.0")).toBe("v1.0.0");
+    expect(() => nextTag(["v0.5.0"], "major")).toThrow(/--user-approved-major/);
+    expect(() => nextTag(["v0.5.0"], "1.1.0")).toThrow(/--user-approved-major/);
+    expect(() => nextTag(["v0.5.0"], "2.0.0")).toThrow(/--user-approved-major/);
+    expect(() => nextTag(["v1.0.0"], "2.0.0")).toThrow(/--user-approved-major/);
+  });
+
+  it("walks 0.5.0 to 1.0.0 to 1.0.1", () => {
+    const tags = ["v0.5.0"];
+    tags.push(nextTag(tags, "1.0.0"));
+    expect(tags.at(-1)).toBe("v1.0.0");
+    expect(nextTag(tags, "patch")).toBe("v1.0.1");
+  });
+
+  it("starts from 0.0.0 when no release tag exists", () => {
+    expect(nextTag(["2026.11.04"], "minor")).toBe("v0.1.0");
   });
 });
 
 describe("previous release", () => {
-  const rel = (tagName: string, publishedAt: string) => ({ tagName, publishedAt });
+  const tags = ["v0.5.0", "v1.0.0", "v1.1.0", "v1.2.0", "nightly"];
 
-  it("uses the newest published release when no semver release exists", () => {
-    const all = [rel("2026.11.03", "2026-11-03T06:00:00Z"), rel("2026.11.04", "2026-11-04T11:00:00Z"), rel("2026.11.02", "2026-11-02T00:00:00Z")];
-    expect(previousRelease(all, "v1.0.0")).toBe("2026.11.04");
-  });
-
-  it("prefers the highest semver release below the new tag", () => {
-    const all = [rel("2026.11.04", "2026-11-04T11:00:00Z"), rel("v1.0.0", "2026-11-05T00:00:00Z"), rel("v1.1.0", "2026-11-06T00:00:00Z"), rel("v1.2.0", "2026-11-07T00:00:00Z")];
-    expect(previousRelease(all, "v1.2.0")).toBe("v1.1.0");
-    expect(previousRelease(all.slice(0, 2), "v1.0.0")).toBe("2026.11.04");
+  it("is the highest release below the new tag", () => {
+    expect(previousTag(tags, "v1.2.0")).toBe("v1.1.0");
+    expect(previousTag(tags, "v1.0.0")).toBe("v0.5.0");
+    expect(previousTag(tags, "v1.0.1")).toBe("v1.0.0");
   });
 
   it("is null for the very first release", () => {
-    expect(previousRelease([], "v1.0.0")).toBeNull();
+    expect(previousTag(["nightly"], "v0.1.0")).toBeNull();
   });
 });
 
