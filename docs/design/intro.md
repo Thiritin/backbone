@@ -59,7 +59,7 @@ Backbone is made for technical people who know the hosting industry and how it w
 
 ## Open source
 
-Backbone is open source. If you don't like something, download it from [GitHub](https://github.com/Thiritin/backbone) and send a pull request.
+Backbone is open source. If you don't like something, download it from [GitHub](https://github.com/Thiritin/raid0) and send a pull request.
 
 Fair warning: this game is made with a lot of AI. If you want to change something, feel free to send your pull request through your own AI agent.
 
