@@ -181,6 +181,9 @@
 .w-led-on { fill: var(--ok); }
 .w-led-fault { fill: var(--bad); }
 .w-blink .w-led-on { opacity: 0.35; }
+.w-led-flood { fill: var(--ok); animation: w-flood 0.14s steps(2) infinite; }
+@keyframes w-flood { 50% { opacity: 0.2; } }
+@media (prefers-reduced-motion: reduce) { .w-led-flood { animation: none; fill: var(--warn); } }
 
 .w-clock {
   position: absolute; top: 12px; left: 12px;

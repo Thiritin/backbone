@@ -672,7 +672,7 @@ export function Shimmer({ tile, z }: { tile: Tile; z: number }) {
 }
 
 // A rack is a dark box; a front facing the camera shows one LED per device, or from zoom 2 the rack front art scaled onto it. In a datacenter the face in view, front or rear, is a closed mesh door over that; a neighbour's rack is muted, its door shut on a few LEDs and a blank label plate. A share is the bottom section of a provider's cabinet of `cabinet` units.
-export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; fault?: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {
+export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cabinet = units }: { tile: Tile; units: number; items: RackItem[]; leds: { id: string; on: boolean; fault?: boolean; flood?: boolean; top: number }[]; zoomed: boolean; mesh?: boolean; neighbour?: boolean; cabinet?: number }) {
   const H = rackHeight(units), CH = rackHeight(cabinet), c = center(tile.x, tile.y), dx = 28, m = 1 / 16;
   const L = { x: c.x - dx, y: c.y }, B = { x: c.x, y: c.y + dx / 2 }, R = { x: c.x + dx, y: c.y };
   // The south face is the lower left, the east face the lower right; a north-facing rack shows its rear door on the south face.
@@ -691,7 +691,7 @@ export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, cab
   ) : (
     <>
       <rect x="6" y="4" width={artW - 12} height={artH - 8} rx="3" fill="var(--rack)" />
-      {leds.map((d) => <rect key={d.id} className={d.fault ? "w-led w-led-fault" : d.on ? "w-led w-led-on" : "w-led"} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
+      {leds.map((d, i) => <rect key={d.id} className={d.fault ? "w-led w-led-fault" : d.on && d.flood ? "w-led w-led-flood" : d.on ? "w-led w-led-on" : "w-led"} style={d.flood ? { animationDelay: `${(i * 0.05) % 0.14}s` } : undefined} x="12" y={4 + (units - d.top) * ART_U} width="10" height="5" rx="2" />)}
     </>
   ));
   const blink = (tile.x * 7 + tile.y * 3) % 5;
@@ -752,7 +752,7 @@ export function Tubes({ tiles }: { tiles: { x: number; y: number }[] }) {
 // The basement's metal shelf: four uprights, a board per unit from the floor up, each device lying on its board with an LED
 // on its front, and the loose cables hanging behind the boards.
 const SHELF_BOARDS_Z = 18, SHELF_U = 4.5;
-export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number; devices: { id: string; slot: number; height: number; on: boolean }[] }) {
+export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number; devices: { id: string; slot: number; height: number; on: boolean; flood?: boolean }[] }) {
   const x0 = tile.x + 0.1, x1 = tile.x + 0.9, y0 = tile.y + 0.12, y1 = tile.y + 0.88, post = 0.05, tone = "w-tone-shelf";
   const zOf = (slot: number) => 3 + (slot - 1) * SHELF_BOARDS_Z, top = zOf(units) + BOARD;
   const posts = (y: number) => [x0, x1 - post].map((x) => <Prism key={`${x}-${y}`} x0={x} y0={y} x1={x + post} y1={y + post} z1={top + 2} tone={tone} />);
@@ -772,7 +772,7 @@ export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number;
           <g key={k}>
             <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={z} z1={z + BOARD} tone={tone} />
             {d && <Prism x0={x0 + 0.08} y0={y0 + 0.1} x1={x1 - 0.08} y1={y1 - 0.06} z0={z + BOARD} z1={z + BOARD + dz} tone="w-tone-rack" />}
-            {led && <rect className={d.on ? "w-led w-led-on" : "w-led"} x={led.x - 2} y={led.y - 1} width="4" height="2" rx="1" />}
+            {led && <rect className={d.on && d.flood ? "w-led w-led-flood" : d.on ? "w-led w-led-on" : "w-led"} x={led.x - 2} y={led.y - 1} width="4" height="2" rx="1" />}
           </g>
         );
       })}

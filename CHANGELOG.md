@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Routers, firewalls and switches now flicker wildly while a DDoS attack is hitting their location, and calm down once the traffic is blackholed or filtered.
+- The Weather app now shows the city you are in at the top.
 - Rain now runs down the basement and office windows on wet days, and snow settles on the sill when it is cold outside.
 - An owned building can be fitted as a datacenter hall with rows you lay out, your own cooling, power and carriers, and spare positions sold to colocation customers.
 - The datacenter tubes no longer cast a glow over the racks.

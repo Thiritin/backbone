@@ -6,7 +6,7 @@ import { datacenterById } from "../src/sim/20-world/datacenters";
 import type { Profile } from "../src/sim/30-customers/customers";
 import { serviceOnline } from "../src/sim/40-support/status";
 import { type GameState } from "../src/sim/50-state";
-import { attacks, blackholed, burstFactor, capacityMbps, monthlyNetworkCost, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand, zoneTraffic } from "../src/sim/60-infra/network";
+import { attacks, blackholed, flooded, floodedDevice, burstFactor, capacityMbps, monthlyNetworkCost, networkBills, networkTick, p95, route, serviceMbps, transitBill, zoneDemand, zoneTraffic } from "../src/sim/60-infra/network";
 import type { SimEvent } from "../src/sim/88-tick/tick";
 import { addressBills, addressTick } from "../src/sim/60-infra/addresses";
 import { buyAddresses } from "../src/sim/90-actions/addresses";
@@ -337,5 +337,48 @@ describe("monthly cost", () => {
     const network = -networkBills(s).reduce((n, b) => n + b.amount, 0);
     expect(monthlyNetworkCost(s)).toBeCloseTo(network + bills, 2);
     expect(monthlyNetworkCost(s)).toBeGreaterThan(network);
+  });
+});
+
+describe("flooded", () => {
+  const setup = () => {
+    const { s, loc } = datacenter(5);
+    s.hour = 24 * 100 + 21;
+    const gear = s.devices.find((d) => d.rackId)!;
+    const attack = (over: Partial<GameState["network"]["attacks"][number]> = {}) => {
+      s.network = { ...s.network, attacks: [{ id: "a1", serviceId: "x", locationId: loc, mbps: 1000, startedAt: s.hour, endsAt: s.hour + 3, blackholed: false, ...over }] };
+    };
+    return { s, loc, gear, attack };
+  };
+
+  it("flickers working network gear while an unprotected attack lands", () => {
+    const { s, loc, gear, attack } = setup();
+    expect(floodedDevice(s, gear)).toBe(false);
+    attack();
+    expect(flooded(s, loc)).toBe(true);
+    expect(floodedDevice(s, gear)).toBe(true);
+  });
+
+  it("calms on blackhole, always-on protection, expiry and other locations", () => {
+    const { s, loc, gear, attack } = setup();
+    attack({ blackholed: true });
+    expect(floodedDevice(s, gear)).toBe(false);
+    attack();
+    s.network = { ...s.network, protection: "alwaysOn" };
+    expect(flooded(s, loc)).toBe(false);
+    s.network = { ...s.network, protection: "none" };
+    attack({ endsAt: s.hour });
+    expect(flooded(s, loc)).toBe(false);
+    attack({ locationId: "elsewhere" });
+    expect(flooded(s, loc)).toBe(false);
+  });
+
+  it("on-demand protection only lets the first hour through", () => {
+    const { s, loc, attack } = setup();
+    s.network = { ...s.network, protection: "onDemand" };
+    attack();
+    expect(flooded(s, loc)).toBe(true);
+    s.hour += 1;
+    expect(flooded(s, loc)).toBe(false);
   });
 });

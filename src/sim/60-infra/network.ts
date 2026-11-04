@@ -14,14 +14,15 @@ import type { Service } from "../30-customers/customers";
 import { bump, createTicket, OUTAGE_WRITE_CHANCE, profileStats, slowed } from "../40-support/tickets";
 import { attention, segmentOf } from "../10-catalog/attention";
 import { serviceHeld } from "../45-billing/billing";
-import type { GameState, LedgerEntry, Location } from "../50-state";
+import type { Device, GameState, LedgerEntry, Location } from "../50-state";
+import { modelById } from "../10-catalog/hardware";
 import type { SimEvent } from "../88-tick/tick";
 import { uplinkPrice } from "../10-catalog/uplinks";
 import { addressBills } from "./addresses";
 import { UPLINK_MONTHLY } from "./oob";
 import { workloadsOf } from "./cluster";
 import { routerMbps, throughputShare } from "./routers";
-import { working, type Hop } from "./status";
+import { locationOf, working, type Hop } from "./status";
 
 // A link takes one router port; it carries traffic from readyAt on, while its router works.
 // jack is the provider panel jack the line lands on.
@@ -87,6 +88,18 @@ export function attackMbps(s: GameState, a: Attack): number {
   if (a.blackholed || s.network.protection === "alwaysOn") return 0;
   if (s.network.protection === "onDemand") return s.hour === a.startedAt ? a.mbps * DDOS.detectShare : 0;
   return a.mbps;
+}
+
+// An attack is hitting the location's links this hour.
+export const flooded = (s: GameState, locationId: string): boolean =>
+  s.network.attacks.some((a) => a.locationId === locationId && a.endsAt > s.hour && attackMbps(s, a) > 0);
+
+// Working network gear at a flooded location, which the room and the rack show as flickering lights.
+export function floodedDevice(s: GameState, d: Device): boolean {
+  const k = modelById(d.model).kind;
+  if (k !== "gateway" && k !== "firewall" && k !== "switch") return false;
+  const loc = locationOf(s, d);
+  return !!loc && working(s, d.id) && flooded(s, loc.id);
 }
 
 // Mbit/s each location sends this hour, attacks included, and its burst: how much its 5-minute traffic swings around that.

@@ -22,10 +22,10 @@ export function WeatherApp() {
   return (
     <div className="weather">
       <section className="wx-now">
-        <h2>Frankfurt</h2>
-        <SkyIcon kind={sky("Frankfurt", game.hour)} />
-        <strong>{degrees("Frankfurt", game.hour)}</strong>
-        <span>{t(`weather.sky.${sky("Frankfurt", game.hour)}`)}</span>
+        <h2>{here.city}</h2>
+        <SkyIcon kind={sky(here.city, game.hour)} />
+        <strong>{degrees(here.city, game.hour)}</strong>
+        <span>{t(`weather.sky.${sky(here.city, game.hour)}`)}</span>
       </section>
       <ul className="wx-list">
         {game.locations.map((l) => {
@@ -46,7 +46,7 @@ export function WeatherApp() {
       </ul>
       <h3 className="wx-head">{t("weather.cities")}</h3>
       <ul className="wx-list">
-        {CITIES.filter((c) => c !== "Frankfurt").map((c) => (
+        {CITIES.filter((c) => c !== here.city).map((c) => (
           <li key={c} className="wx-row wx-city">
             <SkyIcon kind={sky(c, game.hour)} />
             <div className="wx-place"><b>{c}</b><span>{t(`weather.sky.${sky(c, game.hour)}`)}</span></div>
