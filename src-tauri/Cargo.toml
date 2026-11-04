@@ -1,11 +1,11 @@
 [package]
-name = "backbone"
+name = "raid0"
 # Replaced from the release tag at build time; see .github/workflows/desktop.yml.
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "backbone_lib"
+name = "raid0_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
