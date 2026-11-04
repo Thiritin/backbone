@@ -5,6 +5,9 @@ import { LOCALE } from "../../i18n/lang";
 import { hasMark, Logo } from "../art/logos";
 import { CABLES, CITIES, COAST, type City } from "./world-data";
 import { cityName } from "../cityName";
+import { fade, townLevel } from "./detail";
+import { RegionLayer, shape } from "./RegionLayer";
+import { inBox, loadRegion, PATCHES } from "./regions";
 import "./map.css";
 
 export type { City };
@@ -22,6 +25,7 @@ export interface Marker {
 interface Props { initial?: Bounds; markers?: Marker[]; onMarkerClick?: (id: string) => void; onCityClick?: (city: City) => void; className?: string; children?: ReactNode; minW?: number; layer?: ReactNode }
 
 export const EUROPE: Bounds = { west: -9.14, south: 41.9, east: 21.01, north: 59.91 };
+const EU = { w: -11, s: 35, e: 32, n: 62 };
 export const WORLD: Bounds = { west: -180, south: -58, east: 180, north: 84 };
 export const cityNamed = (name: string) => CITIES.find((c) => c.name === name);
 
@@ -69,6 +73,8 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
   cityClick.current = onCityClick;
   const dragged = useRef(false);
   const zoomBy = useRef<(f: number) => void>(() => {});
+  // The patches in view and the smallest town class shown, from the zoom.
+  const [det, setDet] = useState({ want: "", level: 0 });
   const pins = markers.map((m) => `${m.id}:${m.label}:${m.lon}:${m.lat}`).join("|");
   useEffect(() => declutter(svg.current!), [pins]);
 
@@ -86,6 +92,13 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
       s.setAttribute("viewBox", `${cur.x} ${cur.y} ${cur.w} ${(cur.w * ch) / cw}`);
       const k = cur.w / cw, nz = k > 0.12 ? "1" : k > 0.035 ? "2" : k > 5e-4 ? "3" : "4";
       s.style.setProperty("--k", String(k));
+      const f = fade(k);
+      s.style.setProperty("--o-region", String(f.region));
+      s.style.setProperty("--o-europe", String(f.europe));
+      s.style.setProperty("--o-detail", String(f.detail));
+      const lvl = townLevel(k), a = ch / cw, view = { w: cur.x / KX, e: (cur.x + cur.w) / KX, n: -cur.y, s: -(cur.y + cur.w * a) };
+      const want = f.region > 0 ? PATCHES.filter((p) => inBox(p.box, view)).map((p) => p.code).join() : "";
+      setDet((d) => (d.want === want && d.level === lvl ? d : { want, level: lvl }));
       if (nz !== z) el.dataset.z = z = nz;
     };
     const step = () => {
@@ -198,7 +211,9 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
   return (
     <div ref={wrap} className={`wm ${className ?? ""}`}>
       <svg ref={svg} role="group" aria-label="World map" onClickCapture={(e) => { if (dragged.current) { e.stopPropagation(); dragged.current = false; } }}>
-        <Base onCity={(c) => cityClick.current?.(c)} />
+        <BaseLand />
+        <RegionLayer want={det.want ? det.want.split(",") : []} level={det.level} onDraw={() => svg.current && declutter(svg.current)} />
+        <BaseTop onCity={(c) => cityClick.current?.(c)} />
         {layer}
         {[...groups.values()].map((g) => (
           <g key={g[0].id} className={g[0].zoom ? `wm-${g[0].zoom}` : undefined} transform={`translate(${XF(g[0].lon)} ${Y(g[0].lat)})`}>
@@ -241,6 +256,16 @@ function declutter(s: SVGSVGElement) {
     const r = c.querySelector("text")!.getBoundingClientRect();
     c.classList.toggle("wm-covered", r.width > 0 && pins.some(meets(r)));
   }
+  // Town names yield to pins, city names and larger towns; towns come largest first.
+  const kept = [...pins, ...[...s.querySelectorAll<SVGTextElement>(".wm-city:not(.wm-covered) text, .wm-country")].map((x) => x.getBoundingClientRect()).filter((x) => x.width > 0)];
+  const towns = [...s.querySelectorAll<SVGGElement>(".rg-town")];
+  const hide = towns.map((g) => {
+    const r = g.querySelector("text")!.getBoundingClientRect();
+    if (r.width === 0 || kept.some(meets(r))) return true;
+    kept.push(r);
+    return false;
+  });
+  towns.forEach((g, i) => g.classList.toggle("rg-hidden", hide[i]));
 }
 
 function flip(p: SVGGElement, left: boolean) {
@@ -268,11 +293,17 @@ function Pin({ m, y, onClick }: { m: Marker; y: number; onClick: () => void }) {
 }
 
 // Coast, graticule, cables and cities never change, so they render once.
-const Base = memo(function Base({ onCity }: { onCity: (c: City) => void }) {
+const BaseLand = memo(function BaseLand() {
   return (
     <>
       <path className="wm-grat" d={GRID} />
       <path className="wm-land" d={LAND} />
+    </>
+  );
+});
+const BaseTop = memo(function BaseTop({ onCity }: { onCity: (c: City) => void }) {
+  return (
+    <>
       <WorldGeo />
       <clipPath id="wm-world"><rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} /></clipPath>
       <g className="wm-cables" clipPath="url(#wm-world)">
@@ -298,14 +329,19 @@ export const lines = (ls: [number, number][][], close = false) => ls.map((l) => 
 
 // Lakes, rivers and borders, with country names in the interface language; loaded after the first paint.
 export function WorldGeo() {
-  const [g, setG] = useState<WorldGeoData | null>(null);
-  useEffect(() => { void import("./world-geo").then(setG); }, []);
+  const [g, setG] = useState<WorldGeoData | null>(null), [eu, setEu] = useState<Awaited<ReturnType<typeof loadRegion>>>(null);
+  useEffect(() => { void import("./world-geo").then(setG); void loadRegion("europe").then(setEu); }, []);
   if (!g) return null;
   const names = new Intl.DisplayNames(LOCALE, { type: "region" });
   return (
     <>
-      <path className="wm-lake" d={lines(g.LAKES, true)} />
-      <path className="wm-river" d={lines(g.RIVERS)} />
+      {/* Europe draws its lakes and rivers from the finer regional data. */}
+      <clipPath id="wm-noeu"><path clipRule="evenodd" d={`M${X0} ${Y0}H${X1}V${Y1}H${X0}ZM${X(EU.w)} ${Y(EU.n)}H${X(EU.e)}V${Y(EU.s)}H${X(EU.w)}Z`} /></clipPath>
+      <g clipPath={eu ? "url(#wm-noeu)" : undefined}>
+        <path className="wm-lake" d={lines(g.LAKES, true)} />
+        <path className="wm-river" d={lines(g.RIVERS)} />
+      </g>
+      {eu && <><path className="wm-lake" d={shape(eu.lake, true)} /><path className="wm-river" d={shape(eu.river, false)} /></>}
       <path className="wm-admin" d={lines(g.REGION_LINES)} />
       <path className="wm-border" d={lines(g.BORDERS)} />
       <g className="wm-countries">

@@ -115,3 +115,22 @@
 .wm:not([data-z="4"]) .geo-major { stroke-width: 1.2px; }
 .wm:not([data-z="4"]) .tr-streets { stroke: oklch(0.8 0.015 80); stroke-width: 0.8px; }
 .geo-patch { opacity: clamp(0, calc((0.008 - var(--k, 0)) / 0.006), 1); }
+
+/* Regional ground between the street patch and the national map. */
+.rg-eu { opacity: var(--o-europe, 1); }
+.rg-patch { opacity: var(--o-region, 1); }
+.rg path { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.rg-urban { fill: oklch(0.925 0.018 80) !important; }
+.rg-forest { fill: oklch(0.9 0.07 145) !important; }
+.rg-lake { fill: var(--wm-water) !important; }
+.rg-river { stroke: var(--wm-river); stroke-width: 1px; }
+.rg-stream, .rg-rail, .rg-second { opacity: var(--o-detail, 1); }
+.rg-stream { stroke: var(--wm-river); stroke-width: 0.7px; }
+.rg-rail { stroke: oklch(0.7 0.01 250); stroke-width: 0.8px; stroke-dasharray: 3 3; }
+.rg-second { stroke: oklch(0.86 0.05 90); stroke-width: clamp(0.8px, calc(0.002px / var(--k, 1)), 2px); }
+.rg-major-case { stroke: oklch(0.62 0.1 55); stroke-width: clamp(1.8px, calc(0.008px / var(--k, 1)), 4.4px); }
+.rg-major { stroke: oklch(0.86 0.15 80); stroke-width: clamp(1px, calc(0.004px / var(--k, 1)), 3px); }
+.rg-town circle { fill: var(--map-label); }
+.rg-town text { font: 500 10px Inter, sans-serif; fill: var(--map-label); stroke: var(--wm-halo); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke; pointer-events: none; }
+.rg-town.rg-hidden { visibility: hidden; }
+.wm-geo[data-z="4"] .rg-river { display: none; }

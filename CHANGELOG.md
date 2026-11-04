@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The travel map now shows roads, railways, rivers, forests, parks and towns at every zoom between the street and the whole of Europe, with town names in your language.
 - Supplier bills now come with a guide card and early warnings before power or domains are cut, all open bills can be paid at once with a single TAN in one bank tab, and a server without power shows Kein Strom instead of Voll.
 - After your first quote is accepted the guide walks you through creating the customer, registering the domain, setting up hosting and sending the access data and the first invoice, the customer form is prefilled from the order, and Escape closes the front window.
 - Two jobs can no longer work on the same server or rack slot at the same time: the second one shows Belegt until the first one is done or cancelled.
