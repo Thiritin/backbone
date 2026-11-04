@@ -16,7 +16,7 @@ The update offer never appears in `desktop:dev`.
 1. A push to main that adds CHANGELOG.md bullets runs `release.yml`, which creates or edits the day's GitHub release (tag `2026.11.04`).
 2. `release.yml` then starts `desktop.yml`. A release published by hand starts it too.
 3. `desktop.yml` builds macOS (arm64 and x64), Windows and Linux installers, signs the update bundles, and attaches the installers, signatures and `latest.json` to the release.
-4. The app checks `https://github.com/Thiritin/backbone/releases/latest/download/latest.json` on launch. It shows the existing update sheet with the release bullets, and accepting downloads, installs and restarts the app.
+4. The app checks `https://github.com/Thiritin/raid0/releases/latest/download/latest.json` on launch. It shows the existing update sheet with the release bullets, and accepting downloads, installs and restarts the app.
 
 The tag has leading zeros, so the build converts it to semver (`2026.11.4`) and writes it into `tauri.conf.json` and `Cargo.toml` at build time. The committed files keep version `0.1.0`.
 
