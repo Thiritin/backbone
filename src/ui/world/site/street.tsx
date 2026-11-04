@@ -36,10 +36,10 @@ export function Walk({ i }: { i: Item }) {
 
 // A paved strip: a driveway is plain concrete across the sidewalk and the kerb, any other path has joints every metre.
 export function Path({ i }: { i: Item }) {
-  const { x0, x1, y0, y1 } = i, drive = i.kind === "drive";
+  const { x0, x1, y0, y1 } = i, drive = i.kind === "drive" || i.kind === "lane" || i.kind === "track";
   return (
     <g pointerEvents="none">
-      <polygon className={drive ? "w-f-drive" : "w-f-paving"} points={flat(0, [x0, y0], [x1, y0], [x1, y1], [x0, y1])} />
+      <polygon className={i.kind === "lane" ? "w-f-asph" : i.kind === "track" ? "w-f-gravel" : drive ? "w-f-drive" : "w-f-paving"} points={flat(0, [x0, y0], [x1, y0], [x1, y1], [x0, y1])} />
       {!drive && <path className="w-f-paving-line" d={Array.from({ length: Math.floor(y1 - y0) }, (_, k) => `M${flat(0, [x0, y0 + k + 1], [x1, y0 + k + 1]).replace(/ /g, "L").replace(/,/g, " ")}`).join("")} />}
     </g>
   );

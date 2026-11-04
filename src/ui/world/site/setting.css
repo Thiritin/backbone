@@ -1,0 +1,30 @@
+/* Ground, tones and small parts of the compound settings: flat, two to three tones each. */
+.w-f-verge { fill: oklch(0.68 0.07 118); }
+.w-f-scrub { fill: oklch(0.7 0.08 112); }
+.w-f-gravel { fill: oklch(0.78 0.03 85); }
+.w-f-slab { fill: oklch(0.77 0.01 250); }
+.w-f-slab-line { fill: none; stroke: oklch(0.7 0.012 250); stroke-width: 1; }
+.w-f-asph { fill: oklch(0.58 0.01 255); }
+.w-f-ties { fill: none; stroke: oklch(0.5 0.05 60); stroke-width: 2; }
+.w-f-steel { fill: none; stroke: oklch(0.42 0.012 252); stroke-width: 1.6; }
+.w-fld-plough polygon { fill: oklch(0.52 0.07 55); } .w-fld-plough path { fill: none; stroke: oklch(0.45 0.07 52); stroke-width: 1.4; }
+.w-fld-sprout polygon { fill: oklch(0.72 0.1 130); } .w-fld-sprout path { fill: none; stroke: oklch(0.62 0.12 135); stroke-width: 1.4; }
+.w-fld-crop polygon { fill: oklch(0.8 0.13 92); } .w-fld-crop path { fill: none; stroke: oklch(0.7 0.14 90); stroke-width: 1.4; }
+.w-fld-stubble polygon { fill: oklch(0.75 0.07 90); } .w-fld-stubble path { fill: none; stroke: oklch(0.66 0.08 85); stroke-width: 1.4; }
+.w-snow .w-fld-plough polygon, .w-snow .w-fld-sprout polygon, .w-snow .w-fld-crop polygon, .w-snow .w-fld-stubble polygon { fill: oklch(0.94 0.008 240); }
+.w-snow .w-fld-plough path, .w-snow .w-fld-sprout path, .w-snow .w-fld-crop path, .w-snow .w-fld-stubble path { stroke: oklch(0.86 0.012 240); }
+.w-tone-cont-a { --top: oklch(0.62 0.1 245); --left: oklch(0.54 0.1 245); --right: oklch(0.45 0.1 245); --edge: oklch(0.38 0.08 245); }
+.w-tone-cont-b { --top: oklch(0.6 0.14 35); --left: oklch(0.52 0.14 35); --right: oklch(0.43 0.13 35); --edge: oklch(0.36 0.1 35); }
+.w-tone-cont-c { --top: oklch(0.62 0.1 150); --left: oklch(0.54 0.1 150); --right: oklch(0.45 0.1 150); --edge: oklch(0.38 0.08 150); }
+.w-tone-tank { --top: oklch(0.88 0.01 250); --left: oklch(0.8 0.012 250); --right: oklch(0.68 0.014 250); --edge: oklch(0.58 0.014 250); }
+.w-tone-gen { --top: oklch(0.7 0.06 100); --left: oklch(0.62 0.065 100); --right: oklch(0.52 0.065 100); --edge: oklch(0.44 0.06 100); }
+.w-tone-solar { --top: oklch(0.45 0.09 255); --left: oklch(0.38 0.08 255); --right: oklch(0.3 0.07 255); --edge: oklch(0.25 0.06 255); }
+.w-tone-shrub { --top: oklch(0.7 0.14 140); --left: oklch(0.62 0.14 140); --right: oklch(0.52 0.13 140); --edge: oklch(0.45 0.1 140); }
+.w-rib { fill: none; stroke: oklch(0.3 0.03 250 / 0.5); stroke-width: 1.2; }
+.w-blade { fill: none; stroke: oklch(0.95 0.005 250); stroke-width: 3; stroke-linecap: round; }
+.w-hub { fill: oklch(0.8 0.01 250); }
+.w-cctv-text { font: 700 5px/1 var(--font-sans, system-ui), sans-serif; fill: oklch(0.3 0.02 250); }
+.w-site .w-mesh { fill: url(#sp-mesh2); }
+.w-box.w-tone-barrier { --top: oklch(0.6 0.2 28); --left: oklch(0.52 0.2 28); --right: oklch(0.44 0.19 28); --edge: oklch(0.36 0.15 28); }
+.w-tone-hall-4 { --roof-t: oklch(0.66 0.11 45); --roof-l: oklch(0.58 0.11 45); --roof-r: oklch(0.49 0.1 45); }
+.w-tone-hall-5 { --roof-t: oklch(0.8 0.07 70); --roof-l: oklch(0.72 0.07 70); --roof-r: oklch(0.63 0.07 70); }

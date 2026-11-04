@@ -8,7 +8,9 @@ import { Lobby } from "./lobby";
 import { Yard, type Gear } from "./yard";
 import { Bin, Sign } from "./decor";
 import { Hedge } from "./hedge";
-import { Booth, Fence, Gate, Light } from "./perimeter";
+import { Booth, Cam, Fence, Gate, Light } from "./perimeter";
+import { SettingGround } from "./scene";
+import { BusStop, Container, Cooling, Dock, Generator, Lamp, Pallet, Planter, Rack, Substation, Tank } from "./utility";
 import { Model, ModelDefs } from "./Model";
 import type { Item, SiteSpec } from "./layout";
 
@@ -17,7 +19,7 @@ export { GroundRect, SiteNight };
 // The spike's fixed yard: two transformers and a condenser.
 const gear = (i: Item): Gear[] => [{ kind: "xfmr", x: i.x0 + 1.5, y: i.y0 + 1 }, { kind: "xfmr", x: i.x0 + 4.2, y: i.y0 + 1 }, { kind: "cond", x: i.x1 - 3, y: i.y0 + 1.2 }];
 
-function One({ i, s, name, band }: { i: Item; s: SiteSpec; name: string; band: string }) {
+function One({ i, s, name, band, year }: { i: Item; s: SiteSpec; name: string; band: string; year: number }) {
   switch (i.t) {
     case "street": return <g aria-label={t("world.site.street")}><Street i={i} seed={s.seed} /></g>;
     case "path": return <Path i={i} />;
@@ -31,12 +33,29 @@ function One({ i, s, name, band }: { i: Item; s: SiteSpec; name: string; band: s
     case "pole": return <Model id="pole" x={i.x0} y={i.y0} />;
     case "lobby": return <g aria-label={t("world.site.lobby")}><Lobby i={i} seats={s.seats} band={band} /></g>;
     case "yard": return <g aria-label={t("world.site.yard")}><Yard i={i} gear={gear(i)} /></g>;
-    case "house": return <Model id="house" x={i.x0} y={i.y0} tone={i.tone} />;
-    case "box": return <Model id="warehouse" x={i.x0} y={i.y0} tone={i.tone} />;
+    case "house": return <Model id={i.kind ?? "house"} x={i.x0} y={i.y0} tone={i.tone} />;
+    case "box": return <Model id={i.kind ?? "warehouse"} x={i.x0} y={i.y0} tone={i.tone} />;
     case "bin": return <Bin i={i} />;
     case "hedge": return <Hedge i={i} />;
     case "sign": return <Sign i={i} name={name} />;
     case "tree": return <Model id={i.kind ?? "oak"} x={i.x0} y={i.y0} />;
+    case "cam": return <Cam i={i} />;
+    case "lamp": return <Lamp i={i} />;
+    case "office": return <Model id={i.kind ?? "office-f"} x={i.x0} y={i.y0} tone={i.tone} />;
+    case "landmark": return <Model id={i.kind ?? "chimney"} x={i.x0} y={i.y0} />;
+    case "tank": return <Tank i={i} />;
+    case "cont": return <Container i={i} />;
+    case "pallet": return <Pallet i={i} />;
+    case "subst": return <Substation i={i} />;
+    case "gen": return <Generator i={i} />;
+    case "dock": return <Dock i={i} />;
+    case "cooling": return <Cooling i={i} />;
+    case "planter": return <Planter i={i} />;
+    case "rack": return <Rack i={i} />;
+    case "busstop": return <BusStop i={i} />;
+    case "turbine": return <Model id="windmill" x={i.x0} y={i.y0} />;
+    case "solar": return year >= 2018 ? <>{Array.from({ length: Math.floor((i.x1 - i.x0) / 12) * Math.floor((i.y1 - i.y0) / 7) }, (_, k) => <Model key={k} id="solar" x={i.x0 + (k % Math.floor((i.x1 - i.x0) / 12)) * 12} y={i.y0 + Math.floor(k / Math.floor((i.x1 - i.x0) / 12)) * 7} />)}</> : null;
+    default: return null;
   }
 }
 
@@ -44,17 +63,17 @@ function One({ i, s, name, band }: { i: Item; s: SiteSpec; name: string; band: s
 const flatFirst = (i: Item) => (i.t === "street" ? 0 : i.t === "walk" ? 1 : i.t === "path" || i.t === "bays" ? 2 : 3);
 const sorted = (items: Item[]) => [...items].sort((a, b) => flatFirst(a) - flatFirst(b) || a.x1 + a.y1 - b.x1 - b.y1);
 
-const Layer = ({ s, layer, name, band }: { s: SiteSpec; layer: Item["layer"]; name: string; band: string }) => (
+const Layer = ({ s, layer, name, band, year }: { s: SiteSpec; layer: Item["layer"]; name: string; band: string; year: number }) => (
   <g className="w-site" pointerEvents="none" transform={layer === "back" && s.lift ? `translate(0 ${-s.lift})` : undefined}>
-    {sorted(s.items.filter((i) => i.layer === layer)).map((i, k) => <One key={k} i={i} s={s} name={name} band={band} />)}
+    {sorted(s.items.filter((i) => i.layer === layer)).map((i, k) => <One key={k} i={i} s={s} name={name} band={band} year={year} />)}
   </g>
 );
 
 // Behind the room's far walls: the ground plane and everything standing on it behind the room and beside it.
-export const SiteBack = memo(function SiteBack({ s, name, band }: { s: SiteSpec; name: string; band: string }) {
-  return <>{s.kind !== "none" && <ModelDefs />}<GroundBack s={s} /><Layer s={s} layer="back" name={name} band={band} /></>;
+export const SiteBack = memo(function SiteBack({ s, name, band, month, year }: { s: SiteSpec; name: string; band: string; month: number; year: number }) {
+  return <>{s.kind !== "none" && <ModelDefs />}{s.kind === "plot" ? <SettingGround s={s} month={month} /> : <GroundBack s={s} />}<Layer s={s} layer="back" name={name} band={band} year={year} /></>;
 });
 // In front of the room: lobby, parking, street and the trees along them.
-export const SiteFront = memo(function SiteFront({ s, name, band }: { s: SiteSpec; name: string; band: string }) {
-  return <Layer s={s} layer="front" name={name} band={band} />;
+export const SiteFront = memo(function SiteFront({ s, name, band, year }: { s: SiteSpec; name: string; band: string; year: number }) {
+  return <Layer s={s} layer="front" name={name} band={band} year={year} />;
 });

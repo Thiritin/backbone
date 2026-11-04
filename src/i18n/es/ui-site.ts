@@ -6,4 +6,5 @@ export default {
   "world.site.yard": () => "Patio",
   "world.site.parking": () => "Aparcamiento",
   "world.site.street": () => "Calle",
+  "world.site.cctv": () => "Videovigilancia",
 } satisfies Dict;

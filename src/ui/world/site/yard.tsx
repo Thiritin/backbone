@@ -5,7 +5,7 @@ import type { Item } from "./layout";
 export interface Gear { kind: "xfmr" | "cond"; x: number; y: number }
 const FENCE = 40;
 
-function Transformer({ x, y }: { x: number; y: number }) {
+export function Transformer({ x, y }: { x: number; y: number }) {
   return (
     <g>
       <Prism x0={x - 0.15} y0={y - 0.15} x1={x + 2.15} y1={y + 1.75} z1={3} tone="w-tone-concrete" />
@@ -16,7 +16,7 @@ function Transformer({ x, y }: { x: number; y: number }) {
   );
 }
 
-function Condenser({ x, y }: { x: number; y: number }) {
+export function Condenser({ x, y }: { x: number; y: number }) {
   const c = at3(x + 1.1, y + 0.7, 24);
   return (
     <g>

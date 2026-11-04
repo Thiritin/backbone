@@ -127,7 +127,7 @@ export function World() {
   const view = useRef({ zoom, o, fit });
   // The player may zoom out to fit the whole site around the room.
   const site = useMemo(() => siteOf(game, loc, w, h), [loc.id, game.properties, w, h]);
-  const fitSite = Math.min(size.w * 0.98 / site.box.w, size.h * 0.98 / site.box.h);
+  const fitSite = Math.min(size.w * 0.98 / site.box.w, size.h * 0.98 / site.box.h) * (site.kind === "plot" ? (site.setting === "nowhere" ? 1 : 1.3) : 1);
   view.current = { zoom, o, fit: Math.min(fit, fitSite) };
   const port = { x: o.x, y: o.y, w: size.w / zoom, h: size.h / zoom };
   const zoomed = zoom >= 2;
@@ -400,13 +400,13 @@ export function World() {
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
         <GroundRect view={port} kind={site.kind} />
         <Defs />
-        <SiteBack s={site} name={game.company.name} band={game.company.color} />
+        <SiteBack s={site} name={game.company.name} band={game.company.color} month={month} year={date.getUTCFullYear()} />
         <Walls w={w} h={h} dc={!home && !office} color={game.company.color} />
         {home ? <><polygon className="w-floor" points={pts(iso(0, 0), iso(w, 0), iso(w, h), iso(0, h))} /><Concrete w={w} h={h} /></>
           : office ? <OfficeFloor w={w} h={h} servers={Object.values(fx).filter((f) => f.kind === "tray").map((f) => f.x - 3)} /> : <RaisedFloor w={hallRect?.w ?? w} h={hallRect?.h ?? h} />}
         {back}
         {things.map((x) => x.node)}
-        <SiteFront s={site} name={game.company.name} band={game.company.color} />
+        <SiteFront s={site} name={game.company.name} band={game.company.color} year={date.getUTCFullYear()} />
         {(home || office) && <Night w={w} h={h} opacity={loc.tripped ? TRIPPED_DARK : darkness(hd, month, lights)} />}
         <SiteNight s={site} view={port} opacity={darkness(hd, month)} />
         {bright}

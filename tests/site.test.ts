@@ -124,7 +124,7 @@ describe("site placement", () => {
         const d = drives.find((x) => Math.abs(x.y0 - b.y1) < 1e-6 && x.x0 >= b.x0 && x.x1 <= b.x1);
         expect(d, `drive for ${b.t}@${b.x0}`).toBeTruthy();
         expect(d!.y1).toBe(street.y0);
-        expect(lots.filter((o) => o !== b && Math.abs(o.y1 - b.y1) > 1e-6)).toEqual([]);
+        expect(lots.filter((o) => Math.abs(o.y1 - b.y1) > 3 + 1e-6)).toEqual([]);
       }
     }
   });

@@ -1,3 +1,4 @@
+import { t } from "../../../i18n/en";
 import { onX, onY, Prism } from "../draw";
 import { M, type Item } from "./layout";
 
@@ -21,15 +22,11 @@ export function Fence({ i }: { i: Item }) {
 
 // The gate: two heavy posts with a sliding leaf drawn open beside them and a striped barrier arm across the lane.
 export function Gate({ i }: { i: Item }) {
-  const len = (i.x1 - i.x0) * M;
   return (
     <g pointerEvents="none">
       <Prism x0={i.x0 - 0.15} y0={i.y0} x1={i.x0 + 0.15} y1={i.y0 + 0.3} z1={3 * M} tone="w-tone-concrete" />
       <Prism x0={i.x1 - 0.15} y0={i.y0} x1={i.x1 + 0.15} y1={i.y0 + 0.3} z1={3 * M} tone="w-tone-concrete" />
-      <g transform={onY(i.x0, i.y1, 0)}>
-        <rect className="w-mesh" x={len * 0.62} y={-MESH} width={len * 0.38 - 6} height={MESH} />
-        <path className="w-rail" d={`M${len * 0.62} ${-MESH}H${len - 6}M${len * 0.62} -2H${len - 6}`} />
-      </g>
+      {i.kind === "slide" && <Fence i={{ ...i, x0: i.x0 + (i.x1 - i.x0) * 0.55, x1: i.x1 - 0.15, y0: i.y0 + 0.45, y1: i.y0 + 0.55, dir: "x", coil: false }} />}
       <Prism x0={i.x0 + 0.4} y0={i.y0 - 1.5} x1={i.x1 - 0.4} y1={i.y0 - 1.4} z0={1 * M} z1={1 * M + 4} tone="w-tone-barrier" />
       <Prism x0={i.x0 + 0.1} y0={i.y0 - 1.6} x1={i.x0 + 0.5} y1={i.y0 - 1.2} z1={1 * M} tone="w-tone-concrete" />
     </g>
@@ -56,6 +53,23 @@ export function Light({ i }: { i: Item }) {
     <g pointerEvents="none">
       <Prism x0={x - 0.12} y0={y - 0.12} x1={x + 0.12} y1={y + 0.12} z1={i.top} tone="w-tone-fence" />
       <Prism x0={x - 0.6} y0={y - 0.2} x1={x + 0.6} y1={y + 0.2} z0={i.top} z1={i.top + 6} tone="w-tone-fence" />
+    </g>
+  );
+}
+
+// A camera pole with a slim head; the pole at the gate carries a surveillance plate on the lit face.
+export function Cam({ i }: { i: Item }) {
+  const x = (i.x0 + i.x1) / 2, y = (i.y0 + i.y1) / 2;
+  return (
+    <g pointerEvents="none">
+      <Prism x0={x - 0.1} y0={y - 0.1} x1={x + 0.1} y1={y + 0.1} z1={i.top} tone="w-tone-fence" />
+      <Prism x0={x - 0.5} y0={y - 0.12} x1={x + 0.1} y1={y + 0.12} z0={i.top - 5} z1={i.top + 3} tone="w-tone-dark" />
+      {i.kind === "gate" && (
+        <>
+          <Prism x0={x - 0.9} y0={y + 0.1} x1={x + 0.9} y1={y + 0.16} z0={1.4 * M} z1={2 * M} tone="w-tone-sign" />
+          <g transform={onY(x - 0.9, y + 0.16, 1.4 * M)}><text className="w-cctv-text" x={3} y={-0.2 * M}>{t("world.site.cctv")}</text></g>
+        </>
+      )}
     </g>
   );
 }
