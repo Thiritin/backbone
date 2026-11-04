@@ -164,7 +164,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   );
 }
 
-// The disc the rack stands on: a click turns it, the side facing the room is the darker word on its near edge.
+// The disc the rack stands on: a click turns it, the side facing the room is the brighter word on its near edge.
 function Turntable({ back, onTurn }: { back: boolean; onTurn: () => void }) {
   return (
     <svg className="wr-table" viewBox="0 0 400 44" role="button" tabIndex={0} aria-label={t(back ? "locations-2.front" : "locations-2.back")} aria-pressed={back}

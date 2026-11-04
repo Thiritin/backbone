@@ -392,7 +392,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       })}
       <rect y={top - 4} width={W} height={H - top + 4} rx="4" fill="var(--rack)" />
       <g transform={`translate(0 ${top})`}>
-        {shelf && [...placed.values()].map(({ it, y: dy, h }) => <Loops key={it.id} x={pad + w / 2} y={dy + h} drop={pitch} n={it.ports.filter((p) => p !== "off").length} />)}
+        {shelf && !back && [...placed.values()].map(({ it, y: dy, h }) => <Loops key={it.id} x={pad + w / 2} y={dy + h} drop={pitch} n={it.ports.filter((p) => p !== "off").length} />)}
         {shelf ? [pad - 6, rail].map((x) => <Upright key={x} x={x} h={y} />) : [pad - 6, rail].map((x) => <rect key={x} x={x} y="-2" width="5" height={y + 4} rx="1" fill="var(--metal-2)" />)}
         {back && !shelf && (
           <g aria-label={t("art.cableChannel")}>
