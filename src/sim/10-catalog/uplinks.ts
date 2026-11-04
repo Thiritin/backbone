@@ -40,3 +40,5 @@ export const opticsOn = (year: number) => OPTICS.filter((o) => o.from <= year);
 export const PROVIDER_CABLE = { fee: 150, leadHours: 2 * 24 } as const;
 export const PROVIDER_PANEL = "panel-provider";
 export const PANEL_JACKS = 24;
+// Jacks on a panel by model: the fiber panels of an own hall's meet-me zone differ, the provider's panel has PANEL_JACKS.
+export const panelJacks = (model: string): number => (model === "patch-48f" ? 48 : PANEL_JACKS);

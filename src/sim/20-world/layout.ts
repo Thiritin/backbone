@@ -1,6 +1,7 @@
 import type { GameState, Hall as OwnHall, HallRow, Location, Rack, Section, SpaceKind } from "../50-state";
 import { datacenterById } from "./datacenters";
-import { hallCapacity, holdsDesks, isHalle } from "./properties";
+import { exchangeById } from "../10-catalog/network";
+import { customerPositions, hallCapacity, holdsDesks, isHalle, zonePositions } from "./properties";
 
 export type Facing = "n" | "e" | "s" | "w";
 // floor is set only in an office with more than one floor of server rooms; it counts from 1.
@@ -348,5 +349,16 @@ function hallRoom(hall: OwnHall, capacity: number, dock: boolean): OfficeRoom {
 export function customerTiles(loc: Location, plan?: OfficePlan): { id: string; name: string; tile: Tile }[] {
   if (loc.space !== "hall" || !plan?.hall) return [];
   const at = wallTiles(loc, plan);
-  return plan.hall.customers.flatMap((c) => (at[c.position - 1] ? [{ id: c.id, name: c.name, tile: at[c.position - 1] }] : []));
+  const h = plan.hall;
+  // A cage customer stands on every position of its cage; the exchange on its own.
+  const held = h.customers.flatMap((c) => customerPositions(h, c).map((p) => ({ id: c.id, name: c.name, p })));
+  if (h.exchange?.position) held.push({ id: h.exchange.id, name: exchangeById(h.exchange.id)?.name ?? h.exchange.id, p: h.exchange.position });
+  return held.flatMap(({ id, name, p }) => (at[p - 1] ? [{ id, name, tile: at[p - 1] }] : []));
+}
+
+// The tiles a zone covers, with the zone's id and kind.
+export function zoneTiles(loc: Location, plan?: OfficePlan): { id: string; kind: "colo" | "cage" | "meetme"; tiles: Tile[] }[] {
+  if (loc.space !== "hall" || !plan?.hall) return [];
+  const at = wallTiles(loc, plan), h = plan.hall;
+  return h.zones.map((z) => ({ id: z.id, kind: z.kind, tiles: zonePositions(h, z).flatMap((p) => (at[p - 1] ? [at[p - 1]] : [])) }));
 }

@@ -22,6 +22,7 @@ import { phoneTick } from "../47-staff/oncall";
 import { handsJobsTick } from "../90-actions/presence";
 import { autoUpdateTick } from "../90-actions/software";
 import { snapshotTick } from "../90-actions/snapshots";
+import { HALL, hallCustomerKw } from "../20-world/properties";
 import { closeLocation, noticeEnd } from "../90-actions/hardware";
 import { propertiesEnd, propertyBills } from "../90-actions/properties";
 import { coloTick } from "../90-actions/hall";
@@ -128,6 +129,8 @@ export function endLease(s: GameState, leaseId: string) {
   s.devices = s.devices.map((d) => (d.lease === leaseId ? { ...d, lease: null } : d));
 }
 
+// The factor on the business price: a datacenter's own, an own hall's cheaper one, or the household's.
+const powerFactorOf = (loc: Location): number => (loc.dc ? datacenterById(loc.dc).powerFactor : loc.space === "hall" ? HALL.powerFactor * HALL.pue : HOUSEHOLD_FACTOR);
 // Power drawn in one hour per location: kWh, and euros at the business price × the datacenter's power factor, or the household
 // price in the basement. Racks on a flat-rate contract pay it monthly instead.
 export function powerByLocation(s: GameState): Record<string, PowerUse> {
@@ -138,9 +141,17 @@ export function powerByLocation(s: GameState): Record<string, PowerUse> {
       if (!d.on || flat.has(d.rackId ?? "") || !powered(s, d.id)) continue;
       const loc = locationOf(s, d)!, kwh = drawWatts(s, d, busy) / 1000, u = (out[loc.id] ??= { kwh: 0, eur: 0 });
       u.kwh += kwh;
-      u.eur += kwh * price * (loc.dc ? datacenterById(loc.dc).powerFactor : HOUSEHOLD_FACTOR);
+      u.eur += kwh * price * powerFactorOf(loc);
     }
   });
+  // A hall's customers draw their kW all hour.
+  for (const p of s.properties) {
+    const kw = hallCustomerKw(p.hall), loc = p.hall && s.locations.find((l) => l.id === p.hall!.locationId);
+    if (!kw || !loc) continue;
+    const u = (out[loc.id] ??= { kwh: 0, eur: 0 });
+    u.kwh += kw;
+    u.eur += kw * price * powerFactorOf(loc);
+  }
   return out;
 }
 // Euros of power drawn in one hour.

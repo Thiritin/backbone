@@ -48,8 +48,14 @@ Other tenants hold a share of each building's sections (25 to 70%), fixed by the
 | Feed B | €25,000 | €200 | Opens a second feed on every rack in the hall |
 | UPS | €40,000 | €300 | Bridges a grid outage for minutes |
 | Generator | €60,000 | €500 | Carries a grid outage with the UPS; needs the UPS |
-| Carrier build-in | €15,000 per carrier | None | The carrier's transit then books as at a colocation site, onto a fiber patch panel the player mounts |
+| Carrier build-in | €15,000 per carrier | None | Needs the meet-me zone; the carrier's transit then books as at a colocation site, onto a fiber patch panel in that zone |
 
 **Moving.** A rack with devices that is moved, alone or with its row, is dark for 2 hours (`HALL.moveHours`) and costs nothing.
 
-**Colocation customers.** Spare positions are listed at a monthly price per position the player sets. The city's going rate is the average list price of a position at its datacenters. At the going rate a spare position finds a customer in a month with a chance of 50%, falling to none at twice the going rate and rising to 75% at half of it; one customer signs per month at most. Each customer pays the price agreed at signing every month start and leaves in a month with a chance of 4%.
+**Colocation customers.** Spare positions are listed at a monthly price per position the player sets. The city's going rate is the average list price of a position at its datacenters. At the going rate a spare position finds a customer in a month with a chance of 50%, falling to none at twice the going rate and rising to 75% at half of it; one customer signs per month at most. A listed hall gets `1 + floor(free / 10)` signing chances a month, counting free positions in colocation zones only; positions outside zones are never sold. Each customer pays the price agreed at signing every month start and leaves in a month with a chance of 4%, or 25% in a month the breaker tripped (`HALL.colo.leavesAfterOutage`). Each customer draws 2 to 5 kW per position (`HALL.colo.kw`, seeded at signing).
+
+**Zones.** Open colocation zones are free. A cage zone (from 2015, 2 to 8 positions) costs €2,000 per position; the meet-me zone (one per hall, 1 to 4 positions) costs €5,000; removing either refunds 50% (`HALL.zones`). An empty cage signs a customer each month with chance 50% (`HALL.colo.signs`) who pays `length × rate × 1.1` (`HALL.colo.cageMarkup`).
+
+**Cross-connects and the hub.** Each month a customer orders a cross-connect with chance 15%, up to 3, paying €150 a month (`HALL.xconnect`). At 8 customers a free city carrier builds in with chance 30% a month; with 3 carriers and 12 customers the city's exchange takes the first free meet-me position (`HALL.hub`).
+
+**Power price.** An own hall buys power at the business price times `HALL.powerFactor` 1.0 times `HALL.pue` 1.3, below the household factor 1.6.

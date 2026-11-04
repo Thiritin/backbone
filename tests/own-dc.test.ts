@@ -12,7 +12,7 @@ import { thermalTick } from "../src/sim/60-infra/thermal";
 import { panelOf } from "../src/sim/60-infra/panels";
 import { buyDevice, buyRack, mountDevice, resetBreaker, setFeed } from "../src/sim/90-actions/hardware";
 import { orderExchangePort, orderTransit } from "../src/sim/90-actions/network";
-import { addCooling, buildCarrier, buyHallUpgrade, cityCarriers, coloTick, goingRate, layRow, removeRow, setColoRate, signChance } from "../src/sim/90-actions/hall";
+import { addCooling, buildCarrier, paintZone, removeZone, buyHallUpgrade, cityCarriers, coloTick, goingRate, layRow, removeRow, setColoRate, signChance } from "../src/sim/90-actions/hall";
 import { hands } from "../src/sim/90-actions/presence";
 import { buyBuilding, propertyBills, refitSection } from "../src/sim/90-actions/properties";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -188,6 +188,9 @@ describe("own datacenter: carriers", () => {
     ok(mountDevice(s, ok(buyDevice(s, "edge-m", "Sysko", 1, hallId)), rack, 1));
     const carrier = cityCarriers("Frankfurt")[0].id;
     expect(orderTransit(s, hallId, carrier, 1, 0.2)).toEqual({ ok: false, error: "error.carrierNotBuilt" });
+    const rowId = s.properties.find((p) => p.hall?.locationId === hallId)!.hall!.rows[0].id;
+    expect(buildCarrier(s, hallId, carrier)).toEqual({ ok: false, error: "error.noMeetMe" });
+    ok(paintZone(s, hallId, { kind: "meetme", rowId, from: 0, length: 1 }));
     ok(buildCarrier(s, hallId, carrier));
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.carrierBuild", amount: -HALL.carrierFee });
     expect(orderTransit(s, hallId, carrier, 1, 0.2)).toEqual({ ok: false, error: "error.noRouterPort" });
@@ -209,10 +212,11 @@ describe("own datacenter: colocation customers", () => {
     expect(signChance(going, going)).toBe(HALL.colo.signs);
     expect(signChance(2 * going, going)).toBe(0);
     ok(buyRack(s, hallId, "rack-42", 1));
+    const rowId = hall().rows[0].id, zone = ok(paintZone(s, hallId, { kind: "colo", rowId, from: 1, length: 3 }));
     // Half the going rate signs a customer in most months.
     ok(setColoRate(s, hallId, Math.round(going / 2)));
     let months = 0;
-    while (!hall().customers.length && months++ < 12) coloTick(s);
+    while (!hall().customers.length && months++ < 12) { s.hour += 720; coloTick(s); }
     const c = hall().customers[0];
     expect(c).toMatchObject({ position: 2, monthly: Math.round(going / 2) });
     expect(freePositions(s, hallId)).not.toContain(2);
@@ -223,6 +227,7 @@ describe("own datacenter: colocation customers", () => {
     expect(s.cash).toBe(cash + c.monthly);
     while (hall().customers.length && months++ < 600) { s.hour += 1; coloTick(s); }
     expect(hall().customers).toHaveLength(0);
+    ok(removeZone(s, hallId, zone));
     expect(freePositions(s, hallId)).toContain(2);
   });
 });
@@ -235,7 +240,7 @@ describe("own datacenter: the room", () => {
     ok(addCooling(s, hallId)); ok(addCooling(s, hallId));
     expect(Object.values(fixtures(loc(), officePlan(s, loc()))).filter((f) => f.kind === "cooling")).toHaveLength(2);
     expect(fixtures(loc(), officePlan(s, loc())).meetme).toBeDefined();
-    s.properties.find((p) => p.id === propertyId)!.hall!.customers.push({ id: "c1", name: "Mainbit", position: 3, monthly: 300, since: s.hour });
+    s.properties.find((p) => p.id === propertyId)!.hall!.customers.push({ id: "c1", name: "Mainbit", position: 3, monthly: 300, since: s.hour, kw: 3, zoneId: null });
     expect(customerTiles(loc(), officePlan(s, loc()))[0].tile).toEqual(wallTiles(loc(), officePlan(s, loc()))[2]);
     expect(freeRackTiles(loc(), s.racks, officePlan(s, loc()))).toHaveLength(HALL_POSITIONS.office - 1);
     const { s: big, hallId: halle } = ownHall("fechenhalle");

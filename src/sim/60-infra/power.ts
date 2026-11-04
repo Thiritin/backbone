@@ -192,6 +192,8 @@ export function breakerTick(s: GameState): SimEvent[] {
         return n;
       });
       setRoom(s, loc.id, { tripped: true, overSince: undefined, trippedAt: now });
+      const hall = s.properties.find((p) => p.hall?.locationId === loc.id)?.hall;
+      if (hall) hall.outage = true;
       events.push({ app: "Locations", key: "event.roomTripped", params: { location: loc.name } });
     }
   }

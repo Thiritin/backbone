@@ -4,7 +4,7 @@ import { nowMinutes } from "../00-core/time";
 import { modelById } from "../10-catalog/hardware";
 import { BASEMENT } from "../20-world/datacenters";
 import { hallCoverage, hallSize } from "../20-world/layout";
-import { HALL, hallCapacity, hallOf, isHalle } from "../20-world/properties";
+import { HALL, hallCapacity, hallCustomerKw, hallOf, isHalle } from "../20-world/properties";
 import type { Device, GameState, Location } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { heatIncident } from "./incidents";
@@ -69,9 +69,9 @@ function step(s: GameState, loc: Location, at: number, events: SimEvent[]): bool
   const waiting = s.devices.some((d) => d.overheatedAt !== undefined && locationOf(s, d)?.id === loc.id);
   if (loc.dc && !heat && !out && !waiting) return false;
   const racks = readOnlySweep(s, () => s.racks.filter((r) => r.locationId === loc.id).map((r) => rackPower(s, r.id)));
-  const kw = racks.reduce((n, p) => n + p.watts, 0) / 1000;
-  // An own hall cools with the units the player put on its walls.
+  // An own hall cools with the units the player put on its walls, and its customers' kW warms it.
   const hall = loc.space === "hall" && hallOf(s, loc.id), floor = loc.dc || hall;
+  const kw = racks.reduce((n, p) => n + p.watts, 0) / 1000 + (hall ? hallCustomerKw(hall) : 0);
   const cooling = hall ? (out ? 0 : hall.coolers.length * HALL.cooling.kw) : !loc.dc ? BASEMENT.kw : out ? 0 : (THERMAL.headroom * racks.reduce((n, p) => n + p.limitWatts, 0)) / 1000;
   const mass = floor ? Math.max(1, loc.positions) : THERMAL.basementMass;
   const shed = floor ? THERMAL.shed * mass : THERMAL.basementShed;

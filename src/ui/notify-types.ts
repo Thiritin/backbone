@@ -27,7 +27,7 @@ const GROUPS: Record<string, NotifyType[]> = {
     type("Hardware failures", "componentFailed", "dataLoss", "dataCorrupted", "recovered", "serverHung", "serverStuck", "breakerTripped", "feedTripped", "roomTripped", "breakerReset", "bmcHung"),
     type("Deliveries and moves", "rackArrived", "stockArrived", "drained", "spaceHeld", "holdExpired", "seizedBack", "contractEnded", "contractRolled", "leaseEnded"),
     type("Internet line", "lineReady", "lineFull"),
-    type("Colocation", "coloSigned", "coloLeft"),
+    type("Colocation", "coloSigned", "coloLeft", "coloLeftOutage", "cageSigned", "xconnectNoJack", "carrierArrived", "exchangeComing", "exchangeOpened"),
     type("Burn-in and refunds", "burninQuick", "burninFull", "burninAborted", "usedRefund"),
     type("Hand work", "workDone", "providerCable"),
     type("Workloads and migrations", "migrated", "migrationFailed", "failedOver", "failoverStuck"),

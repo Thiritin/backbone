@@ -82,12 +82,20 @@ export interface Property {
 // A rack row on the hall floor: length positions from (x, y), along x when it faces n or s, along y when it faces e or w.
 export interface HallRow { id: string; x: number; y: number; length: number; facing: "n" | "e" | "s" | "w" }
 // A colocation customer's rack on one of the hall's positions, paying monthly from since.
-export interface ColoCustomer { id: string; name: string; position: number; monthly: number; since: number }
+// A cage customer rents a whole cage zone: position is the zone's first and kw is drawn per position.
+export interface ColoCustomer { id: string; name: string; position: number; monthly: number; since: number; kw: number; zoneId: string | null }
+// A run of positions in one row (from is the 0-based index in the row) the player sets aside: open colocation, a fenced cage or the meet-me area.
+export interface HallZone { id: string; kind: "colo" | "cage" | "meetme"; rowId: string; from: number; length: number; builtAt: number }
+// A customer's cross-connect to a built carrier, patched on a jack of a fiber panel in the meet-me zone.
+export interface HallXConnect { id: string; customerId: string; carrierId: string; jack: { device: string; port: number } }
 // coolers are the wall slots holding a cooling unit; transformers the extra transformers bought (at most one per floor); carriers the ids of carriers built into the meet-me room; rate the monthly
 // price per position offered to colocation customers, null while no position is listed.
 export interface Hall {
   locationId: string; rows: HallRow[]; coolers: number[]; transformers: number; feedB: boolean; ups: boolean; generator: boolean;
   carriers: string[]; rate: number | null; customers: ColoCustomer[];
+  zones: HallZone[]; xconnects: HallXConnect[]; exchange: { id: string; position: number } | null; // position 0 while the exchange waits for a free meet-me position
+  // Set when the room's breaker trips; the next month start reads and clears it.
+  outage: boolean;
 }
 // One System Event Log record of a device (syslog.ts pushLog); id counts up within the log.
 export type LogSev = "info" | "warn" | "crit";

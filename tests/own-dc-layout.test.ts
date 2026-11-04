@@ -104,7 +104,7 @@ describe("own datacenter layout: rows and aisles", () => {
   it("a row with a customer cannot move, turn or shrink, and an empty row can go", () => {
     const { s, hallId, hall } = setup();
     const [a, b] = hall().rows;
-    hall().customers.push({ id: "c1", name: "Mainbit", position: 3, monthly: 300, since: s.hour });
+    hall().customers.push({ id: "c1", name: "Mainbit", position: 3, monthly: 300, since: s.hour, kw: 3, zoneId: null });
     for (const next of [{ ...a, x: 4 }, { ...a, facing: "n" as const }, { ...a, length: 5 }]) {
       refuses(s, layRowError(s, hallId, next), () => layRow(s, hallId, next));
       expect(layRowError(s, hallId, next)).toBe("error.rowInUse");

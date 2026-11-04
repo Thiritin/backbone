@@ -1,5 +1,5 @@
 import { hashRng, rand } from "../00-core/rng";
-import type { Building, GameState, Hall, Property } from "../50-state";
+import type { Building, ColoCustomer, GameState, Hall, HallZone, Property } from "../50-state";
 
 // Office buildings to rent sections in or buy (GDD, Properties; economy/properties.md). region matches a location's city;
 // rent is the factor on the era's rent per section; price is the buy price in 2005 euros, null when not for sale.
@@ -13,6 +13,9 @@ export const LISTINGS: Listing[] = [
   { id: "ostendkontor", name: "Ostend-Kontor", street: "Lagerhausring 5", zip: "60314", city: "Frankfurt am Main", region: "Frankfurt", floors: 3, perFloor: 3, rent: 0.9, price: 820_000, from: 2005, taken: 0.4, lat: 50.112, lon: 8.712 },
   { id: "fechenhalle", name: "Halle Fechenheim", street: "Industriering 12", zip: "60386", city: "Frankfurt am Main", region: "Frankfurt", floors: 1, perFloor: 1, rent: 1, price: 2_400_000, from: 2012, taken: 0, lat: 50.123, lon: 8.752, kind: "halle" },
   { id: "bockenbogen", name: "Bockenheimer Bogen", street: "Bogenallee 30", zip: "60487", city: "Frankfurt am Main", region: "Frankfurt", floors: 5, perFloor: 4, rent: 1.1, price: null, from: 2012, taken: 0.6, lat: 50.1225, lon: 8.638 },
+  { id: "spreehalle", name: "Halle Spreeufer", street: "Werftstraße 3", zip: "12459", city: "Berlin", region: "Berlin", floors: 1, perFloor: 1, rent: 1, price: 2_000_000, from: 2012, taken: 0, lat: 52.4915, lon: 13.5185, kind: "halle" },
+  { id: "rheinhalle", name: "Halle Rheinhafen", street: "Hafenstraße 41", zip: "40221", city: "Düsseldorf", region: "Düsseldorf", floors: 1, perFloor: 1, rent: 1, price: 2_200_000, from: 2012, taken: 0, lat: 51.2095, lon: 6.7355, kind: "halle" },
+  { id: "amstelhalle", name: "Halle Amstelkade", street: "Industrieweg 9", zip: "1101", city: "Amsterdam", region: "Amsterdam", floors: 1, perFloor: 1, rent: 1, price: 2_600_000, from: 2012, taken: 0, lat: 52.3105, lon: 4.9345, kind: "halle" },
 ];
 
 // Rent per section per month by the first year it applies.
@@ -40,7 +43,17 @@ export const HALL = {
   moveHours: 2,
   // Colocation customers: at the city's going rate a spare position finds a customer in a month with chance `signs`, which
   // falls to nothing at twice the going rate and climbs by half again at half of it; each customer leaves in a month with chance `leaves`.
-  colo: { signs: 0.5, leaves: 0.04 },
+  // leavesAfterOutage replaces `leaves` in a month the room's breaker tripped; a cage customer pays cageMarkup times the open rate per position.
+  // kw is a customer's draw per position, drawn at signing.
+  colo: { signs: 0.5, leaves: 0.04, leavesAfterOutage: 0.25, cageMarkup: 1.1, kw: { min: 2, max: 5 } },
+  // The player's own hall buys power at powerFactor times the cooling overhead pue, instead of the household factor.
+  powerFactor: 1.0, pue: 1.3,
+  // Zones: a cage needs the year `from` and 2 to 8 positions; the meet-me zone holds 1 to 4; fences cost per position (meet-me a flat price) and refund half.
+  zones: { cage: { from: 2015, min: 2, max: 8, perPosition: 2000 }, meetme: { min: 1, max: 4, price: 5000 }, refund: 0.5 },
+  // A customer orders a cross-connect to a built carrier each month with chance `chance`, up to `max`, for `monthly`.
+  xconnect: { monthly: 150, chance: 0.15, max: 3 },
+  // Busy halls draw carriers (from `carrierAt` customers, chance `carrierChance` a month) and the city's exchange (`exchangeCarriers` carriers and `exchangeCustomers` customers).
+  hub: { carrierAt: 8, carrierChance: 0.3, exchangeCarriers: 3, exchangeCustomers: 12 },
   // A carrier's one-time fee to build its fiber into the hall's meet-me room.
   carrierFee: 15_000,
   upgrades: { feedB: { price: 25_000, monthly: 200 }, ups: { price: 40_000, monthly: 300 }, generator: { price: 60_000, monthly: 500 } },
@@ -48,6 +61,24 @@ export const HALL = {
 export type HallUpgrade = keyof typeof HALL.upgrades;
 export const hallKw = (p: Property): number =>
   (new Set(p.sections.filter((x) => x.fit === "hall").map((x) => x.floor)).size + (p.hall?.transformers ?? 0)) * HALL.transformerKw[isHalle(p.buildingId) ? "halle" : "office"];
+// Index of a row's first position (0-based over the whole hall).
+export const rowStart = (h: Hall, rowId: string): number => h.rows.slice(0, h.rows.findIndex((r) => r.id === rowId)).reduce((n, r) => n + r.length, 0);
+// The hall position numbers a zone covers.
+export const zonePositions = (h: Hall, z: HallZone): number[] => Array.from({ length: z.length }, (_, i) => rowStart(h, z.rowId) + z.from + i + 1);
+// Positions a customer holds: a cage customer holds its whole zone.
+export const customerPositions = (h: Hall, c: ColoCustomer): number[] => {
+  const z = c.zoneId ? h.zones.find((x) => x.id === c.zoneId) : undefined;
+  return z?.kind === "cage" ? zonePositions(h, z) : [c.position];
+};
+// The row and 0-based index a hall position number lies at.
+export const rowOfPosition = (h: Hall, position: number): { rowId: string; index: number } | null => {
+  let start = 0;
+  for (const r of h.rows) { if (position > start && position <= start + r.length) return { rowId: r.id, index: position - start - 1 }; start += r.length; }
+  return null;
+};
+// kW a customer draws; a cage draws it per position.
+export const customerKw = (h: Hall, c: ColoCustomer): number => c.kw * customerPositions(h, c).length;
+export const hallCustomerKw = (h: Hall | undefined): number => (h ? h.customers.reduce((n, c) => n + customerKw(h, c), 0) : 0);
 export const hallBackup = (h: Hall): "none" | "ups" | "ups+generator" => (h.ups && h.generator ? "ups+generator" : h.ups ? "ups" : "none");
 // Default rows a new hall floor gets: rows of HALL_ROW positions, facing each other in pairs.
 export const HALL_ROW = 10;

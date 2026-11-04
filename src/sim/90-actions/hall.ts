@@ -2,12 +2,13 @@
 import { coolingSlots, fixtures, fixtureTiles, HALL_MARGIN, hallSize, officePlan, rowBack, rowFront, rowTiles } from "../20-world/layout";
 import { euro } from "../00-core/money";
 import { hashRng, rand } from "../00-core/rng";
-import { carriersAt, type Carrier } from "../10-catalog/network";
+import { carriersAt, EXCHANGES, exchangeAt, type Carrier } from "../10-catalog/network";
 import { DATACENTERS } from "../20-world/datacenters";
-import { HALL, hallCapacity, isHalle, type HallUpgrade } from "../20-world/properties";
+import { customerPositions, HALL, hallCapacity, isHalle, zonePositions, type HallUpgrade } from "../20-world/properties";
 import { cents } from "../45-billing/billing";
-import type { GameState, Hall, HallRow, Location, Property, Rack } from "../50-state";
-import { freePositions } from "../60-infra/status";
+import type { GameState, Hall, HallRow, HallZone, Location, Property, Rack } from "../50-state";
+import { yearOf } from "../00-core/time";
+import { freeJack } from "../60-infra/panels";
 import type { SimEvent } from "../88-tick/tick";
 import type { ActionResult } from "./hardware";
 
@@ -39,6 +40,9 @@ function relayRows(s: GameState, h: HallAt, rows: HallRow[], moved?: { id: strin
   };
   for (const r of s.racks) if (r.locationId === h.loc.id) r.position = renumber(r.position);
   h.hall.customers = h.hall.customers.map((c) => ({ ...c, position: renumber(c.position) }));
+  if (h.hall.exchange?.position) h.hall.exchange = { ...h.hall.exchange, position: renumber(h.hall.exchange.position) };
+  // Zones are kept by row and index, so only the moved row's indexes change.
+  if (moved) h.hall.zones = h.hall.zones.map((z) => (z.rowId === moved.id ? { ...z, from: moved.to(z.from) } : z));
   h.hall.rows = rows;
   h.loc.positions = rows.reduce((n, r) => n + r.length, 0);
 }
@@ -47,7 +51,9 @@ function relayRows(s: GameState, h: HallAt, rows: HallRow[], moved?: { id: strin
 function rowRacks(s: GameState, h: HallAt, rowId: string) {
   const start = h.hall.rows.slice(0, h.hall.rows.findIndex((r) => r.id === rowId)).reduce((n, r) => n + r.length, 0), len = h.hall.rows.find((r) => r.id === rowId)?.length ?? 0;
   const inRow = (p: number) => p > start && p <= start + len;
-  return { racks: s.racks.filter((x) => x.locationId === h.loc.id && inRow(x.position)), customers: h.hall.customers.filter((c) => inRow(c.position)), start };
+  // Customers, a cage's every position and the exchange's rack count as standing on the row.
+  const sold = [...h.hall.customers.flatMap((c) => customerPositions(h.hall, c)), ...(h.hall.exchange?.position ? [h.hall.exchange.position] : [])].filter(inRow).map((position) => ({ position }));
+  return { racks: s.racks.filter((x) => x.locationId === h.loc.id && inRow(x.position)), customers: sold, start };
 }
 
 // Whether a row holds a rack or a customer.
@@ -93,7 +99,8 @@ export function layRowError(s: GameState, locationId: string, row: Omit<HallRow,
     if (resize) {
       // Lengthening or shortening keeps every tile where it is, so nothing may stand on a removed one.
       const keep = new Set(tiles.map(tileKey));
-      const standing = [...u.racks.map((x) => x.position), ...u.customers.map((c) => c.position)];
+      const zoned = h.hall.zones.filter((z) => z.rowId === current.id).flatMap((z) => zonePositions(h.hall, z));
+      const standing = [...u.racks.map((x) => x.position), ...u.customers.map((c) => c.position), ...zoned];
       if (standing.some((pos) => !keep.has(same[pos - u.start - 1])) || (u.customers.length && next.length < current.length)) return "error.rowInUse";
     } else if ((next.x !== current.x || next.y !== current.y || next.facing !== current.facing) && u.customers.length) return "error.rowInUse";
   }
@@ -132,7 +139,9 @@ export function removeRowError(s: GameState, locationId: string, rowId: string):
 export function removeRow(s: GameState, locationId: string, rowId: string): ActionResult {
   const error = removeRowError(s, locationId, rowId);
   if (error) return fail(error);
-  relayRows(s, hallAt(s, locationId)!, hallAt(s, locationId)!.hall.rows.filter((r) => r.id !== rowId));
+  const h = hallAt(s, locationId)!;
+  relayRows(s, h, h.hall.rows.filter((r) => r.id !== rowId));
+  h.hall.zones = h.hall.zones.filter((z) => z.rowId !== rowId);
   return { ok: true };
 }
 
@@ -237,12 +246,73 @@ export const cityCarriers = (city: string): Carrier[] => [...new Map(DATACENTERS
 export function buildCarrier(s: GameState, locationId: string, carrierId: string): ActionResult {
   const h = hallAt(s, locationId);
   if (!h) return fail("error.unknownLocation");
+  if (!h.hall.zones.some((z) => z.kind === "meetme")) return fail("error.noMeetMe");
   const c = cityCarriers(h.loc.city).find((x) => x.id === carrierId);
   if (!c) return fail("error.carrierAbsent");
   if (h.hall.carriers.includes(carrierId)) return fail("error.upgradeBuilt");
   if (s.cash < HALL.carrierFee) return fail("error.noCash");
   pay(s, "ledger.carrierBuild", { carrier: c.name, location: h.loc.name }, HALL.carrierFee);
   h.hall.carriers = [...h.hall.carriers, carrierId];
+  return { ok: true };
+}
+
+type ZoneSpec = { kind: HallZone["kind"]; rowId: string; from: number; length: number };
+const fenceCost = (z: Pick<ZoneSpec, "kind" | "length">): number => (z.kind === "cage" ? z.length * HALL.zones.cage.perPosition : z.kind === "meetme" ? HALL.zones.meetme.price : 0);
+
+// Why a zone cannot be painted, or null.
+export function paintZoneError(s: GameState, locationId: string, z: ZoneSpec): string | null {
+  const h = hallAt(s, locationId);
+  if (!h) return "error.unknownLocation";
+  const row = h.hall.rows.find((r) => r.id === z.rowId);
+  if (!row) return "error.unknownRow";
+  if (!["colo", "cage", "meetme"].includes(z.kind) || !Number.isInteger(z.from) || !Number.isInteger(z.length) || z.length < 1) return "error.badZone";
+  if (z.from < 0 || z.from + z.length > row.length) return "error.zoneOutside";
+  if (z.kind === "cage") {
+    if (yearOf(s.hour) < HALL.zones.cage.from) return "error.cageLater";
+    if (z.length < HALL.zones.cage.min || z.length > HALL.zones.cage.max) return "error.zoneSize";
+  }
+  if (z.kind === "meetme") {
+    if (z.length > HALL.zones.meetme.max) return "error.zoneSize";
+    if (h.hall.zones.some((x) => x.kind === "meetme")) return "error.zoneExists";
+  }
+  if (h.hall.zones.some((x) => x.rowId === z.rowId && x.from < z.from + z.length && z.from < x.from + x.length)) return "error.occupied";
+  if (z.kind !== "meetme") {
+    const at = new Set(zonePositions(h.hall, { ...z, id: "", builtAt: 0 }));
+    if (s.racks.some((r) => r.locationId === locationId && at.has(r.position))) return "error.zoneRack";
+  }
+  return s.cash < fenceCost(z) ? "error.noCash" : null;
+}
+
+// Sets a run of positions in one row aside as open colocation, a fenced cage or the meet-me area; the fence is paid once.
+export function paintZone(s: GameState, locationId: string, z: ZoneSpec): ActionResult {
+  const error = paintZoneError(s, locationId, z);
+  if (error) return fail(error);
+  const h = hallAt(s, locationId)!, cost = fenceCost(z), id = `zone${s.nextId++}`;
+  if (cost) pay(s, "ledger.fence", { location: h.loc.name }, cost);
+  h.hall.zones = [...h.hall.zones, { id, kind: z.kind, rowId: z.rowId, from: z.from, length: z.length, builtAt: s.hour }];
+  return { ok: true, id };
+}
+
+export function removeZoneError(s: GameState, locationId: string, zoneId: string): string | null {
+  const h = hallAt(s, locationId);
+  if (!h) return "error.unknownLocation";
+  const z = h.hall.zones.find((x) => x.id === zoneId);
+  if (!z) return "error.unknownZone";
+  const at = new Set(zonePositions(h.hall, z));
+  const rented = h.hall.customers.some((c) => c.zoneId === z.id || customerPositions(h.hall, c).some((p) => at.has(p))) || (!!h.hall.exchange && at.has(h.hall.exchange.position));
+  return rented || s.racks.some((r) => r.locationId === locationId && at.has(r.position)) ? "error.zoneInUse" : null;
+}
+
+// Takes a zone away; a fence refunds half.
+export function removeZone(s: GameState, locationId: string, zoneId: string): ActionResult {
+  const error = removeZoneError(s, locationId, zoneId);
+  if (error) return fail(error);
+  const h = hallAt(s, locationId)!, z = h.hall.zones.find((x) => x.id === zoneId)!, refund = fenceCost(z) * HALL.zones.refund;
+  h.hall.zones = h.hall.zones.filter((x) => x.id !== zoneId);
+  if (refund) {
+    s.cash = cents(s.cash + refund);
+    s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.fence", params: { location: h.loc.name }, amount: refund }];
+  }
   return { ok: true };
 }
 
@@ -267,8 +337,21 @@ const COLO_NAMES = ["Mainbit", "Taunusnet", "Kranich Media", "Datenwerk Süd", "
 // The chance a spare position signs a customer this month at the rate against the going rate.
 export const signChance = (rate: number, going: number): number => Math.max(0, Math.min(1, HALL.colo.signs * (2 - rate / going)));
 
-// At each month start: customers pay their month, some leave and free their position, and a listed hall with a spare
-// position may sign one new customer at its rate, who takes the first free position.
+// The first free jack on a fiber panel of a rack in the meet-me zone.
+function meetMeJack(s: GameState, hall: Hall, locationId: string): { device: string; port: number } | null {
+  const at = new Set(hall.zones.filter((z) => z.kind === "meetme").flatMap((z) => zonePositions(hall, z)));
+  for (const r of s.racks) if (r.locationId === locationId && at.has(r.position)) { const j = freeJack(s, r.id); if (j) return j; }
+  return null;
+}
+
+// Positions of the meet-me zone with no player rack and not taken by the exchange.
+const freeMeetMe = (s: GameState, hall: Hall, locationId: string): number[] => {
+  const racks = new Set(s.racks.filter((r) => r.locationId === locationId).map((r) => r.position));
+  return hall.zones.filter((z) => z.kind === "meetme").flatMap((z) => zonePositions(hall, z)).filter((p) => !racks.has(p) && p !== hall.exchange?.position);
+};
+
+// At each month start: customers pay their month and their cross-connects, order new cross-connects, some leave (more after a
+// trip), a busy hall draws carriers and the city's exchange, and a listed hall signs customers onto its zones.
 export function coloTick(s: GameState): SimEvent[] {
   const events: SimEvent[] = [];
   s.properties.forEach((p, pi) => {
@@ -278,15 +361,84 @@ export function coloTick(s: GameState): SimEvent[] {
       s.cash = cents(s.cash + c.monthly);
       s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.colo", params: { customer: c.name, location: loc.name }, amount: c.monthly }];
     }
-    const left = hall.customers.filter((_, i) => rand(hashRng(s.seed, s.hour, pi, i, 1)) < HALL.colo.leaves);
-    for (const c of left) events.push({ app: "Locations", key: "event.coloLeft", params: { customer: c.name, location: loc.name } });
+    for (const x of hall.xconnects) {
+      s.cash = cents(s.cash + HALL.xconnect.monthly);
+      s.ledger = [...s.ledger, { hour: s.hour, category: "sales", key: "ledger.xconnect", params: { customer: hall.customers.find((c) => c.id === x.customerId)?.name ?? "", location: loc.name }, amount: HALL.xconnect.monthly }];
+    }
+    // Customers order a cross-connect to a built carrier; a full panel leaves them unhappy.
+    const unhappy = new Set<string>();
+    if (hall.carriers.length && hall.zones.some((z) => z.kind === "meetme")) {
+      hall.customers.forEach((c, i) => {
+        if (hall.xconnects.filter((x) => x.customerId === c.id).length >= HALL.xconnect.max || rand(hashRng(s.seed, s.hour, pi, i, 5)) >= HALL.xconnect.chance) return;
+        const jack = meetMeJack(s, hall, loc.id);
+        if (!jack) {
+          unhappy.add(c.id);
+          events.push({ app: "Locations", key: "event.xconnectNoJack", params: { customer: c.name, location: loc.name } });
+          return;
+        }
+        const carrierId = hall.carriers[Math.floor(rand(hashRng(s.seed, s.hour, pi, i, 6)) * hall.carriers.length)];
+        hall.xconnects = [...hall.xconnects, { id: `xc${s.nextId++}`, customerId: c.id, carrierId, jack }];
+      });
+    }
+    const outage = hall.outage;
+    hall.outage = false;
+    const left = hall.customers.filter((c, i) => rand(hashRng(s.seed, s.hour, pi, i, 1)) < (outage || unhappy.has(c.id) ? HALL.colo.leavesAfterOutage : HALL.colo.leaves));
+    for (const c of left) {
+      const params = { customer: c.name, location: loc.name };
+      if (outage || unhappy.has(c.id)) events.push({ app: "Locations", key: "event.coloLeftOutage", params });
+      else events.push({ app: "Locations", key: "event.coloLeft", params });
+    }
     hall.customers = hall.customers.filter((c) => !left.includes(c));
-    const free = freePositions(s, loc.id)[0], going = goingRate(loc.city);
-    if (hall.rate === null || free === undefined || loc.readyAt > s.hour || !going) return;
-    if (rand(hashRng(s.seed, s.hour, pi, 2)) >= signChance(hall.rate, going)) return;
-    const name = COLO_NAMES[s.nextId % COLO_NAMES.length];
-    hall.customers = [...hall.customers, { id: `colo${s.nextId++}`, name, position: free, monthly: hall.rate, since: s.hour }];
-    events.push({ app: "Locations", key: "event.coloSigned", params: { customer: name, location: loc.name, amount: euro(hall.rate) } });
+    hall.xconnects = hall.xconnects.filter((x) => hall.customers.some((c) => c.id === x.customerId));
+    hubTick(s, hall, loc, pi, events);
+    signTick(s, hall, loc, pi, events);
   });
   return events;
+}
+
+// A hall with 8 customers draws a carrier of its city for free; with enough carriers and customers the city's exchange moves in.
+function hubTick(s: GameState, hall: Hall, loc: Location, pi: number, events: SimEvent[]): void {
+  if (!hall.zones.some((z) => z.kind === "meetme")) return;
+  const open = cityCarriers(loc.city).filter((c) => !hall.carriers.includes(c.id));
+  if (hall.customers.length >= HALL.hub.carrierAt && open.length && rand(hashRng(s.seed, s.hour, pi, 7)) < HALL.hub.carrierChance) {
+    const c = open[Math.floor(rand(hashRng(s.seed, s.hour, pi, 8)) * open.length)];
+    hall.carriers = [...hall.carriers, c.id];
+    events.push({ app: "Locations", key: "event.carrierArrived", params: { carrier: c.name, location: loc.name } });
+  }
+  if (hall.carriers.length < HALL.hub.exchangeCarriers || hall.customers.length < HALL.hub.exchangeCustomers) return;
+  const x = hall.exchange ? EXCHANGES.find((e) => e.id === hall.exchange!.id) : DATACENTERS.filter((d) => d.city === loc.city).map(exchangeAt).find(Boolean);
+  if (!x || hall.exchange?.position) return;
+  if (!hall.exchange) {
+    hall.exchange = { id: x.id, position: 0 };
+    events.push({ app: "Locations", key: "event.exchangeComing", params: { exchange: x.name, location: loc.name } });
+  }
+  const at = freeMeetMe(s, hall, loc.id)[0];
+  if (at === undefined) return;
+  hall.exchange = { id: x.id, position: at };
+  events.push({ app: "Locations", key: "event.exchangeOpened", params: { exchange: x.name, location: loc.name } });
+}
+
+// A listed hall signs customers onto free positions of its colocation zones and onto empty cages.
+function signTick(s: GameState, hall: Hall, loc: Location, pi: number, events: SimEvent[]): void {
+  const going = goingRate(loc.city);
+  if (hall.rate === null || loc.readyAt > s.hour || !going) return;
+  const taken = () => new Set(hall.customers.flatMap((c) => customerPositions(hall, c)));
+  const freeColo = () => hall.zones.filter((z) => z.kind === "colo").flatMap((z) => zonePositions(hall, z)).filter((q) => !taken().has(q));
+  const kw = (n: number) => HALL.colo.kw.min + Math.floor(rand(hashRng(s.seed, s.hour, pi, 3, n)) * (HALL.colo.kw.max - HALL.colo.kw.min + 1));
+  const name = () => COLO_NAMES[s.nextId % COLO_NAMES.length];
+  const chances = 1 + Math.floor(freeColo().length / 10);
+  for (let k = 0; k < chances; k++) {
+    const free = freeColo()[0];
+    if (free === undefined || rand(hashRng(s.seed, s.hour, pi, 2, k)) >= signChance(hall.rate, going)) continue;
+    const zone = hall.zones.find((z) => z.kind === "colo" && zonePositions(hall, z).includes(free))!, n = name(), id = `colo${s.nextId++}`;
+    hall.customers = [...hall.customers, { id, name: n, position: free, monthly: hall.rate, since: s.hour, kw: kw(k), zoneId: zone.id }];
+    events.push({ app: "Locations", key: "event.coloSigned", params: { customer: n, location: loc.name, amount: euro(hall.rate) } });
+  }
+  if (yearOf(s.hour) < HALL.zones.cage.from) return;
+  hall.zones.forEach((z, zi) => {
+    if (z.kind !== "cage" || hall.customers.some((c) => c.zoneId === z.id) || rand(hashRng(s.seed, s.hour, pi, 4, zi)) >= HALL.colo.signs) return;
+    const n = name(), monthly = Math.round(z.length * hall.rate! * HALL.colo.cageMarkup), id = `colo${s.nextId++}`;
+    hall.customers = [...hall.customers, { id, name: n, position: zonePositions(hall, z)[0], monthly, since: s.hour, kw: kw(100 + zi), zoneId: z.id }];
+    events.push({ app: "Locations", key: "event.cageSigned", params: { customer: n, location: loc.name, amount: euro(monthly), positions: z.length } });
+  });
 }

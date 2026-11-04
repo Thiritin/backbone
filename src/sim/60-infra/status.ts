@@ -8,7 +8,7 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, PARCEL, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
-import { CLOSET_KW, HALL, hallKw, hallOf } from "../20-world/properties";
+import { CLOSET_KW, customerPositions, HALL, hallCustomerKw, hallKw, hallOf, zonePositions } from "../20-world/properties";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
@@ -346,11 +346,13 @@ function computeRackPower(s: GameState, rackId: string, demand = false): RackPow
 // position's own limit in a datacenter.
 export function roomPower(s: GameState, loc: Location, demand = false): { watts: number; limitWatts: number; over: boolean } {
   const racks = s.racks.filter((r) => r.locationId === loc.id).map((r) => (demand ? summed(s, r.id, true) : rackPower(s, r.id)));
-  const watts = racks.reduce((n, p) => n + p.watts, 0);
+  const hall = loc.space === "hall" ? hallOf(s, loc.id) : undefined;
+  // A hall's customers draw their kW through the same breaker.
+  const watts = racks.reduce((n, p) => n + p.watts, 0) + 1000 * hallCustomerKw(hall);
   const over = racks.some((p) => p.over);
   if (loc.dc) return { watts, limitWatts: racks.reduce((n, p) => n + p.limitWatts, 0), over };
-  const hall = loc.space === "hall" && s.properties.find((p) => p.hall?.locationId === loc.id);
-  const limitWatts = 1000 * (hall ? hallKw(hall) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc));
+  const prop = loc.space === "hall" && s.properties.find((p) => p.hall?.locationId === loc.id);
+  const limitWatts = 1000 * (prop ? hallKw(prop) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc));
   return { watts, limitWatts, over: over || watts > limitWatts };
 }
 
@@ -574,7 +576,10 @@ export const energized = (d: Device): boolean => d.on && (!psusOf(d).length || p
 export function freePositions(s: GameState, locationId: string): number[] {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return [];
-  const taken = new Set([...s.racks.filter((r) => r.locationId === locationId).map((r) => r.position), ...(hallOf(s, locationId)?.customers.map((c) => c.position) ?? [])]);
+  const hall = hallOf(s, locationId);
+  // In a hall the customers, the exchange and the colocation and cage zones are not the player's to fill.
+  const sold = hall ? [...hall.customers.flatMap((c) => customerPositions(hall, c)), ...(hall.exchange ? [hall.exchange.position] : []), ...hall.zones.filter((z) => z.kind !== "meetme").flatMap((z) => zonePositions(hall, z))] : [];
+  const taken = new Set([...s.racks.filter((r) => r.locationId === locationId).map((r) => r.position), ...sold]);
   return Array.from({ length: loc.positions }, (_, i) => i + 1).filter((p) => !taken.has(p));
 }
 

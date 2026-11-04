@@ -24,7 +24,8 @@ import { legacyTax } from "../80-business/tax";
 import { legacyBank, savingsOf } from "../46-finance/bank";
 import { bankById, defaultPlan } from "../10-catalog/banks";
 import type { Employee } from "../47-staff/staff";
-import { basementProperty, device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Contract, type Device, type GameState, type Location } from "../50-state";
+import { basementProperty, device, deviceDefaults, fillCards, fillSizes, newGame, SAVE_VERSION, type Contract, type Device, type GameState, type Hall, type HallZone, type Location, type Rack } from "../50-state";
+import { rowOfPosition } from "../20-world/properties";
 import { dropCluster, workloadDefaults } from "../60-infra/cluster";
 import { upgradeCompute } from "./compute";
 import { fillDomains } from "../30-customers/domains";
@@ -39,12 +40,27 @@ import { fillGames } from "../60-infra/games";
 import { fillMachines, fillVersions } from "./machines";
 import { legacyLeads } from "./leads";
 
-// Halls from before placed cooling units hold a count: the first slots.
-const fillHall = (p: GameState["properties"][number]): GameState["properties"][number] => {
+// Halls from before placed cooling units hold a count: the first slots. Halls from before zones get a colocation zone under each
+// customer and a meet-me zone under the first rack whose fiber panel carries an uplink.
+const fillHall = (p: GameState["properties"][number], racks: Rack[], devices: Device[], uplinks: GameState["network"]["uplinks"]): GameState["properties"][number] => {
   const h = p.hall as (typeof p.hall & { cooling?: number }) | undefined;
   if (!h) return p;
   const { cooling, ...rest } = h;
-  return { ...p, hall: { ...rest, coolers: h.coolers ?? Array.from({ length: cooling ?? 0 }, (_, i) => i), transformers: h.transformers ?? 0 } };
+  const hall: Hall = { ...rest, coolers: h.coolers ?? Array.from({ length: cooling ?? 0 }, (_, i) => i), transformers: h.transformers ?? 0, zones: h.zones ?? [], xconnects: h.xconnects ?? [], exchange: h.exchange ?? null, outage: h.outage ?? false };
+  const zoneAt = (id: string, kind: HallZone["kind"], position: number) => {
+    const at = rowOfPosition(hall, position);
+    if (at) hall.zones = [...hall.zones, { id, kind, rowId: at.rowId, from: at.index, length: 1, builtAt: 0 }];
+  };
+  hall.customers = hall.customers.map((c) => {
+    if (c.zoneId !== undefined && c.kw !== undefined) return c;
+    zoneAt(`zone-${c.id}`, "colo", c.position);
+    return { ...c, kw: c.kw ?? 3, zoneId: c.zoneId ?? `zone-${c.id}` };
+  });
+  if (!h.zones && hall.carriers.length) {
+    const linked = uplinks.flatMap((u) => u.links).map((l) => racks.find((r) => r.id === devices.find((d) => d.id === l.jack?.device)?.rackId)).find((r) => r?.locationId === hall.locationId);
+    if (linked) zoneAt("zone-meetme", "meetme", linked.position);
+  }
+  return { ...p, hall };
 };
 import { seededPassword } from "../42-mail/new";
 
@@ -126,7 +142,7 @@ export function deserialize(raw: string): GameState {
   const fill = data.ips ? (x: GameState) => x : fillAddresses;
   const s = fillMachines(dropGone(gone, fillRegistrar(fill(fillLaunch(fillDesign(fillLines(fillHostnames(upgradeCompute(fillDomains(fillSpecs({
     ...base, ...data, dcs, locations, devices, racks, cables, rng: { ...base.rng, ...data.rng }, version: SAVE_VERSION,
-    properties: data.properties?.map(fillHall) ?? [basementProperty(locations.find((l) => l.space === "basement")?.id ?? null)],
+    properties: data.properties?.map((p) => fillHall(p, racks, devices, data.network?.uplinks ?? [])) ?? [basementProperty(locations.find((l) => l.space === "basement")?.id ?? null)],
     billingRules: { ...base.billingRules, ...data.billingRules },
     // Quotes from before the shop wrote its own were all written in Books.
     quotes: (data.quotes ?? []).map((q) => ({ ...q, origin: q.origin ?? "books" })),
