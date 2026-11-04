@@ -33,6 +33,7 @@ export default defineConfig({
   plugins: [react(), versionFile()],
   test: {
     environment: "node",
+    setupFiles: ["tests/dom-cleanup.ts"],
     testTimeout: 20000,
     projects: [
       { extends: true, test: { name: "shared", include: testFiles, exclude: isolated, isolate: false } },
