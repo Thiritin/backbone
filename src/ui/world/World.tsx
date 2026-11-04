@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
-import { cage, fixtures, neighbourRacks, officeFloors, officePlan, rackTiles, roomSize, shareMates, walkways, type Fixture } from "../../sim/20-world/layout";
+import { cage, fixtures, neighbourRacks, officeFloors, officePlan, rackTiles, roomSize, shareMates, type Fixture } from "../../sim/20-world/layout";
 import { rackUnits } from "../../sim/20-world/datacenters";
 import { temperature } from "../../sim/20-world/weather";
 import { modelById } from "../../sim/10-catalog/hardware";
@@ -21,7 +21,7 @@ import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
 import {
   at3, BeerCrate, Corkboard, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, darkness, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
-  CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, rackHeight, RackBox, RaisedFloor, Scanner, Shimmer, Shelf, ShelfUnit, Tower, TubeLight, Tubes, WallJack, Walls, WALL, Washer,
+  CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, rackHeight, RackBox, RaisedFloor, Scanner, Shimmer, Shelf, ShelfUnit, Tower, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
 import { useFigures } from "./figures";
@@ -243,7 +243,7 @@ export function World() {
     };
   });
   // Other tenants' racks and the cage fence are scenery from the layout.
-  const ways = walkways(loc), fence = cage(loc), taken = new Set(Object.values(tiles).map((t) => `${t.x},${t.y}`)), others = neighbourRacks(loc).filter((t) => !taken.has(`${t.x},${t.y}`));
+  const fence = cage(loc), taken = new Set(Object.values(tiles).map((t) => `${t.x},${t.y}`)), others = neighbourRacks(loc).filter((t) => !taken.has(`${t.x},${t.y}`));
   for (const tile of others)
     things.push({ depth: tile.x + tile.y, node: <g key={`n${tile.x},${tile.y}`} pointerEvents="none" aria-hidden><RackBox tile={tile} units={42} items={[]} leds={[]} zoomed={false} mesh neighbour /></g> });
   if (fence) things.push(...cageFence(fence));
@@ -366,7 +366,6 @@ export function World() {
         {(home || office) && <Night w={w} h={h} opacity={loc.tripped ? TRIPPED_DARK : darkness(hd, month, lights)} />}
         {bright}
         {!home && !office && <Tubes tiles={[...others, ...Object.values(tiles)]} />}
-        {!home && !office && <TubeLight w={w} h={h} ways={ways} />}
         <RoomCables game={game} loc={loc} tiles={tiles} fx={fx} onOpen={(id, port) => { setCable(null); setRackOpen({ id, port }); }} />
         {over}
         {linkAt && link.current && tiles[link.current] && (() => {

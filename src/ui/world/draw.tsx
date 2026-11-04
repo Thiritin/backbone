@@ -724,29 +724,6 @@ export function Tubes({ tiles }: { tiles: { x: number; y: number }[] }) {
   );
 }
 
-// The tubes' faint cool wash: a band of light along each walkway fading to the rack rows, and a cool tint over the whole room.
-export function TubeLight({ w, h, ways }: { w: number; h: number; ways: { y: number; x0: number; x1: number }[] }) {
-  const room = pts(iso(0, h), up(iso(0, h), WALL), up(iso(0, 0), WALL), up(iso(w, 0), WALL), iso(w, 0), iso(w, h));
-  return (
-    <g pointerEvents="none" className="w-light">
-      <polygon className="w-cool" points={room} />
-      {ways.map((a) => {
-        const id = `w-wash-${a.y}`, p0 = iso(a.x0, a.y - 0.5), p1 = iso(a.x0, a.y + 1.5), y0 = Math.max(0, a.y - 0.5), y1 = Math.min(h, a.y + 1.5);
-        return (
-          <g key={a.y}>
-            <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y}>
-              <stop offset="0" stopColor="oklch(0.97 0.03 220)" stopOpacity="0" />
-              <stop offset="0.5" stopColor="oklch(0.97 0.03 220)" stopOpacity="0.09" />
-              <stop offset="1" stopColor="oklch(0.97 0.03 220)" stopOpacity="0" />
-            </linearGradient>
-            <polygon fill={`url(#${id})`} points={pts(iso(0, y0), iso(w, y0), iso(w, y1), iso(0, y1))} />
-          </g>
-        );
-      })}
-    </g>
-  );
-}
-
 // The basement's metal shelf: four uprights, a board per unit from the floor up, each device lying on its board with an LED
 // on its front, and the loose cables hanging behind the boards.
 const SHELF_BOARDS_Z = 18, SHELF_U = 4.5;
