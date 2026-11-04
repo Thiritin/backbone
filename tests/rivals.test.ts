@@ -49,7 +49,7 @@ describe("rivals", () => {
     // Control panels in 2006 and one-click installs in 2009.
     expect(ionose.C).toBe(70 + 8);
     expect(rackspice.C).toBe(75 + 6);
-    expect(byId(c, "hetzna").C).toBe(40 + 4);
+    expect(byId(c, "hetzler").C).toBe(40 + 4);
     // A slow rival adopts the 2009 feature only after its lag.
     // Feature adoption lives in the roll itself, so the market demand of each city is skipped here.
     let slow = newGame(5).competitors.map((r) => ({ ...r, lag: 9 })), at = 0;
@@ -67,10 +67,10 @@ describe("rivals", () => {
     const s = newGame(7);
     s.competitors = s.competitors.map((r, i) => ({ ...r, lag: i === 2 ? 6 : 0 }));
     rollTo(s, 2008, 0);
-    expect(byId(s, "hetzna").P).toBe(85 - GEN_PENALTY);
+    expect(byId(s, "hetzler").P).toBe(85 - GEN_PENALTY);
     expect(byId(s, "ovheat").P).toBe(70);
     rollTo(s, 2008, 6);
-    expect(byId(s, "hetzna").P).toBe(85);
+    expect(byId(s, "hetzler").P).toBe(85);
   });
 
   it("takes reliability and customers in an outage and posts it as news", () => {
