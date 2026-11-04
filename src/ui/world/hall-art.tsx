@@ -233,7 +233,7 @@ export function Terminal({ x, y, facing = "s", occupied = false, ghost }: Base &
 
 // A wall screen two tiles wide: on the left wall from tile row y, or on the top wall from tile column x.
 export function WallScreen({ x, y = 0, state, ghost }: { x?: number; y?: number; state: "ok" | "alarm" | "trip"; ghost?: boolean }) {
-  const t = x === undefined ? onX(0, y + 2, 0) : onY(x, 0, 0), z = 28, w = 64, h = 36;
+  const t = x === undefined ? onX(0, y + 2, 0) : onY(x, 0, 0), z = 2, w = 64, h = 36;
   const block = state === "ok" ? "ha-ok" : state === "alarm" ? "ha-alarm" : "ha-trip";
   return ghosted(ghost, (
     <g transform={`${t} translate(0 ${-z - h})`}>

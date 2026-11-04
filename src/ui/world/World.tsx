@@ -281,7 +281,7 @@ export function World() {
     const p = { x: fx.door.x + 1, y: fx.door.y - 1 }, shown = parcels.slice(-PARCEL_STACK);
     const label = iso(p.x + 0.5, p.y + 0.5);
     things.push({ depth: p.x + p.y, node: (
-      <g key="parcels" data-parcels={parcels.length} role="img" aria-label={t("world.obj.parcels", { n: parcels.length })}>
+      <g key="parcels" pointerEvents="none" data-parcels={parcels.length} role="img" aria-label={t("world.obj.parcels", { n: parcels.length })}>
         {shown.map((d, i) => <Parcel key={d.id} cx={p.x + 0.5} cy={p.y + 0.5} z={i * PARCEL_H} brand={d.brand} />)}
         {parcels.length > 1 && <text className="w-num w-num-tag" x={label.x} y={label.y - shown.length * PARCEL_H - 10}>{n(parcels.length)}</text>}
       </g>

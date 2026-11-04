@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The speed buttons and the order list stay usable while a close-up is open, the NOC wall screens no longer cover the lettering, and the start screen changelog lists each day once.
 - The travel map fades the street detail smoothly into the regional map when you zoom out, and city names on the map follow your language.
 - You and your staff now walk to the racks you work on and show your progress over the rack, and the order list by the clock lets you cancel what is still waiting.
 - Hands-on work in the basement, offices and every datacenter now takes game time: you queue the job, the work happens over minutes, and the checklist ticks when it is done.
@@ -67,9 +68,6 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The server inspector shows each CPU's cores and threads, and panel host settings show the host's compute next to its vCPU.
 - Collmix, sevDeck and lexoffize now run as web apps in the browser, and the Books app opens them there.
 - The bookkeeping setup wizard title is readable again on dark vendor colors.
-
-## 2026-11-03
-
 - The bookkeeping categories now follow a standard chart of accounts: bank and payment charges, interest, fees and dues, travel, licences, domains, credits and other operating expenses each get their own line, and a trade registration no longer counts as a ransom.
 
 ## 2026-11-02
