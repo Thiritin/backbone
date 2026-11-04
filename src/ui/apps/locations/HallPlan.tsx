@@ -1,6 +1,6 @@
 import { t } from "../../../i18n/en";
 import { siteAreas } from "../../../sim/20-world/layout";
-import { HALL, hallKw, hallSpots, hallCapacity, isHalle, stepTile, zoneSpots } from "../../../sim/20-world/properties";
+import { HALL, hallSpots, hallCapacity, isHalle, stepTile, zoneSpots } from "../../../sim/20-world/properties";
 import { airflow } from "../../../sim/60-infra/airflow";
 import { hallBackupMinutes } from "../../../sim/60-infra/incidents";
 import { roomPower } from "../../../sim/60-infra/status";
@@ -24,7 +24,7 @@ export function HallPlan({ game, p }: { game: GameState; p: Property }) {
   const n = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
   const tick = (q: { x: number; y: number }, f: "n" | "e" | "s" | "w") => { const c = { x: (q.x + 0.5) * T, y: (q.y + 0.5) * T }, e = stepTile({ x: 0, y: 0 }, f, 1); return `M${c.x} ${c.y}L${c.x + e.x * T * 0.45} ${c.y + e.y * T * 0.45}`; };
   const sold = [...hall.customers.flatMap((c) => (c.tile ? [c.tile] : [])), ...(hall.exchange?.tile ? [hall.exchange.tile] : [])];
-  const cracs = hall.items.filter((i) => i.kind === "crac").length, load = roomPower(game, loc).watts / 1000;
+  const cracs = hall.items.filter((i) => i.kind === "crac").length, pw = roomPower(game, loc), load = pw.watts / 1000;
   const carriers = cityCarriers(loc.city).filter((c) => hall.carriers.includes(c.id)).map((c) => c.name).join(", ") || "0";
   return (
     <div className="hall-plan">
@@ -38,7 +38,7 @@ export function HallPlan({ game, p }: { game: GameState; p: Property }) {
       </svg>
       <div className="hp-meters num">
         <span>{t("hall.positionsUsed", { used, cap })}</span>
-        <span>{t("hall.edit.kw", { used: n(load), max: n(hallKw(p)) })}</span>
+        <span>{t("hall.edit.kw", { used: n(load), max: n(pw.limitWatts / 1000) })}</span>
         <span>{t("hall.edit.cooling", { cool: n(air.effective), heat: n(load) })}</span>
         <span>{t("hall.edit.efficiency", { v: n(air.efficiency * 100) })}</span>
         <span>{t("hall.edit.pue", { v: air.pue.toFixed(2) })}</span>

@@ -2,13 +2,13 @@ import { t } from "../../../../../i18n/en";
 import { euro } from "../../../../../sim/00-core/money";
 import { Logo } from "../../../../art/logos";
 import { exchangeLabel } from "../../../locations/ui";
-import { A, Body, dcsOf, Nav, titleOf, type ProviderProps } from "./ProviderSite";
+import { A, Body, dcsOf, Nav, NoSites, titleOf, type ProviderProps } from "./ProviderSite";
 import type { Design } from "./registry";
 import "./telex.css";
 
 // Telex: 2005 a glossy slate header over a Manhattan skyline banner with three orange-headed boxes; 2012 a white page with a building card and a meet-me room counter.
 function Telex(props: ProviderProps) {
-  const { p, look, route, go, year } = props, dc = dcsOf(p.id)[0];
+  const { p, look, route, go, year } = props, sites = dcsOf(p.id), dc = sites[0];
   const labels = { sites: t("providers.telex.navSites"), order: t("providers.telex.navOrder"), account: t("providers.telex.navPortal") };
   const boxes = [1, 2, 3].map((i) => <div key={i} className="tx-box"><h3>{t(`providers.telex.box${i}`)}</h3><p>{t(`providers.telex.box${i}Text`)}</p></div>);
   return (
@@ -18,7 +18,7 @@ function Telex(props: ProviderProps) {
         <Nav route={route} go={go} labels={labels} />
       </header>
       <main>
-        {route.page === "home" ? <>
+        {!sites.length ? <NoSites p={p} look={look} heroClass="tx-hero" /> : route.page === "home" ? <>
           <section className="tx-hero">
             <h1>{look === "early" ? t("providers.telex.heroEarly") : t("providers.telex.heroLate")}</h1>
             <p>{t("providers.telex.text", { name: dc.name, city: dc.city })}</p>

@@ -104,4 +104,7 @@ export default {
   "hall.board.tripped": () => `Tripped`,
   "hall.board.on": () => `On`,
   "hall.board.reset": () => `Reset`,
+  "hall.tickets.title": () => "Remote hands tickets",
+  "hall.tickets.due": () => "Due",
+  "hall.tickets.late": () => "Late",
 } satisfies Dict;

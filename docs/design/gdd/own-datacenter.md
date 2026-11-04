@@ -37,6 +37,7 @@ An office building the company owns can have a floor fitted as a hall (refit `ha
 - **Capacity.** Open customer jobs are limited to 2 per technician. A booking beyond that is declined and the customer is upset.
 - **Doing the work.** The job is an order for a technician of the hall and targets the customer's rack. The technician walks there and works at the staff times in Work orders and figures. The fee is the billed hours (cable 0.25, mount 0.5, parts 1) times the rate, paid on completion.
 - **Quality.** A job not done 4 hours after booking is late. A job fails with chance 10% times the technician's missing skill: no fee is paid. Each late, declined or failed job adds 5% to that customer's leave chance in the month, up to 50%.
+- **Ticket board.** The NOC wall screen opens a close-up with one paper ticket per open customer job: customer, kind, due time and a late mark. A ticket can be cancelled until the technician starts it; a cancelled job counts like a declined one against the customer's leave chance.
 - **Terminal.** Every rented share and cage room has a terminal desk by the entry with one seat. The player takes the first seat of a location and staff fill the rest.
 
 ## In the room

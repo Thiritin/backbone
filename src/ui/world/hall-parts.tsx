@@ -4,7 +4,7 @@ import { t } from "../../i18n/en";
 import { euro } from "../../sim/00-core/money";
 import { yearOf } from "../../sim/00-core/time";
 import { RACK_MODELS } from "../../sim/20-world/datacenters";
-import { HALL, hallCapacity, hallKw, hallSpots, isHalle } from "../../sim/20-world/properties";
+import { HALL, hallCapacity, hallSpots, isHalle } from "../../sim/20-world/properties";
 import { airflow } from "../../sim/60-infra/airflow";
 import { roomPower } from "../../sim/60-infra/status";
 import type { HallItemKind, Location } from "../../sim/50-state";
@@ -54,7 +54,7 @@ export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }
   const halle = isHalle(h.p.buildingId), year = yearOf(game.hour);
   const n = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
   const cap = hallCapacity(h.p), used = hallSpots(h.hall, Object.fromEntries(game.racks.filter((r) => r.locationId === loc.id).map((r) => [r.id, r.tile ?? null])));
-  const heat = roomPower(game, loc).watts / 1000, air = airflow(game, loc);
+  const pw = roomPower(game, loc), heat = pw.watts / 1000, air = airflow(game, loc);
   const delivered = game.racks.filter((r) => r.locationId === loc.id && !r.tile);
   const tabs = TABS.filter((k) => k !== "delivered" || delivered.length > 0);
   const active: Tab = tabs.includes(tab) ? tab : "racks";
@@ -104,7 +104,7 @@ export function HallStrip({ loc, onDone }: { loc: Location; onDone: () => void }
           </div>
         ))}
         <div className="w-parts-meters num">
-          <span>{t("hall.edit.kw", { used: n(heat), max: n(hallKw(h.p)) })}</span>
+          <span>{t("hall.edit.kw", { used: n(heat), max: n(pw.limitWatts / 1000) })}</span>
           <span>{t("hall.edit.cooling", { cool: n(air.effective), heat: n(heat) })}</span>
           <span>{t("hall.edit.efficiency", { v: n(air.efficiency * 100) })}</span>
           <span>{t("hall.edit.pue", { v: air.pue.toFixed(2) })}</span>

@@ -368,3 +368,20 @@ export function Doorway({ x, y, axis }: { x: number; y: number; axis: "x" | "y" 
     </g>
   );
 }
+
+// The ticket board on the left wall from tile row y, two tiles wide: one paper ticket per open customer job, a late one with a red edge.
+export function WallTickets({ y = 0, late }: { y?: number; late: boolean[] }) {
+  const t = onX(0, y + 2, 0), w = 64, h = 36, cols = 4, shown = Math.max(cols, late.length);
+  return (
+    <g transform={`${t} translate(0 ${-2 - h})`}>
+      <rect className="ha-c ha-corkframe" x={0} y={0} width={w} height={h} />
+      <rect className="ha-c ha-cork" x={2.5} y={2.5} width={w - 5} height={h - 5} />
+      {Array.from({ length: Math.min(shown, 8) }, (_, i) => {
+        const x = 6 + (i % cols) * 14, yy = 6 + Math.floor(i / cols) * 15, has = i < late.length;
+        return has
+          ? <g key={i}><rect className={`ha-c ${late[i] ? "ha-ticketlate" : "ha-ticket"}`} x={x} y={yy} width={11} height={12} /><rect className="ha-c ha-pin" x={x + 4.5} y={yy + 0.5} width={2} height={2} /></g>
+          : <rect key={i} className="ha-c ha-pin" x={x + 4.5} y={yy + 0.5} width={2} height={2} />;
+      })}
+    </g>
+  );
+}

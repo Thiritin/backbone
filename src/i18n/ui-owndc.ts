@@ -60,4 +60,5 @@ export default {
   "event.hallBreakerReset.title": () => "Breaker reset",
   "event.hallBreakerReset.text": (p) => `Your technician reset the main breaker at ${p.location}.`,
   "error.queueFull": () => "Queue full.",
+  "error.jobStarted": () => "The technician has already started this job.",
 } satisfies Dict;

@@ -5,7 +5,7 @@ import type { Employee } from "../src/sim/47-staff/staff";
 import { figuresIn } from "../src/sim/60-infra/figures";
 import { goingHandsRate, handsTick, setHandsRate } from "../src/sim/90-actions/hall";
 import { JOB_HOURS } from "../src/sim/90-actions/presence";
-import { frontOf, orderWork, workOrdersTick, doneAt } from "../src/sim/90-actions/work-orders";
+import { cancelWorkOrder, frontOf, orderWork, workOrdersTick, doneAt } from "../src/sim/90-actions/work-orders";
 import { at, customer, ok, ownHall, rack, zone, type OwnHall } from "./own-dc-hall";
 import { buyDevice } from "../src/sim/90-actions/hardware";
 import { mountDevice } from "../src/sim/90-actions/hardware";
@@ -47,6 +47,37 @@ describe("own datacenter: customers' remote hands", () => {
     expect(booked(e, 360)).toBe(0);
     const none = hall([]);
     expect(booked(none, 360)).toBe(0);
+  });
+
+  // A customer job queued behind a started one on the same technician.
+  const twoJobs = (e: OwnHall) => {
+    e.s.hour = at(2013, 3, 4) + 24;
+    withChance(1, () => handsTick(e.s));
+    orderWork(e.s, "t0", e.hallId, {}, null, { kind: "hands", workMin: 60, customerId: e.hall().customers[0].id, fee: 0 });
+    return e.s.orders.filter((o) => o.customerId);
+  };
+
+  it("refuses to cancel a started customer job and keeps it queued", () => {
+    const e = hall(), [first] = twoJobs(e);
+    expect(first.startAt).toBeLessThanOrEqual(Math.floor(e.s.hour * 60));
+    expect(cancelWorkOrder(e.s, first.id)).toMatchObject({ ok: false, error: "error.jobStarted" });
+    expect(e.s.orders.some((o) => o.id === first.id)).toBe(true);
+    expect(e.hall().customers[0].leaveBump).toBe(0);
+  });
+
+  it("cancels a queued customer job and raises the customer's leave pressure", () => {
+    const e = hall(), [, second] = twoJobs(e);
+    expect(cancelWorkOrder(e.s, second.id)).toMatchObject({ ok: true });
+    expect(e.s.orders.some((o) => o.id === second.id)).toBe(false);
+    expect(e.hall().customers[0].leaveBump).toBe(HALL.hands.leaveBump);
+  });
+
+  it("cancels the player's own order without a leave bump", () => {
+    const e = hall();
+    const r = orderWork(e.s, "t0", e.hallId, {}, null, { kind: "mount", workMin: 30 });
+    if (!r.ok) throw new Error(r.error);
+    expect(cancelWorkOrder(e.s, r.id!)).toMatchObject({ ok: true });
+    expect(e.hall().customers[0].leaveBump).toBe(0);
   });
 
   it("declines a third open job with one technician and upsets the customer", () => {

@@ -98,9 +98,14 @@ export function orderWork(s: GameState, worker: string, locationId: string, targ
 }
 
 // Cancels an order that has not started, or aborts the running one with no effect; the rest of the worker's queue moves up.
+// A customer's job cannot be aborted once started, and cancelling one counts against the customer like a declined job.
 export function cancelWorkOrder(s: GameState, orderId: string): ActionResult {
   const o = s.orders.find((x) => x.id === orderId);
   if (!o || o.applied) return fail("error.unknownOperation");
+  if (o.customerId) {
+    if (o.startAt !== null && o.startAt <= nowMin(s)) return fail("error.jobStarted");
+    bumpLeave(s, o.locationId, o.customerId);
+  }
   s.orders = s.orders.filter((x) => x !== o);
   reschedule(s, o.worker);
   return { ok: true };

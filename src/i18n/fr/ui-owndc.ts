@@ -60,4 +60,5 @@ export default {
   "event.hallBreakerReset.title": () => "Disjoncteur réarmé",
   "event.hallBreakerReset.text": (p) => `Ton technicien a réarmé le disjoncteur principal de ${p.location}.`,
   "error.queueFull": () => "File d'attente pleine.",
+  "error.jobStarted": () => "Le technicien a déjà commencé cette intervention.",
 } satisfies Dict;

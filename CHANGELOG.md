@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Customers' remote-hands jobs appear as paper tickets on a board on the NOC wall, and the three providers without a datacenter have their own site pages.
 - You can plug the install stick into a server's USB port in the rack close-up and use a crash cart with a monitor and keyboard to boot and install it, right in the datacenter.
 - The outside world has a library of 62 buildings, vehicles, trees and props that show snow, autumn colours and bare winter branches.
 - The basement and your own hall now stand in a drawn world: a street with houses on their own driveways, parking, a lobby building, a fenced compound with a gate, trees, fields and moving cars.

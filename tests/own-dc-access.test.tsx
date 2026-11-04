@@ -1,3 +1,4 @@
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { HALL, hallKw } from "../src/sim/20-world/properties";
 import { roomPower } from "../src/sim/60-infra/status";
@@ -5,6 +6,9 @@ import { editHallError, hallPath, unmaintained } from "../src/sim/90-actions/hal
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import type { HallItemKind } from "../src/sim/50-state";
 import type { AreaId } from "../src/sim/50-state";
+import { HallPlan } from "../src/ui/apps/locations/HallPlan";
+import { useStore } from "../src/ui/store";
+import { HallStrip } from "../src/ui/world/hall-parts";
 import { ownHall, place } from "./own-dc-hall";
 
 type E = ReturnType<typeof ownHall>;
@@ -66,5 +70,18 @@ describe("own datacenter: doors and maintenance access", () => {
     expect(cut).toBeLessThan(full);
     expect(roomPower(s, s.locations.find((l) => l.id === e.hallId)!).limitWatts).toBe(1000 * cut);
     expect(cut).toBe(full * HALL.service.derate);
+  });
+
+  it("shows the derated capacity in the hall plan and the edit strip", () => {
+    const e = ownHall();
+    cram(e, "transformer", "xfmr", 0, 2, "e");
+    cram(e, "transformer", "xfmr", 1, 0, "s");
+    const p = e.s.properties.find((x) => x.hall)!, loc = e.s.locations.find((l) => l.id === e.hallId)!;
+    const kw = roomPower(e.s, loc).limitWatts / 1000;
+    expect(kw).toBeLessThan(hallKw(p));
+    expect(renderToString(<HallPlan game={e.s} p={p} />)).toContain(`/ ${kw}`);
+    // Server rendering reads the store's initial state.
+    Object.assign(useStore.getInitialState(), { game: e.s });
+    expect(renderToString(<HallStrip loc={loc} onDone={() => {}} />)).toContain(`kW 0 / ${kw}`);
   });
 });

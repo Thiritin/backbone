@@ -73,7 +73,7 @@ const Camera = ({ f }: { f: Fixture }) => (
 );
 
 export function hallScene(game: GameState, loc: Location, plan: OfficePlan | undefined, tiles: Record<string, Tile>, size: { w: number; h: number },
-  things: Thing[], draw: Record<string, (f: Fixture) => ReactNode>, editing = false): void {
+  things: Thing[], draw: Record<string, (f: Fixture) => ReactNode>, editing = false, onTickets?: () => void): void {
   const hall = plan?.hall;
   if (!hall) return;
   Object.assign(draw, {
@@ -85,7 +85,7 @@ export function hallScene(game: GameState, loc: Location, plan: OfficePlan | und
     cooling: () => null,
     noc: () => null,
   });
-  annexScene(game, loc, plan, tiles, (depth, node) => things.push({ depth, node }));
+  annexScene(game, loc, plan, tiles, (depth, node) => things.push({ depth, node }), onTickets);
   // Air tones are floor paint: a rack's intake and exhaust tiles in the tone of the air they get.
   for (const [k, tone] of Object.entries(airTones(game, loc))) {
     if (tone === "room" || tone === "ventIdle") continue;

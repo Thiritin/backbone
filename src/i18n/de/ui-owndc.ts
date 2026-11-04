@@ -60,4 +60,5 @@ export default {
   "event.hallBreakerReset.title": () => "Sicherung zurückgesetzt",
   "event.hallBreakerReset.text": (p) => `Dein Techniker hat die Hauptsicherung bei ${p.location} zurückgesetzt.`,
   "error.queueFull": () => "Warteschlange voll.",
+  "error.jobStarted": () => "Der Techniker hat diesen Auftrag bereits begonnen.",
 } satisfies Dict;

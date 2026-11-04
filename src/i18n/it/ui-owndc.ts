@@ -60,4 +60,5 @@ export default {
   "event.hallBreakerReset.title": () => "Interruttore ripristinato",
   "event.hallBreakerReset.text": (p) => `Il tuo tecnico ha ripristinato l'interruttore principale di ${p.location}.`,
   "error.queueFull": () => "Coda piena.",
+  "error.jobStarted": () => "Il tecnico ha già iniziato questo lavoro.",
 } satisfies Dict;

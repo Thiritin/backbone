@@ -81,3 +81,11 @@ export function walkPath(areas: Area[], blocked: Set<string>, from: Pt, to: Pt):
   for (let k: string | null = key(to); k; k = seen.get(k) ?? null) { const [x, y] = k.split(",").map(Number); path.unshift({ x, y }); }
   return path;
 }
+
+// The row where the two-tile ticket board hangs on the left wall: beside the wall screen when free, else the first free pair of rows; null when the wall is full.
+// `taken` holds the wall's fixtures and the screen as [row, rows] spans.
+export function boardRow(height: number, taken: { y: number; len: number }[], screenY: number | null): number | null {
+  const free = (r: number) => r >= 0 && r + 2 <= height && taken.every((q) => r >= q.y + q.len || r + 2 <= q.y);
+  const near = screenY === null ? [] : [screenY + 2, screenY - 2];
+  return [...near, ...Array.from({ length: Math.max(0, height - 1) }, (_, r) => r)].find(free) ?? null;
+}

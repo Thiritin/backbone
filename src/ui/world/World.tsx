@@ -36,6 +36,7 @@ import { RoomCables } from "./rack/Cables";
 import { PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
 import { PhonePanel } from "./panel/PhonePanel";
 import { boardOf, CorkboardPanel } from "./panel/Corkboard";
+import { TicketsPanel } from "./panel/Tickets";
 import { answerCall } from "../../sim/90-actions/staff";
 import type { Call } from "../../sim/47-staff/oncall";
 import {
@@ -97,7 +98,7 @@ export function World() {
   const link = useRef<string | null>(null);
   const [linkAt, setLinkAt] = useState<Pt | null>(null);
   // The panel open over the room: storage, the post or the power of a fixture.
-  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board" | "mainboard" | "meetme"; title: string; id?: string; call?: Call | null } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board" | "mainboard" | "meetme" | "tickets"; title: string; id?: string; call?: Call | null } | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
 
@@ -370,7 +371,7 @@ export function World() {
     closet: (f) => <Closet f={f} />,
     corkboard: (f) => office ? <ReceptionBoard f={f} {...pinned} /> : <Corkboard f={f} {...pinned} span={2} />,
   };
-  if (loc.space === "hall") hallScene(game, loc, plan, tiles, { w, h }, things, draw, editing);
+  if (loc.space === "hall") hallScene(game, loc, plan, tiles, { w, h }, things, draw, editing, () => setPanel({ kind: "tickets", title: t("hall.tickets.title") }));
   // A tripped room goes dark; its windows and lit bulbs are drawn again over the dark.
   const back: ReactNode[] = [], over: ReactNode[] = [], bright: ReactNode[] = [];
   for (const [id, f] of Object.entries(fx)) {
@@ -432,6 +433,7 @@ export function World() {
       {panel?.kind === "board" && <CorkboardPanel title={panel.title} onClose={() => setPanel(null)}
         spot={(k) => (k === "rack" ? (racks[0] ? { id: racks[0].id, name: racks[0].name } : null) : fx[k] ? { id: k, name: t(artOf(k, fx[k]).label ?? k) } : null)}
         onGlow={(id) => { setHint(id); setTimeout(() => setHint((v) => (v === id ? null : v)), HINT_MS); }} />}
+      {panel?.kind === "tickets" && <TicketsPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "scan" && <ScanPanel title={panel.title} onClose={() => setPanel(null)} />}
       {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)}
         onConnectFrom={(device) => { setFrom({ rack: rackOpen.id, device }); setRackOpen(null); }} />}

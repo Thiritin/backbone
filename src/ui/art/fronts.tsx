@@ -376,14 +376,21 @@ function Gateway(p: FrontProps) {
   const fs = fsz(Math.min(h, 24));
   // A small-office router is a white box standing on a shelf.
   if (model.brand === "AVN") {
-    const bx = w * 0.32, bw = w * 0.4;
+    const n = model.ports.length, bw = w * 0.5, bx = (w - bw) / 2, by = 2.5, bh = h - 6.5, px = bx + bw - 10 - n * 16;
     return (
       <>
         <rect x="0" y={h - 3} width={w} height="2.5" rx="0.8" fill="var(--metal)" stroke="var(--metal-line)" />
-        <rect x={bx} y="1.5" width={bw} height={h - 5} rx="3" fill="oklch(0.93 0.005 90)" stroke="oklch(0.7 0.01 90)" />
-        <Label x={12} y={h / 2 + fs * 0.35} text={name} size={fs} />
-        {model.ports.map((_, i) => <circle key={i} cx={bx + 10 + i * 6} cy={h / 2 - 1} r="1.3" {...ledProps(lights[i], name, i)} />)}
-        <StatusLeds x={bx + bw - 18} y={h / 2 - 1} state={state} blink={blink} fault={p.fault} />
+        <rect x="1" y={h - 3.2} width={w - 2} height="0.8" fill="var(--metal-3)" />
+        <rect x={bx} y={by} width={bw} height={bh} rx="2.5" fill="oklch(0.78 0.008 90)" stroke="oklch(0.6 0.01 90)" strokeWidth="0.6" />
+        <rect x={bx + 1.5} y={by + 1} width={bw - 3} height="1.2" rx="0.6" fill="oklch(0.86 0.006 90)" />
+        <Label x={bx + 8} y={by + bh / 2 + fs * 0.9} text={name} size={fs} />
+        {model.ports.map((_, i) => (
+          <g key={i}>
+            <rect x={px + i * 16} y={by + bh - 8} width="12" height="6" rx="0.8" fill="oklch(0.2 0.004 255)" />
+            <circle cx={px + i * 16 + 6} cy={by + bh - 10} r="1" {...ledProps(lights[i], name, i)} />
+          </g>
+        ))}
+        <StatusLeds x={bx + 8} y={by + 5} state={state} blink={blink} fault={p.fault} />
       </>
     );
   }

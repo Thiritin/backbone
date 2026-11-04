@@ -1,7 +1,7 @@
 import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
 import { exchangeLabel } from "../../../locations/ui";
-import { A, Body, citiesOf, dcsOf, Nav, titleOf, type ProviderProps } from "./ProviderSite";
+import { NoSites, A, Body, citiesOf, dcsOf, Nav, titleOf, type ProviderProps } from "./ProviderSite";
 import type { Design } from "./registry";
 import "./corespite.css";
 
@@ -16,7 +16,7 @@ function CoreSpite(props: ProviderProps) {
         <Nav route={route} go={go} items={look === "early" ? ["home", "sites", "order", "account"] : ["sites", "order", "account"]} labels={labels} />
       </header>
       <main>
-        {route.page === "home" ? <>
+        {!sites.length ? <NoSites p={p} look={look} heroClass="csp-hero" /> : route.page === "home" ? <>
           <section className="csp-hero">
             <h1>{look === "early" ? t("providers.corespite.heroEarly") : t("providers.corespite.heroLate")}</h1>
             <p>{t("providers.corespite.text", { n: sites.length, cities: cities.join(", ") })}</p>

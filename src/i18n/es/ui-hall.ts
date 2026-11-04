@@ -104,4 +104,7 @@ export default {
   "hall.board.tripped": () => `Disparado`,
   "hall.board.on": () => `Encendido`,
   "hall.board.reset": () => `Rearmar`,
+  "hall.tickets.title": () => "Tickets de manos remotas",
+  "hall.tickets.due": () => "Vence",
+  "hall.tickets.late": () => "Vencido",
 } satisfies Dict;

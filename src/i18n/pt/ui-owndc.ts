@@ -60,4 +60,5 @@ export default {
   "event.hallBreakerReset.title": () => "Disjuntor rearmado",
   "event.hallBreakerReset.text": (p) => `O teu técnico rearmou o disjuntor principal de ${p.location}.`,
   "error.queueFull": () => "Fila cheia.",
+  "error.jobStarted": () => "O técnico já começou este trabalho.",
 } satisfies Dict;

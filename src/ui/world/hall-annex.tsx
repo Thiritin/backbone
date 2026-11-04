@@ -2,7 +2,7 @@
 // walls with doorways, power gear, cooling, delivered crates, the NOC lettering, and the trays and light rails over the runs.
 import type { ReactNode } from "react";
 import { t } from "../../i18n/en";
-import { areaAt, footprint, intake, siteAreas, type Area, type OfficePlan, type Tile } from "../../sim/20-world/layout";
+import { areaAt, footprint, hallRoom, intake, siteAreas, type Area, type OfficePlan, type Tile } from "../../sim/20-world/layout";
 import { HALL, isHalle, zoneSpots } from "../../sim/20-world/properties";
 import type { GameState, HallItem, Location } from "../../sim/50-state";
 import { rackAlarms } from "../../sim/60-infra/alarms";
@@ -12,8 +12,9 @@ import { useStore } from "../store";
 import { visitThen } from "./visit";
 import { Prism, WALL } from "./draw";
 import { ART } from "./rooms";
-import { aisleTiles, key, runsOf, wallPieces, type Pt } from "./hall-edit-geom";
-import { AreaFloor, Battery, Containment, CratedRack, Crac, Doorway, Generator, Hatch, NocDesk, NocLettering, StubWall, Switchgear, Transformer, Ups, Vent, WallScreen } from "./hall-art";
+import { aisleTiles, boardRow, key, runsOf, wallPieces, type Pt } from "./hall-edit-geom";
+import { AreaFloor, Battery, Containment, CratedRack, Crac, Doorway, Generator, Hatch, NocDesk, NocLettering, StubWall, Switchgear, Transformer, Ups, Vent, WallScreen, WallTickets } from "./hall-art";
+import { ticketsOf } from "./panel/Tickets";
 
 type Push = (depth: number, node: ReactNode) => void;
 const FLOOR_OF: Record<Area["floor"], "concrete" | "epoxy" | "carpet" | null> = { raised: null, concrete: "concrete", epoxy: "epoxy", office: "carpet", outdoor: null };
@@ -86,7 +87,7 @@ export function crateSpots(H: number, taken: Set<string>, n: number): Pt[] {
   return cand.filter((p) => !taken.has(key(p))).slice(0, n);
 }
 
-export function annexScene(game: GameState, loc: Location, plan: OfficePlan, tiles: Record<string, Tile>, push: Push): { halle: boolean; areas: Area[]; bodies: Set<string> } {
+export function annexScene(game: GameState, loc: Location, plan: OfficePlan, tiles: Record<string, Tile>, push: Push, onTickets?: () => void): { halle: boolean; areas: Area[]; bodies: Set<string> } {
   const at = hallAt(game, loc.id), hall = plan.hall!, areas = at ? siteAreas(game, loc) : [], halle = !!at && isHalle(at.p.buildingId);
   const color = game.company.color, H = areas.find((a) => a.id === "hall")?.rect.h ?? 0;
   for (const a of areas) {
@@ -107,6 +108,9 @@ export function annexScene(game: GameState, loc: Location, plan: OfficePlan, til
     const pts = itemTiles(i, areas, halle);
     if (HALL.items[i.kind].layer === "body") for (const p of pts) bodies.add(key(p));
   }
+  // The ticket board hangs on the free left wall; a full wall leaves the wall screen to open the tickets.
+  const scr = hall.items.find((i) => i.kind === "screen"), room = hallRoom(plan.hall!, plan.capacity ?? 0, !!plan.dock);
+  const boardY = boardRow(room.size.h, [...Object.values(room.fixtures).filter((f) => f.x === 0).map((f) => ({ y: f.y, len: 1 })), ...(scr ? [{ y: scr.y, len: 2 }] : [])], scr?.y ?? null);
   for (const i of hall.items) {
     const pts = itemTiles(i, areas, halle), ex = extent(pts), c = corner(pts), body = HALL.items[i.kind].layer === "body";
     if (i.kind === "transformer" || i.kind === "generator") push(-30, <g key={`h${i.id}`} pointerEvents="none"><Hatch x={c.x} y={c.y} w={ex.w} h={ex.h} /></g>);
@@ -114,8 +118,12 @@ export function annexScene(game: GameState, loc: Location, plan: OfficePlan, til
     const art = <ItemArt i={i} areas={areas} halle={halle} tripped={loc.tripped} alarm={alarm} hall={hall} />;
     // A NOC desk is a PC of the company: pressing it opens the desktop.
     if (i.kind === "nocdesk") push(depth, <g key={`i${i.id}`} className="w-obj" role="button" aria-label={t(ART.nocdesk.label!)} onClick={(e) => { e.stopPropagation(); visitThen(loc.id, seatOf(game, loc.id, "player"), t(ART.nocdesk.label!), () => useStore.getState().setSurface("desktop")); }}>{art}</g>);
+    else if (i.kind === "screen" && onTickets && boardY === null) push(depth, <g key={`i${i.id}`} className="w-obj" role="button" aria-label={t("hall.tickets.title")} onClick={(e) => { e.stopPropagation(); onTickets(); }}>{art}</g>);
     else push(depth, <g key={`i${i.id}`} role="img" aria-label={t(`hall.item.${i.kind}`)} pointerEvents="none"><title>{t(`hall.item.${i.kind}`)}</title>{art}</g>);
   }
+
+  // The ticket board hangs beside the wall screen, on the left wall; pressing it opens the board enlarged.
+  if (onTickets && boardY !== null) push(-38, <g key="tickets" className="w-obj" role="button" aria-label={t("hall.tickets.title")} onClick={(e) => { e.stopPropagation(); onTickets(); }}><WallTickets y={boardY} late={ticketsOf(game, loc.id).map((x) => x.late)} /></g>);
 
   // Delivered racks stand crated by the entry until they are placed.
   const crates = game.racks.filter((r) => r.locationId === loc.id && !r.tile);

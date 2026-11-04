@@ -1,6 +1,6 @@
 import { t } from "../../../../../i18n/en";
 import { Logo } from "../../../../art/logos";
-import { A, Body, citiesOf, dcsOf, Nav, titleOf, type ProviderProps } from "./ProviderSite";
+import { NoSites, A, Body, citiesOf, dcsOf, Nav, titleOf, type ProviderProps } from "./ProviderSite";
 import type { Design } from "./registry";
 import "./digitalreality.css";
 
@@ -17,7 +17,7 @@ function DigitalReality(props: ProviderProps) {
         <Nav route={route} go={go} labels={labels} />
       </header>
       <main>
-        {route.page === "home" ? <>
+        {!sites.length ? <NoSites p={p} look={look} heroClass="dr-hero" /> : route.page === "home" ? <>
           <section className="dr-hero">
             <h1>{look === "early" ? t("providers.digitalreality.heroEarly") : t("providers.digitalreality.heroLate")}</h1>
             <p>{t("providers.digitalreality.text", { cities: cities.length })}</p>

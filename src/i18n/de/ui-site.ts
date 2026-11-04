@@ -5,5 +5,5 @@ export default {
   "world.site.lobby": () => "Empfang",
   "world.site.yard": () => "Hof",
   "world.site.parking": () => "Parkplatz",
-  "world.site.street": () => "Strasse",
+  "world.site.street": () => "Straße",
 } satisfies Dict;
