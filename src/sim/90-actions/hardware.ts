@@ -587,6 +587,7 @@ export function shipStock(s: GameState, deviceIds: string[], toLocationId: strin
   const to = s.locations.find((l) => l.id === toLocationId);
   if (!to) return fail("error.unknownLocation");
   if (to.id === from) return fail("error.sameZone");
+  if (to.readyAt > s.hour) return fail("error.locationNotReady");
   let trip = parcelCost(s, from, to.id, units.length);
   if (self) {
     if (!present(s, from)) return fail("error.notThere");

@@ -3,7 +3,7 @@ import { REGIONS, regionOf } from "../src/sim/20-world/datacenters";
 import { type GameState } from "../src/sim/50-state";
 import { storageStacks } from "../src/sim/60-infra/status";
 import { tick, type SimEvent } from "../src/sim/88-tick/tick";
-import { addLocation, buyRack, closeLocation, sellDevice, shipStock, unmountDevice } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, closeLocation, sellDevice, shipStock as shipRaw, unmountDevice } from "../src/sim/90-actions/hardware";
 import { mountDevice, mountStack } from "./plugged";
 import { buyCart, buyDevice, freeFloor, newGame } from "./fixtures";
 import { deserialize, serialize } from "../src/sim/91-save/save";
@@ -11,6 +11,11 @@ import { drive } from "../src/sim/90-actions/travel";
 import { withServer } from "./fixtures";
 
 const rich = (): GameState => ({ ...withServer(newGame(1)), cash: 100_000 });
+// Rented space is handed over after its lead time; these tests ship as if it were ready.
+const shipStock = (s: GameState, ...a: Parameters<typeof shipRaw> extends [unknown, ...infer R] ? R : never) => {
+  for (const l of s.locations) l.readyAt = 0;
+  return shipRaw(s, ...a);
+};
 const ok = (r: ReturnType<typeof buyDevice>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;

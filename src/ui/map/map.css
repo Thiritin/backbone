@@ -64,3 +64,10 @@
 .wm-panel button:hover { background: var(--hover); }
 .wm-panel button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .wm-add .wm-city text { display: none; }
+
+.wm-zoom { position: absolute; right: 8px; bottom: 28px; display: flex; flex-direction: column; gap: 4px; }
+.wm-zoom button {
+  width: 26px; height: 26px; display: grid; place-items: center; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 6px; background: var(--win); color: var(--text); box-shadow: var(--shadow-pop); cursor: pointer;
+}
+.wm-zoom button:hover { background: var(--hover); color: var(--accent); }

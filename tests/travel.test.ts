@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { type GameState } from "../src/sim/50-state";
-import { addLocation, buyRack, moveServer } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, moveServer, shipStock } from "../src/sim/90-actions/hardware";
 import { useStore } from "../src/ui/store";
 import { useTrip } from "../src/ui/travel/route";
 import { drive, flight, FLIGHT, greatCircleKm, travelTo } from "../src/sim/90-actions/travel";
 import { deserialize, serialize } from "../src/sim/91-save/save";
-import { newGame, withServer } from "./fixtures";
+import { buyDevice, newGame, withServer } from "./fixtures";
 import { COUNTRY, DATACENTERS, listed } from "../src/sim/20-world/datacenters";
 import { CITIES } from "../src/ui/map/world-data";
 import { BASEMENT_PLACE, PLACES } from "../src/sim/20-world/places";
@@ -88,11 +88,37 @@ describe("travel", () => {
   });
 });
 
+describe("unready locations", () => {
+  const rented = () => {
+    const s: GameState = { ...newGame(1), cash: 100_000 };
+    const r = addLocation(s, "interaction-fra", "cage", 4);
+    if (!r.ok) throw new Error(r.error);
+    return { s, loc: r.id! };
+  };
+
+  it("refuses a visit until the space is handed over", () => {
+    const { s, loc } = rented(), cash = s.cash, player = { ...s.player };
+    expect(s.locations.find((l) => l.id === loc)!.readyAt).toBeGreaterThan(s.hour);
+    expect(travelTo(s, loc)).toEqual({ ok: false, error: "error.locationNotReady" });
+    expect([s.cash, s.player]).toEqual([cash, player]);
+    s.hour = s.locations.find((l) => l.id === loc)!.readyAt;
+    expect(travelTo(s, loc).ok).toBe(true);
+  });
+
+  it("takes no shipment by courier or by hand", () => {
+    const { s, loc } = rented();
+    expect(buyDevice(s, "g1-compute", "Dwell", 1, "loc1").ok).toBe(true);
+    const id = s.devices.find((d) => d.store === "loc1")!.id;
+    for (const self of [false, true]) expect(shipStock(s, [id], loc, self)).toEqual({ ok: false, error: "error.locationNotReady" });
+  });
+});
+
 describe("trip mode", () => {
   const at = (dc: string, space: "share" | "cage" = "cage") => {
     const s: GameState = { ...newGame(1), cash: 100_000 };
     const r = addLocation(s, dc, space, space === "cage" ? 4 : 1);
     if (!r.ok) throw new Error(r.error);
+    for (const l of s.locations) l.readyAt = 0;
     return { s, loc: r.id! };
   };
 

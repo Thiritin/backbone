@@ -12,4 +12,6 @@ export default {
   "travel.flight": (p) => `Flug, ${p.hours} h, ${p.fee}`,
   "ledger.fly": (p) => `Flug nach ${p.place}`,
   "ledger.drive": (p) => `Fahrt nach ${p.place}`,
+  "map.zoomIn": () => "Vergrößern",
+  "map.zoomOut": () => "Verkleinern",
 } satisfies Dict;

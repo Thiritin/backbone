@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- The travel map opens on all your places and has zoom buttons, and a location can only be visited once it is ready.
 - The trade office page says when its online service opens again, the DSL line shows as a phone cable, and only European cities are offered.
 - Cooling units in your own hall now cool the racks nearest to them, rows need an aisle, and a moved rack is dark for two hours.
 - The corkboard, wall phone and rack close-up are drawn cleaner: no stray cable loops, one handset on the hook and labels that fit.

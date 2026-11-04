@@ -4,13 +4,14 @@ import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
 import { euro } from "../../sim/00-core/money";
 import { formatClock, MS_PER_HOUR, nowHours } from "../../sim/00-core/time";
-import { datacenterById, listed } from "../../sim/20-world/datacenters";
+import { COUNTRY, datacenterById, listed } from "../../sim/20-world/datacenters";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { drive, travelTo } from "../../sim/90-actions/travel";
 import { cityNamed, LAND, WorldMap, X, XF, Y, type Marker } from "../map/WorldMap";
 import { useStore } from "../store";
 import { placeOf } from "../../sim/20-world/places";
 import { along, arc, driveMs, driveOf, km, loadRoutes, loadStreets, useTrip, type LL, type RouteData, type Trip } from "./route";
+import { readyIn } from "../apps/hw";
 import { Scene, useSkip } from "./Scene";
 import { engineRun, jetRun } from "./sounds";
 import "./travel.css";
@@ -30,9 +31,9 @@ function TravelMap() {
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const here = playerAt(game);
-  const [focus, setFocus] = useState(here.city);
+  const [focus, setFocus] = useState<string | null>(null);
   const [streets, setStreets] = useState("");
-  useEffect(() => { let on = true; void loadStreets(focus).then((l) => on && setStreets(toPath(l))); return () => { on = false; }; }, [focus]);
+  useEffect(() => { let on = true; void loadStreets(focus ?? here.city).then((l) => on && setStreets(toPath(l))); return () => { on = false; }; }, [focus]);
   // Every reachable place as a pin at street zoom; above it, one pin per city with the count.
   const spots = useMemo(() => game.locations.flatMap((l) => {
     const c = cityNamed(l.city), p = placeOf(game, l.id) ?? c, d = l.id === here.id ? null : drive(game, l.id);
@@ -41,7 +42,7 @@ function TravelMap() {
   }), [game, here.id]);
   const markers = useMemo(() => {
     const pin = ({ l, lon, lat, d }: (typeof spots)[number], zoom: Marker["zoom"]): Marker =>
-      ({ id: l.id, lon, lat, label: l.name, zoom, plane: d?.by === "fly", hint: d ? `${l.name}\n${t(d.by === "fly" ? "travel.flight" : "travel.drive", { hours: d.hours, fee: euro(d.fee) })}` : undefined, kind: l.space === "basement" ? "basement" : l.dc ? "datacenter" : "location", provider: l.dc ? datacenterById(l.dc).provider : null, selected: l.id === here.id });
+      ({ id: l.id, lon, lat, label: l.name, zoom, plane: d?.by === "fly", hint: l.readyAt > game.hour ? `${l.name}\n${t("locations-2.readyIn", { time: readyIn(l.readyAt, game.hour) })}` : d ? `${l.name}\n${t(d.by === "fly" ? "travel.flight" : "travel.drive", { hours: d.hours, fee: euro(d.fee) })}` : undefined, kind: l.space === "basement" ? "basement" : l.dc ? "datacenter" : "location", provider: l.dc ? datacenterById(l.dc).provider : null, selected: l.id === here.id });
     const cities = new Map<string, typeof spots>();
     for (const x of spots) cities.set(x.l.city, [...(cities.get(x.l.city) ?? []), x]);
     return [...spots.map((x) => pin(x, "street")), ...[...cities].map(([city, g]): Marker => {
@@ -49,9 +50,12 @@ function TravelMap() {
       return g.length === 1 ? { ...pin(g[0], "region"), id: `region:${g[0].l.id}` }
         : { id: `city:${city}`, lon: c.lon, lat: c.lat, label: cityName(city), zoom: "region", kind: "location", count: g.length, plane: g.some((x) => x.d?.by === "fly"), selected: g.some((x) => x.l.id === here.id) };
     })];
-  }, [spots, here.id]);
-  const inFocus = spots.filter((x) => x.l.city === focus), lons = inFocus.map((x) => x.lon), lats = inFocus.map((x) => x.lat);
-  const initial = inFocus.length ? { west: Math.min(...lons) - 0.03, east: Math.max(...lons) + 0.03, south: Math.min(...lats) - 0.02, north: Math.max(...lats) + 0.02 } : undefined;
+  }, [spots, here.id, game.hour]);
+  // A focused city opens at street level; otherwise the map shows every reachable place.
+  const inFocus = spots.filter((x) => focus ? x.l.city === focus : true), lons = inFocus.map((x) => x.lon), lats = inFocus.map((x) => x.lat);
+  const spread = new Set(inFocus.map((x) => COUNTRY[x.l.city])).size > 1;
+  const padX = focus ? 0.03 : (Math.max(...lons) - Math.min(...lons)) * 0.1 + 0.03, padY = focus ? 0.02 : (Math.max(...lats) - Math.min(...lats)) * 0.1 + 0.02;
+  const initial = !inFocus.length || (!focus && spread) ? undefined : { west: Math.min(...lons) - padX, east: Math.max(...lons) + padX, south: Math.min(...lats) - padY, north: Math.max(...lats) + padY };
 
   useEffect(() => {
     ref.current?.focus();
@@ -75,7 +79,7 @@ function TravelMap() {
 
   return (
     <div ref={ref} className="travel travel-map" role="dialog" aria-label={t("travel.map")} tabIndex={-1}>
-      <WorldMap key={focus} initial={initial} markers={markers} onMarkerClick={pick} minW={0.04} layer={streets && <path className="tr-streets" d={streets} />} />
+      <WorldMap key={focus ?? ""} initial={initial} markers={markers} onMarkerClick={pick} minW={0.04} layer={streets && <path className="tr-streets" d={streets} />} />
       {streets && <div className="travel-osm">{t("travel.osm")}</div>}
       <button className="travel-close" onClick={() => send("close")}>{t("travel.close")}</button>
       {error && <div className="travel-error" role="alert">{error}</div>}

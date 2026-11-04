@@ -42,6 +42,7 @@ export function travelTo(s: GameState, locationId: string): ActionResult {
   if (!loc) return fail("error.noLocation");
   if (s.player.until > s.hour) return fail("error.away");
   if (playerAt(s).id === loc.id) return fail("error.alreadyThere");
+  if (loc.readyAt > s.hour) return fail("error.locationNotReady");
   const d = drive(s, loc.id);
   if (!d) return fail("error.tooFar");
   if (s.cash < d.fee) return fail("error.noCash");

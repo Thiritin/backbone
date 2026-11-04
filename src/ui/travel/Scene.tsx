@@ -210,6 +210,8 @@ function OfficeFront({ door, name, building, night }: { door: number; name: stri
 
 function Datacenter({ door, name, provider, night }: { door: number; name: string; provider: string | null; night: boolean }) {
   const wall = "oklch(0.72 0.006 255)", edge = "oklch(0.62 0.006 255)";
+  // The plate grows with the name (about 4.3 units a letter) up to the width of the wall.
+  const textW = Math.min(Math.ceil(name.length * 4.3), 100), plateW = 15 + textW + 5;
   return (
     <g style={{ filter: `brightness(${dim(night)})` }}>
       <rect x="6" y="66" width="150" height={GROUND - 6 - 66} fill={wall} />
@@ -224,10 +226,10 @@ function Datacenter({ door, name, provider, night }: { door: number; name: strin
           {[1.5, 3.5, 5.5].map((d) => <rect key={d} x={x + 0.5} y={y + d} width="9" height="1" fill="oklch(0.44 0.006 255)" />)}
         </g>
       )))}
-      <rect x="20" y="78" width="66" height="14" fill="oklch(0.96 0.005 255)" />
-      <rect x="20" y="91.4" width="66" height="0.6" fill="oklch(0.8 0.005 255)" />
+      <rect x="20" y="78" width={plateW} height="14" fill="oklch(0.96 0.005 255)" />
+      <rect x="20" y="91.4" width={plateW} height="0.6" fill="oklch(0.8 0.005 255)" />
       {provider && hasMark(provider) ? <g transform="translate(22 80)"><Logo provider={provider} size={10} /></g> : <rect x="22" y="80" width="4" height="10" fill="oklch(0.53 0.19 262)" />}
-      <text x="57" y="88.5" textAnchor="middle" className="tr-plate">{name}</text>
+      <text x="35" y="88.5" className="tr-plate" textLength={textW} lengthAdjust="spacingAndGlyphs">{name}</text>
       <rect x={door - 11} y="110" width="22" height="30" fill="oklch(0.46 0.01 255)" />
       <rect x={door - 9} y="112" width="8" height="28" fill="oklch(0.6 0.05 225)" />
       <rect x={door + 1} y="112" width="8" height="28" fill="oklch(0.6 0.05 225)" />
@@ -252,7 +254,6 @@ function Lamp({ x, on }: { x: number; on: boolean }) {
   const metal = "oklch(0.4 0.01 255)", lit = "oklch(0.48 0.01 255)";
   return (
     <g>
-      {on && <polygon points={`${x - 3},95 ${x + 3},95 ${x + 14},${GROUND} ${x - 20},${GROUND}`} fill="oklch(0.92 0.1 90)" opacity="0.12" />}
       <rect x={x} y="92" width="2" height={GROUND - 92} fill={metal} />
       <rect x={x} y="92" width="0.7" height={GROUND - 92} fill={lit} />
       <rect x={x - 1} y={GROUND - 9} width="4" height="7" rx="1" fill={metal} />
@@ -282,7 +283,6 @@ function Car({ x, open, lights, taxi, night }: { x: number; open: boolean; light
   const edge = taxi ? "oklch(0.72 0.06 86)" : "oklch(0.7 0.012 255)", glass = "oklch(0.62 0.06 235)";
   return (
     <g transform={`translate(${x} 0)`}>
-      {lights && <polygon points={`44,131 80,127 80,${GROUND} 44,135`} fill="oklch(0.95 0.12 95)" opacity="0.16" />}
       <g style={{ filter: `brightness(${dim(night)})` }}>
         {taxi && <><rect x="16" y="115" width="10" height="4.5" rx="1" fill="oklch(0.88 0.14 95)" /><rect x="16" y="118" width="10" height="1.5" fill="oklch(0.76 0.13 90)" /><rect x="18" y="116.2" width="6" height="0.8" fill="oklch(0.45 0.08 85)" /></>}
         <path d="M7,128 L11.5,120.5 Q12,120 13,120 L30,120 Q31,120 31.6,120.6 L37,128 Z" fill={top} />

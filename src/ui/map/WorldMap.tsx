@@ -1,5 +1,6 @@
-import { Warehouse } from "lucide-react";
+import { Minus, Plus, Warehouse } from "lucide-react";
 import { memo, useEffect, useRef, type ReactNode } from "react";
+import { t } from "../../i18n/en";
 import { hasMark, Logo } from "../art/logos";
 import { CABLES, CITIES, COAST, type City } from "./world-data";
 import "./map.css";
@@ -65,6 +66,7 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
   const cityClick = useRef(onCityClick);
   cityClick.current = onCityClick;
   const dragged = useRef(false);
+  const zoomBy = useRef<(f: number) => void>(() => {});
   const pins = markers.map((m) => `${m.id}:${m.label}:${m.lon}:${m.lat}`).join("|");
   useEffect(() => declutter(svg.current!), [pins]);
 
@@ -105,6 +107,8 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
       v.y = wy - py * v.w * a;
       clamp(v);
     };
+
+    zoomBy.current = (f) => { zoom(f, 0.5, 0.5); animate(); };
 
     const ro = new ResizeObserver(([e]) => {
       const { width, height } = e.contentRect;
@@ -205,6 +209,10 @@ export function WorldMap({ initial = EUROPE, markers = [], onMarkerClick, onCity
         ))}
       </svg>
       <div ref={tip} className="wm-tip" hidden />
+      <div className="wm-zoom">
+        <button type="button" aria-label={t("map.zoomIn")} title={t("map.zoomIn")} onClick={() => zoomBy.current(0.5)}><Plus size={14} /></button>
+        <button type="button" aria-label={t("map.zoomOut")} title={t("map.zoomOut")} onClick={() => zoomBy.current(2)}><Minus size={14} /></button>
+      </div>
       {children}
     </div>
   );
