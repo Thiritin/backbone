@@ -319,13 +319,14 @@ const circuitKw = (loc: Location): number => BASEMENT.kw + (loc.extraCircuit ? E
 const officeKw = (s: GameState, loc: Location): number =>
   s.properties.some((p) => p.locationId === loc.id && p.sections.some((x) => x.fit === "servers")) ? circuitKw(loc) : CLOSET_KW;
 
-function computeRackPower(s: GameState, rackId: string): RackPower {
+// demand counts what a tripped room's racks draw once its breaker is reset.
+function computeRackPower(s: GameState, rackId: string, demand = false): RackPower {
   const rack = s.racks.find((r) => r.id === rackId);
   const loc = rack && s.locations.find((l) => l.id === rack.locationId);
-  if (!rack || !loc) return { watts: 0, a: 0, b: 0, limitWatts: 0, tripped: false };
+  if (!rack || !loc) return { watts: 0, a: 0, b: 0, limitWatts: 0, over: false };
   const busy = busyDevices(s);
   let a = 0, b = 0;
-  if (rack.arriveAt === null) {
+  if (rack.arriveAt === null && (demand || !loc.tripped)) {
     for (const d of s.devices) {
       if (d.rackId !== rackId || !d.on || !pluggedIn(d) || chassisOut(s, d)) continue;
       const w = drawWatts(s, d, busy);
@@ -338,12 +339,23 @@ function computeRackPower(s: GameState, rackId: string): RackPower {
   const kw = loc.dc ? datacenterById(loc.dc).kwPerPosition * (rack.highDensity ? 2 : 1) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc);
   // A flat-rate contract's kW replaces the position's limit.
   const limitWatts = rack.flatKw ? Math.round(1000 * rack.flatKw) : Math.round((1000 * kw) / share) + Math.round(1000 * rack.extraKw);
-  return { watts: a + b, a, b, limitWatts, tripped: a > limitWatts || b > limitWatts };
+  return { watts: a + b, a, b, limitWatts, over: a > limitWatts || b > limitWatts };
+}
+
+// A room's draw against its main breaker: the house or office circuit in the basement and an office, each rack
+// position's own limit in a datacenter.
+export function roomPower(s: GameState, loc: Location, demand = false): { watts: number; limitWatts: number; over: boolean } {
+  const racks = s.racks.filter((r) => r.locationId === loc.id).map((r) => (demand ? summed(s, r.id, true) : rackPower(s, r.id)));
+  const watts = racks.reduce((n, p) => n + p.watts, 0);
+  const over = racks.some((p) => p.over);
+  if (loc.dc) return { watts, limitWatts: racks.reduce((n, p) => n + p.limitWatts, 0), over };
+  const limitWatts = 1000 * (loc.space === "office" ? officeKw(s, loc) : circuitKw(loc));
+  return { watts, limitWatts, over: over || watts > limitWatts };
 }
 
 // Link, rack power and lookup results memoised for one sweep. Only for code that reads the infrastructure and never changes it.
 // a and b are the draw on each feed; limitWatts is the limit of one feed.
-type RackPower = { watts: number; a: number; b: number; limitWatts: number; tripped: boolean };
+type RackPower = { watts: number; a: number; b: number; limitWatts: number; over: boolean };
 type Memo = { s: GameState; link?: Map<string, LinkStatus>; power?: Map<string, RackPower>; working?: Map<string, boolean>; powered?: Map<string, boolean>; groups?: Map<string, Map<string, unknown[]>>; other?: Map<string, unknown> };
 let memo: Memo | null = null;
 export function readOnlySweep<T>(s: GameState, fn: () => T): T {
@@ -412,13 +424,13 @@ export function cabledOut(s: GameState, deviceId: string): NetFail | null {
 export const linkStatus = (s: GameState, deviceId: string): LinkStatus => memoised(s, deviceId, (m) => (m.link ??= new Map()), () => computeLinkStatus(s, deviceId));
 // A server's CPU load asks whether its rack has power while the rack's draw is being summed; inside that sum the rack counts as untripped.
 const summing = new Set<string>();
+const summed = (s: GameState, rackId: string, demand = false): RackPower => {
+  summing.add(rackId);
+  try { return computeRackPower(s, rackId, demand); } finally { summing.delete(rackId); }
+};
 export const rackPower = (s: GameState, rackId: string): RackPower =>
-  summing.has(rackId) ? { watts: 0, a: 0, b: 0, limitWatts: 0, tripped: false } : memoised(s, rackId, (m) => (m.power ??= new Map()), () => {
-    summing.add(rackId);
-    try { return computeRackPower(s, rackId); } finally { summing.delete(rackId); }
-  });
+  summing.has(rackId) ? { watts: 0, a: 0, b: 0, limitWatts: 0, over: false } : memoised(s, rackId, (m) => (m.power ??= new Map()), () => summed(s, rackId));
 
-// Stored devices, devices in a moving or tripped rack and devices in a location that is not ready have no power.
 export const EXTRA_CIRCUIT_KW = 3;
 
 export const isDrive = (c: Component): boolean => c.kind === "hdd" || c.kind === "ssd" || c.kind === "nvme";
@@ -543,15 +555,16 @@ function computeWorking(s: GameState, deviceId: string): boolean {
 export const osInstalling = (s: GameState, d: Device): boolean => !!d.os && d.os.installedAt > nowHours(s);
 export const takesShutdown = (s: GameState, d: Device): boolean => working(s, d.id) || (d.on && !halting(d) && osInstalling(s, d) && powered(s, d.id));
 
+// Stored devices, devices in a moving rack and devices in a tripped room or a location that is not ready have no power.
 export const powered = (s: GameState, deviceId: string): boolean => flagMemo(s, deviceId, (m) => (m.powered ??= new Map()), () => computePowered(s, deviceId));
 function computePowered(s: GameState, deviceId: string): boolean {
   const d = s.devices.find((x) => x.id === deviceId);
   const loc = d && locationOf(s, d);
-  if (!d || !loc || loc.readyAt > s.hour || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
+  if (!d || !loc || loc.readyAt > s.hour || loc.tripped || (s.ops.dark[loc.id] ?? 0) > s.hour) return false;
   if (d.chassisId) return !chassisOut(s, d) && powered(s, d.chassisId);
   if (!d.rackId) return true;
   const rack = s.racks.find((r) => r.id === d.rackId)!;
-  return rack.arriveAt === null && pluggedIn(d) && !rackPower(s, rack.id).tripped;
+  return rack.arriveAt === null && pluggedIn(d);
 }
 
 // A device switched on with every power cord pulled is as safe to open as one switched off.

@@ -178,6 +178,7 @@ export default {
   "locations-2.front": () => "Avant",
   "locations-2.back": () => "Arrière",
   "locations-2.tripped": () => "Déclenché",
+  "locations-2.resetBreaker": () => "Réarmer le disjoncteur",
   "locations-2.arrives": (p) => `Arrivée le ${p.day}`,
   "locations-2.location": () => "Site",
   "locations-2.position": () => "Emplacement",

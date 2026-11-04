@@ -178,6 +178,7 @@ export default {
   "locations-2.front": () => "Frente",
   "locations-2.back": () => "Trás",
   "locations-2.tripped": () => "Disparado",
+  "locations-2.resetBreaker": () => "Rearmar o disjuntor",
   "locations-2.arrives": (p) => `Chega ${p.day}`,
   "locations-2.location": () => "Local",
   "locations-2.position": () => "Posição",

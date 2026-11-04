@@ -60,6 +60,8 @@
 .wp-screw { fill: oklch(0.6 0.01 250); }
 .wp-lcd-num { font: 600 22px var(--font-ui); font-variant-numeric: tabular-nums; text-anchor: end; fill: oklch(0.85 0.12 140); }
 .wp-lcd-num.bad { fill: oklch(0.7 0.18 27); }
+.wp-lcd-msg { font-size: 11px; }
+.wp-trip-flag { fill: oklch(0.6 0.22 27); stroke: oklch(0.98 0 0); stroke-width: 1.5; }
 [data-pdu] .wp-lcd-num { font-size: 15px; }
 .wp-plate { fill: oklch(0.88 0.01 90); }
 .wp-plate-txt { font: 600 10px var(--font-ui); font-variant-numeric: tabular-nums; fill: oklch(0.3 0.01 255); }

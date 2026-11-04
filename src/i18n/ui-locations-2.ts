@@ -178,6 +178,7 @@ export default {
   "locations-2.front": () => "Front",
   "locations-2.back": () => "Back",
   "locations-2.tripped": () => "Tripped",
+  "locations-2.resetBreaker": () => "Reset breaker",
   "locations-2.arrives": (p) => `Arrives ${p.day}`,
   "locations-2.location": () => "Location",
   "locations-2.position": () => "Position",

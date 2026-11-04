@@ -37,7 +37,7 @@ export function locationPower(g: GameState, locId: string) {
   const loc = g.locations.find((l) => l.id === locId)!, dc = dcOf(loc);
   const racks = g.racks.filter((r) => r.locationId === locId).map((r) => rackPower(g, r.id));
   const limit = loc.space === "share" || loc.space === "office" ? racks.reduce((n, p) => n + p.limitWatts, 0) : 1000 * (dc ? loc.positions * dc.kwPerPosition : BASEMENT.kw);
-  return { watts: racks.reduce((n, p) => n + p.watts, 0), limit, tripped: racks.some((p) => p.tripped) };
+  return { watts: racks.reduce((n, p) => n + p.watts, 0), limit, tripped: loc.tripped };
 }
 
 export const exchangeLabel = (dc: Datacenter | null) => (!dc?.exchange ? t("locations-2.none") : t("locations-2.exchangeAt", { name: dc.exchange.name, onSite: dc.exchange.onSite ? 1 : 0 }));

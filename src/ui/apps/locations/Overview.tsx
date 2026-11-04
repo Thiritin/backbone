@@ -9,7 +9,7 @@ import { slotTime } from "./TechButton";
 import { backupLabel, dcOf, exchangeLabel, Facts, feedsLabel, locationPower, PowerMeter, providerOf, RoomTemp, spaceLabel, spaceSize, Zone } from "./ui";
 import { Hourglass } from "lucide-react";
 import { datacenterById, homeLineById } from "../../../sim/20-world/datacenters";
-import { leaveWaitlist } from "../../../sim/90-actions/hardware";
+import { leaveWaitlist, resetBreaker } from "../../../sim/90-actions/hardware";
 import { orderUrl, providerUrl } from "../../../sim/80-business/browser";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -56,7 +56,7 @@ export function Waitlist({ game }: { game: GameState }) {
 function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; onOpen: () => void }) {
   const dc = dcOf(loc), power = locationPower(game, loc.id), used = loc.positions - freePositions(game, loc.id).length;
   const arriving = game.racks.filter((r) => r.locationId === loc.id && r.arriveAt !== null);
-  const openApp = useStore((s) => s.openApp);
+  const openApp = useStore((s) => s.openApp), act = useStore((s) => s.act);
   return (
     <div className={`loc-card loc-site${loc.readyAt > game.hour ? " loc-pending" : ""}`} onClick={onOpen}>
       <div className="loc-card-h">
@@ -74,7 +74,10 @@ function LocationCard({ game, loc, onOpen }: { game: GameState; loc: Location; o
         [t("locations-2.carriers"), dc ? <span className="num">{dc.carriers}</span> : `${homeLineById(game.homeLine.id).isp} ${homeLineById(game.homeLine.id).name}`],
         [t("locations-2.exchange"), exchangeLabel(dc)],
       ]} />
-      <div className="loc-row"><span className="loc-k">{t("locations-2.power")}</span><PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} /></div>
+      <div className="loc-row"><span className="loc-k">{t("locations-2.power")}</span>
+        {loc.tripped && <span className="pill bad">{t("locations-2.tripped")}</span>}
+        {loc.tripped && !loc.dc && <button className="btn" data-reset-breaker="" onClick={(e) => { e.stopPropagation(); act(resetBreaker, loc.id); }}>{t("locations-2.resetBreaker")}</button>}
+        <PowerMeter watts={power.watts} limit={power.limit} tripped={power.tripped} /></div>
       <div className="loc-row"><span className="loc-k">{t("locations-2.temperature")}</span><span className="grow" /><RoomTemp g={game} loc={loc} /></div>
       {arriving.map((r) => <div key={r.id} className="loc-row"><span className="loc-k">{t("locations-2.inTransit")}</span>{r.name}<span className="grow" /><span className="num">{day(r.arriveAt!)}</span></div>)}
       {game.handsJobs.filter((j) => j.locationId === loc.id).map((j) => <div key={j.id} className="loc-row"><span className="loc-k">{t(`locations-2.job.${j.action}`)}</span>{game.devices.filter((d) => d.id === j.deviceId).map(devName)}<span className="grow" /><span className="num">{j.self ? t("locations-2.selfOnArrival") : slotTime(game.hour, j.dueAt)}</span></div>)}

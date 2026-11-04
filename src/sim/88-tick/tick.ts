@@ -51,7 +51,7 @@ import { importTick } from "../42-mail/imports";
 import { deliverMail } from "../42-mail/sources";
 import { pearMailTick } from "../43-pear-mail/check";
 import { computeTick, pinMembers } from "../60-infra/cluster";
-import { haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
+import { breakerTick, haltTick, powerTick, pushLog, tripTick } from "../60-infra/power";
 import { loadSaved } from "../60-infra/switches";
 import { installNetTick } from "../60-infra/oob";
 import { moduleBills, panelOpsTick } from "../60-infra/panel-services";
@@ -303,7 +303,7 @@ export function tick(state: GameState): SimEvent[] {
   haltTick(state);
   installNetTick(state);
   panelOpsTick(state);
-  const events: SimEvent[] = [...tripTick(state), ...thermalTick(state, minutes)];
+  const events: SimEvent[] = [...tripTick(state), ...breakerTick(state), ...thermalTick(state, minutes)];
   // The store shallow-copies the state before ticking, so arrays and their items are replaced rather than changed.
   if (state.racks.some((r) => r.arriveAt !== null && r.arriveAt <= state.hour)) {
     state.racks = state.racks.map((r) => {
@@ -489,7 +489,7 @@ export function tickMinute(state: GameState): SimEvent[] {
   haltTick(state);
   installNetTick(state);
   panelOpsTick(state);
-  const tripped = tripTick(state);
+  const tripped = [...tripTick(state), ...breakerTick(state)];
   tanTick(state);
   return [...tripped, ...thermalTick(state), ...workTick(state), ...deliverLicences(state), ...pearMailTick(state), ...phoneTick(state)];
 }

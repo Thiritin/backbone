@@ -20,7 +20,7 @@ const book = (s: GameState, category: string, key: string, params: LedgerEntry["
 const placeOffice = (s: GameState, p: Property, readyAt: number) => {
   if (p.locationId) return;
   const city = s.locations[0]?.city ?? "Frankfurt", id = `loc${s.nextId++}`;
-  s.locations = [...s.locations, { id, dc: null, city, az: nextAz(s.locations, city), name: p.building.name, space: "office", positions: 0, readyAt, extraCircuit: false }];
+  s.locations = [...s.locations, { id, dc: null, city, az: nextAz(s.locations, city), name: p.building.name, space: "office", positions: 0, readyAt, extraCircuit: false, tripped: false }];
   p.locationId = id;
 };
 

@@ -194,7 +194,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
           <>
             <div className="loc-insp-h" onContextMenu={menuOn(rackMenu)}>
               <h2>{rack.name}</h2>
-              {power.tripped && <span className="pill bad">{t("locations-2.tripped")}</span>}
+              {loc.tripped && <span className="pill bad">{t("locations-2.tripped")}</span>}
               {rack.arriveAt !== null && <span className="pill"><Truck />{t("locations-2.arrives", { day: day(rack.arriveAt) })}</span>}
               <span className="grow" />
               {!rack.provided && <More label={rack.name} entries={rackMenu} />}
@@ -203,7 +203,7 @@ export function RackView({ game, rack, device, onDevice, onMoved }: { game: Game
               <Facts rows={[[t("locations-2.location"), loc.name], [t("locations-2.position"), <span className="num">{rack.position}</span>], [t("locations-2.used"), <span className="num">{rack.model === "shelf" ? `${t("rack.shelf")}, ${used} / ${units}` : `${used} / ${units} U`}</span>], ...(rack.provided ? [[t("locations-2.owner"), t("locations-2.provided")]] as [string, string][] : [[t("locations-2.paid"), <span className="num">{euro(rack.price)}</span>]] as [string, ReactNode][])]} />
             </div>
             <div className="loc-card">
-              <div className="loc-card-h"><h3><Plug />{t("locations-2.power")}</h3><span className="grow" /><PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} /></div>
+              <div className="loc-card-h"><h3><Plug />{t("locations-2.power")}</h3><span className="grow" /><PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.over} /></div>
               {rack.feedB && (["a", "b"] as const).map((f) => (
                 <div key={f} className="loc-row"><span className="loc-k">{t("locations-1.feed", { feed: f.toUpperCase() })}</span><span className="grow" /><PowerMeter watts={power[f]} limit={power.limitWatts} tripped={power[f] > power.limitWatts} /></div>
               ))}

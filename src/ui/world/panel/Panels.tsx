@@ -5,7 +5,7 @@ import { modelById } from "../../../sim/10-catalog/hardware";
 import { atDesk } from "../../../sim/40-support/letters";
 import type { Device, Location } from "../../../sim/50-state";
 import { pickUp } from "../../../sim/90-actions/carry";
-import { setPower } from "../../../sim/90-actions/hardware";
+import { resetBreaker, setPower } from "../../../sim/90-actions/hardware";
 import { readLetter } from "../../../sim/90-actions/paperwork";
 import { scanLetter } from "../../../sim/90-actions/post";
 import { Isometric } from "../../art/Isometric";
@@ -137,25 +137,29 @@ export function ScanPanel({ title, onClose }: { title: string; onClose: () => vo
 
 // The fuse box with its door open, or a datacenter PDU; the numbers sit on the meter's face and the PDU's display.
 export function PowerPanel({ loc, title, kind, onClose }: Props & { title: string; kind: string }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act), power = locationPower(game, loc.id);
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), attempt = useStore((s) => s.attempt), power = locationPower(game, loc.id);
   const units = game.devices.filter((d) => d.rackId && game.racks.some((r) => r.id === d.rackId && r.locationId === loc.id) && !d.chassisId);
-  const live = units.some((d) => d.on);
-  // The main switch is the pulled plug for every unit in the room, and switching it back on boots them all.
-  const main = () => units.forEach((d) => act(setPower, d.id, !live));
+  const live = units.some((d) => d.on), [refused, setRefused] = useState<string | null>(null);
+  // The main switch is the pulled plug for every unit in the room, and switching it back on boots them all; a tripped one is reset.
+  const main = () => {
+    if (!loc.tripped) return units.forEach((d) => act(setPower, d.id, !live));
+    const r = attempt(resetBreaker, loc.id);
+    setRefused(r.ok ? null : r.error);
+  };
   return (
     <Slab title={title} onClose={onClose} data={{ "power-panel": loc.id }}>
       <div className="wp-scene">
         {kind === "pdu"
           ? <PduFace watts={power.watts} limit={power.limit} lit={units.filter((d) => d.on).length} tripped={power.tripped} />
-          : <FuseFace watts={power.watts} limit={power.limit} live={live} tripped={power.tripped} onMain={main} />}
+          : <FuseFace watts={power.watts} limit={power.limit} live={live && !loc.tripped} tripped={power.tripped} refused={loc.tripped ? refused : null} onMain={main} />}
       </div>
     </Slab>
   );
 }
 
 const ROWS = 3, PER_ROW = 8;
-function FuseFace({ watts, limit, live, tripped, onMain }: { watts: number; limit: number; live: boolean; tripped: boolean; onMain: () => void }) {
-  const W = 300, H = 440, x0 = 30, y0 = 50, turn = watts > 0 ? Math.min(20, 4000 / watts) : 0;
+function FuseFace({ watts, limit, live, tripped, refused, onMain }: { watts: number; limit: number; live: boolean; tripped: boolean; refused: string | null; onMain: () => void }) {
+  const W = 300, H = 440, x0 = 30, y0 = 50, turn = watts > 0 && !tripped ? Math.min(20, 4000 / watts) : 0;
   const lever = (x: number, y: number, up: boolean, wide = false, children?: ReactNode) => (
     <g transform={`translate(${x} ${y})`}>
       <rect className="wp-brk" width={wide ? 44 : 22} height="54" />
@@ -180,7 +184,9 @@ function FuseFace({ watts, limit, live, tripped, onMain }: { watts: number; limi
       {/* The meter: a counter, the turning disc behind its window and the rating plate. */}
       <rect className="w-meter" x={x0} y="24" width={W - 2 * x0} height={y0 + 80} />
       <rect className="w-lcd" x={x0 + 16} y="38" width={W - 2 * x0 - 32} height="34" />
-      <text className={`wp-lcd-num${tripped ? " bad" : ""}`} x={W - x0 - 24} y="63">{`${num(watts)} W`}</text>
+      {refused
+        ? <text className="wp-lcd-num wp-lcd-msg bad" x={W - x0 - 22} y="59" textLength={W - 2 * x0 - 44} lengthAdjust="spacingAndGlyphs" data-refused="">{t(refused)}</text>
+        : <text className={`wp-lcd-num${tripped ? " bad" : ""}`} x={W - x0 - 24} y="63">{`${num(tripped ? 0 : watts)} W`}</text>}
       <rect className="w-disc-win" x={x0 + 16} y="84" width={W - 2 * x0 - 32} height="18" />
       <rect className="w-disc" x={x0 + 18} y="90" width={W - 2 * x0 - 36} height="6" />
       {turn > 0 && <rect className="w-disc-mark wp-disc-mark" x={x0 + 18} y="89" width="8" height="8" style={{ animationDuration: `${turn}s` }} />}
@@ -197,6 +203,7 @@ function FuseFace({ watts, limit, live, tripped, onMain }: { watts: number; limi
                 <g key={k} className="wp-hit" role="switch" aria-checked={live} aria-label={t("world.mainSwitch")} tabIndex={0} data-main={live ? "on" : "off"}
                   onClick={onMain} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onMain(); } }}>
                   {lever(x0 + 2, y, live, true)}
+                  {tripped && <rect className="wp-trip-flag" x={x0 + 2 + 31} y={y + 30} width="6" height="8" data-tripped="" />}
                 </g>
               ) : null;
               return <g key={k}>{lever(x0 + 2 + k * 30, y, true)}</g>;

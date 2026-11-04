@@ -44,8 +44,8 @@ function RackTile({ game, rack, onOpen }: { game: GameState; rack: Rack; onOpen:
       <span className="num loc-tile-sub">{rack.model === "shelf" ? `${t("rack.shelf")}, ${used} / ${units}` : `${used} / ${units} U`}</span>
       {rack.arriveAt !== null
         ? <span className="pill"><Truck />{t("locations-1.arrives")} <span className="num">{day(rack.arriveAt)}</span></span>
-        : <PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.tripped} />}
-      {power.tripped && <span className="pill bad">{t("locations-1.tripped")}</span>}
+        : <PowerMeter watts={power.watts} limit={power.limitWatts} tripped={power.over} />}
+      {game.locations.find((l) => l.id === rack.locationId)?.tripped && <span className="pill bad">{t("locations-1.tripped")}</span>}
     </button>
   );
 }
