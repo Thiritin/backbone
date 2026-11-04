@@ -34,6 +34,8 @@ export default {
   "error.wrongRoom": () => "Falscher Raum.",
   "error.blocked": () => "Blockiert.",
   "error.noPath": () => "Kein Durchgang.",
+  "error.noAccess": () => "Kein Wartungszugang.",
+  "hall.unmaintained": () => "Ungewartet",
   "error.hallFull": () => "Halle voll.",
   "error.limit": () => "Limit erreicht.",
   "error.notYet": () => "Noch nicht verfügbar.",

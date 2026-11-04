@@ -34,6 +34,8 @@ export default {
   "error.wrongRoom": () => "Sala incorrecta.",
   "error.blocked": () => "Bloqueado.",
   "error.noPath": () => "Sin paso.",
+  "error.noAccess": () => "Sin acceso de mantenimiento.",
+  "hall.unmaintained": () => "Sin mantenimiento",
   "error.hallFull": () => "Sala llena.",
   "error.limit": () => "Límite alcanzado.",
   "error.notYet": () => "Aún no disponible.",

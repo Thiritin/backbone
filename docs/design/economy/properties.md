@@ -59,7 +59,7 @@ The NOC room costs €30,000 once and is built instantly below the hall. A cage 
 | Item | One-time | Monthly | What it does |
 | --- | --- | --- | --- |
 | Cooling unit | €18,000 | €150 | Cools the 8 nearest positions (40 kW); one fits per two-tile slot on the far wall and the right wall; removing one refunds 50%, moving one is free |
-| Extra transformer | €80,000 | €400 | Adds 100 kW (300 kW in a Halle); one per hall floor, bought in the transformer room |
+| Extra transformer | €80,000 | €400 | Adds 100 kW (300 kW in a Halle); one per hall floor, bought in the transformer room; half the kW while it has no maintenance access (`HALL.service.derate`) |
 | Feed B | €25,000 | €200 | Opens a second feed on every rack in the hall |
 | UPS | €40,000 | €300 | Bridges a grid outage for minutes |
 | Generator | €60,000 | €500 | Carries a grid outage with the UPS; needs the UPS |

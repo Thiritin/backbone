@@ -8,7 +8,7 @@ import { cardWatts } from "../10-catalog/gpu";
 import { partPrice } from "../10-catalog/parts";
 import { BASEMENT, capacityAt, datacenterById, EXTRA_STEP_KW, extraStepPrice, homeLineById, inUs, MOVE, PARCEL, rackUnits, regionOf, SHARE_RACKS, spacePrice, type Datacenter } from "../20-world/datacenters";
 import { CITY_TLD } from "../30-customers/domains";
-import { CLOSET_KW, HALL, hallCapacity, hallCustomerKw, hallKw, hallOf, hallSpots } from "../20-world/properties";
+import { CLOSET_KW, HALL, hallCapacity, hallCustomerKw, hallKw, access, hallOf, hallSpots } from "../20-world/properties";
 import { activeServices, type Service } from "../30-customers/customers";
 import { serverOsById } from "../10-catalog/server-os";
 import { egress, ingress, MGMT_VLAN, routesTo } from "./switches";
@@ -354,7 +354,7 @@ export function roomPower(s: GameState, loc: Location, demand = false): { watts:
   const over = racks.some((p) => p.over);
   if (loc.dc) return { watts, limitWatts: racks.reduce((n, p) => n + p.limitWatts, 0), over };
   const prop = loc.space === "hall" && s.properties.find((p) => p.hall?.locationId === loc.id);
-  const limitWatts = 1000 * (prop ? hallKw(prop) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc));
+  const limitWatts = 1000 * (prop ? hallKw(prop, access.cut(s, loc.id)) : loc.space === "office" ? officeKw(s, loc) : circuitKw(loc));
   return { watts, limitWatts, over: over || watts > limitWatts };
 }
 

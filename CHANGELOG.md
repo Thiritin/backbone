@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-04
 
+- Equipment in your own hall needs a free tile in front of it and a way to walk there, and a transformer that technicians cannot reach delivers half its power.
 - Racks and equipment in your own hall now stand on any free floor tile and turn in four directions, each rack keeps the tile in front of it free, and the hall gets a transformer room and a battery room on its right side.
 - Every room now has a coloured band around its walls in your company colour, and the NOC room shows your company logo.
 - Rain, snow and clouds now stay behind the glass of every window.

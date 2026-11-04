@@ -71,6 +71,8 @@ export const HALL = {
   air: { reach: 12, base: 0.7, fedGain: 0.2, containedGain: 0.1, recircLoss: 0.2, min: 0.5, roomC: 4, perKwC: 1, recircC: 6, blockedC: 3, containedC: 2, hotDelta: 6, pueBase: 1.2, pueSlope: 0.5 },
   noc: { price: 30_000, w: 8, d: 5, resetMin: 30, resetMinScreens: 10 },
   annex: { w: 6 },
+  // Service front: gear of largeTiles or more tiles keeps largeDepth tiles clear in front, the rest one. Gear without a way to its front gives derate of its capacity.
+  service: { largeTiles: 4, largeDepth: 2, derate: 0.5 },
   generatorStartMin: 1,
 };
 const itemKw = (p: Property, kind: HallItemKind): number => {
@@ -78,7 +80,10 @@ const itemKw = (p: Property, kind: HallItemKind): number => {
   return typeof k === "object" ? k[isHalle(p.buildingId) ? "halle" : "office"] : (k ?? 0);
 };
 // The kW a hall's placed transformers give: its main breaker limit.
-export const hallKw = (p: Property): number => (p.hall?.items ?? []).filter((i) => i.kind === "transformer").length * itemKw(p, "transformer");
+// Ids of a hall's items that have no maintenance access. Bound by 90-actions/hall, which cannot be imported from here without a cycle.
+export const access = { cut: (_s: GameState, _locationId: string): ReadonlySet<string> => new Set<string>() };
+// An unmaintained transformer (ids in `cut`) gives only HALL.service.derate of its kW.
+export const hallKw = (p: Property, cut: ReadonlySet<string> = new Set()): number => (p.hall?.items ?? []).filter((i) => i.kind === "transformer").reduce((n, i) => n + itemKw(p, "transformer") * (cut.has(i.id) ? HALL.service.derate : 1), 0);
 // Monthly cost of the items paid for; an item the refit placed costs nothing.
 export const hallMonthly = (hall: Hall): number => hall.items.reduce((n, i) => n + (i.price > 0 ? HALL.items[i.kind].monthly : 0), 0);
 const tileKey = (t: { x: number; y: number }) => `${t.x},${t.y}`;

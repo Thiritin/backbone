@@ -5,7 +5,7 @@ import { euro } from "../00-core/money";
 import { hashRng, rand } from "../00-core/rng";
 import { carriersAt, EXCHANGES, exchangeAt, type Carrier } from "../10-catalog/network";
 import { DATACENTERS, RACK_MODELS } from "../20-world/datacenters";
-import { customerSpots, HALL, hallCapacity, hallKw, hallSpots, isHalle, stepTile, zoneSpots } from "../20-world/properties";
+import { access, customerSpots, HALL, hallCapacity, hallKw, hallSpots, isHalle, stepTile, zoneSpots } from "../20-world/properties";
 import { cents } from "../45-billing/billing";
 import type { AreaId, GameState, Hall, HallItem, HallItemKind, HallZone, Location, Property, Rack, RackModel } from "../50-state";
 import { yearOf } from "../00-core/time";
@@ -73,11 +73,12 @@ function itemPts(c: Ctx, i: HallItem): Pt[] {
   return footprint(i.kind, i, c.halle, a.rect);
 }
 
-// The tiles one step in front of an object's footprint, as wide as the footprint.
+// The tiles in front of an object's footprint, as wide as the footprint and one deep, two for large gear.
 function frontOf(pts: Pt[], facing: Facing): Pt[] {
+  const depth = pts.length >= HALL.service.largeTiles ? HALL.service.largeDepth : 1;
   const edge = facing === "s" ? Math.max(...pts.map((p) => p.y)) : facing === "n" ? Math.min(...pts.map((p) => p.y)) : facing === "e" ? Math.max(...pts.map((p) => p.x)) : Math.min(...pts.map((p) => p.x));
   const along = facing === "n" || facing === "s";
-  return pts.filter((p) => (along ? p.y : p.x) === edge).map((p) => stepTile(p, facing, 1));
+  return pts.filter((p) => (along ? p.y : p.x) === edge).flatMap((p) => Array.from({ length: depth }, (_, k) => stepTile(p, facing, k + 1)));
 }
 
 interface Body { ref: string; pts: Pt[]; front: Pt[]; kind: string }
@@ -127,6 +128,28 @@ export function hallPath(s: GameState, locationId: string, from: Pt, to: Pt): Pt
   return path;
 }
 
+// Bodies whose service front is blocked, outside their area or cut off from the entry door: rule 4 failures first, then rule 5.
+function frontErrors(c: Ctx, bodies: Body[], solid: Set<string>): { body: Body; err: LayoutError }[] {
+  const seen = walk(c, solid, c.entry), out: { body: Body; err: LayoutError }[] = [];
+  for (const rule of [4, 5]) for (const body of bodies) for (const f of body.front) {
+    const a = areaAt(c.areas, body.pts[0]), fa = areaAt(c.areas, f);
+    const key = !fa || fa !== a || solid.has(tileKey(f)) ? "error.blocked" : !seen.has(tileKey(f)) ? "error.noPath" : null;
+    if (key && (key === "error.blocked") === (rule === 4)) out.push({ body, err: { key: body.ref.startsWith("item:") ? "error.noAccess" : key, at: f } });
+  }
+  return out;
+}
+
+// The racks and items that have no service front or no way to it, as "rack:<id>" and "item:<id>". Old crammed halls load with these.
+export function unmaintained(s: GameState, locationId: string): string[] {
+  const h = hallAt(s, locationId);
+  if (!h) return [];
+  const l = currentLayout(s, h), c = ctxOf(h, l.noc), bodies = bodiesOf(c, l), bodyAt = new Set(bodies.flatMap((b) => b.pts.map(tileKey)));
+  const solid = new Set([...bodyAt, ...c.fixed].filter((k) => !isPassageOrInside(c, k)));
+  return [...new Set(frontErrors(c, bodies, solid).map((e) => e.body.ref).filter((r) => r !== "locked"))];
+}
+
+access.cut = (s, id) => new Set(unmaintained(s, id).map((r) => r.slice(5)));
+
 // Decision 3, rules 1 to 7, over a whole candidate layout: first failure wins.
 export function hallLayoutError(s: GameState, locationId: string, layout?: Layout): LayoutError | null {
   const h = hallAt(s, locationId);
@@ -166,15 +189,9 @@ export function hallLayoutError(s: GameState, locationId: string, layout?: Layou
       stacked.add(k);
     }
   }
-  // 4. Clearance: the tile in front of every rack, zone tile and body item stays inside its area and free of bodies.
-  const solid = new Set([...bodyAt, ...c.fixed].filter((k) => !isPassageOrInside(c, k)));
-  for (const b of bodies) for (const f of b.front) {
-    const a = areaAt(c.areas, b.pts[0]), fa = areaAt(c.areas, f);
-    if (!fa || fa !== a || solid.has(tileKey(f))) return err("error.blocked", f);
-  }
-  // 5. Every clearance tile has a way to the entry door.
-  const seen = walk(c, solid, c.entry);
-  for (const b of bodies) for (const f of b.front) if (!seen.has(tileKey(f))) return err("error.noPath", f);
+  // 4 and 5. Every service front is free and joined to the entry door.
+  const bad = frontErrors(c, bodies, new Set([...bodyAt, ...c.fixed].filter((k) => !isPassageOrInside(c, k))));
+  if (bad.length) return bad[0].err;
   // 6. Rack spots.
   if (hallSpots(h.hall, l.racks, l.zones) > hallCapacity(h.p)) return err("error.hallFull", null);
   // 7. Limits.
