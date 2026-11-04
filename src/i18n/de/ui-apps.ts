@@ -316,7 +316,7 @@ export default {
   "preview.paid": () => "Bezahlt am",
   "preview.vat": (p) => `Enthaltene USt. ${p.rate}: ${p.amount}`,
   "preview.none": () => "Kein Dokument geöffnet",
-  "apps.about.Chat": () => "Öffnet den Community-Chat von Backbone, in dem du mit anderen Spielern und dem Entwickler sprechen kannst.",
+  "apps.about.Chat": () => "Öffnet den Community-Chat von raid0, in dem du mit anderen Spielern und dem Entwickler sprechen kannst.",
   "weather.sky.sun": () => "Sonnig",
   "weather.sky.partly": () => "Teils bewölkt",
   "weather.sky.cloud": () => "Bewölkt",

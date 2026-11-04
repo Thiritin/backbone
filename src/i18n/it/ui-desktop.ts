@@ -71,14 +71,14 @@ export default {
   "desktop.changes.more": (p) => `${p.n} ${Number(p.n) === 1 ? "modifica in più" : "modifiche in più"}`,
 
   "desktop.early.title": () => "Accesso anticipato",
-  "desktop.early.text": () => "Backbone è in accesso anticipato e non è ancora finito. Aspettati bug, funzioni mancanti e cambi di bilanciamento. Lascia il tuo feedback su GitHub o Discord.",
+  "desktop.early.text": () => "raid0 è in accesso anticipato e non è ancora finito. Aspettati bug, funzioni mancanti e cambi di bilanciamento. Lascia il tuo feedback su GitHub o Discord.",
 
   "desktop.over.title": (p) => `${p.company} è fallita`,
   "desktop.over.text": (p) => `L'azienda è diventata insolvente il ${p.day} con un saldo di ${p.cash}.`,
   "desktop.over.load": () => "Carica esportazione",
 
-  "desktop.mobile.title": () => "Backbone è un gioco per computer",
-  "desktop.mobile.text": () => "Backbone non si può giocare su telefono o tablet. Aprilo su un computer per giocare.",
+  "desktop.mobile.title": () => "raid0 è un gioco per computer",
+  "desktop.mobile.text": () => "raid0 non si può giocare su telefono o tablet. Aprilo su un computer per giocare.",
   "desktop.mobile.discord": () => "Unisciti al Discord",
 
   "desktop.icon.newNote": () => "Nuova nota",
@@ -93,8 +93,8 @@ export default {
 
   "desktop.menu.settings": () => "Impostazioni…",
   "desktop.menu.intro": () => "Introduzione…",
-  "desktop.menu.github": () => "Backbone su GitHub",
-  "desktop.menu.discord": () => "Backbone su Discord",
+  "desktop.menu.github": () => "raid0 su GitHub",
+  "desktop.menu.discord": () => "raid0 su Discord",
   "desktop.menu.report": () => "Segnala un problema",
   "desktop.menu.restoreGuide": () => "Ripristina Primi passi",
   "desktop.menu.whatsNew": () => "Novità",

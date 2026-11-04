@@ -1,6 +1,6 @@
 # Introduction
 
-Source text for the in-game introduction, opened from "First time here?" on the start screen and from the Backbone menu. Each `##` heading is one page.
+Source text for the in-game introduction, opened from "First time here?" on the start screen and from the raid0 menu. Each `##` heading is one page.
 
 ## Welcome
 
@@ -36,7 +36,7 @@ If you love accounting, this is the game for you.
 
 ## Glossary
 
-Backbone is made for technical people who know the hosting industry and how it works. If that is not you, you may not have the best time, but you are welcome to try. The game uses plenty of specific terms, and here is a quick overview of the most important ones.
+raid0 is made for technical people who know the hosting industry and how it works. If that is not you, you may not have the best time, but you are welcome to try. The game uses plenty of specific terms, and here is a quick overview of the most important ones.
 
 | Word | Meaning |
 | --- | --- |
@@ -59,7 +59,7 @@ Backbone is made for technical people who know the hosting industry and how it w
 
 ## Open source
 
-Backbone is open source. If you don't like something, download it from [GitHub](https://github.com/Thiritin/raid0) and send a pull request.
+raid0 is open source. If you don't like something, download it from [GitHub](https://github.com/Thiritin/raid0) and send a pull request.
 
 Fair warning: this game is made with a lot of AI. If you want to change something, feel free to send your pull request through your own AI agent.
 

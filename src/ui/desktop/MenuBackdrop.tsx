@@ -53,7 +53,7 @@ export function MenuBackdrop() {
   return (
     <div className="mbd" aria-hidden="true" inert>
       <header className="menubar">
-        <span className="mb-item mb-app">Backbone</span>
+        <span className="mb-item mb-app">raid0</span>
         <span className="mb-item">{t("desktop.menu.window")}</span>
         <span className="mb-spacer" />
         <div className="speed"><button><Pause /></button><button aria-pressed="true"><span className="arrows"><Play /></span></button><button><span className="arrows"><Play /><Play /></span></button><button><SkipForward className="skip" /></button></div>

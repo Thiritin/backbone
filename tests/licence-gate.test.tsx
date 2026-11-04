@@ -22,7 +22,7 @@ function fresh(panel: string, trial: boolean) {
   s.clusters = s.clusters.map((x) => (x.id === id ? { ...x, setupPending: true } : x));
   const key = issueKey(s, panel, null).key;
   useStore.setState({ game: s });
-  sessionStorage.setItem("backbone.ui.browser.logins", JSON.stringify([HOST]));
+  sessionStorage.setItem("raid0.ui.browser.logins", JSON.stringify([HOST]));
   const View = () => {
     const game = useStore((x) => x.game);
     return <ConsolePage game={game} hostname={HOST} host={HOST} cluster={game.clusters.find((x) => x.id === id)} defaced={false} />;

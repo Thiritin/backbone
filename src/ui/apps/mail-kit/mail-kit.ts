@@ -89,7 +89,7 @@ export function useMailActions(accountId: string) {
   };
 }
 
-export const MAIL_DRAG = "application/x-backbone-mail";
+export const MAIL_DRAG = "application/x-raid0-mail";
 export interface MailDrag { accountId: string; ids: string[] }
 export const dragPayload = (accountId: string, ids: string[]): string => JSON.stringify({ accountId, ids } satisfies MailDrag);
 export function readDrag(e: Pick<DragEvent, "dataTransfer">): MailDrag | null {

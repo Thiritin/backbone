@@ -38,7 +38,7 @@ function show(s: GameState, path: string) {
   };
   return render(<View />);
 }
-const agent = () => sessionStorage.setItem("backbone.ui.desk.agent", "true");
+const agent = () => sessionStorage.setItem("raid0.ui.desk.agent", "true");
 
 beforeEach(() => { sessionStorage.clear(); go = []; });
 afterEach(cleanup);

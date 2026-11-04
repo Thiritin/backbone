@@ -35,7 +35,7 @@ describe("DirectAdmen user level", () => {
   it("opens the logged-in user's level with a link back to the admin level", () => {
     const store = new Map<string, string>();
     vi.stubGlobal("sessionStorage", { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v) });
-    store.set("backbone.ui.browser.directadmen.as." + host(2010).c.id, JSON.stringify("w-x"));
+    store.set("raid0.ui.browser.directadmen.as." + host(2010).c.id, JSON.stringify("w-x"));
     const html = admin(2010);
     for (const label of ["Admin Level", "User Level", "Account Manager", "Domain Setup"]) expect(html).toContain(label);
   });

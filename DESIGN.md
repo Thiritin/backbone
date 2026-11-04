@@ -1,5 +1,5 @@
 ---
-name: Backbone
+name: raid0
 description: A hosting-company management game played on a macOS-style desktop in the browser.
 colors:
   accent: "oklch(0.53 0.19 262)"
@@ -123,13 +123,13 @@ components:
     rounded: "{rounded.win}"
 ---
 
-# Design System: Backbone
+# Design System: raid0
 
 ## Overview
 
 **Creative North Star: "The Operator's Desktop"**
 
-Backbone is a real macOS-grade desktop where the only rich drawing is the hardware itself. The chrome is quiet and native: a translucent menu bar, a frosted dock, windows with traffic lights and soft shadows, and dense sidebars and tables in cool slate neutrals. Against that calm surface, racks, switches, servers and patch panels are drawn in code with real port counts, SFP cages and live status LEDs, and the same fronts reappear as miniatures wherever a device is shown.
+raid0 is a real macOS-grade desktop where the only rich drawing is the hardware itself. The chrome is quiet and native: a translucent menu bar, a frosted dock, windows with traffic lights and soft shadows, and dense sidebars and tables in cool slate neutrals. Against that calm surface, racks, switches, servers and patch panels are drawn in code with real port counts, SFP cages and live status LEDs, and the same fronts reappear as miniatures wherever a device is shown.
 
 The interface is dense in the way a working admin tool is dense. Body text sits at 13px, rows are 28 to 34px tall, and several windows stay open at once over a night map of Western Europe's backbone. Every number is set in JetBrains Mono so columns line up. Light and dark modes share one token set, switched on the root element.
 
