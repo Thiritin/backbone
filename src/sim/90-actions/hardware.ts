@@ -23,6 +23,7 @@ import { hasPdu, pduOf } from "../60-infra/pdu";
 import { kvmPower, lockoutRoll } from "../60-infra/oob";
 import { handJob, present, trip as drive, type HandJob, type How } from "../60-infra/handwork";
 import { viaHands } from "./presence";
+import { busyReason } from "./busy";
 import { drive as driveTo } from "./travel";
 import { endLease, rebuildHours } from "../88-tick/tick";
 import { cardsFree, serverTaken, vmById } from "../60-infra/cluster";
@@ -496,6 +497,7 @@ function rackWork(s: GameState, devices: Device[], locationId: string, how: How 
 export function mountDevice(s: GameState, deviceId: string, rackId: string, slot: number, how: How | boolean = false): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (d.store && busyReason(s, { deviceId: d.id, rackId, slot, height: heightIn(s, rackId, d.model) })) return fail("error.busy");
   const error = mountError(s, d, rackId, slot);
   if (error) return fail(error);
   const h = viaHands(s, "mountDevice", [deviceId, rackId, slot], d.store!, how);
@@ -625,7 +627,7 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
   if (!to) return fail("error.unknownLocation");
   if (to.id === from.id) return fail("error.sameZone");
   if (to.readyAt > s.hour) return fail("error.locationNotReady");
-  if (servers.some((d) => d.maintenance)) return fail("error.busy");
+  if (servers.some((d) => d.maintenance || busyReason(s, { deviceId: d.id }))) return fail("error.busy");
   if (servers.some((d) => d.burnin)) return fail("error.burninRunning");
   if (servers.some((d) => spotOf(s, d.rackId!)!.moving)) return fail("error.rackMoving");
   const own = s.clusters.filter((c) => c.nodes.some((n) => list.includes(n.deviceId)));
@@ -706,6 +708,7 @@ export function sellDevice(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (isProviderPanel(d)) return fail("error.providerPanel");
+  if (busyReason(s, { deviceId: d.id })) return fail("error.busy");
   if (modelById(d.model).kind === "gateway" && !modelById(d.model).price) return fail("error.cannotSell");
   if (d.lease) return fail("error.leased");
   if (d.chassisId) return fail("error.inChassis");
@@ -1096,6 +1099,7 @@ export function buyCircuit(s: GameState, locationId: string): ActionResult {
 export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
+  if (busyReason(s, { deviceId: d.id })) return fail("error.busy");
   const to = dualPsuModel(d.model);
   if (!to) return fail("error.noSecondPsu");
   const price = priceOf(to, d.brand) - priceOf(modelById(d.model), d.brand);

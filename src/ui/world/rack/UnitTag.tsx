@@ -6,6 +6,7 @@ import { isOfficeRouter, modelById, modelName } from "../../../sim/10-catalog/ha
 import { routerPassword } from "../../../sim/60-infra/lan";
 import type { Device } from "../../../sim/50-state";
 import { deviceHealth, deviceValue, pluggedIn } from "../../../sim/60-infra/status";
+import { busyReason } from "../../../sim/90-actions/busy";
 import { sellDevice } from "../../../sim/90-actions/hardware";
 import { deviceLamps, devName, partLabel } from "../../apps/hw";
 import { secondPsuPrice } from "../../apps/locations/deviceMenu";
@@ -80,11 +81,15 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
     ...options.map((o, i) => ({ o: o.op, e: powerEntries[i] })).filter(({ o, e }) => e && o !== "on" && o !== "shutdown"),
     ...(options.some((o) => o.op === "reboot") ? [] : [{ o: "reboot" as const, e: { label: POWER_LABEL.reboot, disabled: true } as MenuItem }]),
   ] : [];
+  const busy = !!busyReason(game, { deviceId: d.id });
   const keys = [
     ...extra.map(({ o, e }) => ({ e, icon: POWER_ICON[o], label: bare(POWER_LABEL[o]), badge: "", why: state })),
-    ...rest.map((e) => psuLabel && e.label === psuLabel
-      ? { e, icon: Zap, label: t("world.secondPsu"), badge: euro(psuPrice!), why: "" }
-      : { e, icon: iconFor(d, game, e.label), label: bare(e.label), badge: "", why: "" }),
+    ...rest.map((r) => {
+      const e = busy ? { ...r, disabled: true } : r, why = busy ? t("world.busy") : "";
+      return psuLabel && e.label === psuLabel
+        ? { e, icon: Zap, label: t("world.secondPsu"), badge: euro(psuPrice!), why }
+        : { e, icon: iconFor(d, game, r.label), label: bare(e.label), badge: "", why };
+    }),
   ];
 
   const onKey = () => {

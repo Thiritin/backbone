@@ -34,6 +34,7 @@ export default {
   "world.zoomIn": () => "Ingrandisci",
   "world.zoomFit": () => "Adatta",
   "world.console": () => "Console",
+  "world.busy": () => "Occupato",
   "world.secondPsu": () => "2° alim.",
   "world.dropCable": () => "Lascia il cavo",
   "world.newConnection": () => "Nuova connessione da qui",

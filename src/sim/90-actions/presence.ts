@@ -11,6 +11,7 @@ import {
 } from "./hardware";
 import { opensOf, orderWork, cancelWorkOrder, workMinutes } from "./work-orders";
 import { travelTo } from "./travel";
+import { busyAction } from "./busy";
 
 export type Hands = "own" | "remote" | "none";
 
@@ -67,6 +68,8 @@ export function viaHands(s: GameState, action: HandsAction, args: unknown[], loc
   const h = hands(s, locationId), self = how === "self" || h === "own";
   const hall = s.properties.some((p) => p.hall?.locationId === locationId);
   if (h === "none" && !self) return { ok: false, error: "error.notThere" };
+  const busy = busyAction(s, action, args);
+  if (busy) return { ok: false, error: busy };
   // ponytail: validates on a full copy of the game; a per-action check function if this gets slow.
   const trial = run(structuredClone(s), action, args);
   if (!trial.ok) return trial;

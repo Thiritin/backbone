@@ -54,6 +54,8 @@ describe("installing parts", () => {
     // The work is a queued order; the stick goes in when it is done.
     expect(s.orders.filter((o) => !o.applied)).toMatchObject([{ kind: "parts", action: { name: "installPart" } }]);
     expect(kinds(s, id, "ram")).toHaveLength(0);
+    // A second install on the same unit is busy while the first is queued.
+    expect(err(installPart(s, id, spare(s, "ram", 2)))).toBe("error.busy");
     settle(s);
     expect(kinds(s, id, "ram")).toHaveLength(1);
     expect(kinds(s, id, "ram")[0]).toMatchObject({ size: 2, installedAt: s.hour, failedAt: null });
