@@ -1,6 +1,7 @@
 // GDD, Company email: the company starts on free GMix and can move to an external provider or a mail server of its own.
 // Numbers in economy/README.md, Company email.
 import { isMonthStart, yearOf } from "../00-core/time";
+import { bill, invoice } from "../46-finance/payables";
 import type { GameState, LedgerEntry } from "../50-state";
 import type { Profile } from "../30-customers/customers";
 import { anchorOf, controlPlaneUp, type Cluster } from "../60-infra/cluster";
@@ -96,8 +97,8 @@ export function mailTick(s: GameState): void {
     const price = t.offerUntil !== undefined && s.hour <= t.offerUntil ? GMIX_OFFER : mailPlan(t.host, t.plan)?.price(year) ?? 0, seats = seatsBilled(s, t), amount = Math.round(seats * price * 100) / 100;
     if (amount <= 0) continue;
     const e: LedgerEntry = { hour: s.hour, category: "subscriptions", key: "ledger.companyMail", params: { name: hostName(t.host), seats }, amount: -amount };
-    s.cash = Math.round((s.cash - amount) * 100) / 100;
-    s.ledger = [...s.ledger, e];
+    if (s.bank) invoice(s, "services", hostName(t.host), [e]);
+    else bill(s, { supplier: "services", name: hostName(t.host), lines: [e], method: "cash" });
   }
   const m = s.company.mail, target = mxTarget(s);
   if (m.kind === "external" && target) s.company = { ...s.company, mail: { ...m, seats: seatsBilled(s, target) } };

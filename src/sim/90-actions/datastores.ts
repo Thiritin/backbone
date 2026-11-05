@@ -8,7 +8,9 @@ import {
 } from "../60-infra/cluster";
 import { locationOf, raidUsable } from "../60-infra/status";
 import { LAN_GB_PER_HOUR } from "../85-products/products";
+import { HARDWARE_SHOP, type Method } from "../46-finance/payables";
 import type { ActionResult } from "./hardware";
+import { methodsFor, placeOrder } from "./purchase";
 import { quorumBlock } from "../60-infra/quorum";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -28,7 +30,7 @@ export function datastoreBlock(s: GameState, c: Cluster, deviceId: string): stri
 
 // Attaches a free server with drives in the cluster's zone as a datastore, usable an hour later. Fibre Channel buys a host
 // adapter for every node of the cluster.
-export function attachDatastore(s: GameState, clusterId: string, deviceId: string, protocol: DatastoreProtocol): ActionResult {
+export function attachDatastore(s: GameState, clusterId: string, deviceId: string, protocol: DatastoreProtocol, method?: Method): ActionResult {
   const c = s.clusters.find((x) => x.id === clusterId);
   if (!c) return fail("error.unknownCluster");
   if (c.kind !== "cloud" || !c.platform || !softwareById(c.platform).datastores) return fail("error.noDatastores");
@@ -39,10 +41,10 @@ export function attachDatastore(s: GameState, clusterId: string, deviceId: strin
   const bad = datastoreBlock(s, c, deviceId);
   if (bad) return fail(bad);
   const cost = protocol === "fc" ? FC_HBA_PRICE * c.nodes.length : 0;
-  if (s.cash < cost) return fail("error.noCash");
   if (cost) {
-    s.cash = Math.round((s.cash - cost) * 100) / 100;
-    s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.fcAdapters", params: { cluster: c.name, count: c.nodes.length }, amount: -cost }];
+    const lines = [{ hour: s.hour, category: "hardware", key: "ledger.fcAdapters", params: { cluster: c.name, count: c.nodes.length }, amount: -cost }];
+    const paid = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines, method: method ?? methodsFor(s, "hardware", lines, HARDWARE_SHOP)[0] });
+    if (!paid.ok) return paid;
   }
   update(s, c.id, [...c.datastores, { deviceId, protocol, readyAt: s.hour + DATASTORE_ATTACH_HOURS }]);
   return { ok: true };
