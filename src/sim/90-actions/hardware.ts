@@ -4,8 +4,8 @@ import { rand } from "../00-core/rng";
 import { freeRackTiles, officePlan, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
 import { billDue, CONTRACTOR, canPay, debitAllowed, HARDWARE_SHOP, type Method, type SupplierId } from "../46-finance/payables";
-import { bankOf } from "../46-finance/bank";
-import { INVOICE_AFTER, paidOrders, placeOrder } from "./purchase";
+import { bankOf, cardReady } from "../46-finance/bank";
+import { INVOICE_AFTER, methodsFor, paidOrders, placeOrder } from "./purchase";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
 import { DAYS_PER_MONTH, hourOf, dateOf, monthIndexOf, nextMonthStart, yearOf } from "../00-core/time";
 import { freeJack, isProviderPanel } from "../60-infra/panels";
@@ -79,7 +79,10 @@ const unplug = (s: GameState, deviceIds: Set<string>, keep = (_: string) => fals
 const flatDefault = (s: GameState, locationId: string): number => (flatOffer(s, locationId) === "flat" ? FLAT_CONTRACTS[0].kw : 0);
 
 // What the provider's order form sends. A direct debit gives the site a mandate, so its rent invoices are debited at once.
-export interface ColoOrder extends Billing { payment: { kind: "debit"; iban: string; holder: string } | { kind: "transfer" } }
+export interface ColoOrder extends Billing { payment: { kind: "debit"; iban: string; holder: string } | { kind: "transfer" | "onAccount" | "card" | "cash" } }
+
+// The tick bills full months from the next month start, so a new contract pays the rest of this one pro rata.
+export const coloFirstCharge = (s: GameState, monthly: number): number => cents(monthly * Math.min(1, (nextMonthStart(s.hour) - s.hour) / (DAYS_PER_MONTH * 24)));
 
 // For a share, size is n for 1/n of a rack; the location then has one position, taken by the provider's rack.
 export function addLocation(s: GameState, dcId: string, space: "share" | "cage" | "suite", size: number, order?: ColoOrder): ActionResult {
@@ -90,23 +93,23 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   // A waitlist hold for exactly this space reserves it; otherwise the space must be free now.
   const hold = s.waitlist.find((w) => w.dc === dcId && w.space === space && w.size === size && w.heldUntil !== null);
   if (!hold && !fits(s, dcId, space, size)) return fail("error.noSpace");
-  const monthly = spacePrice(dc, space, size, s.providerPrices);
-  if (s.cash < monthly) return fail("error.noCash");
+  const monthly = spacePrice(dc, space, size, s.providerPrices), kind = order?.payment.kind;
+  const method: Method = !s.bank ? "cash" : kind === "debit" || kind === "card" || kind === "transfer" ? kind : "onAccount";
+  if (method === "cash" && s.cash < monthly) return fail("error.noCash");
   const bad = order && orderError(order);
   if (bad) return fail(bad);
-  if (order?.payment.kind === "debit" && !s.bank) return fail("error.noBank");
-  if (order?.payment.kind === "debit" && !debitAllowed(dc.name)) return fail("error.debitAbroad");
+  if (kind === "debit" && !s.bank) return fail("error.noBank");
+  if (kind === "debit" && !debitAllowed(dc.name)) return fail("error.debitAbroad");
+  const rest = coloFirstCharge(s, monthly);
+  const rentLines = rest > 0 ? [{ hour: s.hour, category: "rent", key: "ledger.space", params: { location: dc.name, dc: dc.id }, amount: -rest }] : [];
+  if (method === "card" && !methodsFor(s, "datacenter", rentLines, dc.name).includes("card")) return fail(cardReady(s) ? "error.cardLimit" : "error.noCard");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false, tripped: false };
   s.locations.push(loc);
   s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly, endsAt: null, retainedAt: null, ...(order && { billing: { company: order.company, name: order.name, address: { street: order.address.street, zip: order.address.zip, city: order.address.city } } }) });
   if (order?.payment.kind === "debit") s.bank = { ...s.bank!, mandates: [...s.bank!.mandates.filter((x) => x !== dc.name), dc.name] };
-  // The order confirmation is the contract document. The tick bills full months from the next month start, so the order
-  // pays the rest of this one pro rata: by debit on the contract, else on its own receipt (cash) or open invoice (on account).
-  const rest = cents(monthly * Math.min(1, (nextMonthStart(s.hour) - s.hour) / (DAYS_PER_MONTH * 24)));
-  const rentLines = rest > 0 ? [{ hour: s.hour, category: "rent", key: "ledger.space", params: { location: dc.name, dc: dc.id }, amount: -rest }] : [];
-  const method = !s.bank ? "cash" : order?.payment.kind === "debit" ? "debit" : "onAccount";
+  // The order confirmation is the contract document; the pro rata rest rides on it by debit, else on its own document.
   const apart = method !== "debit";
   placeOrder(s, { supplier: "datacenter", name: dc.name, lines: apart ? [] : rentLines, method, doc: "contract", order: loc.id });
   if (apart && rentLines.length) placeOrder(s, { supplier: "datacenter", name: dc.name, lines: rentLines, method, order: loc.id });

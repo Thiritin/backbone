@@ -69,14 +69,14 @@ const STEP_OF: Record<string, number> = { "error.orderName": 0, "error.orderAddr
 // choice of the company's own addresses, the first preselected.
 export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer, place, confirm, onBack, emails }: {
   game: GameState; btn: string; lines?: CheckoutLine[]; total?: string; facts?: [string, string][]; onBack?: () => void; emails?: string[];
-  methods?: { kind: PaymentKind; label: string }[];
+  methods?: { kind: PaymentKind; label: string; off?: string | null }[];
   // The order's supplier and lines: the methods then follow the sim's rules, an unavailable one stays listed with its reason.
   offer?: Offer;
   place: (d: CheckoutDetails) => ActionResult;
   confirm: (order: string, kind: PaymentKind) => Confirmation;
 }) {
   const methods = offer ? payOptions(game, offer).map((o) => ({ kind: o.method as PaymentKind, label: o.label, off: o.off }))
-    : (fixed ?? []).map((m) => ({ ...m, off: null as string | null }));
+    : (fixed ?? []).map((m) => ({ ...m, off: m.off ?? null }));
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<{ order: string; info: Confirmation; doc?: string } | null>(null);
@@ -167,7 +167,8 @@ export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer
         </form>
       )}
       {step === 2 && <>
-        {facts && <table className="co-table"><tbody>{facts.map(([k, v]) => <tr key={k}><td>{k}</td><td>{v}</td></tr>)}</tbody></table>}
+        {facts && <table className="co-table"><tbody>{facts.map(([k, v]) => <tr key={k}><td>{k}</td><td>{v}</td></tr>)}</tbody>
+          {total && !lines && <tfoot><tr><th>{t("checkout.total")}</th><td className="num"><b>{total}</b></td></tr></tfoot>}</table>}
         {lines && <table className="co-table">
           <thead><tr><th>{t("checkout.item")}</th><th className="num">{t("checkout.qty")}</th><th className="num">{t("checkout.price")}</th></tr></thead>
           <tbody>{lines.map((l, i) => <tr key={i}><td>{l.label}</td><td className="num">{l.qty}</td><td className="num">{l.price}</td></tr>)}</tbody>
