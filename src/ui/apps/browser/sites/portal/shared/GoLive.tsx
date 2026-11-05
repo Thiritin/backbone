@@ -1,3 +1,4 @@
+import { PBtn } from "./ui";
 import { useState } from "react";
 import { goLivePlan } from "../../../../../../sim/80-business/portal";
 import { importExisting } from "../../../../../../sim/90-actions/portal";
@@ -15,7 +16,7 @@ export function GoLive({ game }: { game: GameState }) {
     <>
       <dl className="setup-fields">{rows.map(([k, v]) => <div key={k}><dt>{t(k)}</dt><dd className="num">{v}</dd></div>)}</dl>
       <p>
-        <button className="btn" disabled={!p.customers.length} onClick={() => setDone(act(importExisting).ok)}>{t("setup.golive.title")}</button>
+        <PBtn disabled={!p.customers.length} onClick={() => setDone(act(importExisting).ok)}>{t("setup.golive.title")}</PBtn>
         {done && <span> {t("setup.golive.done")}</span>}
       </p>
     </>

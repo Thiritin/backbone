@@ -3,7 +3,7 @@ import { t } from "../../../../../../i18n/en";
 import { yearOf } from "../../../../../../sim/00-core/time";
 import { versionInfo } from "../../../../../../sim/10-catalog/software-versions";
 import { shopById } from "../../../../../../sim/10-catalog/shops";
-import { AdminScreen } from "../shared/AdminScreen";
+import { AdminScreen, titleOf } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { navOf, screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
@@ -20,7 +20,7 @@ export const eraOf = (major: string): Era => (major.startsWith("0.") ? "foss" : 
 const GROUPS: [string, ScreenName[]][] = [
   ["shop", ["home", "products", "servers", "settings", "emails", "marketplace"]],
   ["billing", ["orders", "clients", "invoices", "quotes"]],
-  ["system", ["licence", "updates"]],
+  ["system", ["updates"]],
 ];
 const TILES: ScreenName[] = ["orders", "clients", "invoices", "products", "servers", "updates"];
 const label = (n: ScreenName) => t(`shop-boxBillin.nav.${n}`);
@@ -61,8 +61,8 @@ function Admin(props: SkinProps) {
       </nav>
       <main className="bx-main">
         {era === "cube" && current === "home" && <div className="bx-tiles">{TILES.map(link)}</div>}
-        <h1 className="bx-title">{label(current)}</h1>
-        <div className="bx-panel"><AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={browse} /></div>
+        <h1 className="bx-title">{titleOf(screen) ?? label(current)}</h1>
+        <div className="bx-panel"><AdminScreen game={game} screen={screen} dash="box" market="box" label={label} go={go} toClient={(c) => open("client", {}, { c })} browse={browse} /></div>
       </main>
     </AdminFrame>
   );
@@ -104,7 +104,7 @@ function Client(props: SkinProps) {
         <form className="bx-signin" onSubmit={(e) => { e.preventDefault(); if (who) open("client", {}, { c: who.id }); }}>
           <label>{t("shop-boxBillin.email")}<input name="email" type="email" autoComplete="off" /></label>
           <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-          <button type="submit" className="btn primary">{t("shop-boxBillin.signIn")}</button>
+          <button type="submit" className="pt-btn primary">{t("shop-boxBillin.signIn")}</button>
         </form>
       )}
     </StoreFrame>
@@ -119,7 +119,7 @@ function Login(props: SkinProps & LoginProps) {
         <header><Brand era={era} variant={props.variant} version={props.version} /></header>
         <label>{t("shop-setup.email")}<input name="username" type="email" autoComplete="off" /></label>
         <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-        <button type="submit" className="btn primary">{t("shop-boxBillin.signIn")}</button>
+        <button type="submit" className="pt-btn primary">{t("shop-boxBillin.signIn")}</button>
         <LoginNote error={props.error} onForgot={props.onForgot} />
       </form>
       <Version variant={props.variant} version={props.version} />

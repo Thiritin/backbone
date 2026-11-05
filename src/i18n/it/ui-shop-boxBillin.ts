@@ -11,6 +11,7 @@ export default {
   "shop-boxBillin.nav.quotes": () => "Richieste di preventivo",
   "shop-boxBillin.nav.licence": () => "Licenza",
   "shop-boxBillin.nav.updates": () => "Aggiornamenti",
+  "shop-boxBillin.nav.settings": () => "Impostazioni",
   "shop-boxBillin.group.shop": () => "Negozio",
   "shop-boxBillin.group.billing": () => "Fatturazione",
   "shop-boxBillin.group.system": () => "Sistema",

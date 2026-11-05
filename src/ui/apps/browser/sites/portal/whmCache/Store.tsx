@@ -27,7 +27,7 @@ function ClientLogin({ game, open }: SkinProps) {
     <form className="whc-clientlogin" onSubmit={(e) => { e.preventDefault(); if (c) open("client", {}, { c: c.id }); }}>
       <label>{t("shop-store.email")}<input name="email" type="email" autoComplete="off" /></label>
       <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-      <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+      <button type="submit" className="pt-btn primary">{t("shop-admin.login")}</button>
     </form>
   );
 }
