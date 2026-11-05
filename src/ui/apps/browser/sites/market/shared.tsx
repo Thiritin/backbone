@@ -10,6 +10,7 @@ import type { GameState } from "../../../../../sim/50-state";
 import { bidListing, buyListing, cancelListing } from "../../../../../sim/90-actions/used";
 import { useSessionState } from "../../../../session";
 import { useStore } from "../../../../store";
+import { OrderDone } from "../shared/OrderDone";
 import { PayStep } from "../shared/PayStep";
 import { t } from "../../../../../i18n/en";
 import { classOf, CLASS_TREE, inClass, rowLabel } from "../../../shop/filter";
@@ -89,11 +90,19 @@ export function Money({ value, onChange, label, className = "used-input" }: { va
   );
 }
 
+// The payable each listing bought this session was billed on; a bought listing leaves the market.
+const BOUGHT = new Map<string, string>();
+// The outcome of a listing bought this session, or fallback for one that never was.
+export const Bought = ({ is, children }: { is: (listingId: string) => boolean; children: ReactNode }) => {
+  const payable = [...BOUGHT].find(([id]) => is(id))?.[1];
+  return payable ? <OrderDone payable={payable} /> : <>{children}</>;
+};
+
 // The buy or bid control of a listing: a maximum and a bid button on eBuy, a buy button at the ask elsewhere.
 export function BuyBox({ game, l, to, buy, bid, className }: { game: GameState; l: Listing; to: string; buy?: ReactNode; bid?: ReactNode; className?: string }) {
   const act = useStore((s) => s.act), notify = useStore((s) => s.notify);
   const city = game.locations.find((x) => x.id === to)!.city, now = currentBid(l, game.hour);
-  const [max, setMax] = useState(Math.ceil((now * 1.1) / 10) * 10), [paying, setPaying] = useState(false);
+  const [max, setMax] = useState(Math.ceil((now * 1.1) / 10) * 10), [paying, setPaying] = useState(false), [done, setDone] = useState<string>();
   const name = listingName(l);
   if (l.channel !== "ebuy") {
     const take = (m: Method) => {
@@ -103,8 +112,8 @@ export function BuyBox({ game, l, to, buy, bid, className }: { game: GameState; 
     };
     return (
       <span className={className}>
-        {paying
-          ? <PayStep game={game} buy={{ supplier: "marketplace", name: channelName(l.channel), amount: l.price, run: take }} onClose={() => setPaying(false)} />
+        {done ? <OrderDone payable={done} /> : paying
+          ? <PayStep game={game} buy={{ supplier: "marketplace", name: channelName(l.channel), amount: l.price, run: take }} onClose={() => setPaying(false)} onDone={(id) => { if (id) { BOUGHT.set(l.id, id); setDone(id); } else setPaying(false); }} />
           : <button className="mk-btn" onClick={() => setPaying(true)}>{buy ?? t("shop.buy")}</button>}
       </span>
     );
