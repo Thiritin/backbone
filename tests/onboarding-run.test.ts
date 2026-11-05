@@ -4,7 +4,7 @@ import { cardBoard, checkDone, TUTORIAL } from "../src/sim/checklist";
 import { supplierAccount, supplierCode } from "../src/sim/46-finance/payables";
 import { hostFor, stepsDone } from "../src/sim/30-market/manual";
 import type { GameState } from "../src/sim/50-state";
-import { tick } from "../src/sim/88-tick/tick";
+import { tick, tickMinute } from "../src/sim/88-tick/tick";
 import { openBankAccount, confirmTransfer, startTransfer } from "../src/sim/90-actions/bank";
 import { registerCompany } from "../src/sim/90-actions/company";
 import { orderCompanyDomain } from "../src/sim/90-actions/registrar";
@@ -83,6 +83,9 @@ describe("scripted first hour", () => {
     for (let h = 0; h < 72 && !s.sales.requests.some((r) => r.kind === "order"); h++) tick(s);
     const req = () => s.sales.requests.find((r) => r.kind === "order")!;
     expect(req()).toBeDefined();
+    // The order mail reaches Pear Mail at the next check, also when it came at the full hour.
+    for (let m = 0; m < 20; m++) tickMinute(s);
+    expect(s.pearMail.local.messages.some((m) => m.ticket === req().ticketId)).toBe(true);
     const id = req().ticketId!;
     // The player prices to the customer; the seeded customer's budget is lifted so the quote is taken.
     s.sales.requests = s.sales.requests.map((x) => (x.id === req().id ? { ...x, budget: 100 } : x));
