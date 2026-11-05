@@ -75,6 +75,7 @@ export function PostPanel({ title, onClose }: { title: string; onClose: () => vo
   const stack = (n: number, side: "prev" | "next") => n > 0 && (
     <button className={`wp-stack ${side}`} aria-label={t(side === "next" ? "world.nextLetter" : "world.prevLetter")} onClick={() => go(at + (side === "next" ? 1 : -1))}>
       {Array.from({ length: Math.min(n, STACK_MAX) }, (_, k) => <i key={k} style={{ ["--k" as string]: k }} />)}
+      <b className="wp-n num">{n}</b>
     </button>
   );
   return (

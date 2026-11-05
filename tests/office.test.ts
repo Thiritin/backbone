@@ -17,7 +17,7 @@ describe("trade office", () => {
     const s = newGame(1);
     expect(s.installed).toEqual(["Browser", "Chat"]);
     expect(s.registration).toBeNull();
-    expect(resolve(s, "www.trade-office.gov/eservice/").page.kind).toBe("office");
+    expect(resolve(s, "www.gewerbeamt-frankfurt.de/eservice/").page.kind).toBe("office");
   });
 
   it("keeps office hours from Monday to Friday, 08:00 to 16:00", () => {

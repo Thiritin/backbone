@@ -35,6 +35,20 @@ describe("notification settings", () => {
     expect(s().banners).toHaveLength(1);
   });
 
+  it("counts a banner as seen on the bell once the player acts on it", () => {
+    const s = useStore.getState;
+    useStore.setState({ banners: [], history: [], unseen: 0 });
+    s().setNotifyPref("Books", { allow: true });
+    s().notify("Books", "a", "b");
+    s().notify("Books", "c", "d");
+    expect(s().unseen).toBe(2);
+    s().dismiss(s().banners[0].id, true);
+    s().dismiss(s().banners[0].id, true);
+    expect(s().unseen).toBe(0);
+    s().dismiss(999, true);
+    expect(s().unseen).toBe(0);
+  });
+
   it("plays sounds for every app by default until switched off", () => {
     expect(prefOf({}, "Support")).toEqual({ allow: true, sound: true });
     expect(prefOf({}, "Billing")).toEqual({ allow: true, sound: true });

@@ -26,7 +26,7 @@ export const REGISTRAR_ERAS: Record<RegistrarId, { from: number; look: Look }[]>
 
 export interface RegistrarProps { game: GameState; r: Registrar; look: Look; year: number; go?: (url: string) => void }
 
-const factor = (x: number) => `${x.toFixed(2)}×`;
+const factor = (x: number) => `${x.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`;
 export const own = (game: GameState, r: Registrar): boolean => game.registrar?.id === r.id;
 // A customer is the current partner or a former one this registrar has invoiced.
 export const customer = (game: GameState, r: Registrar): boolean => own(game, r) || game.payables.some((p) => p.name === r.name);
