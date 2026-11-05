@@ -4,6 +4,18 @@ raid0 is a browser management game in which you grow a hosting company from a 20
 
 Play it at [raid0.dev](https://raid0.dev/).
 
+## Download
+
+The desktop app is available for these systems. Download it from the [latest release](https://github.com/Thiritin/raid0/releases/latest).
+
+| Platform | Architecture | Installer |
+| --- | --- | --- |
+| Windows | x86_64 | Setup exe |
+| Linux | x86_64 and arm64 | AppImage |
+| macOS | Apple silicon | dmg |
+
+The app updates itself when a new release is out.
+
 ## Inspiration
 
 raid0 takes its inspiration from [Series of Tubes](https://github.com/fjaeckel/seriesoftubes) by Frederic Jung, a cartoon browser game about how the internet really works, from laying fiber and peering at exchanges to billing on the 95th percentile. Its routing model, its parody network names and its project layout shaped this game.

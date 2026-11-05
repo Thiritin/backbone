@@ -55,7 +55,7 @@ To write the notes by hand, put them in a file and add `--notes-file <path>` to 
 `.github/workflows/release.yml` runs these jobs for the release tag.
 
 1. `gate` checks that the tag is `vX.Y.Z`, runs `npm run typecheck` and `npm test` at the tagged commit, and fills the release notes from the `CHANGELOG.md` bullets added since the previous release when the release body is empty.
-2. `desktop` (`desktop.yml`) builds the macOS (Apple silicon only), Windows and Linux installers at the tagged commit, signs the update bundles, and attaches the installers, signatures and `latest.json` to the release. The release notes become the notes in `latest.json`.
+2. `desktop` (`desktop.yml`) builds the macOS (Apple silicon), Windows (x86_64) and Linux (x86_64 and arm64) installers at the tagged commit, signs the update bundles, and attaches the installers and `latest.json` to the release. The signatures are embedded in `latest.json` and not attached as separate files. The jobs run one after another because each one merges its platform into the same `latest.json`. The release notes become the notes in `latest.json`.
 3. `pages` (`pages.yml`) builds the site at the tagged commit and deploys it to GitHub Pages.
 4. `discord` posts the release notes to the changelog channel after the other jobs pass. It uploads a `discord-posted.txt` file to the release, and a run that finds the file does not post again.
 
@@ -65,7 +65,8 @@ To write the notes by hand, put them in a file and add `--notes-file <path>` to 
 
 After the run is green, confirm each of these.
 
-- `gh release view vX.Y.Z --json assets --jq '.assets[].name'` lists the macOS (`.dmg` and `.app.tar.gz`), Windows (`.exe`), Linux (`.AppImage`, `.deb`, `.rpm`) installers with their `.sig` files, and `latest.json`.
+- `gh release view vX.Y.Z --json assets --jq '.assets[].name'` lists the macOS (`.dmg` and `.app.tar.gz`), Windows (`.exe`) and Linux (two `.AppImage` files, x86_64 and aarch64) installers and `latest.json`.
+- `curl -sL https://github.com/Thiritin/raid0/releases/latest/download/latest.json | jq '.platforms | keys'` lists `darwin-aarch64`, `linux-aarch64`, `linux-x86_64` and `windows-x86_64`, each with its signature.
 - `curl -sL https://github.com/Thiritin/raid0/releases/latest/download/latest.json | jq -r .version` prints `X.Y.Z`.
 - `curl -s https://raid0.dev/version.json | jq '.changelog[0]'` shows the newest day of the release notes.
 - The release has a `discord-posted.txt` asset.
