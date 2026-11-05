@@ -126,6 +126,8 @@
 .pst-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); column-gap: 24px; }
 .pst-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-bottom: var(--ar-bw) solid var(--line); border-radius: var(--ar-pane); cursor: default; min-width: 0; }
 .pst-row:hover { background: var(--hover); }
+.pst-row:has(.pay-sheet) { flex-wrap: wrap; }
+.pst-row > span:has(> .pay-sheet) { flex-basis: 100%; }
 .pst-row-text { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .pst-row-text strong { font-weight: 600; }
 .pst-row-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 12px; }
