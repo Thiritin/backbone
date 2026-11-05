@@ -3,6 +3,8 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Rexoffice now opens as its own web app with a sidebar, a dashboard of your figures, a document editor for invoices and quotes, uploaded receipts you assign to bank bookings, and a look that changes with the year.
+- Rexoffice sends overdue reminders by hand and shows each advance VAT return with its output tax, input tax and difference.
 - Every bookkeeping program now installs through its own setup pages, with licence, serial number and sign-up, and a first-steps guide in the style of its era opens on first launch and ticks off each step until the books are ready.
 - Each accounting software vendor now has its own website look in every era, with a download section, system requirements and an installation guide link.
 - Selecting a device in a rack now hangs a paper asset tag on it with its name, model, rack unit and inventory number, and the router password is read from the sticker on the router.

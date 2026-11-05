@@ -29,6 +29,7 @@ import { Installer } from "./guide/Installer";
 import { setupOf } from "../../../sim/80-business/books-guide";
 import type { AppMenu } from "../../desktop/menu";
 import { useBooks } from "./view";
+import { Rexoffice } from "./programs/saas/rexoffice/Rexoffice";
 import { LAYOUTS } from "./layouts";
 import type { Entry, Group } from "./layouts/types";
 import "../billing/billing.css";
@@ -70,7 +71,13 @@ export function BooksApp() {
   );
 }
 
+// Programs with their own interface; the rest share the layouts below.
 export function BooksProgram() {
+  const id = useBooks().books.vendor;
+  return id === "lexoffize" ? <Rexoffice /> : <SharedProgram />;
+}
+
+function SharedProgram() {
   const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const waiting = useStore((s) => unsynced(s.game));
   // Before Shop link, a shop system hands its records over only on import.
@@ -131,7 +138,7 @@ export function BooksProgram() {
 }
 
 // A browser program without its line: the browser's error page for the vendor's address.
-function Offline({ v }: { v: BooksVendor }) {
+export function Offline({ v }: { v: BooksVendor }) {
   return (
     <div className="books-offline">
       <h2>{t("books-editions.offlineTitle")}</h2>

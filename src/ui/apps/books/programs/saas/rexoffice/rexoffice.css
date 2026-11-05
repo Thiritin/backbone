@@ -1,0 +1,24 @@
+/* Rexoffice in three looks by year. early: light grey page with a narrow icon rail; dash: dark sidebar and round buttons; modern: light sidebar, red accent and a settings gear. */
+.rx-signup { display: block; overflow: auto; }
+.rx-logo { letter-spacing: -.2px; }
+
+.rx-early { --sx-nav: #f4f5f7; --sx-nav-w: 84px; --sx-nav-on: #fff; --sx-accent: #5cb85c; --sx-bg: #eceef1; --sx-r: 2px; font-size: 13px; }
+.rx-early .sx-brand { justify-content: center; padding: 12px 4px; font-size: 14px; }
+.rx-early .sx-navitem { flex-direction: column; gap: 3px; padding: 10px 2px; text-align: center; font-size: 11px; }
+.rx-early .sx-navitem svg { width: 22px; height: 22px; }
+.rx-early .sx-navitem .sx-badge { position: absolute; margin: -4px 0 0 22px; }
+.rx-early .sx-navitem { position: relative; }
+
+.rx-dash { --sx-nav: #2b2f3a; --sx-nav-ink: #cfd3dc; --sx-nav-on: #3a4050; --sx-nav-w: 220px; --sx-accent: #53b947; --sx-bg: #f5f6f8; --sx-r: 6px; font-size: 14px; }
+.rx-dash .sx-brand { color: #fff; font-size: 18px; }
+.rx-dash .sx-navitem[aria-current="page"] { color: #fff; box-shadow: inset 3px 0 0 var(--sx-accent); }
+.rx-dash .sx-btn, .rx-dash .sx-new > button { border-radius: 18px; }
+.rx-dash .sx-card { box-shadow: 0 1px 2px rgb(0 0 0 / .06); }
+
+.rx-modern { --sx-nav: #fff; --sx-nav-on: #fdecee; --sx-nav-w: 232px; --sx-accent: #e2001a; --sx-bg: #f7f7f8; --sx-r: 10px; --sx-ok: #1b7f3b; font-size: 14px; font-family: Inter, "Open Sans", system-ui, sans-serif; }
+.rx-modern .sx-navitem { border-radius: 10px; padding: 9px 12px; }
+.rx-modern .sx-card, .rx-modern .sx-table { border-radius: 12px; }
+.rx-modern .sx-top { padding: 10px 20px; }
+.rx-modern .sx-btn.primary, .rx-modern .sx-new > button { font-weight: 600; }
+.rx-checklist { padding: 0; overflow: hidden; }
+.rx-checklist .bg { border-radius: inherit; }
