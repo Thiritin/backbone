@@ -2,10 +2,10 @@ import { pendingOrders } from "../../../../../../sim/80-business/shop-orders";
 import type { ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { versionAt } from "../../../../../../sim/10-catalog/software-versions";
-import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
+import { AdminScreen, titleOf } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
-import { navOf, screenArgs, screenOf, type NavName, type Screen, type ScreenProps } from "../shared/nav";
+import { navOf, screenArgs, screenOf, type NavName, type Screen, type ScreenName, type ScreenProps } from "../shared/nav";
 import { StoreFront } from "../shared/StoreFront";
 import type { LoginProps, Skin, SkinProps } from "../skins";
 import { LoginNote } from "../Login";
@@ -37,8 +37,10 @@ const ICON: Record<Nav, string> = {
 };
 const Icon = ({ n }: { n: Nav }) => <svg className="cxe-ico" viewBox="0 0 16 16" aria-hidden="true"><path d={ICON[n]} /></svg>;
 
-const GROUPS: [string, Nav[]][] = [["", ["home"]], ["sales", ["orders", "clients", "invoices", "quotes"]], ["catalog", ["products", "servers"]], ["system", ["settings", "emails", "marketplace", "licence", "updates"]]];
-const label = (n: Nav): string => (n === "products" ? t("shop-store.lblGroups") : n === "quotes" ? t("shop-admin.quoteRequests") : SCREEN_LABEL[n]!);
+// The top menu, and the sub menu under Settings that holds Plugins; quotes stay reachable by address.
+const MENU: Nav[] = ["home", "clients", "orders", "invoices", "emails", "products", "settings"];
+const SETTINGS: Nav[] = ["settings", "marketplace", "servers", "licence", "updates"];
+const label = (n: ScreenName): string => t(`cexit.nav.${navOf(n)}`);
 
 // The wordmark: the second word sits on an exit sign.
 export const Mark = () => <span className="cxe-mark">Client<span className="cxe-exit">Exit<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5h6M5 2l3 3-3 3" /></svg></span></span>;
@@ -83,19 +85,19 @@ function Admin(props: SkinProps) {
   const { game, route, open, major } = props, look = lookOf(major, game.hour), screen = screenOf(route.query);
   const go = (s: Screen) => open("admin", {}, screenArgs(s));
   const current: Nav = navOf(screen.name);
-  const link = (n: Nav) => (
-    <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => pick(e, () => go({ name: n }))}>{look !== "classic" && <Icon n={n} />}{label(n)}</a>
+  const inSettings = SETTINGS.includes(current), top = inSettings ? "settings" : current;
+  const link = (n: Nav, on: boolean) => (
+    <a key={n} href="#" className={on ? "on" : ""} onClick={(e) => pick(e, () => go({ name: n }))}>{look === "seven" && <Icon n={n} />}{label(n)}</a>
   );
   const nav = (
-    <nav className="cxe-nav">
-      {look === "seven"
-        ? GROUPS.map(([g, ns]) => <div key={g || "top"} className="cxe-group">{g && <h4>{t(`cexit.group.${g}`)}</h4>}{ns.map(link)}</div>)
-        : GROUPS.flatMap(([, ns]) => ns).map(link)}
-    </nav>
+    <div className="cxe-menu">
+      <nav className="cxe-nav">{MENU.map((n) => link(n, top === n))}</nav>
+      {inSettings && <nav className="cxe-sub">{SETTINGS.map((n) => link(n, current === n))}</nav>}
+    </div>
   );
   return (
-    <AdminFrame {...props} nav={nav} title={label(current)}>
-      {screen.name === "home" && game.shop.setupDone !== false ? <Home game={game} go={go} /> : <AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={props.browse} />}
+    <AdminFrame {...props} nav={nav} title={titleOf(screen) ?? label(current)}>
+      {screen.name === "home" && game.shop.setupDone !== false ? <Home game={game} go={go} /> : <AdminScreen game={game} screen={screen} go={go} dash="exec" market="exec" label={label} toClient={(c) => open("client", {}, { c })} browse={props.browse} />}
     </AdminFrame>
   );
 }
@@ -141,7 +143,7 @@ function Login({ game, variant, major, onLogin, error, onForgot }: SkinProps & L
         <div className="cxe-loginhead"><Mark /><span className="cxe-area">{t("cexit.admin")}</span></div>
         <label>{t("shop-setup.email")}<input name="username" type="email" autoComplete="off" /></label>
         <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-        <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+        <button type="submit" className="pt-btn primary">{t("shop-admin.login")}</button>
         <LoginNote error={error} onForgot={onForgot} />
       </form>
       <VersionFooter game={game} variant={variant} />
@@ -151,6 +153,6 @@ function Login({ game, variant, major, onLogin, error, onForgot }: SkinProps & L
 
 // The licence screen of a locked admin, and the closed store, in the frame of their area.
 const Bare = (props: SkinProps & { children: ReactNode }) =>
-  props.route.area === "admin" ? <AdminFrame {...props} title={SCREEN_LABEL.licence} /> : <StoreFrame {...props} />;
+  props.route.area === "admin" ? <AdminFrame {...props} title={label("licence")} /> : <StoreFrame {...props} />;
 
 export const clientExitSkin: Skin = { Admin, Store, Client, Login, Bare };

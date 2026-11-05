@@ -11,9 +11,12 @@ import { continueBoot } from "../../../sim/90-actions/remote";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 import { useBios } from "./bios";
+import { POWER_ACTION } from "../locations/power";
 import { isDevice, NetFailed, OsInstalling, useInstaller, winEra, type Machine } from "./installer";
 import { LunixBoot, LunixHalt, LunixLogin, useLunix } from "./lunix";
 import { useWindoors, WindoorsBoot, WindoorsHalt } from "./windoors";
+import { cardBoard, nextGoal } from "../../../sim/checklist";
+import { setBootMenu, useBootMenu } from "./bootMenu";
 import "./console.css";
 
 // How the screen is reached: the controller's remote console, a KVM on the console end, or a monitor plugged in at the rack.
@@ -23,6 +26,8 @@ const LABELS: Record<string, string> = {
   Delete: "Del", F1: "F1", F2: "F2", F3: "F3", F8: "F8", F10: "F10", F11: "F11", Escape: "Esc", Tab: "Tab", Enter: "Enter",
   Backspace: "Bksp", ArrowLeft: "←", ArrowUp: "↑", ArrowDown: "↓", ArrowRight: "→", d: "D", CtrlAltDel: "Ctrl+Alt+Del",
 };
+// Del and Ctrl+Alt+Del are printed on the key in the language of the game.
+const keyLabel = (k: string) => (k === "Delete" ? t("console.keyDel") : k === "CtrlAltDel" ? t("console.keyCad") : LABELS[k] ?? k);
 const HANDLED = new Set([...Object.keys(LABELS)]);
 export const stickName = (img: OsImage) => {
   const { id, version } = imageParts(img);
@@ -88,9 +93,11 @@ export function useOsScreen(game: GameState, m: Machine, active: boolean, stick:
 
 // The soft keys a screen takes, and the keyboard while the screen has focus; a shell's own input keeps its keys.
 export function Keys({ keys, onKey, focus }: { keys: string[]; onKey: (k: string) => void; focus: () => void }) {
+  // The boot card outlines the keys that open the boot menu.
+  const guided = useStore((s) => { const c = cardBoard(s.game).current; return !!c && nextGoal(s.game, c) === "bootUsb"; }), menu = useBootMenu();
   return (
     <div className="scr-keys" role="group" aria-label={t("console.keys")}>
-      {[...new Set(keys)].filter((k) => k !== "Backspace").map((k) => <button key={k} onClick={() => { onKey(k); focus(); }}>{LABELS[k] ?? k}</button>)}
+      {[...new Set(keys)].filter((k) => k !== "Backspace").map((k) => <button key={k} data-guide={guided && (menu ? k === "ArrowDown" || k === "Enter" : k === "F11" || k === "CtrlAltDel") ? "" : undefined} onClick={() => { onKey(k); focus(); }}>{keyLabel(k)}</button>)}
     </div>
   );
 }
@@ -102,11 +109,11 @@ export const focusIn = (box: HTMLDivElement | null) => (box?.querySelector("inpu
 
 // The server's screen: black while off, the POST splash (the window for Del and F11), the firmware prompt, the BIOS
 // setup, the boot menu, then whatever the OS on its disks or the stick shows.
-export function Screen(props: { game: GameState; device: Device; via: Via; active?: boolean }) {
+export function Screen(props: { game: GameState; device: Device; via: Via; active?: boolean; onRestart?: () => void }) {
   return <DeviceScreen key={props.device.id} {...props} />;
 }
 
-function DeviceScreen({ game, device: d, via, active = true }: { game: GameState; device: Device; via: Via; active?: boolean }) {
+function DeviceScreen({ game, device: d, via, active = true, onRestart }: { game: GameState; device: Device; via: Via; active?: boolean; onRestart?: () => void }) {
   const act = useStore((s) => s.act);
   const box = useRef<HTMLDivElement>(null);
   const bios = useBios(game, d);
@@ -123,9 +130,14 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const menu = menuFor !== null && menuFor === d.bootUntil && kind !== "setup" && kind !== "dark";
   const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
+  const guideUsb = useStore((st) => { const c = cardBoard(st.game).current; return !!c && nextGoal(st.game, c) === "bootUsb"; });
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
+  // On a monitor at the rack, Ctrl+Alt+Del restarts a machine whose OS is up, except where the key is the OS's own: the Windoors lock and user prompts.
+  useEffect(() => { setBootMenu(shown === "menu"); return () => setBootMenu(false); }, [shown]);
+  const restart = via === "monitor" && (kind === "desktop" || shown === "notFound" || (kind === "login" && os.look !== "win")) && !os.keys.includes("CtrlAltDel");
   const onKey = (key: string) => {
-    if (shown === "post" || shown === "notFound") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
+    if (key === "CtrlAltDel" && restart) { if (act(POWER_ACTION.reboot, d.id).ok) onRestart?.(); }
+    else if (shown === "post" || shown === "notFound") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
     else if (key === "F11" && shown !== "menu" && shown !== "bios" && shown !== "dark") setQueued(true);
     else if (shown === "stuck") { if (key === "F1") act(continueBoot, d.id); else if (key === "Delete" || key === "F2") act(enterSetup, d.id); }
     else if (shown === "bios") bios.onKey(key);
@@ -136,12 +148,12 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
       else if (key === "Enter" && usb && pick === 1) { act(bootFromUsb, d.id); setMenuFor(null); }
     } else if (shown !== "dark" && shown !== "hung") os.onKey(key);
   };
-  const keys = shown === "post" || shown === "notFound" ? ["Delete", "F2", "F11"] : shown === "stuck" ? ["F1", "Delete"] : shown === "bios" ? ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight", "Enter", "Escape", "F10"]
-    : shown === "menu" ? ["ArrowUp", "ArrowDown", "Enter", "Escape"] : shown === "dark" || shown === "hung" ? [] : os.keys;
+  const keys = shown === "notFound" ? ["Delete", "F2", "F11", ...(restart ? ["CtrlAltDel"] : [])] : shown === "post" ? ["Delete", "F2", "F11"] : shown === "stuck" ? ["F1", "Delete"] : shown === "bios" ? ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight", "Enter", "Escape", "F10"]
+    : shown === "menu" ? ["ArrowUp", "ArrowDown", "Enter", "Escape"] : shown === "dark" || shown === "hung" ? [] : restart ? [...os.keys, "CtrlAltDel"] : os.keys;
   const look = shown === "bios" || shown === "menu" || shown === "dark" || shown === "post" || shown === "stuck" ? shown : os.look;
   return (
     <div className={`scr-wrap ${via}`}>
-      <div ref={box} className="scr" data-look={look} data-hung={kind === "hung" || undefined} tabIndex={0} role="application" aria-label={t("console.serverScreen")} onKeyDown={keyHandler(onKey)}>
+      <div ref={box} className="scr" data-look={look} data-hung={kind === "hung" || undefined} tabIndex={0} role="application" aria-label={t("console.serverScreen")} onKeyDown={(e) => { if (e.key === "Escape" && !keys.includes("Escape")) return; keyHandler(onKey)(e); }}>
         {shown === "dark" && <span className="scr-osd">{t("console.noSignal")}</span>}
         {shown === "post" && <Post game={game} d={d} />}
         {shown === "stuck" && <pre>{"CMOS checksum error - Defaults loaded\nPress F1 to continue, DEL to enter SETUP"}</pre>}
@@ -149,7 +161,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
         {shown === "menu" && (
           <div className="bootmenu">
             <div className="bootmenu-t">Please select boot device:</div>
-            {devices.map((x, i) => <div key={x} className={`inst-row${i === pick ? " on" : ""}`}>{x}</div>)}
+            {devices.map((x, i) => <div key={x} data-guide={guideUsb && x.startsWith("USB") ? "" : undefined} className={`inst-row${i === pick ? " on" : ""}`}>{x}</div>)}
             {pick === devices.length - 1 && <div className="muted">PXE-E53: No boot filename received</div>}
           </div>
         )}

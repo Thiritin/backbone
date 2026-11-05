@@ -1,12 +1,13 @@
 import { t } from "../../i18n/en";
+import { menuTriggers } from "../desktop/ContextMenu";
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { OOB_PORT, oobPorts, type DeviceModel } from "../../sim/10-catalog/hardware";
 import type { End } from "../../sim/50-state";
 import { Back, bayRects, Cord, portSpots, psuInlets, type Side, type Spot } from "./backs";
-import { Defs, Front, ledProps, PortJack, portNo, type Lamp, type Parts, type PortLamp, type PortLight } from "./fronts";
+import { Defs, Front, ledProps, PortJack, portNo, type Lamp, type PanelOp, type Parts, type PortLamp, type PortLight } from "./fronts";
 
 // plugs holds whether each power supply is plugged in.
-export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; badge?: string; badgeFault?: boolean; blink?: boolean; fault?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null; stick?: boolean; note?: string }
+export interface RackItem { id: string; slot: number; model: DeviceModel; brand: string; name: string; state: Lamp; badge?: string; badgeFault?: boolean; blink?: boolean; trans?: boolean; fault?: boolean; parts?: Parts; ports: PortLamp[]; lights?: PortLight[]; groups: number[][]; plugs?: boolean[]; chassisId?: string | null; stick?: boolean; note?: string }
 // One cable end in this rack and the end it leads to, in this rack or on a remote box.
 export interface RackLink { id: string; end: End; peer: End; color: string }
 // A device outside the rack that the rack is or can be cabled to, drawn as a small box above it.
@@ -28,6 +29,7 @@ interface Props {
   onDevice: (id: string) => void;
   // A right-click on a mounted device.
   onDeviceMenu?: (id: string, e: ReactMouseEvent) => void;
+  onRename?: (id: string) => void;
   onFree: (unit: number, el: Element) => void;
   // A cable dragged from one port to another on the back.
   onConnect?: (a: End, b: End) => void;
@@ -35,6 +37,12 @@ interface Props {
   onPlug?: (device: string, psu: number) => void;
   // A click on a server's console end on the back, where the monitor plugs in.
   onConsole?: (device: string) => void;
+  // A press on a control of a device's face; away is whether the player is not on site, which leaves them inert.
+  onPanel?: (device: string, op: PanelOp) => void;
+  away?: boolean;
+  guide?: "power" | "usb" | "reset";
+  // The server whose console end holds the crash cart cable; the cable runs from it to the right side of the rack.
+  consoleOn?: string | null;
   // A click on a server's front USB port, where the stick plugs in.
   onUsb?: (device: string) => void;
   // A powered-off device dragged on the front to a new bottom unit.
@@ -60,11 +68,13 @@ const HIT_X = 2.5, HIT_Y = 3;
 const PULL = 16;
 const LANE = 5, ROW = 5, STEP = 11, VSTEP = 16, PER_ROW = 24, BOX_H = 32, BOX_GAP = 8, SOCK = 24;
 
-const press = (fn: (el: Element) => void) => ({
+const press = (fn: (el: Element) => void, menu?: ReturnType<typeof menuTriggers>) => ({
   role: "button",
   tabIndex: 0,
-  onClick: (e: { currentTarget: Element }) => fn(e.currentTarget),
+  onClick: (e: { currentTarget: Element }) => { if (!menu?.swallowed()) fn(e.currentTarget); },
+  ...(menu && { onPointerDown: menu.onPointerDown, onPointerMove: menu.onPointerMove, onPointerUp: menu.onPointerUp, onPointerCancel: menu.onPointerCancel }),
   onKeyDown: (e: KeyboardEvent<SVGGElement>) => {
+    if (menu?.onKeyDown(e)) return;
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fn(e.currentTarget); }
   },
 });
@@ -86,12 +96,13 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove, onPort, hand = null, portTitle, canLink, needs = [], onAway, duct }: Props) {
+export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onRename, onFree, onConnect, onPlug, onConsole, consoleOn, onUsb, onPanel, away, guide, onMove, onPort, hand = null, portTitle, canLink, needs = [], onAway, duct }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
   const pad = 30, fs = Math.max(7, u * 0.5), at = new Map<number, RackItem>();
   // A board is tall enough for a 2U device; a device takes one board whatever its height.
+  const trig = (id: string) => (onDeviceMenu ? menuTriggers((e) => onDeviceMenu(id, e), onRename && (() => onRename(id))) : undefined);
   const pitch = shelf ? shelfPitch(u) : u, span = (it: RackItem) => (shelf ? 1 : it.model.height);
   for (const it of items) for (let k = 0; k < span(it); k++) at.set(it.slot + k, it);
   const slides = (it: RackItem) => !!onMove && !back && !it.plugs?.some(Boolean) && it.model.height > 0;
@@ -100,11 +111,13 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
   // Dragging snaps to whole units; a drop on a free run moves the device there.
   const grabDevice = (it: RackItem) => ({
     onPointerDown: (e: ReactPointerEvent<SVGGElement>) => {
+      trig(it.id)?.onPointerDown(e);
       if (e.button) return;
       e.preventDefault();
       setSlide({ id: it.id, from: it.slot, y0: e.clientY, to: it.slot, px: pitch * (e.currentTarget.ownerSVGElement?.getScreenCTM()?.d ?? 1) });
     },
   });
+  const panel = (it: RackItem) => ({ away, guide, onPanel: onPanel && ((op: PanelOp) => onPanel(it.id, op)) });
   const placed = new Map<string, { it: RackItem; y: number; h: number }>();
   const out: ReactNode[] = [];
   let y = 0;
@@ -146,8 +159,8 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       const moving = slide?.id === it.id ? slide : null, dy = moving ? (moving.from - moving.to) * pitch : 0;
       out.push(
         <g key={it.id} className={`rack-dev${slides(it) ? " movable" : ""}`} transform={`translate(${pad} ${dev + dy})`} aria-label={it.name} aria-pressed={it.id === selected}
-          {...press(() => { if (!slid.current) onDevice(it.id); })} {...(slides(it) ? grabDevice(it) : {})} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
-          {back ? <Back {...it} w={w} h={h} /> : <Front {...it} w={w} h={h} onUsb={onUsb && (() => onUsb(it.id))} />}
+          {...press(() => { if (!slid.current) onDevice(it.id); }, trig(it.id))} {...(slides(it) ? grabDevice(it) : {})} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
+          {back ? <Back {...it} w={w} h={h} {...panel(it)} /> : <Front {...it} w={w} h={h} onUsb={onUsb && (() => onUsb(it.id))} {...panel(it)} />}
         </g>,
       );
       if (moving && moving.to !== moving.from) out.push(<rect key="slide" x={pad - 2} y={dev + dy - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke={fitsAt(it, moving.to) ? "var(--ok)" : "var(--bad)"} strokeWidth="2" pointerEvents="none" />);
@@ -174,7 +187,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
   for (const b of bays) {
     const sel = b.it.id === selected;
     out.push(
-      <g key={b.it.id} className="rack-dev" transform={`translate(${b.x} ${b.y})`} aria-label={b.it.name} aria-pressed={sel} {...press(() => onDevice(b.it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(b.it.id, e))}>
+      <g key={b.it.id} className="rack-dev" transform={`translate(${b.x} ${b.y})`} aria-label={b.it.name} aria-pressed={sel} {...press(() => onDevice(b.it.id), trig(b.it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(b.it.id, e))}>
         {back ? <Back {...b.it} w={b.w} h={b.h} /> : <Front {...b.it} w={b.w} h={b.h} onUsb={onUsb && (() => onUsb(b.it.id))} />}
         {sel && <rect x="-1" y="-1" width={b.w + 2} height={b.h + 2} rx="2" fill="none" stroke="var(--accent)" strokeWidth="1.5" pointerEvents="none" />}
       </g>,
@@ -191,7 +204,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       const jacks = oobPorts(it.model).map((_, k): [End, Spot] => [{ device: it.id, port: OOB_PORT + k }, { x: x + 0.5, y: y0 + 2 + k * (jh + 1), w: 5, h: jh }]);
       railSpots.push(...jacks);
       out.push(
-        <g key={it.id} className="rack-dev" aria-label={it.name} aria-pressed={sel} {...press(() => onDevice(it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
+        <g key={it.id} className="rack-dev" aria-label={it.name} aria-pressed={sel} {...press(() => onDevice(it.id), trig(it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
           <title>{it.name}</title>
           <rect x={x - 1} y={y0 + 0.5} width="8" height={u - 1} rx="1.5" fill="oklch(0.42 0.1 150)" stroke={sel ? "var(--accent)" : "oklch(0.3 0.05 150)"} strokeWidth={sel ? 2 : 0.6} />
           {jacks.map(([e, s]) => <rect key={e.port} x={s.x} y={s.y} width={s.w} height={s.h} rx="0.5" fill="oklch(0.12 0.004 255)" />)}
@@ -200,7 +213,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       continue;
     }
     out.push(
-      <g key={it.id} className="rack-dev" aria-label={it.name} aria-pressed={sel} {...press(() => onDevice(it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
+      <g key={it.id} className="rack-dev" aria-label={it.name} aria-pressed={sel} {...press(() => onDevice(it.id), trig(it.id))} onContextMenu={onDeviceMenu && ((e) => onDeviceMenu(it.id, e))}>
         <title>{it.name}</title>
         <rect x={x - 1} y="-2" width="8" height={y + 4} rx="2" fill="oklch(0.24 0.005 255)" stroke={sel ? "var(--accent)" : "var(--metal-line)"} strokeWidth={sel ? 2 : 0.6} />
         {Array.from({ length: dots }, (_, k) => <rect key={k} x={x + 1} y={3 + (k * (y - 6)) / dots} width="4" height={Math.max(1.5, (y - 6) / dots - 2)} rx="0.8" fill={it.state === "off" ? "oklch(0.35 0.01 255)" : "oklch(0.78 0.18 145)"} />)}
@@ -362,6 +375,10 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       hits.push(vga
         ? <rect key={endKey(end)} className={`rack-port rack-vga${fit(end)}`} data-end={endKey(end)} x={pad + s.x - HIT_X} y={top + py + s.y - HIT_Y} width={s.w + 2 * HIT_X} height={s.h + 2 * HIT_Y} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} onClick={() => onConsole(it.id)}><title>Plug in monitor</title></rect>
         : <rect key={endKey(end)} {...tap(end)} data-end={endKey(end)} x={pad + s.x - HIT_X} y={top + py + s.y - HIT_Y} width={s.w + 2 * HIT_X} height={s.h + 2 * HIT_Y} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} />);
+      if (vga && consoleOn === it.id) {
+        const cx = pad + s.x + s.w / 2, cy = top + py + s.y + s.h / 2;
+        hits.push(<path key="cart-cable" className="rack-cart-cable" pointerEvents="none" d={`M${cx} ${cy} C${cx} ${cy + 16} ${W - 14} ${cy + 6} ${W - 2} ${cy + 22}`} />);
+      }
     }
   }
 

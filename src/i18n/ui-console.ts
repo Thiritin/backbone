@@ -15,6 +15,8 @@ export default {
   "console.vmScreen": () => "Virtual machine screen",
   "console.serverScreen": () => "Server screen",
   "console.keys": () => "Keys",
+  "console.keyDel": () => "Del",
+  "console.keyCad": () => "Ctrl+Alt+Del",
 
   "console.biosHelpRaid": () => "Enter cycles through the levels the drives allow. A new level deletes the array.",
   "console.biosHelpRebuild": () => "A fast rebuild slows the server, a slow one leaves it exposed for longer.",
@@ -47,6 +49,7 @@ export default {
   "console.erase": () => "<Erase>",
   "console.debBoot": (p) => `Debiant GNU/Lunix ${p.version} installer boot menu`,
   "console.install": () => "Install",
+  "console.autoInstall": () => "Automated install",
   "console.eraseDisk": () => "Erase disk",
   "console.reboot": () => "Reboot",
   "console.ejectReboot": () => "Eject and reboot",

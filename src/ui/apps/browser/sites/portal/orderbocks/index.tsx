@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { FileText, Home, KeyRound, LayoutGrid, Mail, Package, Receipt, RefreshCw, Server, ShoppingCart, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
+import { Globe, Home, LayoutGrid, Mail, Package, Receipt, Server, ShoppingCart, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 import { t } from "../../../../../../i18n/en";
 import { activeServices } from "../../../../../../sim/30-customers/customers";
-import { AdminScreen } from "../shared/AdminScreen";
+import { AdminScreen, titleOf } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
 import { navOf, screenArgs, screenOf, type ScreenName } from "../shared/nav";
@@ -17,15 +17,18 @@ export const eraOfMajor = (major: string): Era => (major === "7" ? "gloss" : maj
 
 export const Mark = () => <span className="ob-mark"><span className="ob-cube" aria-hidden />Order<b>Bocks</b></span>;
 
+// Quotes, licence and updates stay reachable by address and sit in no menu.
 const GROUPS: { id: string; screens: ScreenName[] }[] = [
-  { id: "sales", screens: ["clients", "orders", "invoices", "quotes"] },
+  { id: "domains", screens: ["domains"] },
+  { id: "sales", screens: ["clients", "orders", "invoices"] },
   { id: "catalog", screens: ["products", "servers"] },
-  { id: "settings", screens: ["settings", "emails", "marketplace", "licence", "updates"] },
+  { id: "settings", screens: ["settings", "emails", "marketplace"] },
 ];
 const ICON: Partial<Record<ScreenName, LucideIcon>> = {
-  home: Home, clients: Users, orders: ShoppingCart, invoices: Receipt, quotes: FileText, products: Package, settings: SlidersHorizontal, emails: Mail, marketplace: LayoutGrid, servers: Server, licence: KeyRound, updates: RefreshCw,
+  home: Home, domains: Globe, clients: Users, orders: ShoppingCart, invoices: Receipt, products: Package, settings: SlidersHorizontal, emails: Mail, marketplace: LayoutGrid, servers: Server,
 };
-const label = (n: ScreenName) => t(`orderbocks.nav.${n}`);
+const label = (n: ScreenName) => (n === "domains" ? t("shop-admin.d.domains") : t(`orderbocks.nav.${n}`));
+const groupLabel = (id: string) => (id === "domains" ? label("domains") : t(`orderbocks.group.${id}`));
 
 function NavLink({ n, on, go, icon }: { n: ScreenName; on: boolean; go: (n: ScreenName) => void; icon?: boolean }) {
   const Icon = ICON[n]!;
@@ -39,7 +42,7 @@ function AdminNav({ era, current, go }: { era: Era; current: ScreenName; go: (n:
     <nav className="ob-nav">
       <div className="ob-tabs">
         <NavLink n="home" on={current === "home"} go={go} />
-        {GROUPS.map((g) => <a key={g.id} href="#" className={g === group ? "on" : ""} onClick={(e) => { e.preventDefault(); go(g.screens[0]); }}>{t(`orderbocks.group.${g.id}`)}</a>)}
+        {GROUPS.map((g) => <a key={g.id} href="#" className={g === group ? "on" : ""} onClick={(e) => { e.preventDefault(); go(g.screens[0]); }}>{groupLabel(g.id)}</a>)}
       </div>
       <div className="ob-sub">{(group?.screens ?? []).map((n) => <NavLink key={n} n={n} on={current === n} go={go} />)}</div>
     </nav>
@@ -49,7 +52,7 @@ function AdminNav({ era, current, go }: { era: Era; current: ScreenName; go: (n:
       <NavLink n="home" on={current === "home"} go={go} />
       {GROUPS.map((g) => (
         <div key={g.id} className={`ob-drop${g === group ? " on" : ""}`}>
-          <button type="button">{t(`orderbocks.group.${g.id}`)}</button>
+          <button type="button">{groupLabel(g.id)}</button>
           <div className="ob-menu">{g.screens.map((n) => <NavLink key={n} n={n} on={current === n} go={go} />)}</div>
         </div>
       ))}
@@ -61,7 +64,7 @@ function AdminNav({ era, current, go }: { era: Era; current: ScreenName; go: (n:
       <NavLink n="home" on={current === "home"} go={go} icon />
       {GROUPS.map((g) => (
         <div key={g.id} className="ob-group">
-          <h3>{t(`orderbocks.group.${g.id}`)}</h3>
+          <h3>{groupLabel(g.id)}</h3>
           {g.screens.map((n) => <NavLink key={n} n={n} on={current === n} go={go} icon />)}
         </div>
       ))}
@@ -84,15 +87,15 @@ function Frame({ game, variant, major, kind, title, nav, top, children }: SkinPr
 function Admin(props: SkinProps) {
   const { game, route, open, major } = props, era = eraOfMajor(major), screen = screenOf(route.query);
   const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
-  const current: ScreenName = navOf(screen.name);
+  const current: ScreenName = screen.name === "domains" ? "domains" : navOf(screen.name);
   const group = GROUPS.find((g) => g.screens.includes(current));
   return (
     <Frame {...props} kind="admin" title={<Mark />} top={<span className="ob-who"><span>{game.company.name}</span><i aria-hidden>{game.company.name.slice(0, 1)}</i></span>}
       nav={<AdminNav era={era} current={current} go={(n) => go({ name: n })} />}>
-      {era === "box" && <p className="ob-crumb">{[label("home"), group && t(`orderbocks.group.${group.id}`), current !== "home" && label(current)].filter(Boolean).join(" » ")}</p>}
+      {era === "box" && <p className="ob-crumb">{[label("home"), group && groupLabel(group.id), current !== "home" && label(current)].filter(Boolean).join(" » ")}</p>}
       <section className="ob-card">
-        <h1>{label(current)}</h1>
-        <AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={props.browse} />
+        <h1>{titleOf(screen) ?? label(current)}</h1>
+        <AdminScreen game={game} screen={screen} go={go} dash="orderbox" label={label} toClient={(c) => open("client", {}, { c })} browse={props.browse} />
       </section>
     </Frame>
   );
@@ -122,7 +125,7 @@ function SignIn({ title, user, onSubmit }: { title: string; user: ReactNode; onS
       <h1>{title}</h1>
       {user}
       <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-      <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+      <button type="submit" className="pt-btn primary">{t("shop-admin.login")}</button>
     </form>
   );
 }

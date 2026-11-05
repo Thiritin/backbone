@@ -21,7 +21,7 @@
 .bks-form > button, .bks-form > .bks-row, .bks-form > p { grid-column: 2; justify-self: start; }
 .bks-form input[type="checkbox"] { justify-self: start; margin: 0; }
 .bks-row { display: flex; align-items: center; gap: 6px; }
-.bks-btn { font: 11px Verdana, Geneva, sans-serif; padding: 1px 8px; border: 1px solid #555; background: linear-gradient(#fff, #d8d8d8); color: #000; border-radius: 2px; cursor: pointer; }
+.bks-btn { font: 11px Verdana, Geneva, sans-serif; padding: 1px 8px; border: 1px solid #555; background: linear-gradient(#fff, #d8d8d8); color: #000; border-radius: 2px; cursor: pointer; white-space: nowrap; }
 .bks-btn.primary { font-weight: bold; }
 .bks-head .bks-btn { border-color: #fff; }
 .bks-table { border-collapse: collapse; width: 100%; }

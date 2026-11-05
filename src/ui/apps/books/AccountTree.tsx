@@ -3,8 +3,9 @@ import { X } from "lucide-react";
 import { euroCents } from "../../../sim/00-core/money";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
-import { AccountSheet, accountsOf, type Account, type Kind } from "./accounts";
-import { arrowRows, useBooks } from "./view";
+import { useAccounts } from "./data";
+import { AccountSheet, type Account, type Kind } from "./accounts";
+import { arrowRows } from "./view";
 
 const KINDS: Kind[] = ["asset", "liability", "equity", "income", "expense"];
 // GnuCache shows credit accounts with their sign turned, so income and debts read positive.
@@ -12,8 +13,7 @@ const shown = (kind: Kind, v: number) => (kind === "asset" || kind === "expense"
 
 // GnuCache's Accounts page: the account tree with totals; opening an account adds its register as a page beside it.
 export function AccountTree({ go }: { go: (tab: string) => void }) {
-  const game = useBooks();
-  const accounts = accountsOf(game);
+  const accounts = useAccounts();
   const [closed, setClosed] = useState<Kind[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [open, setOpen] = useSessionState<string | null>("books.gnuOpen", null);

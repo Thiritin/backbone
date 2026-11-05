@@ -15,6 +15,8 @@ export default {
   "console.vmScreen": () => "Bildschirm der virtuellen Maschine",
   "console.serverScreen": () => "Server-Bildschirm",
   "console.keys": () => "Tasten",
+  "console.keyDel": () => "Entf",
+  "console.keyCad": () => "Strg+Alt+Entf",
 
   "console.biosHelpRaid": () => "Mit Enter wechselst du durch die Stufen, die die Festplatten erlauben. Eine neue Stufe löscht das Array.",
   "console.biosHelpRebuild": () => "Ein schneller Neuaufbau bremst den Server, ein langsamer lässt ihn länger ungeschützt.",
@@ -47,6 +49,7 @@ export default {
   "console.erase": () => "<Löschen>",
   "console.debBoot": (p) => `Bootmenü des Installationsprogramms für Debiant GNU/Lunix ${p.version}`,
   "console.install": () => "Installieren",
+  "console.autoInstall": () => "Automatische Installation",
   "console.eraseDisk": () => "Festplatte löschen",
   "console.reboot": () => "Neu starten",
   "console.ejectReboot": () => "Auswerfen und neu starten",

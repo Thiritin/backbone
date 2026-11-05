@@ -21,6 +21,7 @@ export default {
   "purchase.pay": () => "Payment method",
   "purchase.net": () => "Net",
   "purchase.gross": () => "Gross",
+  "purchase.vatFree": () => "VAT exempt",
   "purchase.vat": (p) => `VAT ${p.rate}`,
   "purchase.off.noCard": () => "No card",
   "purchase.off.cardLimit": () => "Card limit reached",

@@ -28,6 +28,7 @@ import { VENDORS_EN } from "./vendors";
 import { BANK_EN } from "./bank";
 import { PAPERWORK_EN } from "./paperwork";
 import { TAX_EN } from "./tax";
+import { BOOKS_GUIDE_EN } from "./books-guide";
 import { ALARMS_EN } from "./alarms";
 import { IFACE_EN } from "./iface";
 import { active, LOCALE, type Dict } from "./lang";
@@ -70,6 +71,7 @@ export const en: Record<string, (p: Params) => string> = {
   ...BANK_EN,
   ...PAPERWORK_EN,
   ...TAX_EN,
+  ...BOOKS_GUIDE_EN,
   ...USED_EN,
   ...BURNIN_EN,
   ...ALARMS_EN,
@@ -503,6 +505,7 @@ export const en: Record<string, (p: Params) => string> = {
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
   "guide.step.mountRouter": () => "Cable the router",
+  "guide.step.serverLinked": () => "Cable the server",
   "guide.step.findAddress": () => "Find the server's address",
   "guide.step.shareWeb": () => "Share the web port",
   "guide.step.internet": () => "Add internet",

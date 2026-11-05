@@ -4,10 +4,11 @@ import { atDesk, inLetterbox, type Letter as Post } from "../../sim/40-support/l
 import { readLetter } from "../../sim/90-actions/paperwork";
 import { scanLetter } from "../../sim/90-actions/post";
 import { playerAt } from "../../sim/60-infra/handwork";
-import { useStore } from "../store";
+import { useFocus, useStore } from "../store";
 import { officeAddress } from "../../sim/60-infra/properties";
 import { paperDay } from "./FormDoc";
 import { payUrl } from "./books/PayablesTab";
+import { supplierBrand } from "./preview/SupplierInvoice";
 import { LETTERHEADS } from "../art/letterheads";
 import "./paper.css";
 
@@ -19,6 +20,11 @@ export function PostApp() {
   const bill = l?.payable ? game.payables.find((p) => p.id === l.payable) : undefined;
   const here = playerAt(game).id;
   const open = (id: string, read: boolean) => { setSel(id); if (!read) act(readLetter, id); };
+  // The next-step card selects the first unpaid bill.
+  useFocus("Post", (f) => {
+    const bill = f.kind === "bill" && letters.find((x) => game.payables.some((p) => p.id === x.payable && p.paidAt === null));
+    if (bill) open(bill.id, bill.read);
+  });
   return (
     <div className="post">
       <div className="post-list" role="list">
@@ -45,15 +51,15 @@ export function PostApp() {
       </div>
       {l && (
         <div className="paper-scroll">
-          <div className="letter-fit">
-            <Letter letter={l} company={game.company.name} owner={game.registration?.owner} />
-          </div>
           <div className="letter-actions">
             {l.scanned ? <span>{t("paperwork.post.scanned")}</span> : <button className="btn" onClick={() => act(scanLetter, l.id)}>{t("paperwork.post.scan")}</button>}
             {l.link && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: l.link! })}>{t("paperwork.post.open")}</button>}
             {bill && <button className="btn" onClick={() => openApp("Preview", { kind: "payable", id: bill.id })}>{t(`purchase.doc.${bill.doc ?? "invoice"}`)}</button>}
             {bill && (bill.paidAt !== null ? <span>{t("bank.pay.paid")}</span>
               : game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, bill) })}>{t("bank.pay.pay")}</button>)}
+          </div>
+          <div className="letter-fit">
+            <Letter letter={l} company={game.company.name} owner={game.registration?.owner} />
           </div>
         </div>
       )}
@@ -63,15 +69,16 @@ export function PostApp() {
 
 // One A4 page laid out after DIN 5008 form B: letterhead, window address, reference block, fold and punch marks, footer.
 export function Letter({ letter: l, company, owner }: { letter: Post; company: string; owner?: string }) {
-  const h = LETTERHEADS[l.from], p = l.params, a = officeAddress(useStore((s) => s.game));
+  const game = useStore((s) => s.game), h = LETTERHEADS[l.from], brand = supplierBrand(l.from), p = l.params, a = officeAddress(game);
+  const paid = !!l.payable && game.payables.find((x) => x.id === l.payable)?.paidAt != null;
   const ref = p.number ?? (p.reg ? `GA ${p.reg}` : null);
   const bank = p.iban ? `IBAN ${p.iban}` : p.account ? `${t("paperwork.letter.account")} ${p.account} · ${t("paperwork.letter.code")} ${p.code}` : null;
   return (
     <article className={`letter${h?.serif ? " serif" : ""}`}>
       <i className="letter-mark fold1" /><i className="letter-mark punch" /><i className="letter-mark fold2" />
       <header className="letter-head">
-        {h && <span className="letter-logo">{h.mark}</span>}
-        <div><strong>{h?.org ?? l.from}</strong>{h && <span>{t(h.dept)}</span>}</div>
+        <span className="letter-logo">{h ? h.mark : brand.logo}</span>
+        <div><strong style={h ? undefined : { color: brand.color }}>{h?.org ?? l.from}</strong>{h && <span>{t(h.dept)}</span>}</div>
       </header>
       <div className="letter-window">
         {h && <small>{[h.org, h.street, h.city].join(" · ")}</small>}
@@ -87,6 +94,7 @@ export function Letter({ letter: l, company, owner }: { letter: Post; company: s
         <p>{t("paperwork.letter.greeting")}</p>
         <p>{t(`letter.${l.topic}.body`, p)}</p>
         <p>{t("paperwork.letter.closing")}</p>
+        {paid && <p className="letter-paid">{t("paperwork.letter.paid")}</p>}
         {h?.signer ? <p className="letter-sign"><span className="paper-ink">{h.signer}</span>{h.signer}</p> : <p className="letter-machine">{t("paperwork.letter.machine")}</p>}
       </div>
       {h && (

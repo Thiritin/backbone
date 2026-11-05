@@ -32,6 +32,8 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
 };
 // The pun name each new supplier trades under unless the order names another.
 export const SUPPLIER_NAMES: Partial<Record<SupplierId, string>> = { landlord: "Engel & Vogel", shopVendor: "Taxware", network: "DE-KICKS", registry: "RIPE-ish NCC", services: "Pear" };
+// Authorities bill by letter and issue no invoice document of their own.
+export const AUTHORITIES: SupplierId[] = ["office", "notary", "register", "chamber", "tax"];
 export const PAY_DAYS = 14;
 export const THROTTLE = 0.25;
 // The bank code every supplier banks at; each supplier's account comes from its id.

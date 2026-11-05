@@ -1,5 +1,6 @@
 // A context menu entry; null draws a separator. An item with items opens a submenu; key is the shortcut it shows.
-export interface MenuItem { label: string; run?: () => void; disabled?: boolean; checked?: boolean; items?: MenuEntry[]; key?: string }
+import type { ComponentType } from "react";
+export interface MenuItem { label: string; icon?: ComponentType; run?: () => void; disabled?: boolean; checked?: boolean; items?: MenuEntry[]; key?: string }
 export type MenuEntry = MenuItem | null | false | undefined;
 // A menu an app adds to the menu bar while its window is in front; the one with id "window" heads the Window menu.
 export interface AppMenu { id: string; title: string; items: MenuEntry[] }

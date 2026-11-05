@@ -6,7 +6,7 @@ import { specFor } from "../src/sim/30-market/spec";
 import { device, deviceDefaults, type GameState } from "../src/sim/50-state";
 import { nodeCapacity, nodeTakes } from "../src/sim/60-infra/cluster";
 import { deviceWatts, installedThreads, perCoreOf } from "../src/sim/60-infra/status";
-import { tick, tickMinute, type SimEvent } from "../src/sim/88-tick/tick";
+import { tick } from "../src/sim/88-tick/tick";
 import { setCompatMode } from "../src/sim/90-actions/cpus";
 import { installPart, replaceComponent, setPower } from "../src/sim/90-actions/hardware";
 import { createVm } from "../src/sim/90-actions/clusters";
@@ -189,7 +189,7 @@ describe("matched sockets", () => {
 });
 
 describe("installing from the UI", () => {
-  it("adds a CPU to a powered-off server with the slot left out, and reports the work done", () => {
+  it("adds a CPU to a powered-off server with the slot left out, at once", () => {
     const s = rich(), d = dev(s, "dev3"), cpu = cpus(s, "dev3")[0], sockets = cpus(s, "dev3").length;
     d.on = false;
     ok(runAction(s, "removePart", ["dev3", cpu.id, "hands"]));
@@ -197,11 +197,7 @@ describe("installing from the UI", () => {
     dev(s, "dev3").maintenance = null;
     const part = ok(buyDevice(s, "part-cpu", "Generic", 1, "loc1", { part: { kind: "cpu", size: cpu.size, vendor: cpu.vendor, gen: cpu.gen } }));
     ok(runAction(s, "installPart", ["dev3", part, undefined, "hands"]));
-    const events: SimEvent[] = [];
-    for (let i = 0; i < 24 * 60 && s.orders.some((o) => !o.applied); i++) events.push(...tickMinute(s));
     expect(cpus(s, "dev3")).toHaveLength(sockets);
-    expect(events.map((e) => e.key)).toContain("event.workDone");
-    expect(events.find((e) => e.key === "event.workDone")!.params.work).toBe("Parts");
   });
 });
 

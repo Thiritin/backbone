@@ -2,6 +2,9 @@ import type { Dict } from "./lang";
 
 export default {
   "shop-whmCache.shortcuts": () => "Shortcuts",
+  "shop-whmCache.menuSupport": () => "Support",
+  "shop-whmCache.menuReports": () => "Reports",
+  "shop-whmCache.menuTools": () => "Utilities",
   "shop-whmCache.systemInfo": () => "System Information",
   "shop-whmCache.version": () => "Version",
   "shop-whmCache.registeredTo": () => "Registered to",

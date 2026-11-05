@@ -42,12 +42,12 @@ describe("checklist", () => {
     settle(s);
     expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan"]);
     s.homeLine = { id: "dsl-16", next: null };
-    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan", "firstServer"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "serverLinked", "loan", "firstServer"]);
     ok(connect(s, { device: b, port: 0 }, { device: "dev5", port: 1 }));
     settle(s);
-    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan", "firstServer", "secondServer"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "serverLinked", "loan", "firstServer", "secondServer"]);
     ok(addLocation(s, "interaction-fra", "share", 1));
-    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan", "firstServer", "secondServer", "datacenter"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "serverLinked", "loan", "firstServer", "secondServer", "datacenter"]);
   });
 
   it("detects a datacenter cluster that sells", () => {
@@ -94,10 +94,10 @@ describe("checklist", () => {
     const s = newGame(1);
     for (const id of TUTORIAL) expect(stepOf(s, id).text).toMatch(/\.$/);
     expect(stepOf(s, "domain").text).toBe("Buy a domain for your company at NameCheep in the Browser.");
-    expect(stepOf(s, "domain").focus?.id).toMatch(/\/dir\/[a-z-]+$/);
+    expect(stepOf(s, "domain").focus?.id).toBe("www.namecheep.com/");
     expect(stepOf(s, "website")).toMatchObject({ app: "Shop", focus: { kind: "software", id: "Marketing" } });
     s.installed = [...s.installed, "Marketing"];
-    expect(stepOf(s, "website")).toMatchObject({ app: "Marketing", focus: { kind: "page", id: "channels" } });
+    expect(stepOf(s, "website")).toMatchObject({ app: "Marketing", focus: { kind: "page", id: "website" } });
     expect(stepOf(s, "buyServer").focus).toEqual({ kind: "class", id: "server" });
     expect(stepOf(s, "bank").focus?.id).toMatch(/sparklasse/);
     expect(stepOf(s, "email").focus).toEqual({ kind: "url", id: "www.ionose.com/" });

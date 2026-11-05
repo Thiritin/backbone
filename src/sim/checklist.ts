@@ -1,7 +1,7 @@
 import { isOfficeRouter, modelById } from "./10-catalog/hardware";
 import { DEFAULT_HOME_LINE, MOMS_DSL } from "./20-world/datacenters";
 import type { GameState } from "./50-state";
-import { isDrive, jacked, linkStatus, locationOf } from "./60-infra/status";
+import { cabledOut, isDrive, jacked, linkStatus, locationOf } from "./60-infra/status";
 import { lineActive } from "./60-infra/addresses";
 import { clusterReachable, hasHosts } from "./60-infra/cluster";
 import { CONSEQUENCES } from "./46-finance/payables";
@@ -36,6 +36,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   buyServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server"),
   mountServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server" && d.rackId && d.on),
   mountRouter: (s) => s.devices.some((d) => !!d.rackId && isOfficeRouter(modelById(d.model)) && jacked(s, d.id)),
+  serverLinked: (s) => s.devices.some((d) => modelById(d.model).kind === "server" && !!d.rackId && cabledOut(s, d.id) === null),
   domain: (s) => !!s.registrar && !!s.company.domain,
   website: siteBuilt,
   launch: (s) => s.marketing.launched && s.marketing.lines.length > 0,
@@ -93,7 +94,7 @@ export const CHAPTER1 = [
   { id: "website", goals: ["website"] },
   { id: "payBill", goals: ["payBill"] },
   { id: "buyServer", goals: ["buyServer"] },
-  { id: "mountServer", goals: ["mountServer", "mountRouter"] },
+  { id: "mountServer", goals: ["mountServer", "mountRouter", "serverLinked"] },
   { id: "installOs", goals: ["downloadIso", "writeStick", "plugStick", "bootUsb", "installOs"] },
   { id: "hosting", goals: ["setup", "shareWeb", "launch"] },
   { id: "firstOrder", goals: ["firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "books", "sendInvoice"] },

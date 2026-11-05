@@ -322,7 +322,7 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .loc-line-name { display: grid; gap: 2px; padding: 10px 14px 0; }
 .loc-line-name strong { font-weight: 650; font-size: 12.5px; }
 .loc-line-name span { display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 12px; }
-.loc-line-specs { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 10px 14px 12px; margin: 0; align-content: start; }
+.loc-line-specs { flex: 1; display: grid; grid-template-columns: 1fr; gap: 4px; padding: 10px 14px 12px; margin: 0; align-content: start; }
 .loc-line-specs dt { font-size: 11px; font-weight: 550; color: var(--text-3); }
 .loc-line-specs dd { margin: 0; font-size: 12px; }
 .loc-line-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-height: 44px; padding: 6px 10px 6px 14px; border-top: var(--ar-bw) solid var(--line); }

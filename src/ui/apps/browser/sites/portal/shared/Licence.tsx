@@ -1,3 +1,4 @@
+import { PBtn } from "./ui";
 import { useState } from "react";
 import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
@@ -36,7 +37,7 @@ export function LicenceScreen({ game }: Props) {
       <dl className="pt-fields">
         <dt>{t("host.edition")}</dt><dd>{edition}</dd>
         <dt>{t("shop-admin.status")}</dt><dd>{state}</dd>
-        {k && <><dt>{t("shop-admin.key")}</dt><dd><span className="num">{k.key}</span> <button type="button" className="btn" onClick={() => act(removeLicence, SHOP_MACHINE, id)}>{t("host.removeKey")}</button></dd></>}
+        {k && <><dt>{t("shop-admin.key")}</dt><dd><span className="num">{k.key}</span> <PBtn type="button" onClick={() => act(removeLicence, SHOP_MACHINE, id)}>{t("host.removeKey")}</PBtn></dd></>}
         {caps && <><dt>{t(caps === "servers" ? "shop-admin.capServers" : "shop-admin.capClients")}</dt>
           <dd className="num">{tier?.cap == null ? t("host.unlimited", { n: shopCount(game) }) : t("host.of", { n: shopCount(game), cap: tier.cap })}</dd></>}
         {k?.updatesUntil !== undefined && <><dt>{t("shop-admin.updatesUntil")}</dt><dd className="num">{formatDay(k.updatesUntil)}</dd></>}
@@ -44,7 +45,7 @@ export function LicenceScreen({ game }: Props) {
       {status !== null && !k && (
         <form className="pt-key" onSubmit={(e) => { e.preventDefault(); save(); }}>
           <label>{t("shop-admin.key")}<input name="key" value={code} autoComplete="off" onChange={(e) => setCode(e.target.value)} /></label>
-          <button type="submit" className="btn primary">{t("shop-admin.saveKey")}</button>
+          <PBtn type="submit" primary>{t("shop-admin.saveKey")}</PBtn>
           {error && <p className="pt-error" role="alert">{t(error)}</p>}
         </form>
       )}
@@ -66,17 +67,17 @@ export function UpdatesScreen({ game, browse }: Props) {
       <dl className="pt-fields">
         <dt>{t("shop-admin.installed")}</dt><dd className="num">{version}</dd>
         <dt>{t("shop-admin.available")}</dt>
-        <dd><span className="num">{update?.version ?? t("shop-admin.none")}</span> <button type="button" className="btn" disabled={!update} onClick={() => act(updateShop)}>{t("shop-admin.installUpdate")}</button></dd>
+        <dd><span className="num">{update?.version ?? t("shop-admin.none")}</span> <PBtn type="button" disabled={!update} onClick={() => act(updateShop)}>{t("shop-admin.installUpdate")}</PBtn></dd>
         {k?.updatesUntil !== undefined && <><dt>{t("shop-admin.updatesUntil")}</dt>
           <dd><span className="num">{formatDay(k.updatesUntil)}</span> {fee !== undefined && (account
-            ? <button type="button" className="btn" onClick={account}>{t("vendor-shop.myAccount")}</button>
-            : <PayButton className="btn" supplier="shopVendor" name={vendorName(id)} amount={fee ?? 0} run={(m) => act(renewShopUpdates, m)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</PayButton>)}</dd></>}
+            ? <PBtn type="button" onClick={account}>{t("vendor-shop.myAccount")}</PBtn>
+            : <PayButton className="pt-btn" supplier="shopVendor" name={vendorName(id)} amount={fee ?? 0} run={(m) => act(renewShopUpdates, m)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</PayButton>)}</dd></>}
         {next && <><dt>{t("shop-admin.nextMajor")}</dt>
           <dd><span className="num">{next.version}</span> {price === undefined
-            ? <PayButton className="btn" supplier="shopVendor" name={vendorName(id)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("shop-admin.upgrade")}</PayButton>
+            ? <PayButton className="pt-btn" supplier="shopVendor" name={vendorName(id)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("shop-admin.upgrade")}</PayButton>
             : account
-              ? <button type="button" className="btn" onClick={account}>{t("vendor-shop.myAccount")}</button>
-              : <PayButton className="btn" supplier="shopVendor" name={vendorName(id)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("shop-admin.upgradeFor", { fee: euroPrice(price) })}</PayButton>}</dd></>}
+              ? <PBtn type="button" onClick={account}>{t("vendor-shop.myAccount")}</PBtn>
+              : <PayButton className="pt-btn" supplier="shopVendor" name={vendorName(id)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("shop-admin.upgradeFor", { fee: euroPrice(price) })}</PayButton>}</dd></>}
       </dl>
     </div>
   );

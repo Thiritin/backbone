@@ -18,7 +18,7 @@ import { useStore } from "../../store";
 
 export const ARM_MS = 3000;
 // The key on the tag that the current guide card needs.
-const GUIDE_KEY: Partial<Record<string, "power" | "console" | "reboot">> = { mountServer: "power", mountRouter: "power", plugStick: "console", bootUsb: "reboot", installOs: "console" };
+const GUIDE_KEY: Partial<Record<string, "power" | "console" | "reboot">> = { mountServer: "power", mountRouter: "power", installOs: "console" };
 type Menus = ReturnType<typeof useDeviceMenu>;
 const real = (e: MenuEntry | undefined): e is MenuItem => !!e;
 const bare = (s: string) => s.replace(/(\.\.\.|…)$/, "");
@@ -43,7 +43,7 @@ function iconFor(d: Device, game: Parameters<typeof handsLabel>[0], label: strin
 }
 
 // A paper slip with a stamp: what is being confirmed, a small cancel key bottom left and the stamp bottom right.
-function Slip({ name, text, action, onStamp, onCancel, slip }: { name: string; text?: string; action: string; onStamp: () => void; onCancel: () => void; slip: string }) {
+export function Slip({ name, text, action, onStamp, onCancel, slip }: { name: string; text?: string; action: string; onStamp: () => void; onCancel: () => void; slip: string }) {
   return (
     <div className="wk-slip" data-slip={slip}>
       <div className="wk-slip-name">{name}</div>
@@ -57,8 +57,10 @@ function Slip({ name, text, action, onStamp, onCancel, slip }: { name: string; t
 }
 
 // A server's unit tag: a small paper tag with its name and model, a drawn power key with console and port connectors, and a grid of pictogram keys for the other actions.
-export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, onCart, onSold }: {
+export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, onCart, onSold, onPanel }: {
   deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; menus: Menus; back: boolean; onPorts?: () => void; onCart?: () => void; onSold: () => void;
+  // The same hardware press as the buttons on the front; given when the player is on site.
+  onPanel?: (op: "power") => void;
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const d = game.devices.find((x) => x.id === deviceId)!;
@@ -97,6 +99,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
   ];
 
   const onKey = () => {
+    if (rackServer && onPanel) { if (!d.on || armed) { setArmed(false); onPanel("power"); } else setArmed(true); return; }
     if (!d.on) { if (!rackServer) menus.power(d, true); else if (options.some((o) => o.op === "on")) menus.op(d, "on"); else menus.front(d, "power"); return; }
     if (!armed) { setArmed(true); return; }
     setArmed(false);
@@ -119,7 +122,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
             <i />
           </button>
           <span className="wk-gap" />
-          {m.kind === "server" && <button className="wk-port" data-cart="" data-guide={guide === "console" ? "" : undefined} disabled={!onCart} aria-label={t("world.console")} title={t("world.console")} onClick={onCart}>
+          {m.kind === "server" && <button className="wk-port" data-cart="" data-guide={guide === "console" || guide === "reboot" ? "" : undefined} disabled={!onCart} aria-label={t("world.console")} title={t("world.console")} onClick={onCart}>
             <svg viewBox="0 0 24 16" aria-hidden="true"><rect x="1.5" y="1.5" width="21" height="11" /><path d="M8 15h8" /></svg>
           </button>}
           {onPorts && <button className={`wk-port${back ? " on" : ""}`} data-ports="" aria-pressed={back} aria-label={t("locations-1.ports")} title={t("locations-1.ports")} onClick={onPorts}>

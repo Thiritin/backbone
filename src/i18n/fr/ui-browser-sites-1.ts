@@ -148,6 +148,7 @@ export default {
   "browser-sites-1.ix.searchLabel": () => "Rechercher sur le web",
   "browser-sites-1.ix.search": () => "Rechercher",
   "browser-sites-1.ix.ad": () => "Annonce",
+  "browser-sites-1.ix.pick": () => "Recommandé",
   "browser-sites-1.ix.home": () => "Accueil",
   "browser-sites-1.ix.makeHome": () => "Faire de Yahoy! ma page d'accueil",
   "browser-sites-1.ix.noMatch": () => "Aucun site trouvé.",

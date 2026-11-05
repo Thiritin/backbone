@@ -51,12 +51,8 @@ describe("installing parts", () => {
     expect(err(installPart(s, id, ram))).toBe("error.powerOffFirst");
     ok(setPower(s, id, false));
     ok(installPart(s, id, ram));
-    // The work is a queued order; the stick goes in when it is done.
-    expect(s.orders.filter((o) => !o.applied)).toMatchObject([{ kind: "parts", action: { name: "installPart" } }]);
-    expect(kinds(s, id, "ram")).toHaveLength(0);
-    // A second install on the same unit is busy while the first is queued.
-    expect(err(installPart(s, id, spare(s, "ram", 2)))).toBe("error.busy");
-    settle(s);
+    // The player's own hands act at once.
+    expect(s.orders.filter((o) => !o.applied)).toEqual([]);
     expect(kinds(s, id, "ram")).toHaveLength(1);
     expect(kinds(s, id, "ram")[0]).toMatchObject({ size: 2, installedAt: s.hour, failedAt: null });
     expect(s.devices.some((d) => d.id === ram)).toBe(false);

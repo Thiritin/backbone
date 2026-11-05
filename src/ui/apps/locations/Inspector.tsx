@@ -29,7 +29,7 @@ import { dcOf, Facts, UsageBars } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { NodeCard } from "./Clusters";
 import { softwareOn } from "../../../sim/90-actions/software";
-import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
+import { deviceMenu, secondPsuPrice, type DeviceUi, type WorldUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
 import { RemoteCard } from "./RemoteCard";
 import { consoleVia, remoteFix } from "../../../sim/60-infra/oob";
@@ -42,6 +42,7 @@ import { startBurnin } from "../../../sim/90-actions/burnin";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { burning } from "../../../sim/60-infra/status";
 import { serverTaken } from "../../../sim/60-infra/cluster";
+import { customersAffectedBy } from "../../../sim/60-infra/incidents";
 import { frontOptions, handsAway, isServerInRack, POWER_ACTION, POWER_LABEL, powerOptions, type PowerOp } from "./power";
 import { atDatacenter, HandsButtons, handsWays, useHandWork, wayLabel, type HandsHow } from "./HandSheet";
 import type { FrontOp } from "../../../sim/60-infra/power";
@@ -92,7 +93,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   return {
     plan: mnt.plan,
     pending,
-    entries: (d: Device, open = false) => deviceMenu(game, d, ui(d, open)),
+    entries: (d: Device, open = false, world?: WorldUi) => deviceMenu(game, d, ui(d, open), world),
     power: (d: Device, on: boolean) => ui(d, false).power(on),
     op: (d: Device, op: PowerOp) => ui(d, false).op(op),
     front: (d: Device, op: FrontOp) => ui(d, false).front(op),
@@ -198,7 +199,7 @@ export function Inspector({ game, device, port, side = "front", onSelect, onHot,
       {!monitor && <>
       <div className="loc-face" onContextMenu={menuOn(menu)}>
         <DeviceSvg model={model} brand={device.brand} name={name} {...deviceLamps(game, device.id, model)} groups={device.groups} w={420} u={22} back={side === "back"}
-          onPower={server && (device.rackId || device.panel) ? togglePower : undefined}
+          onPanel={server && (device.rackId || device.panel) ? (op) => { if (op === "power") togglePower(); else if (op === "hold" || op === "reset") menus.front(device, op); } : undefined}
           plugs={psus.map(isPlugged)} stick={stickIn} onInlet={device.rackId || device.panel ? (k) => menus.plug(device, psus[k].id) : undefined} onConsole={device.rackId ? onConsole : undefined} />
         {model.kind !== "server" && <PortGrid model={model} peers={peers} groups={device.groups} sel={sel} onPick={pick} onHover={setHover} roles={isProviderPanel(device) ? jackRoles(game, device.id) : undefined} />}
       </div>
@@ -511,21 +512,23 @@ export function LabelEdit({ device, editing, onEditing }: { device: Device; edit
 // With inline the offline check is returned as `pending` for the view to draw instead of a dialog.
 export function useOfflineGuard(game: GameState, inline = false) {
   const act = useStore((s) => s.act);
-  const [down, setDown] = useState<{ names: string[]; title: string; action: string; run: () => void } | null>(null);
+  const [down, setDown] = useState<{ names: string[]; customers: number; title: string; action: string; run: () => void } | null>(null);
   const guarded = <A extends unknown[]>(title: string, action: string, fn: (g: GameState, ...args: A) => ActionResult, ...args: A) => {
     const after = structuredClone(game);
     fn(after, ...args);
-    const names = game.devices.filter((d) => linkStatus(game, d.id).online && !linkStatus(after, d.id).online).map(devName);
-    if (names.length) setDown({ names, title, action, run: () => act(fn, ...args) });
+    const gone = game.devices.filter((d) => linkStatus(game, d.id).online && !linkStatus(after, d.id).online);
+    const customers = new Set(gone.flatMap((d) => customersAffectedBy(game, d).map((c) => c.id))).size;
+    if (gone.length) setDown({ names: gone.map(devName), customers, title, action, run: () => act(fn, ...args) });
     else act(fn, ...args);
   };
   const names = down?.names ?? [];
+  const offlineText = () => `${t("locations-1.offlineText", { names: names.slice(0, 3).join(", "), more: Math.max(0, names.length - 3), count: names.length })}${down?.customers ? ` ${t("world.affected", { count: down.customers })}` : ""}`;
   const dialog = !inline && down && (
     <Confirm title={down.title}
-      text={t("locations-1.offlineText", { names: names.slice(0, 3).join(", "), more: Math.max(0, names.length - 3), count: names.length })}
+      text={offlineText()}
       action={down.action} onCancel={() => setDown(null)} onConfirm={() => { setDown(null); down.run(); }} />
   );
-  const pending = down && { title: down.title, action: down.action, text: t("locations-1.offlineText", { names: names.slice(0, 3).join(", "), more: Math.max(0, names.length - 3), count: names.length }), cancel: () => setDown(null), confirm: () => { setDown(null); down.run(); } };
+  const pending = down && { title: down.title, action: down.action, text: offlineText(), cancel: () => setDown(null), confirm: () => { setDown(null); down.run(); } };
   return { guarded, dialog, pending };
 }
 

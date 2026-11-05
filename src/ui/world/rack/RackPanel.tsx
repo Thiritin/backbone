@@ -1,19 +1,21 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
-import { modelById, modelName, wanPort } from "../../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById, modelName, wanPort } from "../../../sim/10-catalog/hardware";
+import { uplinkPort } from "../../../sim/60-infra/routers";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { connectError, deviceHealth, heightIn, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
+import { booting, cabledOut, connectError, deviceHealth, halting, heightIn, jacked, locationOf, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
 import { present } from "../../../sim/60-infra/handwork";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
-import { Screen } from "../../apps/console/Screen";
 import { Isometric } from "../../art/Isometric";
+import type { PanelOp } from "../../art/fronts";
 import { RackFront, shelfPitch, type RackItem } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
-import { portLamps } from "../../apps/hw";
+import { devName, portLamps } from "../../apps/hw";
+import { affected, frontGuide, panelPress } from "./panelPress";
 import { handsWays, useHandWork, wayLabel, type HandTask } from "../../apps/locations/HandSheet";
 import { PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
@@ -22,6 +24,8 @@ import { formatDay } from "../../apps/billing/format";
 import "../../apps/locations/locations.css";
 import { Slab } from "../panel/Slab";
 import { endName } from "./Cables";
+import { CrashCart } from "./CrashCart";
+import { noteSelected, setPlug, useCable } from "./cartPlug";
 import { LidScene } from "./LidScene";
 import { jackEntries, jacksOf, jackText, ProviderPanel } from "./ProviderPanel";
 import { PayStep, type Purchase } from "../../apps/browser/sites/shared/PayStep";
@@ -29,7 +33,7 @@ import { panelOf } from "../../../sim/60-infra/panels";
 import "../panel/panel.css";
 import "./rack.css";
 import { WorkTag } from "../figures";
-import { UnitTag } from "./UnitTag";
+import { Slip, UnitTag } from "./UnitTag";
 import { clampZoom, stepZoom, tagLeft, wheelZoom } from "./zoom";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
@@ -47,29 +51,45 @@ const key = (e: End) => `${e.device}:${e.port}`;
 
 // The rack close-up: the rack stands centred on the floor; a picked unit slides it left and hangs a paper tag beside it.
 // On the back a cable is dragged from port to port, or a click takes a port as the cable in hand and a click on a second port plugs it in; the hand outlives the panel.
-export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, onConnectFrom }: {
-  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void;
+export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, device, guide, onConnectFrom }: {
+  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string; guide?: "cable" | "vga" | "usb" | "link" | "mount";
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rack = game.racks.find((r) => r.id === rackId);
-  const [sel, setSel] = useState<string | null>(null);
-  const [back, setBack] = useState(!!(hand || startPort));
+  const [sel, setSel] = useState<string | null>(device ?? null);
+  const [back, setBack] = useState(!!(hand || startPort || guide === "cable" || guide === "vga" || guide === "link"));
   // The side turning away while the other turns in.
   const [turning, setTurning] = useState<boolean | null>(null);
   const [port, setPort] = useState<End | null>(startPort);
   // A carried unit opens the panel on the lowest free unit it fits.
   const [free, setFree] = useState<number | null>(null);
+  const autoPick = useRef(false);
   const [lid, setLid] = useState<string | null>(null);
   const [cart, setCart] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
+  const [out, setOut] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pin, setPin] = useState<{ x: number; y: number; top: number; left: number } | null>(null);
   // The provider jack whose tag hangs open.
   const [jack, setJack] = useState<number | null>(null);
   const stage = useRef<HTMLDivElement>(null), scene = useRef<HTMLDivElement>(null), tagEl = useRef<HTMLDivElement>(null);
-  const pick = (id: string | null) => { setSel(id); setFree(null); setLid(null); setRenaming(false); setPort(null); setJack(null); };
+  const plugged = useCable(game);
+  const pick = (id: string | null) => { noteSelected(id); setSel(id); setFree(null); setLid(null); setRenaming(false); setPort(null); setJack(null); };
   const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }], true);
   const work = useHandWork();
+  const loc = game.locations.find((l) => l.id === rack?.locationId), offSite = !!loc?.dc && !present(game, loc.id);
+  const [ask, setAsk] = useState<{ id: string; op: PanelOp; count: number } | null>(null);
+  const run = (id: string, op: PanelOp) => {
+    const d = game.devices.find((x) => x.id === id), k = d && panelPress(game, act, d, op);
+    if (k) setOut(k);
+  };
+  // A press that takes customers offline waits for the slip.
+  const press = (id: string, op: PanelOp) => {
+    const d = game.devices.find((x) => x.id === id), count = d ? affected(game, d, op) : 0;
+    if (d && count > 0 && !booting(game, d) && !halting(d)) setAsk({ id, op, count });
+    else run(id, op);
+  };
+  useEffect(() => { if (out) { const h = setTimeout(() => setOut(null), 4000); return () => clearTimeout(h); } }, [out]);
   const turn = (to: boolean) => {
     if (to === back) return;
     if (!to) { setPort(null); setJack(null); }
@@ -210,6 +230,44 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   };
   useLayoutEffect(repin, [anchor, sel, back, zoom, game, turning, jack]);
   // A tag opened at high zoom is brought into view.
+  // The card's cabling step outlines the line jack and router uplink, the boot step the server VGA port (the console end is port 100).
+  useEffect(() => {
+    if (guide === "mount") {
+      // The card picks the first free unit at once, so the stock tile shows beside it.
+      if (free === null && !autoPick.current) { const first = document.querySelector<SVGGElement>(".wr-face .rack-free"); if (first) { autoPick.current = true; first.dispatchEvent(new MouseEvent("click", { bubbles: true })); } }
+      // The free unit to click, then the stored devices that fit it.
+      const hit = [document.querySelector(".wr-face .rack-free"), ...document.querySelectorAll("[data-free] .wp-unit button")];
+      const els = hit.filter((el): el is Element => !!el);
+      els.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => els.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    if (guide === "link") {
+      // The cabling step's second cable: the server's first free port to a free LAN port on the router.
+      const srv = game.devices.find((x) => x.id === device), router = game.devices.find((x) => !!x.rackId && isOfficeRouter(modelById(x.model)));
+      if (!srv || !router || cabledOut(game, srv.id) === null) return;
+      const rm = modelById(router.model), wan = wanPort(rm);
+      const free = (id: string, skip: (i: number) => boolean) => modelById(game.devices.find((x) => x.id === id)!.model).ports.findIndex((_, i) => !skip(i) && !portPeers(game, id)[i]);
+      const ends = [`${srv.id}:${free(srv.id, () => false)}`, `${router.id}:${free(router.id, (i) => i === wan)}`];
+      const hit = [...document.querySelectorAll("[data-end]")].filter((el) => ends.includes(el.getAttribute("data-end") ?? ""));
+      hit.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => hit.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    if (guide === "usb") {
+      const usb = [...document.querySelectorAll(".usb-hit")];
+      usb.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => usb.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    if (guide === "vga") {
+      const vga = [...document.querySelectorAll("[data-end]")].filter((el) => el.getAttribute("data-end") === `${device}:100`);
+      vga.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => vga.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    const router = guide === "cable" && game.devices.find((x) => x.id === device), jack = game.devices.find((x) => modelById(x.model).kind === "jack" && locationOf(game, x)?.id === rack?.locationId);
+    if (!router || !jack || jacked(game, router.id)) return;
+    const hit = [...document.querySelectorAll("[data-end]")].filter((el) => el.getAttribute("data-end")?.startsWith(`${jack.id}:`) || el.getAttribute("data-end") === `${router.id}:${uplinkPort(router)}`);
+    hit.forEach((el) => el.setAttribute("data-guide", ""));
+    return () => hit.forEach((el) => el.removeAttribute("data-guide"));
+  });
   useEffect(() => { tagEl.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" }); }, [sel, free, port, jack, back]);
   if (!rack) return null;
 
@@ -238,27 +296,31 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   }
   const away = (e: End) => { if (!peerOf(e)) { onHand(e); onClose(); } };
 
-  const entries = (d: Device) => [...menus.entries(d), ...(onConnectFrom ? [null, { label: t("world.newConnection"), run: () => onConnectFrom(d.id) }] : [])];
+  const entries = (d: Device) => menus.entries(d, false, {
+    cart: () => { setPlug(d.id); setCart(d.id); },
+    ports: () => { pick(d.id); turn(true); },
+    connect: onConnectFrom && (() => onConnectFrom(d.id)),
+  });
   let tag: ReactNode = null, unit = false;
   if (back && pp && jack !== null && !hand) tag = <JackTag game={game} panel={pp} jack={jack} />;
   else if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
-  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} back={back} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => turn(!back) : undefined}
-    onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => setCart(dev.id) : undefined} />; }
+  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} onPanel={offSite ? undefined : (op) => press(dev.id, op)} back={back} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => turn(!back) : undefined}
+    onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => { setPlug(dev.id); setCart(dev.id); } : undefined} />; }
   // A picked free unit sets what fits there on the floor beside the rack.
   const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} /> : null;
 
   const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
   const face = (side: boolean) => side ? (
-    <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U} duct
-      selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title} needs={needs} canLink={(a, b) => !connectError(game, a, b)}
+    <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" away={offSite} guide={frontGuide(game)} onPanel={press} w={BACK_U * 19} u={BACK_U} duct
+      selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} onConsole={present(game, rack.locationId) ? (id) => { setPlug(id); pick(id); } : undefined} consoleOn={plugged} hand={hand} portTitle={title} needs={needs} canLink={(a, b) => !connectError(game, a, b)}
       onPlug={(id, k) => { const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k]; if (d && psu) menus.plug(d, psu.id); }}
-      onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }} />
+      onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onRename={(id) => { pick(id); setRenaming(true); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }} />
   ) : (
     <RackFrame units={tall} bare={shelf}>
       {(w, u) => (
-        <RackFront units={units} shelf={shelf} items={items} w={w} u={u} selected={dev?.id ?? null}
-          onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }}
+        <RackFront units={units} shelf={shelf} items={items} w={w} u={u} selected={dev?.id ?? null} away={offSite} guide={frontGuide(game)} onPanel={press}
+          onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onRename={(id) => { pick(id); setRenaming(true); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }}
           onUsb={(id) => (game.media.stick.in === id ? act(unplugStick) : act(plugStick, id))} />
       )}
     </RackFrame>
@@ -281,6 +343,10 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
               {back && pp && <ProviderPanel game={game} panel={pp} picked={jack} hand={hand} onJack={(e) => (hand ? plug(e) : (pick(null), setJack(e.port)))} onConnect={(a, b) => { act(connect, a, b); }} />}
               <WorkTag game={game} rackId={rack.id} />
               <div className="wr-plate" data-plate=""><b>{rack.name}</b><span>{shelf ? `${used} / ${units}` : `${used} / ${units} U`}</span></div>
+              {ask && (() => { const d = game.devices.find((x) => x.id === ask.id); return d && (
+                <div className="wr-slip-pin"><Slip slip="customers" name={devName(d)} text={t("world.affected", { count: ask.count })} action={t(ask.op === "reset" ? "art.reset" : "art.shutDown")}
+                  onCancel={() => setAsk(null)} onStamp={() => { setAsk(null); run(ask.id, ask.op); }} /></div>
+              ); })()}
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
               <div className={`wr-face${turning !== null ? " in" : ""}`}>{face(back)}</div>
               <button className="wr-flank" aria-hidden="true" onClick={() => turn(!back)} tabIndex={-1} />
@@ -295,38 +361,16 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
             )}
           </div>
           <div className="wr-floor">
+            {out && <div className="wr-out" role="status">{out}</div>}
             {back && <div className="wr-away" data-away="" role="button" tabIndex={0} aria-label={t("world.toRack")} onClick={() => hand && onClose()}><span className="wr-k" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" /><path d="M11 9h3q3 0 3 3t3 3M17 15l3 0M20 15l-2-2M20 15l-2 2" /></svg></span><span>{t("world.toRack")}</span></div>}
           </div>
         </div>
         {lid && dev && <LidScene key={lid} deviceId={lid} onClose={() => setLid(null)} />}
       </div>
       {menus.dialog}
-      {cart && game.devices.some((x) => x.id === cart) && <CrashCart deviceId={cart} onClose={() => setCart(null)} />}
+      {cart && game.devices.some((x) => x.id === cart) && <CrashCart deviceId={cart} onClose={() => setCart(null)} backLabel={t("console.back")} />}
       {work.dialog}
     </Slab>
-  );
-}
-
-// The crash cart: a monitor and keyboard on a trolley, drawn large in front of the rack; the keyboard types into the machine's own console.
-function CrashCart({ deviceId, onClose }: { deviceId: string; onClose: () => void }) {
-  const game = useStore((s) => s.game);
-  const d = game.devices.find((x) => x.id === deviceId)!;
-  return (
-    <div className="wr-cart" data-cart-panel={deviceId}>
-      <div className="wr-cart-monitor">
-        <Screen game={game} device={d} via="monitor" />
-      </div>
-      <svg className="wr-cart-frame" viewBox="0 -20 640 270" aria-hidden="true">
-        <rect className="wr-cart-post" x="48" y="30" width="10" height="190" />
-        <rect className="wr-cart-post" x="582" y="30" width="10" height="190" />
-        <rect className="wr-cart-shelf" x="30" y="150" width="580" height="10" />
-        <rect className="wr-cart-tray" x="20" y="14" width="600" height="20" />
-        <rect className="wr-kb" x="110" y="-18" width="420" height="32" rx="3" />
-        {[0, 1, 2, 3].map((r) => Array.from({ length: r === 3 ? 9 : 19 }, (_, c) => <rect key={`${r}${c}`} className="wr-key" x={r === 3 ? 190 + c * 26 : 118 + c * 21.2} y={-14 + r * 7} width={r === 3 ? 22 : 18} height="5" />))}
-        {[48, 582].map((x) => <g key={x}><rect className="wr-cart-post" x={x - 6} y="220" width="22" height="8" /><circle className="wr-wheel" cx={x + 5} cy="238" r="10" /><circle className="wr-hub" cx={x + 5} cy="238" r="3" /></g>)}
-      </svg>
-      <button className="wr-cart-back" aria-label={t("world.toRack")} onClick={onClose} />
-    </div>
   );
 }
 

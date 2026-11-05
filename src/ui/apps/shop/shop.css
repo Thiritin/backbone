@@ -44,7 +44,7 @@
 }
 :root[data-os="tahoe"][data-theme="dark"] { --ar-lift: inset 0 1px 0 oklch(1 0 0 / 0.14), 0 8px 24px -14px oklch(0 0 0 / 0.6); }
 
-.shop { flex: 1; min-width: 0; display: flex; }
+.shop { flex: 1; min-width: 0; display: flex; container-type: inline-size; }
 .shop-side { display: flex; flex-direction: column; gap: 1px; }
 .shop-side button.side-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; }
 .shop-side button.side-item:hover { background: var(--hover); }
@@ -88,7 +88,7 @@
 .shop-cart-total { display: flex; align-items: center; padding: 10px 16px; border-top: var(--ar-bw) solid var(--line-strong); font-weight: 600; }
 .shop-pay { display: grid; gap: 6px; padding: 4px 12px 12px; }
 .shop-offer-top { display: flex; align-items: center; gap: 6px; }
-.shop-cart-foot { display: flex; justify-content: flex-end; padding: 0 12px 14px; margin-top: auto; }
+.shop-cart-foot { display: flex; justify-content: flex-end; padding: 10px 12px 14px; margin-top: auto; position: sticky; bottom: 0; background: var(--win); border-top: var(--ar-bw) solid var(--line); }
 
 .shop-dest { display: grid; gap: 6px; padding: 10px 14px 12px; font-size: 12px; color: var(--text-2); }
 .shop-dest .pick { color: var(--text); }
@@ -169,7 +169,7 @@
 .shop-side .shop-soft-tile svg.lucide { width: 13px; height: 13px; color: white; }
 .shop-view button { padding: 0 7px; display: grid; place-items: center; }
 .shop-view svg.lucide { width: 14px; height: 14px; }
-.shop-list { flex: 1; min-width: 0; overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; align-content: start; }
+.shop-list { flex: 1; min-width: 0; container-type: inline-size; overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; align-content: start; }
 .shop-row { border-bottom: var(--ar-bw) solid var(--line); }
 .shop-row-main { display: grid; grid-template-columns: 64px minmax(160px, 1.1fr) minmax(0, 2fr) auto; align-items: center; gap: 14px; padding: 8px 4px; }
 /* Beside the open cart the list is too narrow for one line per row: specs and price go below the picture and name. */
@@ -263,3 +263,17 @@
 :root[data-os="tahoe"] .pst-feature { background: oklch(1 0 0 / 0.16); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.35); }
 :root[data-os="tahoe"] .pst-tile { border-radius: 28%; box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.4), 0 2px 6px oklch(0 0 0 / 0.2); }
 :root[data-os="tahoe"] .shop-cart { margin: 8px 8px 8px 0; border: var(--ar-bw) solid var(--line); border-radius: var(--ar-card); box-shadow: var(--ar-lift); background: color-mix(in oklch, var(--win), transparent 25%); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); }
+.shop-class-h { margin: 0; padding: 10px 14px 0; font-size: 15px; font-weight: 600; }
+
+/* Narrow window: the class list folds away and a row keeps its name, price and one add button. */
+@container (max-width: 800px) {
+  .shop-side { display: none; }
+  .shop-row-main { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .shop-row-specs, .shop-row-buy .shop-vendor, .shop-row-buy .shop-config { display: none; }
+}
+
+/* A list squeezed beside the cart puts the buy controls under the name. */
+@container (max-width: 560px) {
+  .shop-row-main { grid-template-columns: 48px minmax(0, 1fr); }
+  .shop-row-buy { grid-column: 1 / -1; justify-items: end; }
+}

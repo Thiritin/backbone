@@ -15,6 +15,8 @@ export default {
   "console.vmScreen": () => "Pantalla de la máquina virtual",
   "console.serverScreen": () => "Pantalla del servidor",
   "console.keys": () => "Teclas",
+  "console.keyDel": () => "Supr",
+  "console.keyCad": () => "Ctrl+Alt+Supr",
 
   "console.biosHelpRaid": () => "Intro recorre los niveles que permiten los discos. Un nivel nuevo borra la matriz.",
   "console.biosHelpRebuild": () => "Una reconstrucción rápida ralentiza el servidor, una lenta lo deja expuesto más tiempo.",
@@ -47,6 +49,7 @@ export default {
   "console.erase": () => "<Borrar>",
   "console.debBoot": (p) => `Menú de arranque del instalador de Debiant GNU/Lunix ${p.version}`,
   "console.install": () => "Instalar",
+  "console.autoInstall": () => "Instalación automática",
   "console.eraseDisk": () => "Borrar disco",
   "console.reboot": () => "Reiniciar",
   "console.ejectReboot": () => "Expulsar y reiniciar",
