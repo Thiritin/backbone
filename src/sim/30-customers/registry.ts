@@ -8,7 +8,7 @@ import type { SimEvent } from "../88-tick/tick";
 import type { Service } from "./customers";
 import { sweepGroups } from "../60-infra/status";
 import { registrarById, registrarHost, REGISTRARS } from "../10-catalog/registrars";
-import { companyDomain } from "./domains";
+import { controlPlaneUp, supports } from "../60-infra/cluster";
 
 // transfer marks a domain the customer owned before; lapsed is set once it expired without a renewal or left for another
 // registrar, and the partner no longer holds it. The company's own domain has no customer.
@@ -28,10 +28,16 @@ export const nsActive = (s: GameState, d: Domain): { ns: NameServerMode; nsHosts
 export function nameServers(s: GameState, d: Domain): [string, string] {
   const a = nsActive(s, d);
   if (a.ns === "custom" && a.nsHosts) return a.nsHosts;
-  const host = a.ns === "registrar" ? registrarHost((s.registrar && registrarById(s.registrar.id)) || REGISTRARS[0]) : companyDomain(s);
+  const host = registrarHost((s.registrar && registrarById(s.registrar.id)) || REGISTRARS[0]);
   return [`ns1.${host}`, `ns2.${host}`];
 }
-export const parked = (s: GameState, d: Domain): boolean => nsActive(s, d).ns !== "company";
+// Own name servers answer only while a DNS server of the company runs.
+export const ownDnsUp = (s: GameState): boolean => s.clusters.some((c) => supports(c, "dns") && controlPlaneUp(s, c));
+export const nsMinutesLeft = (s: GameState, d: Domain): number => Math.max(0, (d.nsReadyAt ?? 0) - nowMinutes(s));
+export type NsStatus = "active" | "propagating" | "silent";
+export const nsStatus = (s: GameState, d: Domain): NsStatus => (nsPropagating(s, d) ? "propagating" : nsActive(s, d).ns === "custom" && !ownDnsUp(s) ? "silent" : "active");
+// The registrar's name servers show the parking page; own ones that do not answer leave the domain unreachable.
+export const parked = (s: GameState, d: Domain): boolean => { const a = nsActive(s, d); return a.ns === "registrar" || (a.ns === "custom" && !ownDnsUp(s)); };
 export type DomainStatus = "active" | "transfer" | "cancelled" | "gone";
 export const domainStatus = (d: Domain): DomainStatus => (d.lapsed ? "gone" : d.leavesAt !== undefined ? "transfer" : d.cancelled ? "cancelled" : "active");
 // The domains the partner holds and bills.

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { nowHours, yearOf } from "../../../../../sim/00-core/time";
 import type { Registrar } from "../../../../../sim/10-catalog/registrars";
+import { nameServers, nsMinutesLeft, nsStatus, domainOf, type Domain } from "../../../../../sim/30-customers/registry";
 import { settled, zoneRecords, type CompanyRecord } from "../../../../../sim/60-infra/company-zone";
 import { TTLS, type DnsType } from "../../../../../sim/60-infra/netsvc-dns";
 import { recordChoices, type RecordChoice } from "../../../../../sim/60-infra/zone-choices";
@@ -29,9 +30,15 @@ function pick(d: Draft, list: RecordChoice[]): Draft {
 }
 
 // The DNS page for the company domain: its records with Edit and Delete and a form to add or change one, titled as the partner named it.
+// The state of a domain's name servers.
+export function NsBadge({ game, d }: { game: GameState; d: Domain }) {
+  const st = nsStatus(game, d);
+  return <span className="num" data-ns-status={st}>{t(`registrarPanel.nsStatus.${st}`, { n: nsMinutesLeft(game, d) })}</span>;
+}
+
 export function RegistrarDns({ game, r }: { game: GameState; r: Registrar }) {
   const act = usePageAct(), [draft, setDraft] = useState<Draft | null>(null), hour = nowHours(game);
-  const look = eraOf(REGISTRAR_ERAS[r.id], yearOf(game.hour)), domain = game.company.domain;
+  const look = eraOf(REGISTRAR_ERAS[r.id], yearOf(game.hour)), domain = game.company.domain, dom = domain ? domainOf(game, domain) : undefined;
   const choices = (type: DnsType) => recordChoices(game, type);
   // A record being edited keeps its value in the list even when nothing the company runs has it any more.
   const options: RecordChoice[] = draft && picked(draft.type)
@@ -44,6 +51,11 @@ export function RegistrarDns({ game, r }: { game: GameState; r: Registrar }) {
   return (
     <section className="bks-box">
       <h2>{t(`registrarDns.title.${r.id}.${look}`)}{domain && `: ${domain}`}</h2>
+      {dom && (
+        <p>
+          {t("registrarPanel.nameServers")}: {t(dom.ns === "custom" ? "registrarPanel.ns.custom" : "registrarPanel.ns.registrar")}, <span className="num">{nameServers(game, { ...dom, nsReadyAt: undefined }).join(", ")}</span> <NsBadge game={game} d={dom} />
+        </p>
+      )}
       {domain && (
         <>
           <table className="bks-table bks-rows">

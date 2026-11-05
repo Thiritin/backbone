@@ -3,14 +3,14 @@ import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { registrarHost, type Registrar } from "../../../../../sim/10-catalog/registrars";
 import { wholesale } from "../../../../../sim/30-customers/registrar";
-import { domainOf, domainStatus, nameServers, nsPropagating, registryOf, type Domain, type NameServerMode } from "../../../../../sim/30-customers/registry";
+import { domainOf, domainStatus, nameServers, registryOf, type Domain, type NameServerMode } from "../../../../../sim/30-customers/registry";
 import type { GameState } from "../../../../../sim/50-state";
 import { generateAuthCode, setDomainRenewal, setNameServers } from "../../../../../sim/90-actions/registrar";
 import { euroCents } from "../../../../../sim/00-core/money";
 import { formatDay } from "../../../billing/format";
 import { displayHost } from "../../../../../sim/80-business/browser";
 import { usePageAct } from "../../pageAct";
-import { RegistrarDns } from "./RegistrarDns";
+import { NsBadge, RegistrarDns } from "./RegistrarDns";
 import { Account, customer, DomainSearch, own, REGISTRAR_HUE } from "./RegistrarPage";
 import { InvoiceTable, PayMethodPanel } from "../shared/SupplierAccount";
 import "../bank/bank-site.css";
@@ -31,6 +31,7 @@ export function panelPage(game: GameState, r: Registrar, sub?: string, name?: st
 const panelPath = (to: PanelPage) => (typeof to === "object" ? `/domain/${to.domain}` : to === "domains" || to === "account" ? "" : `/${to}`);
 // The configured pair, ignoring a change still propagating.
 const configured = (game: GameState, d: Domain) => nameServers(game, { ...d, nsReadyAt: undefined });
+export const modeKey = (ns: NameServerMode) => (ns === "custom" ? "registrarPanel.ns.custom" : "registrarPanel.ns.registrar");
 
 // The reseller panel: every domain with owner, expiry, renewal, status and name servers; per domain the auth code, the renewal switch and its own page. The DNS page edits the company domain's zone, Register orders further domains.
 export function RegistrarPanel({ game, r, page, go }: { game: GameState; r: Registrar; page: PanelPage; go: (url: string) => void }) {
@@ -61,7 +62,7 @@ export function RegistrarPanel({ game, r, page, go }: { game: GameState; r: Regi
           </>
             : page === "dns" ? <RegistrarDns game={game} r={r} />
             : page === "register" ? <section className="bks-box"><h2>{t("registrarPanel.register")}</h2><DomainSearch game={game} r={r} /></section>
-            : typeof page === "object" ? <DomainPage key={page.domain} game={game} r={r} d={domainOf(game, page.domain)!} owner={owner} />
+            : typeof page === "object" ? <DomainPage key={page.domain} game={game} d={domainOf(game, page.domain)!} owner={owner} />
             : <section className="bks-box">
             <h2>{t("registrarPanel.domains")}</h2>
             <table className="bks-table">
@@ -81,7 +82,7 @@ export function RegistrarPanel({ game, r, page, go }: { game: GameState; r: Regi
                       <td className="num">{formatDay(d.expiresAt)}</td>
                       <td>{t(d.cancelled || !live ? "registrarPanel.off" : "registrarPanel.on")}</td>
                       <td>{t(`registrarPanel.status.${status}`)}</td>
-                      <td className="num">{d.ns === "registrar" ? t("registrarPanel.parked") : configured(game, d).join(", ")}</td>
+                      <td className="num">{t(modeKey(d.ns))}: {configured(game, d).join(", ")} <NsBadge game={game} d={d} /></td>
                       <td className="num">{d.code && status !== "gone" ? d.code : live && <button className="bks-btn" onClick={() => act(generateAuthCode, d.name)}>{t("registrarPanel.generate")}</button>}</td>
                       <td>{live && <button className="bks-btn" onClick={() => act(setDomainRenewal, d.name, !!d.cancelled)}>{t(d.cancelled ? "registrarPanel.renew" : "registrarPanel.cancel")}</button>}</td>
                     </tr>
@@ -97,15 +98,13 @@ export function RegistrarPanel({ game, r, page, go }: { game: GameState; r: Regi
   );
 }
 
-const MODES: NameServerMode[] = ["registrar", "company", "custom"];
-const MODE_LABEL: Record<NameServerMode, string> = { registrar: "registrarPanel.ns.registrar", company: "registrarPanel.ns.company", custom: "registrarPanel.ns.custom" };
-
 // One domain: its registry facts and the name server form.
-function DomainPage({ game, r, d, owner }: { game: GameState; r: Registrar; d: Domain; owner: (id: string | null) => string }) {
+function DomainPage({ game, d, owner }: { game: GameState; d: Domain; owner: (id: string | null) => string }) {
   const act = usePageAct();
-  const [mode, setMode] = useState<NameServerMode>(d.ns);
+  const [custom, setCustom] = useState(d.ns === "custom");
   const [hosts, setHosts] = useState<[string, string]>(d.nsHosts ?? ["", ""]);
-  const pair = (ns: NameServerMode) => nameServers(game, { ...d, ns, nsReadyAt: undefined }).join(", ");
+  const pair = nameServers(game, { ...d, ns: "registrar", nsReadyAt: undefined }).join(", ");
+  const save = () => act(setNameServers, d.name, custom ? "custom" : d.ns !== "custom" ? d.ns : d.name === game.company.domain ? "company" : "registrar", custom ? hosts : undefined);
   const fact = (label: string, value: string) => <tr><th>{label}</th><td className="num">{value}</td></tr>;
   return (
     <>
@@ -123,16 +122,18 @@ function DomainPage({ game, r, d, owner }: { game: GameState; r: Registrar; d: D
         </table>
       </section>
       <section className="bks-box">
-        <h2>{t("registrarPanel.nameServers")}</h2>
-        <form className="rgp-ns" onSubmit={(e) => { e.preventDefault(); act(setNameServers, d.name, mode, mode === "custom" ? hosts : undefined); }}>
-          {MODES.map((m) => (
-            <label key={m} className="bks-row">
-              <input type="radio" name="ns" checked={mode === m} disabled={m === "company" && !game.company.domain} onChange={() => setMode(m)} />
-              <span>{t(MODE_LABEL[m], { name: r.name })}</span>
-              {m !== "custom" && (m === "registrar" || game.company.domain) && <span className="num">{pair(m)}</span>}
-            </label>
-          ))}
-          {mode === "custom" && (
+        <h2>{t("registrarPanel.nameServers")} <NsBadge game={game} d={d} /></h2>
+        <form className="rgp-ns" onSubmit={(e) => { e.preventDefault(); save(); }}>
+          <label className="bks-row">
+            <input type="radio" name="ns" checked={!custom} onChange={() => setCustom(false)} />
+            <span>{t("registrarPanel.ns.registrar")}</span>
+            <span className="num">{pair}</span>
+          </label>
+          <label className="bks-row">
+            <input type="radio" name="ns" checked={custom} onChange={() => setCustom(true)} />
+            <span>{t("registrarPanel.ns.custom")}</span>
+          </label>
+          {custom && (
             <div className="bks-form">
               {hosts.map((h, i) => (
                 <label key={i}>
@@ -142,7 +143,6 @@ function DomainPage({ game, r, d, owner }: { game: GameState; r: Registrar; d: D
               ))}
             </div>
           )}
-          {nsPropagating(game, d) && <p>{t("registrarPanel.propagating")}</p>}
           <button type="submit" className="bks-btn primary">{t("registrarPanel.save")}</button>
         </form>
       </section>
