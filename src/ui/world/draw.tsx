@@ -601,8 +601,8 @@ const ease = (v: number) => { const x = clamp01(v); return x * x * (3 - 2 * x); 
 // Share of daylight at hour of day hd in month m (0 is January): full from 08:00 to 17:00 in March, fading out to 19:30 and in from 05:30.
 export const daylight = (hd: number, m: number) => { const s = SEASON[m] ?? 0; return ease((hd - 5.5 + s) / 2.5) * ease((19.5 + s - hd) / 2.5); };
 export const NIGHT = 0.32;
-// How dark the room is drawn: one flat step at night, none by day; lit lamps leave a quarter of it.
-export const darkness = (hd: number, m: number, lit = false) => (daylight(hd, m) < 0.5 ? NIGHT * (lit ? 0.25 : 1) : 0);
+// How dark the room is drawn; lit lamps leave a quarter of the night.
+export const darkness = (hd: number, m: number, lit = false) => (1 - daylight(hd, m)) * NIGHT * (lit ? 0.25 : 1);
 
 // The whole room, walls and floor, darkens as one flat step.
 export function Night({ w, h, opacity }: { w: number; h: number; opacity: number }) {
