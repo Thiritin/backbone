@@ -25,7 +25,8 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
 
 // Modules and payment gateways in two tabs: what a module costs and what the shop already has. Gateways and the Books link are
 // bought on the vendor's site and registered with their key.
-export function Marketplace({ game, go, tab }: { game: GameState; go: ScreenProps["go"]; tab: "modules" | "gateways" }) {
+export type MarketTerms = "exec" | "box";
+export function Marketplace({ game, go, tab, terms }: { game: GameState; go: ScreenProps["go"]; tab: "modules" | "gateways"; terms?: MarketTerms }) {
   const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const id = game.shop.variant;
   if (!id) return null;
@@ -37,7 +38,7 @@ export function Marketplace({ game, go, tab }: { game: GameState; go: ScreenProp
     if (installed(m)) return <PBadge tone="ok">{t(offer === "included" ? "marketing.included" : "marketing.installed")}</PBadge>;
     if (bought !== undefined) return <PBadge>{t("marketing.readyDay", { day: formatDay(bought) })}</PBadge>;
     if (offer === "unavailable" || offer === "included") return <PBadge>{t("marketing.notAvailable")}</PBadge>;
-    return <PBtn disabled={offer > 0 && game.cash < offer} onClick={() => act(buyModule, m)}>{offer ? t("marketing.buy") : t("marketing.integrate")}</PBtn>;
+    return <PBtn disabled={offer > 0 && game.cash < offer} onClick={() => act(buyModule, m)}>{offer ? t("marketing.buy") : t(terms === "box" ? "shop-admin.d.activate" : "marketing.integrate")}</PBtn>;
   };
   const licensed = (m: (typeof MODULES)[number]) => registered(game, m.id)
     ? <PBadge tone="ok">{t("marketing.installed")}</PBadge>
@@ -48,7 +49,7 @@ export function Marketplace({ game, go, tab }: { game: GameState; go: ScreenProp
   return (
     <div className="pt-screen">
       <div className="pt-tabs" role="tablist">
-        {(["modules", "gateways"] as const).map((k) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => go({ name: "marketplace", tab: k })}>{t(k === "modules" ? "shop-admin.d.modules" : "shop-market.gateways")}</button>)}
+        {(["modules", "gateways"] as const).map((k) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => go({ name: "marketplace", tab: k })}>{t(terms === "exec" ? (k === "modules" ? "shop-admin.d.tabServices" : "shop-admin.d.tabGateways") : k === "modules" ? "shop-admin.d.modules" : "shop-market.gateways")}</button>)}
       </div>
       {tab === "modules" && <>
         <Section title={t("marketing.installed")}>{mods.filter(installed).map((m) => <Row key={m} name={name(m)} price={typeof moduleOffer(v, m, year) === "number" ? (moduleOffer(v, m, year) as number) : 0}>{provisioning(m)}</Row>)}</Section>

@@ -1,5 +1,6 @@
 import { useStore } from "../../../../../store";
 import { finishShopSetup } from "../../../../../../sim/90-actions/portal";
+import { Accounts, Domains, Network, Reports } from "./Lists";
 import { Dashboard, type DashKind } from "./Dashboard";
 import { PBtn } from "./ui";
 import { t } from "../../../../../../i18n/en";
@@ -15,7 +16,7 @@ import { Emails } from "./Emails";
 import { ProductEdit } from "./ProductEdit";
 import { ProductCreate, Products } from "./Products";
 import { Servers } from "./Servers";
-import { Marketplace } from "./Marketplace";
+import { Marketplace, type MarketTerms } from "./Marketplace";
 import { LicenceScreen, UpdatesScreen } from "./Licence";
 
 export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
@@ -25,7 +26,7 @@ export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
 };
 
 // The admin screen an address names; every shop system shows the same functions under its own navigation.
-export function AdminScreen({ screen, wizard, dash, label, ...props }: ScreenProps & { screen: Screen; wizard?: boolean; dash?: DashKind; label?: (n: ScreenName) => string }) {
+export function AdminScreen({ screen, wizard, dash, label, market, ...props }: ScreenProps & { screen: Screen; wizard?: boolean; market?: MarketTerms; dash?: DashKind; label?: (n: ScreenName) => string }) {
   if (screen.name === "setup") return <ShopSetup screen={screen} {...props} />;
   switch (screen.name) {
     case "products": return <Products {...props} />;
@@ -35,13 +36,17 @@ export function AdminScreen({ screen, wizard, dash, label, ...props }: ScreenPro
     case "gateways": return <Settings {...props} tab="gateways" />;
     case "import": return <Settings {...props} tab="import" />;
     case "servers": return <Servers game={props.game} />;
-    case "marketplace": return <Marketplace game={props.game} go={props.go} tab={screen.tab === "gateways" ? "gateways" : "modules"} />;
+    case "marketplace": return <Marketplace game={props.game} go={props.go} tab={screen.tab === "gateways" ? "gateways" : "modules"} terms={market} />;
     case "orders": return <Orders {...props} />;
     case "order": return <OrderDetail {...props} id={screen.id ?? ""} />;
     case "service": return <ServiceDetail {...props} id={screen.id ?? ""} />;
     case "clients": return <Clients {...props} />;
     case "client": return <ClientSummary {...props} id={screen.id ?? ""} tab={screen.tab} />;
     case "invoices": return <Invoices {...props} />;
+    case "accounts": return <Accounts {...props} />;
+    case "domains": return <Domains {...props} />;
+    case "reports": return <Reports {...props} />;
+    case "network": return <Network {...props} />;
     case "quotes": return <Quotes {...props} id={screen.id} />;
     case "emails": return <Emails {...props} />;
     case "licence": return <LicenceScreen {...props} />;
