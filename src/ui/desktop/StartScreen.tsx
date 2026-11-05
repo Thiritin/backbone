@@ -11,7 +11,6 @@ import { isNew, loadSeen, markRead, saveSeen } from "../news-seen";
 import { DISCORD_URL, uiSound, useStore, type Theme } from "../store";
 import { Wordmark } from "../art/Wordmark";
 import { Intro } from "./Intro";
-import { MenuBackdrop } from "./MenuBackdrop";
 import "./menu.css";
 
 const twistLabel = (w: Twist): string =>
@@ -83,7 +82,6 @@ export function StartScreen() {
   const week = weeklyChallenge(new Date());
   return (
     <main className="menu">
-      <MenuBackdrop />
       <h1 className="menu-title"><Wordmark /></h1>
       {page === "settings" ? <SettingsPage onBack={() => setPage("main")} /> :
         <nav className="menu-bars">
