@@ -170,6 +170,8 @@ Dark mode redefines the same keys on `:root[data-theme="dark"]`: windows drop to
 
 **The Native Chrome Exception.** The window traffic lights (oklch(0.68 0.2 27), oklch(0.83 0.16 85), oklch(0.72 0.18 145)) and the per-app dock tile colours are part of the macOS world and are exempt from both rules above. They never appear inside window content.
 
+**The Start Screen Rule.** The start screen uses its own red-on-black scheme, square controls and the flat wordmark regardless of the Theme setting; the setting only changes the game desktop.
+
 ## Typography
 
 **Body Font:** Inter (with system-ui, sans-serif), with stylistic sets cv11 and ss01.

@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-05
 - The wall phone, mailbox and light switch are drawn as solid objects with depth, the desk lamp no longer covers the monitor, and wall and desk items no longer overlap.
+- The main menu has a new red and black look with the full raid0 wordmark.
 - The room view no longer keeps drifting after you stop panning with the keys or cancel a drag.
 
 - The macOS desktop app is built for Macs with Apple silicon.
