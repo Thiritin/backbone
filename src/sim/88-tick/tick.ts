@@ -35,6 +35,7 @@ import { marketingTick } from "../80-business/marketing";
 import { newsTick } from "../80-business/news";
 import { walkTick } from "../80-business/walk";
 import { booksTick } from "../80-business/bookkeeping";
+import { syncBooksGuide } from "../80-business/books-guide";
 import { deliverLicences } from "../80-business/licences";
 import { payoutTick } from "../80-business/shoplink";
 import { paymentsTick } from "../45-billing/payments";
@@ -450,6 +451,7 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...fraudTick(state));
   events.push(...deliverLicences(state));
   booksTick(state);
+  syncBooksGuide(state);
   events.push(...ordersTick(state));
   events.push(...domainsTick(state));
   events.push(...certificatesTick(state));
