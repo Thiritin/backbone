@@ -3,7 +3,7 @@ import { hallOf } from "../20-world/properties";
 import { rand } from "../00-core/rng";
 import { freeRackTiles, officePlan, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
-import { debitAllowed, HARDWARE_SHOP, type Method } from "../46-finance/payables";
+import { billDue, CONTRACTOR, canPay, debitAllowed, HARDWARE_SHOP, type Method } from "../46-finance/payables";
 import { bankOf } from "../46-finance/bank";
 import { INVOICE_AFTER, paidOrders, placeOrder } from "./purchase";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
@@ -52,7 +52,13 @@ function nextName(base: string, taken: string[]): string {
   return `${base}-${String(n).padStart(2, "0")}`;
 }
 
-const book = (s: GameState, category: string, key: string, params: Record<string, string | number>, amount: number) => {
+// Spending books a vendor document (the contractor, or the hardware shop for goods); income and own travel go straight to cash.
+const book = (s: GameState, category: string, key: string, params: Record<string, string | number>, amount: number, vendor?: string) => {
+  if (amount < 0 && category !== "travel") {
+    const goods = category === "hardware";
+    billDue(s, goods ? "hardware" : "contractor", vendor ?? (goods ? HARDWARE_SHOP : CONTRACTOR), [{ hour: s.hour, category, key, params, amount }]);
+    return;
+  }
   s.cash = cents(s.cash + amount);
   s.ledger.push({ hour: s.hour, category, key, params, amount });
 };
@@ -186,7 +192,7 @@ export function orderCrossConnect(s: GameState, contractId: string, to: string, 
   const jack = racks.map((r) => freeJack(s, r.id)).find(Boolean);
   if (!jack) return fail("error.noFreeJack");
   const setup = crossConnectSetup(dc);
-  if (s.cash < setup) return fail("error.noCash");
+  if (!canPay(s, setup)) return fail("error.noCash");
   const x = { id: newId(s, "xc"), contractId, to, monthly: dc.crossConnect, since: s.hour, jack };
   s.crossConnects = [...s.crossConnects, x];
   book(s, "rent", "ledger.crossConnectSetup", { to: targetName(to), dc: dc.id }, -setup);
@@ -215,7 +221,7 @@ function placeError(s: GameState, locationId: string, model: RackModel, position
 export function buyRackError(s: GameState, locationId: string, model: RackModel, position: number): string | null {
   const spec = RACK_MODELS.find((m) => m.id === model);
   if (!spec) return "error.unknownRackModel";
-  return placeError(s, locationId, model, position) ?? (s.cash < spec.price ? "error.noCash" : null);
+  return placeError(s, locationId, model, position) ?? (!canPay(s, spec.price) ? "error.noCash" : null);
 }
 
 export function buyRack(s: GameState, locationId: string, model: RackModel, position: number): ActionResult {
@@ -244,7 +250,7 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   const from = s.locations.find((l) => l.id === rack.locationId)!;
   if (to.az !== from.az && (s.workloads.some((w) => w.rackId === rackId) || s.devices.some((d) => d.rackId === rackId && serverTaken(s, d.id)))) return fail("error.rackInUse");
   const move = moveCost(s, rackId, toLocationId);
-  if (s.cash < move.price) return fail("error.noCash");
+  if (!canPay(s, move.price)) return fail("error.noCash");
   // A small-office router stays behind in the basement's storage.
   const left = s.devices.filter((d) => d.rackId === rackId && to.dc && isOfficeRouter(modelById(d.model)));
   for (const d of left) Object.assign(d, { rackId: null, slot: 0, store: from.id });
@@ -416,9 +422,9 @@ export function buyOutLease(s: GameState, leaseId: string): ActionResult {
   const lease = s.leases.find((l) => l.id === leaseId);
   if (!lease) return fail("error.unknownLease");
   const rest = cents((lease.months - lease.paid) * lease.monthly);
-  if (s.cash < rest) return fail("error.noCash");
+  if (!canPay(s, rest)) return fail("error.noCash");
   endLease(s, lease.id);
-  book(s, "leasing", "ledger.leaseBuyout", { lessor: lessorName(lease.lessor) }, -rest);
+  book(s, "leasing", "ledger.leaseBuyout", { lessor: lessorName(lease.lessor) }, -rest, lessorName(lease.lessor));
   return { ok: true };
 }
 
@@ -472,7 +478,7 @@ function rackWork(s: GameState, devices: Device[], locationId: string, how: How 
   const work = devices.reduce((n, d) => n + mountHours(d.model), 0);
   const job = handJob(s, devices.map((d) => d.label ?? d.name).join(", "), loc, how, work);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   return () => {
     const doneAt = s.hour + job.commit();
     if (doneAt > s.hour) for (const d of devices) d.maintenance = { componentId: "", partId: "", doneAt, mount: true };
@@ -656,7 +662,7 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
       transit = drive(from.city, to.city)?.hours ?? ship.hours;
     }
   }
-  if (s.cash < price + job.cost) return fail("error.noCash");
+  if (!canPay(s, price + job.cost)) return fail("error.noCash");
   const hours = Math.max(transit + work, job.commit());
   const told = new Set(ids.filter((id) => plannedFor(s, s.services.find((v) => v.id === id)!, hours)));
   if (ids.some((id) => !told.has(id))) for (const d of servers) announceNow(s, { kind: "device", id: d.id }, hours);
@@ -843,7 +849,7 @@ export function pullPower(s: GameState, deviceId: string, how: How | boolean = f
   if (pduOf(s, d) || !loc?.dc || onSite(how)) return setPower(s, deviceId, false);
   const job = handJob(s, d.label ?? d.name, loc, how, 0);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   d.hands = { kind: "pull", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
@@ -879,7 +885,7 @@ export function atServer(s: GameState, deviceId: string, op: FrontOp, how: How |
   if (op === "plug" && cords.every(isPlugged)) return fail("error.plugged");
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, 0);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   // d.hands only finishes in the hourly power tick, so work without a wait applies now.
   const wait = job.commit();
   if (wait > 0) d.hands = { kind: op, doneAt: s.hour + wait };
@@ -895,7 +901,7 @@ export function resetBmc(s: GameState, deviceId: string, how: How | boolean = fa
   if (d.hands) return fail("error.handsBusy");
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, BMC_RESET_HOURS * workFactor(d.model, s.hour), 1);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   d.hands = { kind: "bmcreset", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
@@ -994,7 +1000,7 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   const swap = SWAP_HOURS * spares.length * workFactor(d.model, s.hour), grey = spares.reduce((n, x) => n + greyMarket(s, d, x), 0);
   const job = handJob(s, d.label ?? d.name, loc, how, swap);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost + grey) return fail("error.noCash");
+  if (!canPay(s, job.cost + grey)) return fail("error.noCash");
   const wait = job.commit();
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: c.kind }, -grey);
   s.devices = s.devices.filter((x) => !spares.includes(x));
@@ -1074,7 +1080,7 @@ export function buyCircuit(s: GameState, locationId: string): ActionResult {
   if (!loc) return fail("error.unknownLocation");
   if (loc.space !== "basement") return fail("error.notBasement");
   if (loc.extraCircuit) return fail("error.alreadyBought");
-  if (s.cash < CIRCUIT_PRICE) return fail("error.noCash");
+  if (!canPay(s, CIRCUIT_PRICE)) return fail("error.noCash");
   loc.extraCircuit = true;
   book(s, "hardware", "ledger.circuit", {}, -CIRCUIT_PRICE);
   return { ok: true };
@@ -1089,7 +1095,7 @@ export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
   const to = dualPsuModel(d.model);
   if (!to) return fail("error.noSecondPsu");
   const price = priceOf(to, d.brand) - priceOf(modelById(d.model), d.brand);
-  if (s.cash < price) return fail("error.noCash");
+  if (!canPay(s, price)) return fail("error.noCash");
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
   if (!zone) return fail("error.inTransit");
   const spare = stock(s, { model: "part-psu", brand: "Generic", qty: 1 }, null, zone)[0];
@@ -1115,7 +1121,7 @@ function handsOn(s: GameState, d: Device, hot: boolean, how: How | boolean): { e
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const job = handJob(s, d.label ?? d.name, loc, how, (hot ? 0 : INSTALL_HOURS) * workFactor(d.model, s.hour));
   if ("error" in job) return job;
-  return s.cash < job.cost ? { error: "error.noCash" } : job;
+  return !canPay(s, job.cost) ? { error: "error.noCash" } : job;
 }
 function startWork(s: GameState, d: Device, partId: string, job: HandJob) {
   const wait = job.commit();
@@ -1157,7 +1163,7 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   const w = handsOn(s, d, hotKind(d, kind), h);
   if ("error" in w) return fail(w.error);
   const grey = set.reduce((n, x) => n + greyMarket(s, d, x), 0);
-  if (s.cash < w.cost + grey) return fail("error.noCash");
+  if (!canPay(s, w.cost + grey)) return fail("error.noCash");
   startWork(s, d, partId, w);
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: kind }, -grey);
   s.devices = s.devices.filter((x) => !set.includes(x));

@@ -1,3 +1,4 @@
+import { canPay } from "../46-finance/payables";
 import { nowHours } from "../00-core/time";
 import { isService, softwareById } from "../10-catalog/platforms";
 import type { Resources } from "../10-catalog/products";
@@ -335,7 +336,7 @@ export function rescueWorkload(s: GameState, id: string, toId: string, how: How 
   if (!nodeTakes(s, d, w)) return fail("error.nodeFull");
   const job = handJob(s, from.label ?? from.name, locationOf(s, from), how, RESCUE_HOURS, 1);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   const down = migrationDowntime(s, w, moveGbit(s, c.az, to.az), c.az !== to.az, toId);
   patch(s, id, { deviceId: toId, clusterId: to.id, placedAt: s.hour, busyUntil: s.hour + job.commit() + down, stuck: undefined, stopped: !!w.template, datastore: undefined });
   if (c.az !== to.az) s.services = s.services.map((v) => (v.id === w.serviceId ? { ...v, zone: to.az } : v));

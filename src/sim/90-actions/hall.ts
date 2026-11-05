@@ -14,14 +14,17 @@ import { freePositions, roomPower } from "../60-infra/status";
 import { t } from "../../i18n/en";
 import type { SimEvent } from "../88-tick/tick";
 import { buyRack, sellRack, type ActionResult } from "./hardware";
+import { spend } from "./purchase";
+import { CONTRACTOR, type SupplierId } from "../46-finance/payables";
 import { hallDoer, JOB_HOURS } from "./presence";
 import { bumpLeave, orderWork, workMinutes } from "./work-orders";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-const pay = (s: GameState, key: string, params: Record<string, string | number>, amount: number) => {
-  s.cash = cents(s.cash - amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key, params, amount: -amount }];
+// Builders and carriers are vendors: the work leaves a document with the contractor, or with the carrier.
+const pay = (s: GameState, key: string, params: Record<string, string | number>, amount: number, to: { supplier: SupplierId; name: string } = { supplier: "contractor", name: CONTRACTOR }) => {
+  spend(s, { ...to, lines: [{ hour: s.hour, category: "hardware", key, params, amount: -amount }] });
 };
+// Money back for dismantled fittings is the sale of the company's own property, not a vendor credit.
 const refund = (s: GameState, key: string, params: Record<string, string | number>, amount: number) => {
   s.cash = cents(s.cash + amount);
   s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key, params, amount }];
@@ -346,7 +349,7 @@ export function editHallError(s: GameState, locationId: string, edit: HallEdit):
     if (!to || !meetme.has(tileKey(to))) return fail2("error.rackLinked");
   }
   // 12. Cash.
-  return s.cash < plan.cost ? fail2("error.noCash") : null;
+  return !s.bank && s.cash < plan.cost ? fail2("error.noCash") : null;
 }
 
 // Places, moves and removes in one transaction. Moved racks with devices go dark for two hours.
@@ -392,8 +395,8 @@ export function buildCarrier(s: GameState, locationId: string, carrierId: string
   const c = cityCarriers(h.loc.city).find((x) => x.id === carrierId);
   if (!c) return fail("error.carrierAbsent");
   if (h.hall.carriers.includes(carrierId)) return fail("error.upgradeBuilt");
-  if (s.cash < HALL.carrierFee) return fail("error.noCash");
-  pay(s, "ledger.carrierBuild", { carrier: c.name, location: h.loc.name }, HALL.carrierFee);
+  if (!s.bank && s.cash < HALL.carrierFee) return fail("error.noCash");
+  pay(s, "ledger.carrierBuild", { carrier: c.name, location: h.loc.name }, HALL.carrierFee, { supplier: "network", name: c.name });
   h.hall.carriers = [...h.hall.carriers, carrierId];
   return { ok: true };
 }

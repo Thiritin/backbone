@@ -1,4 +1,5 @@
 // GDD, Infrastructure consoles: the user certificates of a VPN service and the lost-laptop incident. Numbers in economy/happiness-and-churn.md, Happiness and churn.
+import { billDue } from "../46-finance/payables";
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart } from "../00-core/time";
 import type { Service } from "../30-customers/customers";
@@ -15,6 +16,7 @@ export const AUTO_ENROLL_DAYS = 7;
 export const CERT_FEE = 12;
 export const LOST_REVOKE_HOURS = 72;
 export const INTRUSION_LOSS = 20;
+const CERT_AUTHORITY = "Zertifix";
 const LOST_BASE = 0.015, LOST_CAP = 0.2;
 
 export const vpnServices = (s: GameState): Service[] => s.services.filter((v) => v.product === "vpn" && v.endedAt === null);
@@ -27,8 +29,7 @@ export const isAnyconnekt = (s: GameState, v: Service): boolean => clusterOf(s, 
 export function enroll(s: GameState, v: Service): void {
   const x = vpnOf(s, v);
   if (isAnyconnekt(s, v)) {
-    s.cash = Math.round((s.cash - CERT_FEE) * 100) / 100;
-    s.ledger.push({ hour: s.hour, category: "fees", key: "ledger.vpnCertFee", params: { service: v.label }, amount: -CERT_FEE });
+    billDue(s, "services", CERT_AUTHORITY, [{ hour: s.hour, category: "fees", key: "ledger.vpnCertFee", params: { service: v.label }, amount: -CERT_FEE }]);
   }
   putVpn(s, v, { ...x, serverIssuedAt: s.hour, serverExpiresAt: s.hour + CERT_DAYS * 24 });
   if (s.netsvc.broken[v.id]?.cause === "cert") { const broken = { ...s.netsvc.broken }; delete broken[v.id]; s.netsvc = { ...s.netsvc, broken }; }
