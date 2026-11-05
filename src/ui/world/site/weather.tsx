@@ -9,6 +9,7 @@ const RAIN = dots("rain", 48), FLAKES = dots("flake", 16), LEAVES = dots("leaf",
 
 // Rain, snow and falling leaves over the viewport in screen space: fixed positions in two sets that alternate by opacity, so they move
 // without moving geometry. Rain and snow show only outdoors; the leaves show in the fall palette.
+const sameView = (a: View, b: View) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 export const SiteWeather = memo(function SiteWeather({ sky, night, falling, view }: { sky: Sky; night: boolean; falling: boolean; view: View }) {
   const u = view.w / 900, rain = sky === "rain", snow = sky === "snow";
   if (!rain && !snow && !falling) return null;
@@ -22,4 +23,4 @@ export const SiteWeather = memo(function SiteWeather({ sky, night, falling, view
       {falling && sets(LEAVES, (x, y) => <path className={`w-wx-leaf w-wx-leaf-${Math.floor(x) % 3}`} d={`M${x} ${y}l${7 * u} ${3 * u}l${-2 * u} ${6 * u}z`} />)}
     </g>
   );
-});
+}, (a, b) => a.sky === b.sky && a.night === b.night && a.falling === b.falling && sameView(a.view, b.view));

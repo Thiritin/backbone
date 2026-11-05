@@ -68,7 +68,7 @@
 .w-sign-text { font: 700 5.2px/1 var(--font-sans, system-ui), sans-serif; fill: oklch(0.3 0.02 250); }
 
 
-.w-car-pass { animation: w-car-pass 18s linear infinite; }
+.w-car-pass { animation: w-car-pass 18s steps(180) infinite; }
 @keyframes w-car-pass { from { transform: translate(0, 0); } to { transform: translate(var(--dx), var(--dy)); } }
 @media (prefers-reduced-motion: reduce) { .w-car-pass { animation: none; } }
 

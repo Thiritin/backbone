@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-05
 
 - The macOS desktop app is built for Macs with Apple silicon.
+- The world runs smoother, with less work spent on moving cars and people.
 - The desktop app is also available for Windows (x86_64) and for Linux on x86_64 and arm64, and it updates itself.
 
 ## 2026-11-04
