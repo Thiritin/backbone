@@ -31,6 +31,7 @@ import { GnuCache } from "./programs/gnucache/GnuCache";
 import { useBooks } from "./view";
 import { Rexoffice } from "./programs/saas/rexoffice/Rexoffice";
 import { LAYOUTS } from "./layouts";
+import { TaxwareProgram } from "./programs/taxware/TaxwareProgram";
 import type { Entry, Group } from "./layouts/types";
 import "../billing/billing.css";
 import "./books.css";
@@ -74,7 +75,7 @@ export function BooksApp() {
 // Programs with their own interface; the rest share the layouts below.
 export function BooksProgram() {
   const id = useBooks().books.vendor;
-  return id === "lexoffize" ? <Rexoffice /> : <SharedProgram />;
+  return id === "lexwear" ? <TaxwareProgram /> : id === "lexoffize" ? <Rexoffice /> : <SharedProgram />;
 }
 
 function SharedProgram() {

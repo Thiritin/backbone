@@ -4,10 +4,9 @@ import { FlatLayout } from "./FlatLayout";
 import { IconsLayout } from "./IconsLayout";
 import { MenusLayout } from "./MenusLayout";
 import { TabsLayout } from "./TabsLayout";
-import { TreeLayout } from "./TreeLayout";
 import type { LayoutProps } from "./types";
 import { WebLayout } from "./WebLayout";
 
 export const LAYOUTS: Record<Layout, ComponentType<LayoutProps>> = {
-  tree: TreeLayout, icons: IconsLayout, menus: MenusLayout, tabs: TabsLayout, web: WebLayout, flat: FlatLayout,
+  icons: IconsLayout, menus: MenusLayout, tabs: TabsLayout, web: WebLayout, flat: FlatLayout,
 };

@@ -1,7 +1,7 @@
 import { dateOf } from "../../../../sim/00-core/time";
 import type { GameState, LedgerEntry } from "../../../../sim/50-state";
 import { t } from "../../../../i18n/en";
-import { categoryLabel, CHART, FIXED_NO } from "./chart";
+import { categoryLabel, chartOf } from "./chart";
 import { openItems } from "./openItems";
 
 export type Kind = "asset" | "liability" | "equity" | "income" | "expense";
@@ -17,14 +17,14 @@ export function accountsOf(s: GameState, year?: number): Account[] {
   const kept = year === undefined ? s.ledger : s.ledger.filter((e) => yearOfHour(e.hour) === year);
   for (const e of kept) byCat.set(e.category, [...(byCat.get(e.category) ?? []), e]);
   const later = year === undefined ? 0 : sum(s.ledger.filter((e) => yearOfHour(e.hour) > year));
-  const open = openItems(s);
+  const open = openItems(s), chart = chartOf(s);
   const fixed: Account[] = [
-    { id: "bank", no: FIXED_NO.bank, kind: "asset", label: t("books-screens.acc.bank"), balance: s.cash - later, entries: kept },
-    { id: "receivables", no: FIXED_NO.receivables, kind: "asset", label: t("books-screens.acc.receivables"), go: "invoices", balance: open.receivable, entries: [] },
-    { id: "payables", no: FIXED_NO.payables, kind: "liability", label: t("books-screens.acc.payables"), go: "payables", balance: -open.payable, entries: [] },
+    { id: "bank", no: chart.fixed.bank, kind: "asset", label: t("books-screens.acc.bank"), balance: s.cash - later, entries: kept },
+    { id: "receivables", no: chart.fixed.receivables, kind: "asset", label: t("books-screens.acc.receivables"), go: "invoices", balance: open.receivable, entries: [] },
+    { id: "payables", no: chart.fixed.payables, kind: "liability", label: t("books-screens.acc.payables"), go: "payables", balance: -open.payable, entries: [] },
   ];
   const cats = [...byCat].map(([c, entries]): Account => {
-    const total = sum(entries), [no, kind] = CHART[c] ?? [total >= 0 ? 2700 : 4900, total >= 0 ? "income" : "expense"];
+    const total = sum(entries), [no, kind] = chart.map[c] ?? [chart.other[total >= 0 ? 0 : 1], total >= 0 ? "income" : "expense"];
     return { id: c, no, kind, label: c === "loans" ? t("books-screens.acc.loans") : categoryLabel(c), balance: -total, entries };
   });
   return [...fixed, ...cats].sort((a, b) => a.no - b.no);

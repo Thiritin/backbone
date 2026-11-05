@@ -12,7 +12,7 @@
 .bv-main { padding: 12px 16px 18px; }
 .bv h1 { font-size: 15px; color: var(--bv-brand); margin: 0 0 10px; }
 .bv h2 { font-size: 12px; margin: 0 0 3px; }
-.bv p { margin: 0 0 6px; }
+.bv p, .bv .bv-buyrow { margin: 0 0 6px; }
 .bv-row { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
 .bv-edition { margin: 0 0 14px; }
 .bv-edition ul { margin: 2px 0 4px; padding-left: 20px; }

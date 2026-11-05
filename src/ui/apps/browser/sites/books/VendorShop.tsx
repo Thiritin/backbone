@@ -107,11 +107,11 @@ export function Editions({ game, v, one, table }: { game: GameState; v: BooksVen
             {has(e).map((f) => <li key={f}>{t(`books-editions.feature.${f}`)}</li>)}
             <li>{users(e)}</li>
           </ul>
-          <p>
+          <div className="bv-buyrow">
             <b className="num">{price(e)}</b>
             {e.update > 0 && <> {t("books-vendors.priceUpdates", { price: euro(e.update) })}</>}
             {" "}<Action game={game} v={v} e={e} />
-          </p>
+          </div>
           {now?.id === e.id && e.seat > 0 && <Seats game={game} v={v} e={e} />}
         </div>
       ))}

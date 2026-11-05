@@ -1,21 +1,16 @@
 import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
-import { isUnpaid } from "../../../sim/45-billing/billing";
 import { bookByNumber } from "../../../sim/90-actions/bookkeeping";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { formatDay } from "../billing/format";
+import { docsFor, useBankLines } from "./data";
 import { useBooks } from "./view";
-
-const EPS = 0.005;
 
 // Kontomix's booking form: pick an unbooked line from the account, type the document number it pays, book it.
 export function BookingTab() {
   const game = useBooks(), attempt = useStore((s) => s.attempt);
-  const lines = [
-    ...game.transfers.filter((x) => x.matchedAt === null && !x.covers).map((x) => ({ id: x.id, hour: x.hour, name: x.from, text: t(x.reference, x.params), amount: x.amount, out: false, back: !!x.back })),
-    ...(game.bank?.outgoing ?? []).filter((o) => o.matched === null && !o.returned).map((o) => ({ id: o.id, hour: o.hour, name: o.name, text: o.reference, amount: -o.amount, out: true, back: false })),
-  ].sort((a, b) => a.hour - b.hour);
+  const lines = useBankLines();
   const [picked, setPicked] = useState<string | null>(null);
   const [number, setNumber] = useState("");
   const [settle, setSettle] = useState(false);
@@ -23,8 +18,7 @@ export function BookingTab() {
   const line = lines.find((l) => l.id === picked) ?? lines[0];
   const acc = (key: string, no: number) => `${no} ${t(`books-screens.acc.${key}`)}`;
   const [debit, credit] = !line ? ["", ""] : line.out ? [acc("payables", 1600), acc("bank", 1200)] : line.back ? [acc("receivables", 1400), acc("bank", 1200)] : [acc("bank", 1200), acc("receivables", 1400)];
-  const docs = !line ? [] : line.out ? game.payables.filter((p) => p.booked < p.amount - EPS).map((p) => p.number)
-    : game.invoices.filter((i) => (line.back ? i.status === "paid" : isUnpaid(i))).map((i) => i.number);
+  const docs = line ? docsFor(game, line) : [];
   const book = () => {
     if (!line) return;
     const r = attempt(bookByNumber, line.id, number, settle);
