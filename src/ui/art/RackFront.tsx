@@ -29,6 +29,7 @@ interface Props {
   onDevice: (id: string) => void;
   // A right-click on a mounted device.
   onDeviceMenu?: (id: string, e: ReactMouseEvent) => void;
+  onRename?: (id: string) => void;
   onFree: (unit: number, el: Element) => void;
   // A cable dragged from one port to another on the back.
   onConnect?: (a: End, b: End) => void;
@@ -95,13 +96,13 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, consoleOn, onUsb, onPanel, away, guide, onMove, onPort, hand = null, portTitle, canLink, needs = [], onAway, duct }: Props) {
+export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onRename, onFree, onConnect, onPlug, onConsole, consoleOn, onUsb, onPanel, away, guide, onMove, onPort, hand = null, portTitle, canLink, needs = [], onAway, duct }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
   const pad = 30, fs = Math.max(7, u * 0.5), at = new Map<number, RackItem>();
   // A board is tall enough for a 2U device; a device takes one board whatever its height.
-  const trig = (id: string) => (onDeviceMenu ? menuTriggers((e) => onDeviceMenu(id, e)) : undefined);
+  const trig = (id: string) => (onDeviceMenu ? menuTriggers((e) => onDeviceMenu(id, e), onRename && (() => onRename(id))) : undefined);
   const pitch = shelf ? shelfPitch(u) : u, span = (it: RackItem) => (shelf ? 1 : it.model.height);
   for (const it of items) for (let k = 0; k < span(it); k++) at.set(it.slot + k, it);
   const slides = (it: RackItem) => !!onMove && !back && !it.plugs?.some(Boolean) && it.model.height > 0;

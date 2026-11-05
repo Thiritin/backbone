@@ -101,7 +101,7 @@ function worldMenu(game: GameState, d: Device, ui: DeviceUi, w: WorldUi): MenuEn
     ] },
     psuPrice !== null && item(t("locations-1.addSecondPsu", { price: euro(psuPrice) }), () => act(addSecondPsu, d.id)),
     null,
-    { label: t("locations-1.rename"), run: ui.rename },
+    { label: t("locations-1.rename"), key: "F2", run: ui.rename },
     null,
     ...(mounted ? handsWays(game, loc?.id, "unmountDevice").map((x) => ({ ...why(wayLabel(t("locations-1.unmount"), x), busy), run: () => ui.unmount(x.how) })) : []),
     m.kind !== "gateway" && item(t("locations-1.sell"), ui.sell),

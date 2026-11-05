@@ -274,12 +274,12 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
     <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" away={offSite} guide={frontGuide(game)} onPanel={press} w={BACK_U * 19} u={BACK_U} duct
       selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} onConsole={present(game, rack.locationId) ? (id) => { setPlug(id); pick(id); } : undefined} consoleOn={plugged} hand={hand} portTitle={title} needs={needs} canLink={(a, b) => !connectError(game, a, b)}
       onPlug={(id, k) => { const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k]; if (d && psu) menus.plug(d, psu.id); }}
-      onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }} />
+      onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onRename={(id) => { pick(id); setRenaming(true); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }} />
   ) : (
     <RackFrame units={tall} bare={shelf}>
       {(w, u) => (
         <RackFront units={units} shelf={shelf} items={items} w={w} u={u} selected={dev?.id ?? null} away={offSite} guide={frontGuide(game)} onPanel={press}
-          onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }}
+          onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onRename={(id) => { pick(id); setRenaming(true); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }}
           onUsb={(id) => (game.media.stick.in === id ? act(unplugStick) : act(plugStick, id))} />
       )}
     </RackFrame>

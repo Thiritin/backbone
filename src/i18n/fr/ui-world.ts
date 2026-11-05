@@ -39,6 +39,7 @@ export default {
   "world.serverOff": () => "Serveur éteint",
   "world.notOnSite": () => "Pas sur place",
   "world.ports": () => "Ports",
+  "world.menu": () => "Menu",
   "world.secondPsu": () => "2e alim.",
   "world.dropCable": () => "Lâcher le câble",
   "world.newConnection": () => "Nouvelle connexion d'ici",

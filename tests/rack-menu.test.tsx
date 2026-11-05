@@ -44,6 +44,16 @@ describe("world device menu", () => {
     expect(labels().length).toBeGreaterThan(3);
   });
 
+  it("names the menu and starts renaming on F2", () => {
+    const c = mount();
+    fireEvent.contextMenu(face(c), { clientX: 10, clientY: 10 });
+    expect(document.querySelector("[role=menu]")!.getAttribute("aria-label")).toBe(t("world.menu"));
+    expect(labels()).toContain(`${t("locations-1.rename")}F2`);
+    act(() => closeMenu());
+    fireEvent.keyDown(face(c), { key: "F2" });
+    expect(c.querySelector("input")).not.toBeNull();
+  });
+
   it("shows the reason after a comma on disabled entries", () => {
     useStore.setState({ game: { ...useStore.getState().game, devices: useStore.getState().game.devices.map((d) => (d.id === dev().id ? { ...d, on: false } : d)) } });
     const c = mount();

@@ -2,6 +2,7 @@ import { Check, ChevronRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { create } from "zustand";
+import { t } from "../../i18n/en";
 import { uiSound } from "../store";
 import { place, step, tidy, type MenuEntry, type MenuItem } from "./menu";
 
@@ -36,10 +37,11 @@ const stopPress = () => clearTimeout(pressTimer);
 
 // The same menu without a mouse: Shift+F10 or the Menu key opens it under the element, a 500 ms touch press at the finger.
 // A press that opened the menu swallows the click that follows its release.
-export function menuTriggers(fire: (e: ReactMouseEvent) => void) {
+export function menuTriggers(fire: (e: ReactMouseEvent) => void, rename?: () => void) {
   const synth = (el: Element, type: string, x: number, y: number) => fire({ type, clientX: x, clientY: y, currentTarget: el, preventDefault() {}, stopPropagation() {} } as unknown as ReactMouseEvent);
   return {
     onKeyDown: (e: ReactKeyboardEvent): boolean => {
+      if (rename && e.key === "F2") { e.preventDefault(); e.stopPropagation(); rename(); return true; }
       if (e.key !== "ContextMenu" && !(e.key === "F10" && e.shiftKey)) return false;
       e.preventDefault();
       e.stopPropagation();
@@ -117,12 +119,11 @@ function Panel({ items, x, y, flipX, onBack, root }: { items: (MenuItem | null)[
     else return;
     e.preventDefault();
     e.stopPropagation();
-    e.stopPropagation();
   };
 
   return (
     <>
-      <div ref={ref} className="ctx" role="menu" tabIndex={-1} onKeyDown={key} onContextMenu={(e) => e.preventDefault()}
+      <div ref={ref} className="ctx" role="menu" aria-label={t("world.menu")} tabIndex={-1} onKeyDown={key} onContextMenu={(e) => e.preventDefault()}
         onPointerLeave={() => { if (!sub) setActive(-1); }}
         style={at ? { left: at.left, top: at.top } : { left: x, top: y, visibility: "hidden" }}>
         {items.map((it, i) => it === null ? <div key={i} className="ctx-sep" role="separator" /> : (
