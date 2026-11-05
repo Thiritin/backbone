@@ -69,7 +69,7 @@ export function PostApp() {
 
 // One A4 page laid out after DIN 5008 form B: letterhead, window address, reference block, fold and punch marks, footer.
 export function Letter({ letter: l, company, owner }: { letter: Post; company: string; owner?: string }) {
-  const game = useStore((s) => s.game), h = LETTERHEADS[l.from], p = l.params, a = officeAddress(game);
+  const game = useStore((s) => s.game), h = LETTERHEADS[l.from], brand = supplierBrand(l.from), p = l.params, a = officeAddress(game);
   const paid = !!l.payable && game.payables.find((x) => x.id === l.payable)?.paidAt != null;
   const ref = p.number ?? (p.reg ? `GA ${p.reg}` : null);
   const bank = p.iban ? `IBAN ${p.iban}` : p.account ? `${t("paperwork.letter.account")} ${p.account} · ${t("paperwork.letter.code")} ${p.code}` : null;
@@ -77,8 +77,8 @@ export function Letter({ letter: l, company, owner }: { letter: Post; company: s
     <article className={`letter${h?.serif ? " serif" : ""}`}>
       <i className="letter-mark fold1" /><i className="letter-mark punch" /><i className="letter-mark fold2" />
       <header className="letter-head">
-        <span className="letter-logo">{h ? h.mark : supplierBrand(l.from).logo}</span>
-        <div><strong>{h?.org ?? l.from}</strong>{h && <span>{t(h.dept)}</span>}</div>
+        <span className="letter-logo">{h ? h.mark : brand.logo}</span>
+        <div><strong style={h ? undefined : { color: brand.color }}>{h?.org ?? l.from}</strong>{h && <span>{t(h.dept)}</span>}</div>
       </header>
       <div className="letter-window">
         {h && <small>{[h.org, h.street, h.city].join(" · ")}</small>}

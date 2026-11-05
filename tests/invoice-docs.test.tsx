@@ -10,6 +10,8 @@ import { checkDone } from "../src/sim/checklist";
 import { PreviewApp } from "../src/ui/apps/PreviewApp";
 import { SupplierInvoice } from "../src/ui/apps/preview/SupplierInvoice";
 import { useStore } from "../src/ui/store";
+import { listingById } from "../src/sim/20-world/properties";
+import { freeSections, rentSection } from "../src/sim/90-actions/properties";
 import { newGame } from "./fixtures";
 
 afterEach(cleanup);
@@ -73,5 +75,16 @@ describe("era", () => {
     const c = vendor(2012);
     expect(c.querySelector(".inv-dot")).toBeNull();
     expect(c.querySelector(".inv")).toBeTruthy();
+  });
+});
+
+describe("real purchase", () => {
+  it("fills the rent invoice lines from the landlord flow", () => {
+    const s = newGame(7);
+    s.cash = 2_000_000;
+    expect(rentSection(s, "gallushof", freeSections(s, listingById("gallushof")!)[0]).ok).toBe(true);
+    const p = s.payables.find((x) => x.supplier === "landlord")!;
+    const c = render(<SupplierInvoice game={s} p={p} />).container;
+    expect(c.textContent).not.toContain("undefined");
   });
 });
