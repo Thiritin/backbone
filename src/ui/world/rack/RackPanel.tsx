@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
 import { modelById, modelName, wanPort } from "../../../sim/10-catalog/hardware";
+import { uplinkPort } from "../../../sim/60-infra/routers";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { connectError, deviceHealth, heightIn, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
+import { connectError, deviceHealth, heightIn, mountFrom, jacked, locationOf, pluggedIn, portPeers } from "../../../sim/60-infra/status";
 import { present } from "../../../sim/60-infra/handwork";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
@@ -46,13 +47,13 @@ const key = (e: End) => `${e.device}:${e.port}`;
 
 // The rack close-up: the rack stands centred on the floor; a picked unit slides it left and hangs a paper tag beside it.
 // On the back a cable is dragged from port to port, or a click takes a port as the cable in hand and a click on a second port plugs it in; the hand outlives the panel.
-export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, device, onConnectFrom }: {
-  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string;
+export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, device, guide, onConnectFrom }: {
+  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string; guide?: "cable";
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rack = game.racks.find((r) => r.id === rackId);
   const [sel, setSel] = useState<string | null>(device ?? null);
-  const [back, setBack] = useState(!!(hand || startPort));
+  const [back, setBack] = useState(!!(hand || startPort || guide));
   // The side turning away while the other turns in.
   const [turning, setTurning] = useState<boolean | null>(null);
   const [port, setPort] = useState<End | null>(startPort);
@@ -209,6 +210,14 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   };
   useLayoutEffect(repin, [anchor, sel, back, zoom, game, turning, jack]);
   // A tag opened at high zoom is brought into view.
+  // The card's cabling step outlines the line jack and the router's uplink on the back view.
+  useEffect(() => {
+    const router = guide && game.devices.find((x) => x.id === device), jack = game.devices.find((x) => modelById(x.model).kind === "jack" && locationOf(game, x)?.id === rack?.locationId);
+    if (!router || !jack || jacked(game, router.id)) return;
+    const hit = [...document.querySelectorAll("[data-end]")].filter((el) => el.getAttribute("data-end")?.startsWith(`${jack.id}:`) || el.getAttribute("data-end") === `${router.id}:${uplinkPort(router)}`);
+    hit.forEach((el) => el.setAttribute("data-guide", ""));
+    return () => hit.forEach((el) => el.removeAttribute("data-guide"));
+  });
   useEffect(() => { tagEl.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" }); }, [sel, free, port, jack, back]);
   if (!rack) return null;
 

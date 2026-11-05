@@ -100,7 +100,7 @@ export const World = memo(function World() {
   const [hint, setHint] = useState<string | null>(null);
   // The own hall is being edited.
   const [editing, setEditing] = useState(false);
-  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string } | null>(null);
+  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string; guide?: "cable" } | null>(null);
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
   // A connection between two racks: the pair whose backs are open, and the rack or device a right-click started from.
@@ -277,10 +277,10 @@ export const World = memo(function World() {
   });
   // The next-step card walks the player to a rack and opens its close-up: "rack:shelf" for the shelf, "rack:rack" for the first full rack.
   useEffect(() => {
-    if (seek?.startsWith("dev:")) {
+    if (seek?.startsWith("dev:") || seek?.startsWith("cable:")) {
       useStore.getState().setSeek(null);
-      const d = game.devices.find((x) => x.id === seek.slice(4)), r = racks.find((x) => x.id === d?.rackId);
-      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+      const cable = seek.startsWith("cable:"), d = game.devices.find((x) => x.id === seek.slice(cable ? 6 : 4)), r = racks.find((x) => x.id === d?.rackId);
+      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(cable ? { guide: "cable" as const } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
       return;
     }
     if (!seek?.startsWith("rack:")) return;
@@ -491,7 +491,7 @@ export const World = memo(function World() {
         onGlow={(id) => { setHint(id); setTimeout(() => setHint((v) => (v === id ? null : v)), HINT_MS); }} />}
       {panel?.kind === "tickets" && <TicketsPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "scan" && <ScanPanel title={panel.title} onClose={() => setPanel(null)} />}
-      {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} device={rackOpen.device} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)}
+      {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} device={rackOpen.device} guide={rackOpen.guide} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)}
         onConnectFrom={(device) => { setFrom({ rack: rackOpen.id, device }); setRackOpen(null); }} />}
       {pair && <PairPanel key={`${pair.a} ${pair.b}`} a={pair.a} b={pair.b} from={pair.from} onClose={() => setPair(null)} />}
     </div>

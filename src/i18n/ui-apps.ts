@@ -364,6 +364,7 @@ export default {
   "guide.card.firstOrder": () => "Handle the first order",
   "guide.card.firstOrder.text": () => "The order arrives by email. Open it, set up the customer, the domain and the account, then send the invoice.",
   "guide.next.waiting": () => "Waiting",
+  "guide.next.cable": () => "Connect the router to the line jack.",
   "guide.next.all": () => "All steps",
   "guide.next.done": () => "All steps done",
   "guide.help": () => "Game help",

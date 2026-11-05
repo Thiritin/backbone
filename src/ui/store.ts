@@ -394,9 +394,10 @@ export const useStore = create<Store>((set, get) => ({
     const sw = globalThis.innerWidth ?? Infinity, sh = globalThis.innerHeight ?? Infinity;
     // The guide card docks at the right edge below the exit icon; other windows keep clear of it while it is open.
     const guide = app === "Getting started", card = ws.some((x) => x.app === "Getting started" && !x.minimized) ? GUIDE_W + 32 : 16;
-    const x = guide ? Math.max(136, sw - size.w - 16) : 136 + n * 32, y = guide ? 128 : 64 + n * 28;
+    // With the guide card open every window opens at the same corner so it gets the full width left of the card.
+    const at = card > 16 ? 0 : n, x = guide ? Math.max(136, sw - size.w - 16) : 136 + at * 32, y = guide ? 128 : 64 + at * 28;
     // Leaves room for the dock on small screens.
-    const w = Math.min(size.w, sw - x - (guide ? 16 : card)), h = Math.min(size.h, sh - y - 110);
+    const w = Math.min(size.w, sw - x - (guide || app === "Shop" ? 16 : card)), h = Math.min(size.h, sh - y - 110);
     uiSound("open");
     set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 320), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },

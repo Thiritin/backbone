@@ -58,7 +58,7 @@ export function ShopApp() {
   const [detail, setDetail] = useSessionState<string | null>("shop.detail", null);
   useFocus("Shop", (f) => {
     if (f.kind === "software") { setMaker(null); setCls("Software"); }
-    if (f.kind === "class") { setMaker(null); setCls(CLASS_FOCUS[f.id] ?? null); setSort("priceLow"); clearFilter(); setDetail(null); }
+    if (f.kind === "class") { setMaker(null); setCls(CLASS_FOCUS[f.id] ?? null); setSort("priceLow"); clearFilter(); setDetail(null); setView("list"); }
   });
   const all = items(yearOf(hour), monthIndexOf(hour));
   const software = cls === "Software";

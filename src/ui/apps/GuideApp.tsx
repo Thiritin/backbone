@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { t } from "../../i18n/en";
 import { cardBoard, checkDone, nextGoal } from "../../sim/checklist";
 import { cardOf, type Step } from "./guide";
-import { modelById } from "../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById } from "../../sim/10-catalog/hardware";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { wikiUrl } from "./browser/sites/wiki/articles";
 import { useStore } from "../store";
@@ -24,7 +24,9 @@ export function GuideApp() {
   const open = (step: Step) => {
     const home = game.locations.find((l) => l.space === "basement"), goal = nextGoal(game, shown), at = home && playerAt(game).id === home.id;
     const server = game.devices.find((d) => modelById(d.model).kind === "server" && d.rackId);
-    if (at && (goal === "mountServer" || goal === "mountRouter")) useStore.setState({ surface: "world", seek: goal === "mountRouter" ? "rack:shelf" : "rack:rack" });
+    const router = game.devices.find((d) => d.rackId && isOfficeRouter(modelById(d.model)));
+    if (at && goal === "mountRouter" && router) useStore.setState({ surface: "world", seek: `cable:${router.id}` });
+    else if (at && (goal === "mountServer" || goal === "mountRouter")) useStore.setState({ surface: "world", seek: goal === "mountRouter" ? "rack:shelf" : "rack:rack" });
     else if (at && server && (goal === "plugStick" || goal === "bootUsb" || goal === "installOs")) useStore.setState({ surface: "world", seek: `dev:${server.id}` });
     else openApp(step.app, step.focus);
   };
@@ -36,6 +38,7 @@ export function GuideApp() {
       <div className="next-head"><h2>{title}</h2><span className="next-count">{finished}/{cards.length}</span></div>
       <div className="next-bar" role="progressbar" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={finished}><i style={{ width: `${(finished / cards.length) * 100}%` }} /></div>
       <p>{text}</p>
+      {nextGoal(game, shown) === "mountRouter" && <p>{t("guide.next.cable")}</p>}
       <div className="next-actions">
         {waits ? <span className="next-wait">{t("guide.next.waiting")}</span> : <button className="btn primary" onClick={() => open(step)}>{t("apps.open")}</button>}
         {shown.goals.length > 1 && !waits && <span className="next-count num">{parts}/{shown.goals.length}</span>}

@@ -364,6 +364,7 @@ export default {
   "guide.card.firstOrder": () => "Gestire il primo ordine",
   "guide.card.firstOrder.text": () => "L'ordine arriva per e-mail. Aprilo, crea il cliente, il dominio e l'account, poi invia la fattura.",
   "guide.next.waiting": () => "In attesa",
+  "guide.next.cable": () => "Collega il router alla presa di linea.",
   "guide.next.all": () => "Tutti i passaggi",
   "guide.next.done": () => "Tutti i passaggi completati",
   "guide.help": () => "Guida al gioco",
