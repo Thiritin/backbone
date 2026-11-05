@@ -44,7 +44,7 @@
 }
 :root[data-os="tahoe"][data-theme="dark"] { --ar-lift: inset 0 1px 0 oklch(1 0 0 / 0.14), 0 8px 24px -14px oklch(0 0 0 / 0.6); }
 
-.shop { flex: 1; min-width: 0; display: flex; }
+.shop { flex: 1; min-width: 0; display: flex; container-type: inline-size; }
 .shop-side { display: flex; flex-direction: column; gap: 1px; }
 .shop-side button.side-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; }
 .shop-side button.side-item:hover { background: var(--hover); }
@@ -259,3 +259,10 @@
 :root[data-os="tahoe"] .shop-offer { border-radius: var(--ar-pane); }
 .shop-pay-h { font-size: 12px; margin-top: 4px; }
 .shop-class-h { margin: 0; padding: 10px 14px 0; font-size: 15px; font-weight: 600; }
+
+/* Narrow window: the class list folds away and a row keeps its name, price and one add button. */
+@container (max-width: 800px) {
+  .shop-side { display: none; }
+  .shop-row-main { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .shop-row-specs, .shop-row-buy .shop-vendor, .shop-row-buy .shop-config { display: none; }
+}

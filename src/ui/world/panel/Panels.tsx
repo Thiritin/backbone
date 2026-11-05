@@ -55,7 +55,8 @@ export function StoragePanel({ loc, onClose }: Props) {
 export function PostPanel({ title, onClose }: { title: string; onClose: () => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const letters = [...atDesk(game)].reverse();
-  const [i, setI] = useState(0);
+  // The stack opens at the first unpaid bill, so a card that sent the player here lands on it.
+  const [i, setI] = useState(() => Math.max(0, letters.findIndex((x) => game.payables.some((p) => p.id === x.payable && p.paidAt === null))));
   const at = Math.min(i, letters.length - 1), l = letters[at];
   const go = (to: number) => setI(Math.max(0, Math.min(letters.length - 1, to)));
   useEffect(() => { if (l && !l.read) act(readLetter, l.id); }, [l?.id]);

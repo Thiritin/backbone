@@ -50,7 +50,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     }
     case "payBill": {
       const box = inLetterbox(s)[0];
-      return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post", focus: box && { kind: "letterbox", id: box.box! } };
+      return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post", focus: box ? { kind: "letterbox", id: box.box! } : { kind: "bill", id: "" } };
     }
     case "payBills": {
       const late = s.payables.find((p) => overdue(s, p) && p.sent < p.amount - 0.005) ?? s.payables.find((p) => p.paidAt === null);

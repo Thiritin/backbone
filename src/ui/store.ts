@@ -395,11 +395,11 @@ export const useStore = create<Store>((set, get) => ({
     // The guide card docks at the right edge below the exit icon; other windows keep clear of it while it is open.
     const guide = app === "Getting started", card = ws.some((x) => x.app === "Getting started" && !x.minimized) ? GUIDE_W + 32 : 16;
     // With the guide card open every window opens at the same corner so it gets the full width left of the card.
-    const at = card > 16 ? 0 : n, x = guide ? Math.max(136, sw - size.w - 16) : 136 + at * 32, y = guide ? 128 : 64 + at * 28;
+    const at = card > 16 ? 0 : n, x = guide ? Math.max(136, sw - size.w - 16) : app === "Shop" && card > 16 ? 24 : 136 + at * 32, y = guide ? 128 : 64 + at * 28;
     // Leaves room for the dock on small screens.
-    const w = Math.min(size.w, sw - x - (guide || app === "Shop" ? 16 : card)), h = Math.min(size.h, sh - y - 110);
+    const w = Math.min(size.w, sw - x - (guide ? 16 : card)), h = Math.min(size.h, sh - y - 110);
     uiSound("open");
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 320), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, app === "Shop" ? 480 : 320), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openConsole: (deviceId) => {
     const ws = get().windows, open = ws.find((w) => w.console === deviceId);
@@ -417,8 +417,11 @@ export const useStore = create<Store>((set, get) => ({
     if (d.kind === "cert") return;
     const open = ws.find((w) => w.doc === doc);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
-    const n = ws.length % 8;
-    set({ windows: [...ws, { id: `${doc}-${Date.now()}`, app: "Notes", doc, x: 160 + n * 32, y: 84 + n * 28, w: 560, h: 420, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
+    const n = ws.length % 8, sw = globalThis.innerWidth ?? 1280, sh = globalThis.innerHeight ?? 720;
+    // With the guide card open a document docks under it, so it never covers the page the player is reading it for.
+    const dock = ws.some((w) => w.app === "Getting started" && !w.minimized);
+    const box = dock ? { x: sw - GUIDE_W - 16, y: 392, w: GUIDE_W, h: Math.max(180, sh - 392 - 100) } : { x: 160 + n * 32, y: 84 + n * 28, w: 560, h: 420 };
+    set({ windows: [...ws, { id: `${doc}-${Date.now()}`, app: "Notes", doc, ...box, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   openCompose: (draft) => {
     const ws = get().windows, open = ws.find((w) => w.draft === draft);

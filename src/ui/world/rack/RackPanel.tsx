@@ -48,7 +48,7 @@ const key = (e: End) => `${e.device}:${e.port}`;
 // The rack close-up: the rack stands centred on the floor; a picked unit slides it left and hangs a paper tag beside it.
 // On the back a cable is dragged from port to port, or a click takes a port as the cable in hand and a click on a second port plugs it in; the hand outlives the panel.
 export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, device, guide, onConnectFrom }: {
-  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string; guide?: "cable";
+  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string; guide?: "cable" | "vga";
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rack = game.racks.find((r) => r.id === rackId);
@@ -210,9 +210,14 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   };
   useLayoutEffect(repin, [anchor, sel, back, zoom, game, turning, jack]);
   // A tag opened at high zoom is brought into view.
-  // The card's cabling step outlines the line jack and the router's uplink on the back view.
+  // The card's cabling step outlines the line jack and router uplink, the boot step the server VGA port (the console end is port 100).
   useEffect(() => {
-    const router = guide && game.devices.find((x) => x.id === device), jack = game.devices.find((x) => modelById(x.model).kind === "jack" && locationOf(game, x)?.id === rack?.locationId);
+    if (guide === "vga") {
+      const vga = [...document.querySelectorAll("[data-end]")].filter((el) => el.getAttribute("data-end") === `${device}:100`);
+      vga.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => vga.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    const router = guide === "cable" && game.devices.find((x) => x.id === device), jack = game.devices.find((x) => modelById(x.model).kind === "jack" && locationOf(game, x)?.id === rack?.locationId);
     if (!router || !jack || jacked(game, router.id)) return;
     const hit = [...document.querySelectorAll("[data-end]")].filter((el) => el.getAttribute("data-end")?.startsWith(`${jack.id}:`) || el.getAttribute("data-end") === `${router.id}:${uplinkPort(router)}`);
     hit.forEach((el) => el.setAttribute("data-guide", ""));

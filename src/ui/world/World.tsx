@@ -100,7 +100,7 @@ export const World = memo(function World() {
   const [hint, setHint] = useState<string | null>(null);
   // The own hall is being edited.
   const [editing, setEditing] = useState(false);
-  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string; guide?: "cable" } | null>(null);
+  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string; guide?: "cable" | "vga" } | null>(null);
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
   // A connection between two racks: the pair whose backs are open, and the rack or device a right-click started from.
@@ -277,10 +277,10 @@ export const World = memo(function World() {
   });
   // The next-step card walks the player to a rack and opens its close-up: "rack:shelf" for the shelf, "rack:rack" for the first full rack.
   useEffect(() => {
-    if (seek?.startsWith("dev:") || seek?.startsWith("cable:")) {
+    if (seek?.startsWith("dev:") || seek?.startsWith("cable:") || seek?.startsWith("vga:")) {
       useStore.getState().setSeek(null);
-      const cable = seek.startsWith("cable:"), d = game.devices.find((x) => x.id === seek.slice(cable ? 6 : 4)), r = racks.find((x) => x.id === d?.rackId);
-      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(cable ? { guide: "cable" as const } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+      const kind = seek.split(":")[0], d = game.devices.find((x) => x.id === seek.slice(kind.length + 1)), r = racks.find((x) => x.id === d?.rackId);
+      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(kind === "cable" || kind === "vga" ? { guide: kind } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
       return;
     }
     if (!seek?.startsWith("rack:")) return;

@@ -27,7 +27,8 @@ export function GuideApp() {
     const router = game.devices.find((d) => d.rackId && isOfficeRouter(modelById(d.model)));
     if (at && goal === "mountRouter" && router) useStore.setState({ surface: "world", seek: `cable:${router.id}` });
     else if (at && (goal === "mountServer" || goal === "mountRouter")) useStore.setState({ surface: "world", seek: goal === "mountRouter" ? "rack:shelf" : "rack:rack" });
-    else if (at && server && (goal === "plugStick" || goal === "bootUsb" || goal === "installOs")) useStore.setState({ surface: "world", seek: `dev:${server.id}` });
+    else if (at && server && goal === "bootUsb") useStore.setState({ surface: "world", seek: `vga:${server.id}` });
+    else if (at && server && (goal === "plugStick" || goal === "installOs")) useStore.setState({ surface: "world", seek: `dev:${server.id}` });
     else openApp(step.app, step.focus);
   };
   const { title, text, step } = cardOf(game, shown);
