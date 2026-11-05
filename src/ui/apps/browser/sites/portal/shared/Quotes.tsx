@@ -1,3 +1,4 @@
+import { PBody, PBtn, PSelect } from "./ui";
 import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
@@ -39,15 +40,15 @@ export function Quotes({ game, id }: ScreenProps & { id?: string }) {
   return (
     <div className="pt-screen">
       <div className="pt-form">
-        <select className="field" aria-label={t("pkg.order")} value={ticket || open[0]?.id || ""} onChange={(e) => setTicket(e.target.value)} disabled={!open.length}>
+        <PSelect aria-label={t("pkg.order")} value={ticket || open[0]?.id || ""} onChange={(e) => setTicket(e.target.value)} disabled={!open.length}>
           {open.map((tk) => { const r = orderOf(game, tk)!; return <option key={tk.id} value={tk.id}>{[requestName(r), r.domain].filter(Boolean).join(" · ")}</option>; })}
-        </select>
-        <button className="btn" disabled={!open.length} onClick={create}>{t("shop-admin.newQuote")}</button>
+        </PSelect>
+        <PBtn disabled={!open.length} onClick={create}>{t("shop-admin.newQuote")}</PBtn>
       </div>
       {asked && <p>{t(asked.key, asked.params)}</p>}
       <table className="pt-table">
         <thead><tr><th>{t("books.col.number")}</th><th>{t("shop-admin.client")}</th><th>{t("shop-admin.date")}</th><th>{t("shop-admin.total")}</th><th>{t("shop-admin.status")}</th></tr></thead>
-        <tbody>
+        <PBody>
           {list.map((x) => (
             <tr key={x.id} className={x.id === selected ? "on" : undefined}>
               <td className="num"><a href="#" onClick={(e) => { e.preventDefault(); setSelected(x.id); }}>{x.number}</a></td>
@@ -57,7 +58,7 @@ export function Quotes({ game, id }: ScreenProps & { id?: string }) {
               <td><QuotePill q={x} /></td>
             </tr>
           ))}
-        </tbody>
+        </PBody>
       </table>
       {q && <QuoteEdit key={q.id} game={game} q={q} onGone={() => setSelected(null)} />}
     </div>
@@ -81,16 +82,16 @@ function QuoteEdit({ game, q, onGone }: { game: GameState; q: Quote; onGone: () 
           <PriceField value={monthly} reference={r.reference} onChange={(m) => edit(m, setup)} />
           <PriceField value={setup} reference={setupFee(game, r.product)} onChange={(f) => edit(monthly, f)} label={t("support.setupFee")} />
           {cycles.length > 1 && (
-            <select className="field" aria-label={t("shop-store.cycle")} value={q.cycle ?? "monthly"} onChange={(e) => act(setQuoteCycle, q.id, e.target.value === "monthly" ? null : (e.target.value as Cycle))}>
+            <PSelect aria-label={t("shop-store.cycle")} value={q.cycle ?? "monthly"} onChange={(e) => act(setQuoteCycle, q.id, e.target.value === "monthly" ? null : (e.target.value as Cycle))}>
               {cycles.map((c) => <option key={c} value={c}>{CYCLE_LABEL[c]}</option>)}
-            </select>
+            </PSelect>
           )}
         </div>
       )}
       <div className="pt-form">
-        <button className="btn" disabled={!draft || !q.ticketId} onClick={() => act(attachQuote, q.id, q.ticketId!)}>{t("orderSteps.send")}</button>
-        <button className="btn" disabled={q.status !== "accepted"} onClick={() => act(convertQuote, q.id)}>{t("shop-admin.convertQuote")}</button>
-        <button className="btn" disabled={!draft} onClick={() => { if (act(deleteQuote, q.id).ok) onGone(); }}>{t("orderSteps.delete")}</button>
+        <PBtn disabled={!draft || !q.ticketId} onClick={() => act(attachQuote, q.id, q.ticketId!)}>{t("orderSteps.send")}</PBtn>
+        <PBtn disabled={q.status !== "accepted"} onClick={() => act(convertQuote, q.id)}>{t("shop-admin.convertQuote")}</PBtn>
+        <PBtn disabled={!draft} onClick={() => { if (act(deleteQuote, q.id).ok) onGone(); }}>{t("orderSteps.delete")}</PBtn>
       </div>
     </section>
   );

@@ -51,6 +51,7 @@ describe("WHMCache vendor site and skin", () => {
     const Admin = skinOf("whmCache").Admin;
     const html = (major: string) => renderToString(<Admin game={s} variant="whmCache" route={route} open={() => {}} version="" major={major} browse={() => {}} />);
     expect(html("3")).toContain("whc-classic");
-    expect(html("8")).toContain("whc-sidenav");
+    expect(html("8")).toContain("whc-menu");
+    expect(html("8")).not.toContain("whc-side");
   });
 });

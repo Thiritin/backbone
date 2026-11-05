@@ -7,6 +7,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The room shows the next step in a strip with an Open button, the TAN list marks the code to use next, the plug and mount steps outline the USB port and the free rack unit, and the shop list no longer overlaps beside the cart.
 - Each Getting started card now opens its exact next step: the shop on the sorted server list, the domain search, the website builder, the Debiant download, and the rack in the room, with a counter on multi-part cards.
 - The Debiant boot menu offers an automatic installation, the accounting vendor page installs the download with one button, the bank offers the TAN list at the TAN field, the Terminal types the login for you, and internet lines show speeds, prices and connection dates.
+- Shop admin pages use their own buttons and tabs instead of the desktop ones, the start page shows order, ticket, invoice and income widgets, and there are new Accounts, Domains, Reports and Network pages.
+- Products and payment gateways have their own pages, invoices filter by status, the setup wizard of WHMCache 7 and later and Blessta is a panel you can dismiss, and importing existing customers sits under Import.
 - The power button on a rack server now works: a press starts it or shuts it down, holding it for two seconds cuts the power, the recessed reset button reboots it hard, the router has a rocker switch on its back, the UPS a front button, and the rack floor reports what happened.
 - Shutting down or resetting a server that hosts customers asks first and names how many are affected.
 - A crash cart with a monitor and keyboard stands beside the rack, plugs into a server through its VGA port on the back, and restarts it with Ctrl+Alt+Del.

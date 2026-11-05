@@ -12,7 +12,7 @@ const LABEL: Record<string, string> = { monthly: "Monthly", quarterly: "Quarterl
 
 // Variants that run on the game's first years, then the ones that need a later start.
 const LEGACY: ShopId[] = ["modemBill", "clientExit"];
-const PRODUCTS_LABEL: Record<string, string> = { modemBill: "Packages", clientExit: "Product Groups", blessta: "Package Groups", boxBillin: "Products", hostBull: "Order pages" };
+const PRODUCTS_LABEL: Record<string, string> = { modemBill: "Packages", clientExit: "Packages", blessta: "Package Groups", boxBillin: "Products", hostBull: "Order pages" };
 const MODERN: ShopId[] = ["blessta", "boxBillin", "hostBull"];
 
 const setup = (variant: ShopId): { s: GameState; g: string; p: string } => {

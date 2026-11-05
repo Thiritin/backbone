@@ -33,9 +33,10 @@ describe("shop marketplace", () => {
     for (const id of ["whmCache", "boxBillin", "ubersmyth", "orderBocks", "clientExit", "blessta", "modemBill", "hostBull"] as const) {
       const s = shopGame(id, Math.max(2012, shopById(id).from)), Admin = skinOf(id).Admin;
       const html = renderToString(<Admin game={s} variant={id} route={parsePortal(id, portalPath(id, "admin", {}, { s: "marketplace" }))!} open={() => {}} version="" major="" browse={() => {}} />);
-      expect(html).toContain(t("shop-market.provisioning"));
-      expect(html).toContain(t("shop-market.gateways"));
+      const gateways = renderToString(<Admin game={s} variant={id} route={parsePortal(id, portalPath(id, "admin", {}, { s: "marketplace", tab: "gateways" }))!} open={() => {}} version="" major="" browse={() => {}} />);
+      expect(html).toContain(t("shop-admin.d.available"));
       expect(html).toContain(t("vendor-sites.module.shop-link"));
+      expect(gateways).toContain(t("shop-market.gateways"));
       if (id === "boxBillin") expect(html).toContain(t("marketing.notAvailable"));
     }
   });
