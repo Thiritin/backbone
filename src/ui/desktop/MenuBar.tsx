@@ -1,5 +1,5 @@
 import { t } from "../../i18n/en";
-import { Bell, Moon, Pause, Play, SkipForward, Sun } from "lucide-react";
+import { Bell, Pause, Play, SkipForward } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Intro, PearMark } from "./Intro";
@@ -22,7 +22,7 @@ import type { MenuEntry } from "./menu";
 
 declare const __BUILD_ID__: string;
 
-interface Props { theme: string; onTheme: () => void; onBell: () => void }
+interface Props { onBell: () => void }
 
 export function SpeedControl({ speed, setSpeed }: { speed: Speed; setSpeed: (s: Speed) => void }) {
   return (
@@ -39,7 +39,7 @@ export function SpeedControl({ speed, setSpeed }: { speed: Speed; setSpeed: (s: 
   );
 }
 
-export function MenuBar({ theme, onTheme, onBell }: Props) {
+export function MenuBar({ onBell }: Props) {
   const { game, speed, setSpeed, windows, openApp, openConsole, openDoc, act, unseen, openNews, minimize, close, setSurface } = useStore();
   const guideGone = !game.docs.some((d) => d.kind === "guide");
   const docTitle = (id: string) => game.docs.find((d) => d.id === id)?.title ?? "";
@@ -113,12 +113,11 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
       <span className="mb-sep" />
       <button className={`mb-item num${speed === 0 ? " paused" : ""}`} onClick={() => openApp("Calendar")}>{formatClock(game.hour, game.minute)}</button>
       <span className="mb-sep" />
-      <button className="mb-item mb-cash num" onClick={() => openApp("Books")}>{euro(game.cash)}</button>
+      <button className="mb-item mb-cash num" onClick={() => openApp("Books")}>{game.bank ? euro(game.cash) : "–"}</button>
       <button className="mb-item mb-badge" aria-label={unseen ? t("desktop.notif.unseen", { n: unseen }) : t("desktop.notif.title")} onClick={onBell}>
         <Bell />
         {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}
       </button>
-      <button className="mb-item" aria-label={t("desktop.menu.darkMode")} onClick={onTheme}>{theme === "dark" ? <Sun /> : <Moon />}</button>
       <FullscreenButton className="mb-item" />
       {intro && <Intro onClose={() => setIntro(false)} />}
     </header>

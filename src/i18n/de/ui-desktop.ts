@@ -114,7 +114,6 @@ export default {
   "desktop.menu.pause": () => "Pause",
   "desktop.menu.speedN": (p) => `${p.n}× Geschwindigkeit`,
   "desktop.menu.language": () => "Sprache",
-  "desktop.menu.darkMode": () => "Dunkelmodus umschalten",
   "desktop.menu.logout": () => "Logout",
   "desktop.switcher": () => "Fenster wechseln",
   "desktop.icon.exit": () => "Verlassen",
