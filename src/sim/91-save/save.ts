@@ -7,6 +7,7 @@ import { fillMail } from "./mail";
 import { fillPearMail } from "./pear-mail";
 import { provisionStarterMail } from "../43-pear-mail/setup";
 import { migrateBooks } from "./books";
+import { newSetup } from "../80-business/books-guide";
 import { fillShop, installSavedShop, ownShopWebspace } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
@@ -233,7 +234,7 @@ export function deserialize(raw: string): GameState {
     // Quotes from before the shop wrote its own were all written in Books.
     quotes: (data.quotes ?? []).map((q) => ({ ...q, origin: q.origin ?? "books" })),
     // Letters from before the letterbox lie at the desk, and the delivered ones are filed in DocuWhere.
-    letters: (data.letters ?? base.letters).map((l) => ({ ...l, box: l.box ?? null, addressedTo: l.addressedTo ?? l.box ?? null, scanned: l.scanned ?? l.arrived })),
+    letters: (data.letters ?? base.letters).map((l) => ({ ...l, box: l.read ? null : l.box ?? null, addressedTo: l.addressedTo ?? l.box ?? null, scanned: l.scanned ?? l.arrived })),
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
     // Saves from before contracts get one per rented location at today's price.
     contracts: data.contracts?.map((c: Contract) => ({ ...c, retainedAt: c.retainedAt ?? null })) ?? locations.filter((l) => l.dc).map((l, i) => {
@@ -314,7 +315,7 @@ export function deserialize(raw: string): GameState {
   s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], files: media.files ?? [], dumps: media.dumps ?? {}, stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   s.arrived = data.arrived ?? [];
   // Saves from before the Bookkeeping category run Taxware Office when they have Books.
-  if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] };
+  if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0, download: null, addons: [], setup: newSetup() };
   s.books = { ...s.books, download: s.books.download ?? null, addons: s.books.addons ?? [] };
   migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;

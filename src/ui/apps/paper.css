@@ -51,3 +51,5 @@
 .letter-foot { position: absolute; bottom: calc(var(--mm) * 10); left: calc(var(--mm) * 25); right: calc(var(--mm) * 20); display: flex; gap: calc(var(--mm) * 8); padding-top: calc(var(--mm) * 2); border-top: 0.5px solid #bbb; font-size: calc(var(--mm) * 2.6); color: #444; }
 .letter-foot div { display: grid; }
 .letter-actions { max-width: 760px; margin: 12px auto 0; }
+.letter-paid { display: inline-block; margin: calc(var(--mm) * 3) 0 0; padding: calc(var(--mm) * 1) calc(var(--mm) * 3); border: 0.5mm solid #1c6b3a; color: #1c6b3a; font-weight: 700; text-transform: uppercase; transform: rotate(-3deg); }
+.books-preview .paper-scroll { flex: 1; height: auto; align-self: stretch; min-height: 0; }

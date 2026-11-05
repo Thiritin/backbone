@@ -8,7 +8,7 @@ import { tick, type SimEvent } from "../src/sim/88-tick/tick";
 import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
 import { addLocation, buyRack, mountDevice, mountHours, mountStack, setPower, unmountDevice } from "../src/sim/90-actions/hardware";
 import { queueOperation, setTechLocation } from "../src/sim/90-actions/staff";
-import { hire, settle } from "./fixtures";
+import { hire } from "./fixtures";
 import { buyDevice, freeFloor, withServer, newGame } from "./fixtures";
 
 type R = ReturnType<typeof setPower>;
@@ -42,19 +42,16 @@ describe("mounting hardware", () => {
     expect(mountHours("g1-compute")).toBe(0.25 + 0.25 * big);
   });
 
-  it("is a free work order for the player's own hands in the basement", () => {
+  it("is free and instant for the player's own hands in the basement", () => {
     const s: GameState = { ...withServer(newGame(7)), cash: 10_000 };
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     const cash = s.cash;
     ok(mountDevice(s, id, "rack2", 10));
-    expect(s.orders.some((o) => o.worker === "player" && !o.applied)).toBe(true);
-    expect(dev(s, id).rackId).toBeNull();
-    settle(s);
+    expect(s.orders).toEqual([]);
     expect(dev(s, id).rackId).toBe("rack2");
     expect(dev(s, id).maintenance).toBeNull();
     expect(s.cash).toBe(cash);
     ok(unmountDevice(s, id));
-    settle(s);
     expect(dev(s, id).rackId).toBeNull();
     expect(dev(s, id).maintenance).toBeNull();
     expect(s.cash).toBe(cash);
@@ -109,8 +106,8 @@ describe("mounting hardware", () => {
     const cash = s.cash;
     ok(mountDevice(s, id, rack, 1, "self"));
     expect(s.cash).toBe(cash);
-    expect(s.orders).toMatchObject([{ worker: "player", kind: "mount", workMin: JOB_HOURS.mount * 60 }]);
-    expect(dev(s, id).rackId).toBeNull();
+    expect(s.orders).toEqual([]);
+    expect(dev(s, id).rackId).toBe(rack);
   });
 
   it("is a technician operation at their location, done without a fee", () => {
