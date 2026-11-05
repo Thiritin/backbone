@@ -133,8 +133,8 @@ export function ApplicationsApp() {
           <Item key={name} label={name}><span className="di-page">{fileIcon(name)}</span></Item>
         ))}
         {at === "downloads" && [
-          ...PROGRAMS.filter((p) => game.installers[p.id] && game.hour >= game.installers[p.id].readyAt).map((p) => ({ id: p.id, file: installerFile(p, yearOf(game.hour)) })),
-          ...(books && game.hour >= books.readyAt ? [{ id: books.vendor, file: `${booksVendor(books.vendor)?.program}.dmg` }] : []),
+          ...PROGRAMS.filter((p) => game.installers[p.id] && !game.installed.includes(p.id) && game.hour >= game.installers[p.id].readyAt).map((p) => ({ id: p.id, file: installerFile(p, yearOf(game.hour)) })),
+          ...(books && game.hour >= books.readyAt && game.books.vendor !== books.vendor ? [{ id: books.vendor, file: `${booksVendor(books.vendor)?.program}.dmg` }] : []),
         ].map(({ id, file }) => (
           <Item key={id} label={file} menu={() => [{ label: t("apps.finder.moveToApplications"), run: () => install(id) }]}
             drag={(e) => { e.dataTransfer.setData(INSTALLER, id); e.dataTransfer.effectAllowed = "copy"; }}>
