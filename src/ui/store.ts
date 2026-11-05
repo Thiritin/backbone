@@ -131,7 +131,6 @@ export interface Store {
   // Starts this week's challenge: its seed and twist.
   startChallenge: () => void;
   importSave: (raw: string) => void;
-  deleteProgress: () => void;
   cart: CartLine[];
   addToCart: (line: CartLine) => void;
   setCartQty: (line: CartLine, qty: number) => void;
@@ -140,6 +139,10 @@ export interface Store {
   openLoc: string | null;
   setOpenLoc: (id: string | null) => void;
   // The desk computer or the room the player stands in; never saved.
+  // The pause menu; the game is paused while it is open and speed returns to pauseResume.
+  pause: boolean;
+  pauseResume: Speed;
+  setPause: (open: boolean) => void;
   surface: Surface;
   setSurface: (surface: Surface) => void;
 }
@@ -287,6 +290,9 @@ export const useStore = create<Store>((set, get) => ({
   clearCart: () => set({ cart: [] }),
   openLoc: null,
   setOpenLoc: (openLoc) => set({ openLoc }),
+  pause: false,
+  pauseResume: 0 as Speed,
+  setPause: (open) => set(({ pause, speed, pauseResume }) => open ? (pause ? {} : { pause: true, pauseResume: speed, speed: 0 as Speed }) : pause ? { pause: false, speed: pauseResume } : {}),
   surface: "world",
   setSurface: (surface) => set({ surface }),
 
@@ -484,14 +490,6 @@ export const useStore = create<Store>((set, get) => ({
     }
     get().save();
     get().notify("Settings", t("save.imported.title"), t("save.imported.text"));
-  },
-  deleteProgress: () => {
-    try {
-      localStorage.removeItem(SAVE_KEY);
-    } catch {
-      // Nothing stored to remove.
-    }
-    set({ ...fresh(), game: newCompany(Date.now() >>> 0), started: false, canContinue: false });
   },
 }));
 // Without the focus another app asked for, so a reload keeps what the window shows now.

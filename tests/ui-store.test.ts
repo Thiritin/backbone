@@ -93,10 +93,6 @@ describe("save handling", () => {
     s().importSave("not a save");
     expect(s().game.seed).toBe(7);
     expect(s().history[0].title).toBe("Import failed");
-
-    s().deleteProgress();
-    expect(s().started).toBe(false);
-    expect(s().windows).toHaveLength(0);
   });
 });
 

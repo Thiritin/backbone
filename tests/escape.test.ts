@@ -4,22 +4,28 @@ import { escapeStep, type EscapeState } from "../src/ui/desktop/escape";
 
 const win = (id: string, z: number, minimized = false) => ({ id, app: "Books", x: 0, y: 0, w: 1, h: 1, z, minimized, zoomed: false });
 const state = (over: Partial<EscapeState> = {}, until = 0): EscapeState & { closed: string[]; room: number } => {
-  const st = { closed: [] as string[], room: 0, game: { hour: 10, player: { until } } as EscapeState["game"], windows: [win("a", 1), win("b", 2)], close: (id: string) => void st.closed.push(id), setSurface: () => void st.room++ };
+  const st = { closed: [] as string[], room: 0, game: { hour: 10, player: { until } } as EscapeState["game"], windows: [win("a", 1), win("b", 2)], close: (id: string) => void st.closed.push(id), setSurface: () => {}, setPause: () => void st.room++ };
   return Object.assign(st, over);
 };
 const press = (target: Element, st: EscapeState, key = "Escape") => escapeStep({ key, target, defaultPrevented: false }, st);
 afterEach(() => { document.body.innerHTML = ""; });
 
 describe("Escape on the desktop", () => {
-  it("closes the front window, then the next, then returns to the room", () => {
+  it("closes the front window, then the next, then opens the pause menu", () => {
     const st = state();
     expect(press(document.body, st)).toBe("close");
     st.windows = st.windows.slice(0, 1);
     expect(press(document.body, st)).toBe("close");
     st.windows = [];
-    expect(press(document.body, st)).toBe("room");
+    expect(press(document.body, st)).toBe("pause");
     expect(st.closed).toEqual(["b", "a"]);
     expect(st.room).toBe(1);
+  });
+
+  it("leaves Escape to the room view", () => {
+    const st = state({ surface: "world", windows: [] });
+    expect(press(document.body, st)).toBeNull();
+    expect(st.room).toBe(0);
   });
 
   it("ignores minimized windows and other keys", () => {

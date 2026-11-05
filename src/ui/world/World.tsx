@@ -174,7 +174,7 @@ export function World() {
 
   // Escape drops a cable in progress; open panels close themselves.
   const escape = useRef(() => {});
-  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (!useEdit.getState().escape()) setEditing(false); } };
+  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (!useEdit.getState().escape()) setEditing(false); } else useStore.getState().setPause(true); };
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
