@@ -34,8 +34,8 @@ const Check = ({ label, ok }: { label: ReactNode; ok: boolean }) => (
 // The installer wizard: the environment check, the config form and the config test with the last step.
 function Installer({ game, c }: { game: GameState; c: Cluster }) {
   const act = useStore((x) => x.act), cfg = webmailOf(game, c);
-  const [step, setStep] = useState(c.setupPending ? 1 : 3), [saved, setSaved] = useState(false);
-  const [form, setForm] = useState({ productName: cfg.productName, dsn: cfg.conf.db_dsnw ?? SQUARECUBE_DSN, imapHost: cfg.imapHost, imapPort: String(cfg.imapPort), smtpHost: cfg.smtpHost, smtpPort: String(cfg.smtpPort) });
+  const [step, setStep] = useSessionState(`inst.sc.${c.id}.step`, c.setupPending ? 1 : 3), [saved, setSaved] = useSessionState(`inst.sc.${c.id}.saved`, false);
+  const [form, setForm] = useSessionState(`inst.sc.${c.id}.form`, { productName: cfg.productName, dsn: cfg.conf.db_dsnw ?? SQUARECUBE_DSN, imapHost: cfg.imapHost, imapPort: String(cfg.imapPort), smtpHost: cfg.smtpHost, smtpPort: String(cfg.smtpPort) });
   if (!cfg.installerOpen) return <div className="scw scw-installer"><h1>{t("mailserver.sc.installer")}</h1><p className="fail">{t("mailserver.sc.disabled")}</p></div>;
   const field = (label: string, key: keyof typeof form) => (
     <tr><th><label htmlFor={`sc-${key}`}>{label}</label></th><td><input id={`sc-${key}`} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /></td></tr>
