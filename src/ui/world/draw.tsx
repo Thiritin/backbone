@@ -621,7 +621,7 @@ export function Letterbox({ f, count, shown, near = false }: { f: Fixture; count
         <path className="w-brass-edge" d={`M${L0 + 2.5},6 H${L0 + 11.5}`} />
         <rect className="w-flag-pole" x={L1 - 3} y={up ? 8 : 11} width="0.8" height={up ? 8 : 5} />
         <rect className="w-flag" x={L1 - 6} y={up ? 8 : 14} width="3.2" height="2.4" />
-        {up && <text className="w-num w-num-tag" data-letterbox-count x={L0 + 2} y="15.5">{shown}</text>}
+        {up && <g data-letterbox-badge><rect className="w-count-tag" x={L0 + 2} y="10.5" width="5" height="5" /><text className="w-count-text" data-letterbox-count x={L0 + 4.5} y="14.3">{shown}</text></g>}
       </g>
     </g>
   );
@@ -855,41 +855,50 @@ export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number;
 // The wall phone beside the door: a beige corded set until 2010, then a cordless handset in its wall base. Ringing shakes the handset.
 export const CORDLESS_YEAR = 2010;
 export function Phone({ f, ringing, cordless, near = false }: { f: Fixture; ringing: boolean; cordless: boolean; near?: boolean }) {
-  const [P0, P1] = wallSlot("phone", near), ring = ringing ? "w-ringing" : undefined;
+  const [P0, P1] = wallSlot("phone", near), ring = ringing ? "w-ringing" : undefined, cx = P0 + 3.4;
+  // One handset outline: ear and mouth ends joined by a narrower grip.
+  const handset = "M-1.8,0.6 q0,-0.6 0.6,-0.6 h2.4 q0.6,0 0.6,0.6 v2.6 q0,0.5 -0.6,0.8 l-0.5,0.3 v8.4 l0.5,0.3 q0.6,0.3 0.6,0.8 v2.6 q0,0.6 -0.6,0.6 h-2.4 q-0.6,0 -0.6,-0.6 v-2.6 q0,-0.5 0.6,-0.8 l0.5,-0.3 v-8.4 l-0.5,-0.3 q-0.6,-0.3 -0.6,-0.8 Z";
   return (
     <g data-slot="phone" data-phone={ringing ? "ringing" : "idle"}>
       {cordless ? (
         <>
-          <WallBox f={f} u0={P0 + 2} u1={P1 - 2} z0={40} z1={58} d={3} tone="w-tone-dark" />
+          <WallBox f={f} u0={P0} u1={P1} z0={40} z1={64} d={3} tone="w-tone-enamel" />
+          <WallBox f={f} u0={P0 + 1.5} u1={P1 - 1.5} z0={42} z1={52} d={6} tone="w-tone-plate" />
+          <g transform={wallFront(f, 52, 6)}>
+            <rect className="w-phone-slot" x={P0 + 3} y="1.6" width={P1 - P0 - 6} height="1.6" />
+            <rect className={`w-led${ringing ? " w-led-on" : ""}`} x={P1 - 3.6} y="6" width="1.4" height="1" />
+          </g>
           <g className={ring}>
-            <WallBox f={f} u0={P0 + 4} u1={P0 + 10} z0={43} z1={62} d={5} tone="w-tone-slate" />
-            <g transform={wallFront(f, 62, 5)}>
-              <rect className="w-phone-screen" x={P0 + 5} y="2" width="4" height="3.4" />
-              <rect className={`w-led${ringing ? " w-led-on" : ""}`} x={P0 + 6.3} y="14.5" width="1.4" height="1" />
+            <WallBox f={f} u0={P0 + 4} u1={P0 + 9.6} z0={49} z1={67} d={5} tone="w-tone-pc" />
+            <WallBox f={f} u0={P0 + 8} u1={P0 + 9} z0={67} z1={70} d={1.6} tone="w-tone-pc" />
+            <g transform={wallFront(f, 67, 5)}>
+              <rect className="w-phone-screen" x={P0 + 4.8} y="1.6" width="4" height="3.2" />
+              {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} className="w-phone-dot" x={P0 + 5 + c * 1.4} y={6 + r * 2.4} width="0.9" height="0.9" />))}
             </g>
           </g>
         </>
       ) : (
         <>
-          <WallBox f={f} u0={P0} u1={P1} z0={40} z1={67} d={3} tone="w-tone-beige" />
-          <WallBox f={f} u0={P0 + 0.4} u1={P0 + 5.6} z0={45} z1={47} d={4.8} tone="w-tone-slate" />
-          <WallBox f={f} u0={P0 + 0.4} u1={P0 + 5.6} z0={59.5} z1={61.5} d={4.8} tone="w-tone-slate" />
-          <WallBox f={f} u0={P0 + 6.6} u1={P1 - 1} z0={42} z1={55} d={4.2} tone="w-tone-beige" />
-          <g transform={wallFront(f, 55, 4.2)}>
+          <WallBox f={f} u0={P0} u1={P1} z0={40} z1={71} d={3} tone="w-tone-beige" />
+          <WallBox f={f} u0={cx - 3.2} u1={cx - 2.2} z0={58.5} z1={61} d={4.6} tone="w-tone-slate" />
+          <WallBox f={f} u0={cx + 2.2} u1={cx + 3.2} z0={58.5} z1={61} d={4.6} tone="w-tone-slate" />
+          <WallBox f={f} u0={P0 + 7.4} u1={P1 - 1} z0={42} z1={58} d={4.2} tone="w-tone-beige" />
+          <g transform={wallFront(f, 58, 4.2)}>
             {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => (
               <g key={`${r}${c}`}>
-                <rect className="w-phone-key-edge" x={P0 + 7.4 + c * 1.9} y={1.1 + r * 3 + 0.4} width="1.4" height="1.9" />
-                <rect className="w-phone-key" x={P0 + 7.4 + c * 1.9} y={1.1 + r * 3} width="1.4" height="1.9" />
+                <rect className="w-phone-key-edge" x={P0 + 8.2 + c * 1.7} y={1.4 + r * 3.6 + 0.4} width="1.3" height="2" />
+                <rect className="w-phone-key" x={P0 + 8.2 + c * 1.7} y={1.4 + r * 3.6} width="1.3" height="2" />
               </g>
             )))}
           </g>
           <g className={ring}>
-            <WallBox f={f} u0={P0 + 1} u1={P0 + 5} z0={61.5} z1={65} d={5.8} tone="w-tone-handset" />
-            <WallBox f={f} u0={P0 + 1.9} u1={P0 + 4.1} z0={50.5} z1={61.5} d={5.2} tone="w-tone-handset" />
-            <WallBox f={f} u0={P0 + 1} u1={P0 + 5} z0={47} z1={50.5} d={5.8} tone="w-tone-handset" />
+            <g transform={wallFront(f, 68, 6)}>
+              <path className="w-handset-side" d={handset} transform={`translate(${cx + 0.7} 0.6)`} />
+              <path className="w-handset-face" d={handset} transform={`translate(${cx} 0)`} />
+            </g>
           </g>
-          <g transform={wallFront(f, 47, 5.8)}>
-            <path className="w-phone-cord-wall" d={`M${P0 + 3},0 q-2,1 0,1.6 q2,1 0,1.6 q-2,1 0,1.6 q2,1 0,1.6`} fill="none" />
+          <g transform={wallFront(f, 51, 6)}>
+            <path className="w-phone-cord-wall" d={`M${cx},0 ${Array.from({ length: 5 }, () => "q-1.8,0.5 0,1 q1.8,0.5 0,1").join(" ")}`} fill="none" />
           </g>
         </>
       )}

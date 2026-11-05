@@ -288,3 +288,9 @@
 .w-flag-pole { fill: oklch(0.5 0.01 250); }
 .w-flag { fill: oklch(0.55 0.19 27); }
 .w-phone-cord-wall { stroke: oklch(0.3 0.01 250); stroke-width: 0.9; }
+.w-handset-side { fill: oklch(0.5 0.04 72); stroke: oklch(0.4 0.04 70); stroke-width: 0.4; }
+.w-handset-face { fill: oklch(0.8 0.035 82); stroke: oklch(0.44 0.04 72); stroke-width: 0.4; }
+.w-phone-slot { fill: oklch(0.3 0.01 250); }
+.w-phone-dot { fill: oklch(0.45 0.01 250); }
+.w-count-tag { fill: oklch(0.25 0.02 258); stroke: oklch(0.15 0.02 258); stroke-width: 0.4; }
+.w-count-text { font-family: var(--font-ui); font-size: 4.2px; font-weight: 600; text-anchor: middle; fill: oklch(0.97 0.01 90); }

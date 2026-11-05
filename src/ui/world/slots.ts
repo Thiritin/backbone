@@ -1,9 +1,9 @@
 // Footprints of items that share a wall tile or a desk column, so layout never lets two overlap (tests/slots.test.ts).
 // Wall items span u0..u1 along the wall in units of 32 per tile; the light switch sits in the tile past the door's.
 export const WALL_SLOTS = {
-  switch: [3, 9],
-  phone: [12, 26],
-  letterbox: [12, 26],
+  switch: [8, 14],
+  phone: [16, 30],
+  letterbox: [16, 30],
 } as const;
 
 // An item in the tile just before a door's slides away from it so its far edge ends DOOR_END units into the tile, clear of the frame.
