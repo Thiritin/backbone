@@ -11,7 +11,7 @@ import { shopLicence } from "../../../../../../sim/10-catalog/shop-licences";
 import { versionAt } from "../../../../../../sim/10-catalog/software-versions";
 import type { GameState, Licence } from "../../../../../../sim/50-state";
 import { keyExpired, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
-import { bought } from "../../../../../../sim/80-business/licences";
+import { bought, ordered } from "../../../../../../sim/80-business/licences";
 import { portalPath } from "../../../../../../sim/80-business/portal";
 import { shopUpdatesFee } from "../../../../../../sim/80-business/shop";
 import { shopHost } from "../../../../../../sim/80-business/shoplink";
@@ -155,7 +155,7 @@ function Install({ game }: { game: GameState }) {
 function Addons({ game }: { game: GameState }) {
   const act = usePageAct(), year = yearOf(game.hour);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === ID ? <span className="ubv-ok">{t("vendor-sites.registered")}</span>
-    : bought(game, m.id, ID) ? <span className="ubv-ok">{t("vendor-sites.bought")}</span>
+    : bought(game, m.id, ID) ? <span className="ubv-ok">{t("vendor-sites.bought")}</span> : ordered(game, m.id, ID) ? <span className="ubv-ok">{t("vendor-sites.ordered")}</span>
     : <PayButton className="ubv-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>;
   return (
     <div className="ubv-addons">

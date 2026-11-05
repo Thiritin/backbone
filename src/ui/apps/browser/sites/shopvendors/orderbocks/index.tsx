@@ -12,7 +12,7 @@ import { shopById } from "../../../../../../sim/10-catalog/shops";
 import { nextMajor, releasedAt, versionAt, versionInfo } from "../../../../../../sim/10-catalog/software-versions";
 import { displayHost } from "../../../../../../sim/80-business/browser";
 import { portalPath } from "../../../../../../sim/80-business/portal";
-import { bought } from "../../../../../../sim/80-business/licences";
+import { bought, ordered } from "../../../../../../sim/80-business/licences";
 import { shopHost } from "../../../../../../sim/80-business/shoplink";
 import { installShop, upgradeFee, upgradeShop } from "../../../../../../sim/90-actions/shop";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
@@ -49,7 +49,7 @@ function Pricing({ game }: VendorProps) {
   const act = usePageAct(), era = shopEra(ID, game.hour), year = yearOf(game.hour);
   const modules = MODULES.filter((m) => m.vendor === "shop" && m.year <= year);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === ID ? <span className="obv-state">{t("vendor-sites.registered")}</span>
-    : bought(game, m.id, ID) ? <span className="obv-state">{t("vendor-sites.bought")}</span>
+    : bought(game, m.id, ID) ? <span className="obv-state">{t("vendor-sites.bought")}</span> : ordered(game, m.id, ID) ? <span className="obv-state">{t("vendor-sites.ordered")}</span>
     : <PayButton className="obv-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>;
   return (
     <>

@@ -12,7 +12,7 @@ import { releasedAt } from "../../../../../../sim/10-catalog/software-versions";
 import type { GameState, Licence } from "../../../../../../sim/50-state";
 import { keyExpired, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
 import { displayHost } from "../../../../../../sim/80-business/browser";
-import { bought } from "../../../../../../sim/80-business/licences";
+import { bought, ordered } from "../../../../../../sim/80-business/licences";
 import { shopUpdatesFee } from "../../../../../../sim/80-business/shop";
 import { keysOf, upgradeOffers, vendorName } from "../../../../../../sim/80-business/vendor-shop";
 import { companyDomain } from "../../../../../../sim/30-customers/domains";
@@ -131,7 +131,7 @@ function Extensions({ game }: { game: GameState }) {
           <p>{t(`vendor-sites.pitch.${m.id}`)}</p>
           <p className="num"><strong>{euro(m.price)}</strong> {t("vendor-sites.licence")}{m.id !== "shop-link" && <> · {t("payment-methods.fee")} {feeText(methodById(m.id as MethodId))}</>}</p>
           {hasModule(game, m.id) && game.shop.variant === ID ? <span className="bv-state">{t("vendor-sites.registered")}</span>
-            : bought(game, m.id, ID) ? <span className="bv-state">{t("vendor-sites.bought")}</span>
+            : bought(game, m.id, ID) ? <span className="bv-state">{t("vendor-sites.bought")}</span> : ordered(game, m.id, ID) ? <span className="bv-state">{t("vendor-sites.ordered")}</span>
             : <PayButton className="bv-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>}
         </li>
       ))}

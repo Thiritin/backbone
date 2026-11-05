@@ -13,7 +13,7 @@ import { companyDomain } from "../../../../../../sim/30-customers/domains";
 import type { GameState, Licence } from "../../../../../../sim/50-state";
 import { covers, keyExpired, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
 import { displayHost } from "../../../../../../sim/80-business/browser";
-import { bought } from "../../../../../../sim/80-business/licences";
+import { bought, ordered } from "../../../../../../sim/80-business/licences";
 import { shopUpdatesFee } from "../../../../../../sim/80-business/shop";
 import { keysOf, offers, upgradeOffer, upgradeOffers, vendorName } from "../../../../../../sim/80-business/vendor-shop";
 import { renewShopUpdates, upgradeFee, upgradeShop } from "../../../../../../sim/90-actions/shop";
@@ -96,7 +96,7 @@ function Pricing({ game, cart }: { game: GameState; cart: () => void }) {
                 <td className="num cxv-amount">{euro(m.price)}</td>
                 <td className="num">{m.id !== "shop-link" && feeText(methodById(m.id as MethodId))}</td>
                 <td>{hasModule(game, m.id) && game.shop.variant === ID ? t("vendor-sites.registered")
-                  : bought(game, m.id, ID) ? t("vendor-sites.bought")
+                  : bought(game, m.id, ID) ? t("vendor-sites.bought") : ordered(game, m.id, ID) ? t("vendor-sites.ordered")
                   : <PayButton className="cxv-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>}</td>
               </tr>
             ))}</tbody>

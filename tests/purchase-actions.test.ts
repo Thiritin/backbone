@@ -99,6 +99,14 @@ describe("shop module", () => {
     expect(buyLicence(s, "shop-link").ok).toBe(true);
     expect(ours(s, "shopVendor")).toHaveLength(1);
   });
+
+  it("refuses a second order while the transfer is open", () => {
+    const s = bank(freeFloor({ ...newGame(1), cash: 10_000 }));
+    s.shop = { ...s.shop, variant: "modemBill" };
+    expect(buyLicence(s, "shop-link", "transfer").ok).toBe(true);
+    expect(buyLicence(s, "shop-link", "transfer")).toEqual({ ok: false, error: "error.orderOpen" });
+    expect(ours(s, "shopVendor")).toHaveLength(1);
+  });
 });
 
 describe("colocation", () => {

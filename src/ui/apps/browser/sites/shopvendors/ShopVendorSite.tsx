@@ -9,7 +9,7 @@ import { methodById, type MethodId } from "../../../../../sim/10-catalog/payment
 import { feeText } from "../../../marketing/payments";
 import { shopById, type ShopId } from "../../../../../sim/10-catalog/shops";
 import type { GameState } from "../../../../../sim/50-state";
-import { bought } from "../../../../../sim/80-business/licences";
+import { bought, ordered } from "../../../../../sim/80-business/licences";
 import { buyShopLink } from "../../../../../sim/90-actions/shoplink";
 import { ShopDownload } from "./ShopDownload";
 import "./shopvendors.css";
@@ -24,7 +24,7 @@ export function VendorPage({ game, id, className, mark }: VendorProps & { id: Sh
   const v = shopById(id), year = yearOf(game.hour);
   const modules = MODULES.filter((m) => m.vendor === "shop" && m.year <= year);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === id ? <span className="sv-state">{t("vendor-sites.registered")}</span>
-    : bought(game, m.id, id) ? <span className="sv-state">{t("vendor-sites.bought")}</span>
+    : bought(game, m.id, id) ? <span className="sv-state">{t("vendor-sites.bought")}</span> : ordered(game, m.id, id) ? <span className="sv-state">{t("vendor-sites.ordered")}</span>
     : <PayButton className="sv-buy" supplier="shopVendor" name={vendorName(id)} amount={m.price} run={(pm) => act(buyShopLink, id, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>;
   return (
     <div className={`sv ${className}`}>
