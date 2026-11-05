@@ -56,6 +56,11 @@
 .w-tone-pipe { --top: oklch(0.88 0.006 80); --left: oklch(0.8 0.008 80); --right: oklch(0.71 0.01 80); --edge: oklch(0.63 0.01 80); }
 .w-tone-fabric { --top: oklch(0.44 0.03 260); --left: oklch(0.37 0.03 260); --right: oklch(0.31 0.03 260); --edge: oklch(0.26 0.03 260); }
 .w-tone-bottle { --top: oklch(0.82 0.04 85); --left: oklch(0.42 0.08 60); --right: oklch(0.35 0.07 58); --edge: oklch(0.3 0.06 55); }
+.w-tone-brass { --top: oklch(0.84 0.1 88); --left: oklch(0.76 0.1 85); --right: oklch(0.66 0.1 80); --edge: oklch(0.56 0.09 78); }
+.w-tone-slate { --top: oklch(0.52 0.012 250); --left: oklch(0.44 0.012 250); --right: oklch(0.36 0.012 250); --edge: oklch(0.28 0.012 250); }
+.w-tone-phone { --top: oklch(0.8 0.05 72); --left: oklch(0.7 0.06 70); --right: oklch(0.6 0.06 68); --edge: oklch(0.46 0.06 65); }
+.w-tone-plate { --top: oklch(0.72 0.012 90); --left: oklch(0.64 0.014 90); --right: oklch(0.55 0.014 90); --edge: oklch(0.44 0.014 90); }
+.w-tone-handset { --top: oklch(0.82 0.035 84); --left: oklch(0.74 0.04 80); --right: oklch(0.64 0.04 76); --edge: oklch(0.5 0.04 72); }
 .w-tone-dark { --top: oklch(0.36 0.01 255); --left: oklch(0.3 0.01 255); --right: oklch(0.25 0.01 255); --edge: oklch(0.2 0.01 255); }
 .w-box polygon { stroke: var(--edge); stroke-width: 0.6; stroke-linejoin: round; }
 .w-face-t { fill: var(--top); }
@@ -276,3 +281,14 @@
 .w-alert-chip ~ .w-orders, body:has(.w-alert-chip) .w-orders { top: 92px; }
 @keyframes w-alert-pulse { 50% { border-color: oklch(0.8 0.16 75 / 0.25); } }
 @media (prefers-reduced-motion: reduce) { .w-alert-chip { animation: none; } }
+
+.w-phone-plate { fill: oklch(0.78 0.035 84); }
+.w-phone-key-edge { fill: oklch(0.6 0.04 80); }
+.w-brass-edge { stroke: oklch(0.56 0.09 78); stroke-width: 0.5; }
+.w-flag-pole { fill: oklch(0.5 0.01 250); }
+.w-flag { fill: oklch(0.55 0.19 27); }
+.w-phone-slot { fill: oklch(0.3 0.01 250); }
+.w-phone-dot { fill: oklch(0.45 0.01 250); }
+.w-count-tag { fill: oklch(0.25 0.02 258); stroke: oklch(0.15 0.02 258); stroke-width: 0.4; }
+.w-count-text { font-family: var(--font-ui); font-size: 4.2px; font-weight: 600; text-anchor: middle; fill: oklch(0.97 0.01 90); }
+.w-phone-coil { fill: none; stroke: oklch(0.5 0.04 72); stroke-width: 0.55; stroke-linecap: round; }
