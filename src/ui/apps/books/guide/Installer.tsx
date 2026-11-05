@@ -5,6 +5,7 @@ import { booksVendor, type BooksVendor } from "../../../../sim/10-catalog/bookke
 import { booksKey, needsKey, setupOf } from "../../../../sim/80-business/books-guide";
 import { acceptBooksLicence, activateBooks, createBooksCompany, enterBooksKey, installBooks } from "../../../../sim/90-actions/bookkeeping";
 import { t } from "../../../../i18n/en";
+import { useSessionState } from "../../../session";
 import { useStore } from "../../../store";
 import { CompanyForm } from "./CompanyForm";
 import { installerLook } from "./looks";
@@ -32,11 +33,15 @@ const SIGNUP = ["register", "confirm", "company", "plan"] as const;
 export function Installer({ id, onClose, inline = false }: { id: string; onClose: () => void; inline?: boolean }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const v = booksVendor(id);
-  const [at, setAt] = useState(0);
-  const [accepted, setAccepted] = useState(false);
-  const [key, setKey] = useState("");
-  const [folder, setFolder] = useState(`C:\\Programme\\${v?.program ?? ""}`);
-  const [custom, setCustom] = useState(false);
+  // Closing the installer midway keeps its page and entries until it finishes.
+  const [draft, setDraft] = useSessionState(`books.install.${id}`, { at: 0, accepted: false, key: "", custom: false, folder: `C:\\Programme\\${v?.program ?? ""}` });
+  const { at, accepted, key, custom, folder } = draft;
+  const set = (p: Partial<typeof draft>) => setDraft((d) => ({ ...d, ...p }));
+  const setAt = (n: number) => set({ at: n });
+  const setAccepted = (x: boolean) => set({ accepted: x });
+  const setKey = (x: string) => set({ key: x });
+  const setFolder = (x: string) => set({ folder: x });
+  const setCustom = (x: boolean) => set({ custom: x });
   const [email, setEmail] = useState(""), [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [launch, setLaunch] = useState(true);
@@ -57,7 +62,8 @@ export function Installer({ id, onClose, inline = false }: { id: string; onClose
     if (needsKey(v.id)) act(enterBooksKey, key);
     next();
   };
-  const finish = () => { onClose(); if (launch) openApp("Books"); };
+  const reset = () => setDraft({ at: 0, accepted: false, key: "", custom: false, folder: `C:\\Programme\\${v.program}` });
+  const finish = () => { reset(); onClose(); if (launch) openApp("Books"); };
 
   let body: ReactNode, nextLabel = t("bkinst.next"), canNext = true, onNext: () => void = next, back = at > 0 && page !== "progress" && page !== "finish";
   switch (page) {
@@ -130,7 +136,7 @@ export function Installer({ id, onClose, inline = false }: { id: string; onClose
       break;
     default:
       body = <><h3>{t("bkinst.plan.title")}</h3><p>{t("bkinst.plan.text", { program: v.program, edition: v.editions.find((e) => e.id === game.books.edition)?.name ?? "" })}</p></>;
-      nextLabel = t("bkinst.plan.finish"); onNext = onClose; back = false;
+      nextLabel = t("bkinst.plan.finish"); onNext = () => { reset(); onClose(); }; back = false;
   }
 
   const wizard = (

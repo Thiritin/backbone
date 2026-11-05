@@ -1,4 +1,4 @@
-import { useState, type ComponentType, type CSSProperties } from "react";
+import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { isUnpaid, synced } from "../../../sim/45-billing/billing";
 import { hasModule, MODULES } from "../../../sim/10-catalog/modules";
 import { licenceMail } from "../../../sim/80-business/licences";
@@ -79,9 +79,11 @@ export function BooksProgram() {
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);
   // The first-steps guide is the first thing an unfinished setup shows; the program opens from its button.
-  const [guide, setGuide] = useState(game.books.setupDone === false);
+  const [guide, setGuide] = useState(game.books.setupDone !== true);
+  // A program installed while the window is open shows its guide.
+  useEffect(() => { if (game.books.setupDone !== true) setGuide(true); }, [game.books.vendor, game.books.installedAt]);
   // The sign-up of a web program runs until its plan page is closed; a program with its company already made skips it.
-  const [signedUp, setSignedUp] = useState(setupOf(game).company);
+  const [signedUp, setSignedUp] = useState(game.books.setupDone === true || setupOf(game).company);
   useFocus("Books", (got) => {
     const f = got.kind === "url" ? got.inner : got;
     if (!f) return;
@@ -119,7 +121,7 @@ export function BooksProgram() {
         {register && keys && <Register onClose={() => setRegister(false)} />}
         <div className="books-body">
           {v && booksOffline(game) ? <Offline v={v} />
-            : guide && v?.deployment === "browser" && game.books.setupDone === false && !signedUp ? <Installer id={v.id} inline onClose={() => setSignedUp(true)} />
+            : guide && v?.deployment === "browser" && !signedUp ? <Installer id={v.id} inline onClose={() => setSignedUp(true)} />
             : guide ? <div className="books-guide"><InstallGuide go={pick} canGo={(tab) => shown.some((x) => x.id === tab && !locked(x))} /></div>
             : <Body key={`${current.id}:${focus}`} focus={focus} go={pick} />}
         </div>

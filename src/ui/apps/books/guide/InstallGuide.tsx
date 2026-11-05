@@ -32,6 +32,14 @@ export function InstallGuide({ go, canGo }: { go?: (tab: string) => void; canGo?
   const done = steps.filter((x) => guideTicked(game, x)).length;
   const current = steps.find((x) => !guideTicked(game, x) && !x.optional) ?? steps.find((x) => !guideTicked(game, x));
   const run = (id: string, r: Result) => setErr(r.ok ? null : { id, text: t(r.error ?? "error.booksSetupOrder", r.params) });
+  // Scrolls the guide's own pane, never the window around it, so the heading stays in view.
+  const reveal = (el: HTMLElement | null) => {
+    const box = el?.closest<HTMLElement>(".books-guide");
+    if (!el || !box) return;
+    const a = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if (a.bottom > b.bottom) box.scrollTop += a.bottom - b.bottom + 8;
+    else if (a.top < b.top) box.scrollTop -= b.top - a.top + 8;
+  };
   const hasChart = steps.some((x) => x.id === "chart");
 
   const action = (id: string): ReactNode => {
@@ -58,12 +66,14 @@ export function InstallGuide({ go, canGo }: { go?: (tab: string) => void; canGo?
 
   return (
     <section className={`bg bg-${look}${finished ? " bg-finished" : ""}`} aria-label={t(`bkguide.title.${look}`)} data-look={look}>
+      <div className="bg-top">
       <header className="bg-head">
         <h2>{t(`bkguide.title.${look}`)}</h2>
         <span className="bg-count num">{t("bkguide.progress", { done, total: steps.length })}</span>
         {finished && <button type="button" className="btn bg-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? t("bkguide.hide") : t("bkguide.show")}</button>}
       </header>
       <div className="bg-bar" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done}><i style={{ width: `${(done / steps.length) * 100}%` }} /></div>
+      </div>
       {finished && <p className="bg-allDone">{t("bkguide.allDone")}</p>}
       {open && (
         <ol className="bg-steps">
@@ -71,7 +81,7 @@ export function InstallGuide({ go, canGo }: { go?: (tab: string) => void; canGo?
             const ticked = guideTicked(game, x), now = current?.id === x.id;
             const todo = v.deployment === "browser" ? ({ activate: "confirm", buy: "signup" } as Record<string, string>)[x.id] ?? x.id : x.id;
             return (
-              <li key={x.id} className={`bg-step${ticked ? " ticked" : ""}${now ? " current" : ""}`} aria-current={now ? "step" : undefined} data-step={x.id} ref={now && !first.current ? (el) => el?.scrollIntoView?.({ block: "nearest" }) : undefined}>
+              <li key={x.id} className={`bg-step${ticked ? " ticked" : ""}${now ? " current" : ""}`} aria-current={now ? "step" : undefined} data-step={x.id} ref={now && !first.current ? reveal : undefined}>
                 <span className="bg-mark" role="img" aria-label={t(ticked ? "bkguide.done" : "bkguide.open")}>{ticked ? <Check aria-hidden /> : <span className="num">{i + 1}</span>}</span>
                 <div className="bg-text">
                   <strong>{t(x.labelKey)}{x.optional && <em className="bg-opt">{t("bkguide.optional")}</em>}</strong>

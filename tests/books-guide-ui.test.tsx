@@ -31,7 +31,7 @@ const put = (s: GameState) => reactAct(() => useStore.setState({ game: { ...s } 
 const ticked = () => [...document.querySelectorAll(".bg-step.ticked")].map((x) => x.getAttribute("data-step"));
 
 beforeEach(() => vi.useRealTimers());
-afterEach(() => { cleanup(); useStore.setState({ game: newGame(7) }); });
+afterEach(() => { cleanup(); sessionStorage.clear(); useStore.setState({ game: newGame(7) }); });
 
 describe("install guide", () => {
   it.each(IDS)("%s ticks follow the state", (id) => {
@@ -136,6 +136,20 @@ describe("installer", () => {
     expect(close).toHaveBeenCalled();
   });
 
+  it("resumes where it was closed", () => {
+    const s = game(2006);
+    own(s, "lexwear", false); put(s);
+    const { unmount } = render(<Installer id="lexwear" onClose={() => {}} />);
+    next();
+    fireEvent.click(screen.getByRole("checkbox"));
+    next();
+    fireEvent.change(screen.getByLabelText("Serial number"), { target: { value: "ABC" } });
+    unmount();
+    render(<Installer id="lexwear" onClose={() => {}} />);
+    expect(document.querySelector(".bki")!.getAttribute("data-page")).toBe("key");
+    expect((screen.getByLabelText("Serial number") as HTMLInputElement).value).toBe("ABC");
+  });
+
   it("skips the serial number page for the register program", () => {
     const s = game(2012);
     own(s, "gnucache", false); put(s);
@@ -178,6 +192,13 @@ describe("books program", () => {
     s.books.setupDone = true; fillSetup(s); put(s);
     render(<BooksProgram />);
     expect(document.querySelector(".bg")).toBeNull();
+  });
+
+  it("treats an unset setup state as unfinished", () => {
+    const s = game(2006);
+    own(s, "lexwear"); delete s.books.setupDone; put(s);
+    render(<BooksProgram />);
+    expect(document.querySelector(".bg")).not.toBeNull();
   });
 
   it("offers no tax button where the program has no tax screen", () => {
