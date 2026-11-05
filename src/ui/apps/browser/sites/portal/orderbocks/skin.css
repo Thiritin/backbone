@@ -17,7 +17,7 @@
 .ob .num { font-variant-numeric: tabular-nums; }
 .ob .pt-table { border-collapse: collapse; }
 .ob .shop-item { border-bottom: 0; }
-.ob .shop-item .shop-name { padding: 0; display: block; }
+.ob .shop-item .ps-name { padding: 0; display: block; }
 .ob .ob-foot .pt-version { margin: 0; }
 .ob-login { display: grid; gap: 10px; width: 300px; margin: 48px auto; }
 .ob-login label { display: grid; gap: 4px; }
@@ -46,11 +46,11 @@
 .ob-box .pt-table th { background: #c9d6e8; color: #1b3564; border: 1px solid #a8b8cf; padding: 3px 6px; }
 .ob-box .pt-table td { border: 1px solid #d5dde8; padding: 3px 6px; }
 .ob-box .pt-table tbody tr:nth-child(even) td { background: #f2f5fa; }
-.ob-box .shop-list { gap: 0; border: 1px solid #a8b8cf; }
+.ob-box .ps-list { gap: 0; border: 1px solid #a8b8cf; }
 .ob-box .shop-item { padding: 4px 6px; border-bottom: 1px solid #d5dde8; }
 .ob-box .shop-item:nth-child(even) { background: #f2f5fa; }
-.ob-box .btn, .ob-box button:not(.ob-drop button) { font: 11px Verdana, sans-serif; color: #000; padding: 2px 10px; border: 2px outset #d8d8d8; border-radius: 0; background: #e4e4e4; }
-.ob-box .btn.primary, .ob-box button[type="submit"] { background: #f08a4b; border-color: #f4a777; color: #fff; font-weight: 700; }
+.ob-box .pt-btn, .ob-box button:not(.ob-drop button) { font: 11px Verdana, sans-serif; color: #000; padding: 2px 10px; border: 2px outset #d8d8d8; border-radius: 0; background: #e4e4e4; }
+.ob-box .pt-btn.primary, .ob-box button[type="submit"] { background: #f08a4b; border-color: #f4a777; color: #fff; font-weight: 700; }
 .ob-box input, .ob-box select { font: 11px Verdana, sans-serif; border: 1px solid #7f9db9; padding: 2px 3px; background: #fff; color: #000; border-radius: 0; }
 .ob-box .ob-login { background: #fff; border: 1px solid #8ea3c3; padding: 0 0 12px; gap: 8px; }
 .ob-box .ob-login h1 { margin: 0; padding: 5px 10px; background: #1b3564; color: #fff; font-size: 12px; border: 0; }
@@ -84,12 +84,12 @@
 .ob-gloss.ob-admin .ob-card > dl.pt-fields { grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .ob-gloss.ob-admin .ob-card > dl.pt-fields > div { padding: 10px 12px; border: 1px solid #c3d2e2; border-radius: 6px; background: linear-gradient(#fff, #eef3f8); }
 .ob-gloss.ob-admin .ob-card > dl.pt-fields dd { font-size: 26px; font-weight: bold; color: #e07b12; }
-.ob-gloss .shop-list { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.ob-gloss .ps-list { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .ob-gloss .shop-item { flex-direction: column; align-items: stretch; text-align: center; padding: 12px; border: 1px solid #c3d2e2; border-radius: 6px; background: linear-gradient(#fff, #edf3f9); }
-.ob-gloss .shop-item .shop-name { font-weight: bold; font-size: 14px; color: #1f4f80; }
-.ob-gloss .btn, .ob-gloss .ob-card button, .ob-gloss .ob-login button { font: bold 12px Arial, sans-serif; color: #fff; padding: 5px 14px; border: 1px solid #c86a06; border-radius: 4px; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.25);
+.ob-gloss .shop-item .ps-name { font-weight: bold; font-size: 14px; color: #1f4f80; }
+.ob-gloss .pt-btn, .ob-gloss .ob-card button, .ob-gloss .ob-login button { font: bold 12px Arial, sans-serif; color: #fff; padding: 5px 14px; border: 1px solid #c86a06; border-radius: 4px; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.25);
   background: linear-gradient(#fcc06a, #f7941d 50%, #ee8410 51%, #f39a2c); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5); cursor: pointer; }
-.ob-gloss .btn:disabled, .ob-gloss .ob-card button:disabled { filter: grayscale(1); opacity: 0.6; }
+.ob-gloss .pt-btn:disabled, .ob-gloss .ob-card button:disabled { filter: grayscale(1); opacity: 0.6; }
 .ob-gloss input, .ob-gloss select { font: 12px Arial, sans-serif; border: 1px solid #9fb6cf; border-radius: 3px; padding: 4px 5px; background: #fff; color: #222; box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.08); }
 .ob-gloss .ob-login { background: #fff; border: 1px solid #b9c9da; border-radius: 6px; padding: 0 14px 14px; box-shadow: 0 2px 8px rgb(0 40 90 / 0.18); }
 .ob-gloss .ob-login button { justify-self: start; }
@@ -115,13 +115,13 @@
 .ob-flat.ob-admin .ob-card > dl.pt-fields { display: flex; flex-wrap: wrap; gap: 16px; }
 .ob-flat.ob-admin .ob-card > dl.pt-fields > div { display: flex; flex-direction: column-reverse; min-width: 160px; padding: 16px 18px; border: 1px solid #e0e6ec; border-top: 3px solid #1e88c7; }
 .ob-flat.ob-admin .ob-card > dl.pt-fields dd { font-size: 34px; font-weight: 300; color: #1e88c7; }
-.ob-flat .shop-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.ob-flat .ps-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
 .ob-flat .shop-item { flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; border: 1px solid #e0e6ec; border-top: 3px solid #1e88c7; }
-.ob-flat .shop-item .shop-name { font-size: 16px; font-weight: 600; }
+.ob-flat .shop-item .ps-name { font-size: 16px; font-weight: 600; }
 .ob-flat .shop-item .num { font-size: 18px; color: #1e88c7; }
-.ob-flat .btn, .ob-flat .ob-card button, .ob-flat .ob-login button { font: 600 12px "Open Sans", "Segoe UI", sans-serif; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; background: #3aa757; border: 0; border-radius: 2px; padding: 8px 16px; cursor: pointer; }
-.ob-flat .btn:hover, .ob-flat .ob-card button:hover { background: #2f9149; }
-.ob-flat .btn:disabled, .ob-flat .ob-card button:disabled { background: #b8c4ce; cursor: default; }
+.ob-flat .pt-btn, .ob-flat .ob-card button, .ob-flat .ob-login button { font: 600 12px "Open Sans", "Segoe UI", sans-serif; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; background: #3aa757; border: 0; border-radius: 2px; padding: 8px 16px; cursor: pointer; }
+.ob-flat .pt-btn:hover, .ob-flat .ob-card button:hover { background: #2f9149; }
+.ob-flat .pt-btn:disabled, .ob-flat .ob-card button:disabled { background: #b8c4ce; cursor: default; }
 .ob-flat input, .ob-flat select { font: 13px "Open Sans", "Segoe UI", sans-serif; border: 1px solid #ccd6df; border-radius: 2px; padding: 6px 8px; background: #fff; color: #33414e; }
 .ob-flat .ob-login { background: #fff; border: 1px solid #e0e6ec; border-top: 3px solid #1e88c7; padding: 22px; }
 .ob-flat .ob-foot { color: #8e9ba7; font-size: 12px; padding: 0 24px 20px; }
@@ -159,9 +159,9 @@
 .ob-panel.ob-admin .ob-card > dl.pt-fields > div { display: flex; flex-direction: column-reverse; gap: 2px; padding: 18px; border-radius: 10px; background: #f7f8fb; }
 .ob-panel.ob-admin .ob-card > dl.pt-fields dd { font-size: 30px; font-weight: 650; }
 .ob-panel.ob-admin .ob-card > dl.pt-fields dt a { color: #64708a; text-decoration: none; }
-.ob-panel .btn, .ob-panel .ob-card button, .ob-panel .ob-login button { font: 600 13px Inter, system-ui, sans-serif; color: #1a2233; background: #eef0f5; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
-.ob-panel .btn.primary, .ob-panel .ob-card button.primary, .ob-panel .ob-login button, .ob-panel .shop-item .btn { background: #ff6b1a; color: #fff; }
-.ob-panel .btn:disabled, .ob-panel .ob-card button:disabled { opacity: 0.45; cursor: default; }
+.ob-panel .pt-btn, .ob-panel .ob-card button, .ob-panel .ob-login button { font: 600 13px Inter, system-ui, sans-serif; color: #1a2233; background: #eef0f5; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.ob-panel .pt-btn.primary, .ob-panel .ob-card button.primary, .ob-panel .ob-login button, .ob-panel .shop-item .pt-btn { background: #ff6b1a; color: #fff; }
+.ob-panel .pt-btn:disabled, .ob-panel .ob-card button:disabled { opacity: 0.45; cursor: default; }
 .ob-panel input, .ob-panel select { font: 14px Inter, system-ui, sans-serif; border: 1px solid #d9dde7; border-radius: 8px; padding: 7px 10px; background: #fff; color: #1a2233; }
 .ob-panel .ob-login { background: #fff; border-radius: 14px; padding: 28px; box-shadow: 0 10px 30px rgb(16 24 40 / 0.1); }
 .ob-panel.ob-admin:has(.ob-login) { display: flex; }
@@ -170,9 +170,9 @@
 .ob-panel.ob-store .ob-nav a { padding: 6px 14px; border-radius: 999px; color: #4a5470; font-weight: 500; }
 .ob-panel.ob-store .ob-nav a.on { background: #1a2233; color: #fff; }
 .ob-panel.ob-store .ob-main { width: 1040px; max-width: 100%; margin: 0 auto; }
-.ob-panel .shop-list { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.ob-panel .ps-list { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
 .ob-panel .shop-item { flex-direction: column; align-items: stretch; gap: 10px; padding: 20px; border-radius: 12px; border: 1px solid #e8ebf2; }
-.ob-panel .shop-item .shop-name { font-size: 16px; font-weight: 600; }
+.ob-panel .shop-item .ps-name { font-size: 16px; font-weight: 600; }
 .ob-panel .shop-item .num { font-size: 20px; font-weight: 650; }
 .ob-panel .shop-steps li { padding: 4px 12px; border-radius: 999px; background: #eef0f5; color: #64708a; font-size: 13px; }
 .ob-panel .shop-steps li.on { background: #1a2233; color: #fff; }

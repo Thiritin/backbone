@@ -10,6 +10,8 @@ export default {
   "blessta.group.billing": () => "Fatturazione",
   "blessta.group.packages": () => "Pacchetti",
   "blessta.group.settings": () => "Impostazioni",
+  "blessta.group.support": () => "Supporto",
+  "blessta.group.tools": () => "Strumenti",
   "blessta.v.pricing": () => "Prezzi",
   "blessta.v.extensions": () => "Estensioni",
   "blessta.v.releases": () => "Versioni",

@@ -1,3 +1,4 @@
+import { PBody } from "./ui";
 import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
 import type { GameState } from "../../../../../../sim/50-state";
@@ -18,7 +19,7 @@ export function EmailLog({ game, customerId }: { game: GameState; customerId?: s
     <section className="pt-group">
       <table className="pt-table">
         <thead><tr><th>{t("shop-admin.date")}</th><th>{t("shop-mail.recipient")}</th><th>{t("shop-mail.subject")}</th><th>{t("shop-admin.status")}</th></tr></thead>
-        <tbody>
+        <PBody>
           {rows.map(([m, i]) => (
             <tr key={i} className={i === open ? "on" : undefined}>
               <td className="num">{formatDay(m.at)}</td>
@@ -27,7 +28,7 @@ export function EmailLog({ game, customerId }: { game: GameState; customerId?: s
               <td>{t(m.failed ? "shop-mail.failed" : "shop-mail.sent")}</td>
             </tr>
           ))}
-        </tbody>
+        </PBody>
       </table>
       {shown && (
         <article className="pt-group">
