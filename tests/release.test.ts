@@ -74,19 +74,19 @@ describe("previous release", () => {
 });
 
 describe("release notes", () => {
-  it("lists bullets added since the previous release under their day, newest first", () => {
-    expect(notesSince(old, now)).toBe("## 2026-11-04\n\n- Newest change.\n\n## 2026-11-03\n\n- Added later.");
+  it("lists bullets added since the previous release newest first", () => {
+    expect(notesSince(old, now)).toBe("- Newest change.\n- Added later.");
   });
 
   it("is empty when nothing was added and takes everything without a baseline", () => {
     expect(notesSince(now, now)).toBe("");
-    expect(notesSince(null, old)).toBe("## 2026-11-03\n\n- Older change.\n\n## 2026-11-02\n\n- Oldest change.");
+    expect(notesSince(null, old)).toBe("- Older change.\n- Oldest change.");
   });
 });
 
 describe("discord chunks", () => {
   it("heads the post with the version and splits below the limit on line breaks", () => {
-    expect(discordChunks("v1.0.0", "## 2026-11-04\n\n- One.")[0]).toBe("# [raid0 1.0.0](https://raid0.dev)\n## 2026-11-04\n\n- One.");
+    expect(discordChunks("v1.0.0", "- One.")[0]).toBe("# [1.0.0](https://raid0.dev)\n- One.");
     const chunks = discordChunks("v1.0.0", Array.from({ length: 30 }, (_, i) => `- Change number ${i}.`).join("\n"), 200);
     expect(chunks.length).toBeGreaterThan(1);
     for (const c of chunks) expect(c.length).toBeLessThanOrEqual(200);
