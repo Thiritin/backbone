@@ -2,7 +2,6 @@ import type { Dict } from "./lang";
 
 // The screens only one bookkeeping program has: account tree, booking form, matching list, bank feed and chart of accounts.
 export default {
-  "books.tab.accounts": () => "Accounts",
   "books.tab.booking": () => "Book",
   "books.tab.chart": () => "Chart of accounts",
   "books-screens.balance": () => "Balance",
@@ -29,7 +28,6 @@ export default {
   "books-screens.col.total": () => "Total",
   "books-screens.col.no": () => "Account",
   "books-screens.col.name": () => "Name",
-  "books-screens.open": () => "Open",
   "books-screens.openItems": () => "Open items",
   "books-screens.fiscalYear": () => "Fiscal year",
   "books-screens.search": () => "Search",
