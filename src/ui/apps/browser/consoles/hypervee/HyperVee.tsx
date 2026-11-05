@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useSessionState } from "../../../../session";
 import { Boxes, Server, ServerCog, Tags } from "lucide-react";
 import { dateOf, yearOf } from "../../../../../sim/00-core/time";
 import { SNAPSHOTS_MAX } from "../../../../../sim/10-catalog/platforms";
@@ -126,8 +127,8 @@ export function VmDetails({ game, v, generations, c }: { game: GameState; v: Vm;
 export function HyperVee(p: PanelProps) {
   const era = eraAt(LOOKS, p), icon = TREE[era], { game, c, f } = p, openConsole = useStore((s) => s.openConsole), act = usePageAct();
   const open = parseCreate("hypervee", p.path);
-  const [page, setPage] = useState<Page>(open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "profiles" } : { kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
-  const [part, setPart] = useState<(typeof SETTINGS)[number]>("Memory"), [gen, setGen] = useState(1);
+  const [page, setPage] = useSessionState<Page>(`inst.hv.${c.id}.page`, open?.screen === "create" ? { kind: "new" } : open?.screen === "packages" ? { kind: "profiles" } : { kind: "list", node: null }), [selId, setSelId] = useState<string | null>(null);
+  const [part, setPart] = useSessionState<(typeof SETTINGS)[number]>(`inst.hv.${c.id}.part`, "Memory"), [gen, setGen] = useSessionState(`inst.hv.${c.id}.gen`, 1);
   const { vms, dialog } = useVms(game, c, f), sw = useSoftware(game, c, f), nv = useNewVm(game, c, open?.screen === "create" ? open.order : undefined);
   if (!p.signedIn) return (
     <div className="cx hv hv-login" data-era={era}>

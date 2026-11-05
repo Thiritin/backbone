@@ -1,5 +1,6 @@
 // docs/design/software.md, section 9: what every hypervisor console offers, as blocks each product lays out its own way.
 import { Fragment, useState, type ReactNode } from "react";
+import { useSessionState } from "../../../session";
 import { euroCents } from "../../../../sim/00-core/money";
 import { formatClock } from "../../../../sim/00-core/time";
 import { SOFTWARE, softwareById } from "../../../../sim/10-catalog/platforms";
@@ -200,11 +201,11 @@ export interface Step { id: string; label: string; body: ReactNode }
 // The new VM a wizard books: its size, the ISO it boots and, on a VMwhere cluster with the App Suite, the software it
 // deploys with. create returns the new VM's id.
 export function useNewVm(game: GameState, c: Cluster, order?: string) {
-  const act = usePageAct(), [size, setSize] = useState<Resources>(PANEL_VM_SIZE);
-  const choices = orderChoices(game, HYPERVISOR_ORDERS), [ticket, setTicket] = useState(choices.some((o) => o.ticketId === order) ? order! : "");
-  const [pkg, setPkg] = useState(""), [route, setRoute] = useState(c.id), picked = choices.find((o) => o.ticketId === ticket);
+  const act = usePageAct(), [size, setSize] = useSessionState<Resources>(`inst.nv.${c.id}.size`, PANEL_VM_SIZE);
+  const choices = orderChoices(game, HYPERVISOR_ORDERS), [ticket, setTicket] = useSessionState(`inst.nv.${c.id}.ticket`, choices.some((o) => o.ticketId === order) ? order! : "");
+  const [pkg, setPkg] = useSessionState(`inst.nv.${c.id}.pkg`, ""), [route, setRoute] = useSessionState(`inst.nv.${c.id}.route`, c.id), picked = choices.find((o) => o.ticketId === ticket);
   const hosts = hostChoices(game, c);
-  const [iso, setIso] = useState<OsImage | "">(""), [suite, setSuite] = useState<string | null>(null);
+  const [iso, setIso] = useSessionState<OsImage | "">(`inst.nv.${c.id}.iso`, ""), [suite, setSuite] = useSessionState<string | null>(`inst.nv.${c.id}.suite`, null);
   const create = (): string | null => {
     const r = suite ? act(deployFromSuite, c.id, size, suite) : act(createVm, c.id, size);
     if (!r.ok || !r.id) return null;

@@ -9,7 +9,7 @@ import type { GameState, LedgerEntry } from "../50-state";
 import { ALL_DATACENTERS as DATACENTERS, COUNTRY, datacenterById } from "../20-world/datacenters";
 import { cardReady, cardSpent, groupIban, iban, ibanEra } from "./bank";
 
-export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software";
+export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software" | "landlord" | "shopVendor" | "network" | "services";
 // throttle slows the home line, cut takes it off the internet, dark switches the locations' power off, licence stops the Pear
 // subscriptions, domains lets the domains lapse, noShip stops hardware orders, card blocks the credit card.
 export type Effect = "throttle" | "cut" | "dark" | "licence" | "domains" | "noShip" | "card";
@@ -28,7 +28,10 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   books: [],
   // An unpaid licence order just never sends its keys.
   software: [],
+  landlord: [], shopVendor: [], network: [], services: [],
 };
+// The pun name each new supplier trades under unless the order names another.
+export const SUPPLIER_NAMES: Partial<Record<SupplierId, string>> = { landlord: "Dwell Immobilien", shopVendor: "Taxware", network: "DE-KICKS", services: "Pear" };
 export const PAY_DAYS = 14;
 export const THROTTLE = 0.25;
 // The bank code every supplier banks at; each supplier's account comes from its id.
@@ -40,6 +43,8 @@ export interface Payable {
   consequence: Effect | null; lines: LedgerEntry[]; sent: number; held?: Record<string, number>;
   // Warnings already raised, so each fires once.
   warned?: string[];
+  // How it was paid and what kind of document it is; saves from before leave them out, read as transfer and invoice.
+  method?: Method; doc?: Doc; order?: string;
   // What Books counts as paid: the payments out assigned to it there. sent is what the supplier received.
   booked: number;
   // A licence order paid by transfer, whose keys the vendor sends once the money arrives.
@@ -64,6 +69,8 @@ export function supplierHost(name: string): string {
 export const supplierUrl = (name: string): string => `www.${supplierHost(name)}/account`;
 
 // How a supplier gets its money: by transfer, from the company card as the invoice is issued, or by SEPA direct debit.
+export type Method = "cash" | "transfer" | "onAccount" | "card" | "debit";
+export type Doc = "invoice" | "receipt" | "credit" | "contract";
 export type PayMethod = "transfer" | "card" | "debit";
 export const PAY_METHODS: PayMethod[] = ["transfer", "card", "debit"];
 export const payMethod = (s: GameState, name: string): PayMethod => (s.bank?.mandates.includes(name) ? "debit" : s.bank?.cards.includes(name) ? "card" : "transfer");
@@ -105,27 +112,45 @@ const book = (s: GameState, lines: LedgerEntry[]) => {
   s.ledger = [...s.ledger, ...lines.map((e) => ({ ...e, hour: s.hour }))];
 };
 
-// A supplier's invoice by email with the invoice attached, or on paper when a letter brings it; a supplier with a mandate
-// debits it at once, one paid by card charges the card when it is ready and has the room.
-export function invoice(s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[], days = PAY_DAYS, paper = false): Payable {
-  const amount = cents(-lines.reduce((n, e) => n + e.amount, 0));
+export interface Bill { supplier: SupplierId; name: string; lines: LedgerEntry[]; method: Method; paper?: boolean; days?: number; order?: string; doc?: Doc }
+
+// One vendor document by method: cash, card and debit settle at once (a debit also leaves a bank booking, a card the monthly
+// statement), transfer and on account stay open until paid. Negative lines make a credit note, no lines a contract.
+export function bill(s: GameState, b: Bill): Payable {
+  const { supplier, name, lines, method } = b;
+  const amount = cents(-lines.reduce((n, e) => n + e.amount, 0)) + 0;
+  const doc: Doc = b.doc ?? (amount < 0 ? "credit" : method === "cash" ? "receipt" : "invoice");
   const id = `pay${s.nextId++}`;
-  const p: Payable = { id, supplier, name, number: `${supplier.slice(0, 2).toUpperCase()}-${id.slice(3)}`, amount, issuedAt: s.hour, dueAt: s.hour + days * 24, paidAt: null, consequence: null, lines, sent: 0, booked: 0 };
-  if (s.bank?.mandates.includes(name)) {
+  const p: Payable = { id, supplier, name, number: `${supplier.slice(0, 2).toUpperCase()}-${id.slice(3)}`, amount, issuedAt: s.hour, dueAt: s.hour + (b.days ?? PAY_DAYS) * 24, paidAt: null, consequence: null, lines, sent: 0, booked: 0, method, doc, ...(b.order ? { order: b.order } : {}) };
+  const from = { source: `supplier:${supplier}`, att: [{ k: "invoice" as const, id }] };
+  const params = { name, number: p.number, amount: Math.abs(amount), payable: id };
+  const settle = () => Object.assign(p, { sent: amount, paidAt: s.hour, booked: amount });
+  if (doc === "credit" || doc === "contract" || method === "cash") {
     book(s, lines);
-    Object.assign(p, { sent: amount, paidAt: s.hour, booked: amount });
+    settle();
+    deliverMail(s, name, doc === "invoice" ? "receipt" : doc, params, from);
+  } else if (method === "debit") {
+    book(s, lines);
+    settle();
     const debit = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour, name, account: ibanEra(s) ? supplierIban(supplier) : supplierAccount(supplier), amount, reference: p.number, payableId: id, matched: id, arrived: true as const, debit: true as const };
-    s.bank = { ...s.bank, outgoing: [...s.bank.outgoing, debit] };
-    deliverMail(s, name, "debit", { name, number: p.number, amount, payable: id }, { source: `supplier:${supplier}`, att: [{ k: "invoice", id }] });
-  } else if (s.bank?.cards.includes(name) && cardReady(s) && cardSpent(s) + amount <= s.bank.card!.limit) {
-    const card = s.bank.card!;
-    s.bank = { ...s.bank, card: { ...card, spent: [...card.spent, ...lines.map((e) => ({ ...e, hour: s.hour }))] } };
-    Object.assign(p, { sent: amount, paidAt: s.hour, booked: amount });
-    deliverMail(s, name, "cardPaid", { name, number: p.number, amount, payable: id }, { source: `supplier:${supplier}`, att: [{ k: "invoice", id }] });
-  } else if (!paper) deliverMail(s, name, "invoice", { name, number: p.number, amount, payable: id, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) }, { source: `supplier:${supplier}`, att: [{ k: "invoice", id }] });
+    s.bank = { ...s.bank!, outgoing: [...s.bank!.outgoing, debit] };
+    deliverMail(s, name, "debit", params, from);
+  } else if (method === "card") {
+    const card = s.bank!.card!;
+    s.bank = { ...s.bank!, card: { ...card, spent: [...card.spent, ...lines.map((e) => ({ ...e, hour: s.hour }))] } };
+    settle();
+    deliverMail(s, name, "cardPaid", params, from);
+  } else if (!b.paper) deliverMail(s, name, "invoice", { ...params, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) }, from);
   s.payables = [...s.payables, p];
   return p;
 }
+
+// A supplier's invoice by email with the invoice attached, or on paper when a letter brings it; a supplier with a mandate
+// debits it at once, one paid by card charges the card when it is ready and has the room.
+export const invoice = (s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[], days = PAY_DAYS, paper = false): Payable => {
+  const m = payMethod(s, name), room = cardReady(s) && cardSpent(s) - lines.reduce((n, e) => n + e.amount, 0) <= (s.bank?.card?.limit ?? 0);
+  return bill(s, { supplier, name, lines, days, paper, method: m === "card" && !room ? "transfer" : m, doc: "invoice" });
+};
 
 // Which supplier sends each monthly bill line; lines of no supplier here stay direct debits (leases, addresses).
 const SUPPLIER_OF: Record<string, SupplierId> = {
