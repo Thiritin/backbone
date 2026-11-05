@@ -113,7 +113,7 @@ export function StartScreen() {
           <button className="btn" {...hear} onClick={choose(() => { window.open(DISCORD_URL, "_blank", "noopener"); })}>{t("desktop.start.discord")}</button>
         </nav>}
       <News />
-      {intro && <Intro onClose={() => setIntro(false)} />}
+      {intro && <Intro dark onClose={() => setIntro(false)} />}
       <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => {
         const f = e.target.files?.[0];
         e.target.value = "";
