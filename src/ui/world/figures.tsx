@@ -7,8 +7,7 @@ import { rackUnits } from "../../sim/20-world/datacenters";
 import { type Facing, type OfficePlan, roomSize, seatsAt, type Tile } from "../../sim/20-world/layout";
 import type { GameState, Location } from "../../sim/50-state";
 import { seatChairs, seatDepth } from "./chairs";
-import { figuresIn, pathOf, receptionist, type Figure } from "../../sim/60-infra/figures";
-import { present } from "../../sim/60-infra/handwork";
+import { figuresIn, idlePlayer, pathOf, receptionFloor, receptionist, type Figure } from "../../sim/60-infra/figures";
 import { nowMin, seatOf } from "../../sim/90-actions/work-orders";
 import { brandColor } from "../art/logos";
 import { at3, rackHeight } from "./draw";
@@ -145,7 +144,7 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
   const [hover, setHover] = useState<string | null>(null);
   const walk = useVisit((v) => v.walk), at = useVisit((v) => v.at), set = useVisit((v) => v.set);
   const floor = plan?.floor ?? 1, office = loc.space === "office", m = nowMin(game), out: { depth: number; node: ReactNode; front?: boolean }[] = [], lobbyY = loc.space === "hall" ? roomSize(loc).h : Infinity;
-  const msPerMin = speed > 0 ? 1000 / speed : 0, here = present(game, loc.id), seat = here ? seatOf(game, loc.id, "player") : null;
+  const msPerMin = speed > 0 ? 1000 / speed : 0;
   const busy = game.orders.some((o) => o.worker === "player" && o.locationId === loc.id && !o.applied);
   const pending = useVisit((v) => v.pending);
   const walkHere = walk?.locationId === loc.id ? walk : null;
@@ -165,16 +164,13 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
   const now = figuresIn(game, loc.id, m), next = msPerMin ? figuresIn(game, loc.id, m + 1) : [];
   const list: Figure[] = now.slice();
   out.push(...seatChairs(game, loc));
-  if (seat && !list.some((f) => f.id === "player")) {
-    const p = at?.locationId === loc.id ? at.pt : seat, sitting = key(p) === key(seat);
-    list.push({ id: "player", name: "", role: "player", tile: { x: p.x, y: p.y, facing: (seat as Tile).facing ?? "n" }, facing: (seat as Tile).facing ?? "n", colour: null, busy: false, seated: sitting, pose: sitting ? "sit" : "stand", path: [p], progress: 0 });
-  }
+  if (!list.some((f) => f.id === "player")) { const me = idlePlayer(game, loc, at?.locationId === loc.id ? at.pt : undefined); if (me) list.push(me); }
   const desk = receptionist(game, loc, Math.floor(m / 60));
   if (desk) list.push({ id: "reception", name: t("figures.reception"), role: "provider", tile: { x: desk.x, y: desk.y, facing: desk.facing }, facing: desk.facing, colour: null, busy: false, seated: true, pose: "sit", path: [desk], progress: 0 });
   // Without a drawn seat in the room nobody sits: the figure stands where the sim parks it.
   const seated = seatsAt(game, loc).length > 0;
   for (const f of list) {
-    if ((f.tile.floor ?? 1) !== floor) continue;
+    if ((f.tile.floor ?? receptionFloor(game, loc)) !== floor) continue;
     if (!seated && f.pose === "sit") f.pose = "stand";
     const player = f.id === "player", l = look(f.id, f.colour), name = player ? t("figures.you") : f.name;
     const walking = player && walkHere && f.pose !== "work" && f.pose !== "walk" ? walkHere : null;

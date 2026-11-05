@@ -28,6 +28,7 @@ import {
   CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, rackHeight, RackBox, RaisedFloor, Scanner, Shimmer, Shelf, ShelfUnit, Tower, Tubes, WallJack, Walls, WALL, Washer,
 } from "./draw";
 import { RackPanel } from "./rack/RackPanel";
+import { playerFloor } from "../../sim/60-infra/figures";
 import { useFigures } from "./figures";
 import { OrderChip } from "./OrderChip";
 import { visitThen } from "./visit";
@@ -77,7 +78,7 @@ export const World = memo(function World() {
   const loc = roomOf(game), home = loc.space === "basement", office = loc.space === "office";
   // An office shows one floor at a time, the reception's floor first.
   const [floorSet, setFloor] = useState<number | null>(null);
-  const base = officePlan(game, loc), plan = base && { ...base, floor: floorSet ?? base.sections[0]?.floor ?? 1 };
+  const base = officePlan(game, loc), plan = base && { ...base, floor: floorSet ?? playerFloor(game, loc) };
   const { w, h } = roomSize(loc, plan);
   const tiles = useMemo(() => {
     const own = rackTiles(loc, game.racks, plan);
