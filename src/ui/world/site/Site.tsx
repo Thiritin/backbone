@@ -37,7 +37,7 @@ function PlayerCar({ i, drive }: { i: Item; drive: Drive }) {
 }
 
 // Body shapes by era: boxy until 2011, rounder after. Footprints stay close, so bays still fit.
-const eraKind = (kind: string, year: number): string => (year < 2012 ? ({ coupe: "sedan", suv: "hatchback" } as Record<string, string>)[kind] : ({ sedan: "coupe", hatchback: "suv" } as Record<string, string>)[kind]) ?? kind;
+const eraKind = (kind: string, year: number): string => (year < 2012 ? ({ coupe: "sedan" } as Record<string, string>)[kind] : ({ sedan: "coupe" } as Record<string, string>)[kind]) ?? kind;
 
 function One({ i, s, name, band, year, drive }: { i: Item; s: SiteSpec; name: string; band: string; year: number; drive?: Drive }) {
   switch (i.t) {

@@ -47,7 +47,7 @@ export function visibleBehind(x: number, y: number, z: number, w: number, h: num
 export const M = 32;
 export const STREET = 7, KERB = 0.15, WALK = 1.8, BAY = { w: 2.5, l: 5 };
 // Real footprints of the baked cars (L x W in m), by model.
-export const CAR_SIZE: Record<string, [number, number]> = { sedan: [5, 2], hatchback: [4, 2], van: [5, 2], coupe: [4, 2], suv: [5, 2] };
+export const CAR_SIZE: Record<string, [number, number]> = { sedan: [5, 2], hatchback: [4, 2], van: [5, 2], coupe: [4, 2] };
 const LOT_CARS = ["hatchback", "coupe"];
 
 export const it = (t: ItemType, x0: number, y0: number, x1: number, y1: number, top: number, layer: Item["layer"], o: Partial<Item> = {}): Item => ({ t, x0, y0, x1, y1, top, layer, ...o });
@@ -79,12 +79,11 @@ export const fenceLine = (axis: "x" | "y", fixed: number, a0: number, a1: number
 export type LotMix = "mixed" | "houses" | "warehouses" | "offices" | "farm";
 interface LotDef { t: "house" | "box" | "office"; id: string; w: number; d: number; top: number; hall?: boolean; plaster?: boolean }
 const WH: LotDef = { t: "box", id: "warehouse", w: 22, d: 10, top: 7, plaster: true };
-const HALLS: LotDef[] = [{ t: "box", id: "hall-a", w: 20, d: 12, top: 7, hall: true }, { t: "box", id: "hall-b", w: 20, d: 12, top: 7.5, hall: true }, { t: "box", id: "hall-c", w: 16, d: 18, top: 8, hall: true }];
 const LOTS: Record<LotMix, LotDef[]> = {
   houses: [{ t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }],
   mixed: [{ t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }, { t: "house", id: "house-c", w: 11, d: 8, top: 8.5, plaster: true }, { t: "house", id: "house-k", w: 7, d: 8, top: 8.5, plaster: true }, WH],
-  farm: [{ t: "house", id: "house-c", w: 11, d: 8, top: 8.5, plaster: true }, { ...HALLS[1], hall: true }, { t: "house", id: "house-k", w: 7, d: 8, top: 8.5, plaster: true }, { ...WH }, { t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }],
-  warehouses: [WH, ...HALLS, { t: "box", id: "water-tower", w: 6, d: 6, top: 16 }],
+  farm: [{ t: "house", id: "house-c", w: 11, d: 8, top: 8.5, plaster: true }, { ...WH }, { t: "house", id: "house-k", w: 7, d: 8, top: 8.5, plaster: true }, { ...WH }, { t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }],
+  warehouses: [WH, { ...WH }, { t: "box", id: "water-tower", w: 6, d: 6, top: 16 }],
   offices: [{ t: "office", id: "shop-a", w: 5, d: 6, top: 8, plaster: true }, { t: "office", id: "shop-c", w: 10, d: 12, top: 10, plaster: true }, { t: "office", id: "office-f", w: 6, d: 7, top: 12 }, { t: "office", id: "office-tower", w: 8, d: 8, top: 16 }, { t: "office", id: "shop-a", w: 5, d: 6, top: 8, plaster: true }, { t: "office", id: "shop-c", w: 10, d: 12, top: 10, plaster: true }],
 };
 const WARM = ["w-tone-hall-2", "w-tone-hall-4", "w-tone-hall-5"];
