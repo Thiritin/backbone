@@ -10,7 +10,7 @@ import pc from "polygon-clipping";
 type V3 = [number, number, number];
 type Tri = { p: [V3, V3, V3]; rgb: string; mat: string; cell: string };
 // A colour rule: the first one whose ranges (OKLCH, hue in degrees) and material name all hold gives the material.
-interface Rule { m: string; name?: string; cell?: string[]; L?: [number, number]; C?: [number, number]; H?: [number, number] }
+interface Rule { m: string; name?: string; cell?: string[]; Z?: [number, number]; L?: [number, number]; C?: [number, number]; H?: [number, number] }
 interface Cfg {
   kits: Record<string, { rules: Rule[] }>;
   models: { id: string; kit: string; src: string; yaw: number; size: [number, number, number]; dirs: ("x" | "y")[]; rules?: Rule[]; bare?: boolean }[];
@@ -142,9 +142,9 @@ function oklch(hex: string): [number, number, number] {
   return [L, Math.hypot(A, B), ((Math.atan2(B, A) * 180) / Math.PI + 360) % 360];
 }
 const within = (v: number, r?: [number, number]) => !r || (r[0] <= r[1] ? v >= r[0] && v <= r[1] : v >= r[0] || v <= r[1]);
-function material(rules: Rule[], t: Tri): string {
-  const [L, C, H] = oklch(t.rgb);
-  for (const r of rules) if ((!r.name || r.name === t.mat) && (!r.cell || r.cell.includes(t.cell)) && within(L, r.L) && within(C, r.C) && within(H, r.H)) return r.m;
+function material(rules: Rule[], t: Tri, top = 1): string {
+  const [L, C, H] = oklch(t.rgb), z = Math.max(...t.p.map((q) => q[2])) / top;
+  for (const r of rules) if ((!r.name || r.name === t.mat) && (!r.cell || r.cell.includes(t.cell)) && within(z, r.Z) && within(L, r.L) && within(C, r.C) && within(H, r.H)) return r.m;
   return "?";
 }
 
@@ -182,10 +182,22 @@ function branches(id: string, tris: Tri[]): Tri[] {
   return out;
 }
 
+// The part of a convex ring left (-1) or right (1) of the vertical line x = cx.
+function cutX(ring: Ring, cx: number, side: 1 | -1): Ring {
+  const out: Ring = [];
+  ring.forEach((p, i) => {
+    const q = ring[(i + 1) % ring.length], dp = (p[0] - cx) * side, dq = (q[0] - cx) * side;
+    if (dp >= 0) out.push(p);
+    if (dp * dq < 0) { const k = dp / (dp - dq); out.push([p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k]); }
+  });
+  return out;
+}
+
 function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: boolean, bare: boolean) {
   const placed = place(loadGlb(path.join(artDir, m.src)), m.yaw, m.size, dir);
   const top = Math.max(...placed.flatMap((t) => t.p.map((p) => p[2])));
-  const tris = bare ? [...placed.filter((t) => material(rules, t) === "trunk"), ...branches(m.id, placed)] : placed;
+  const midX = (Math.max(...placed.flatMap((t) => t.p.map((p) => p[0] - p[1]))) + Math.min(...placed.flatMap((t) => t.p.map((p) => p[0] - p[1])))) / 2;
+  const tris = bare ? [...placed.filter((t) => material(rules, t, top) === "trunk"), ...branches(m.id, placed)] : placed;
   type Item = { poly: Ring; key: string; nn: V3; c: number; bb: [number, number, number, number] };
   const items: Item[] = [];
   cellRgb.clear();
@@ -194,8 +206,10 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
     const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], ln = Math.hypot(n[0], n[1], n[2]) || 1;
     const nn = n.map((q) => q / ln);
     if (nn[0] + nn[1] + nn[2] <= 0) continue;
-    const face = nn[2] > 0.6 ? "t" : nn[1] >= nn[0] ? "l" : "r";
-    const mat = inspect ? (t.cell || t.mat) : material(rules, t);
+    const mat = inspect ? (t.cell || t.mat) : material(rules, t, top);
+    // Crowns are faceted, so splitting left and right by the facet normal gives a ragged seam; split them at the model's centre line instead.
+    const rounded = !inspect && (mat === "leaf" || mat === "needle" || mat === "shrub");
+    const face = nn[2] > (rounded ? 0.5 : 0.6) ? "t" : rounded ? "s" : nn[1] >= nn[0] ? "l" : "r";
     // Snow lies on the upward-leaning part of these materials: the whole face when it faces up, the upper part of a steep one.
     if (mat === "drop" || (mat === "needle" && face === "t" && Math.max(a[2], b[2], c[2]) < top * 0.12)) continue;
     const flat = !inspect && !bare && nn[2] > 0.9 && Math.min(a[2], b[2], c[2]) > top * 0.3 && !NOSNOW.has(mat), crown = mat === "leaf" || mat === "needle", snowy = flat || !inspect && !bare && SNOW.has(mat) && nn[2] > (crown ? 0.04 : 0.25) && (!crown || Math.max(a[2], b[2], c[2]) > top * 0.25);
@@ -205,9 +219,14 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
       if (pp.length < 3) continue;
       // Rounding can merge neighbouring corners; repeated points make the clipper recurse without end.
       const poly = (pp.map(proj).map(([x, y]) => [Math.round(x * 8) / 8, Math.round(y * 8) / 8]) as Ring).filter((q, i, r) => { const o = r[(i + r.length - 1) % r.length]; return q[0] !== o[0] || q[1] !== o[1]; });
-      if (poly.length < 3 || Math.abs(area(poly)) < 0.6) continue;
-      const ring: Ring = [...poly, poly[0]], xs = poly.map((q) => q[0]), ys = poly.map((q) => q[1]);
-      items.push({ poly: ring, key: `${mat}|${face}${sn}`, nn: nn as V3, c: nn[0] * a[0] + nn[1] * a[1] + nn[2] * a[2], bb: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] });
+      if (poly.length < 3 || Math.abs(area(poly)) < 1.2) continue;
+      // A crown's side faces split at its centre line into left and right, so the seam is straight.
+      const halves: [Ring, string][] = face === "s" ? [[cutX(poly, midX * 32, -1), "l"], [cutX(poly, midX * 32, 1), "r"]] : [[poly, face]];
+      for (const [hp, hf] of halves) {
+        if (hp.length < 3 || Math.abs(area(hp)) < 0.3) continue;
+        const ring: Ring = [...hp, hp[0]], xs = hp.map((q) => q[0]), ys = hp.map((q) => q[1]);
+        items.push({ poly: ring, key: `${mat}|${hf}${sn}`, nn: nn as V3, c: nn[0] * a[0] + nn[1] * a[1] + nn[2] * a[2], bb: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] });
+      }
     }
     cellRgb.set(t.cell || t.mat, t.rgb);
   }
@@ -289,7 +308,9 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
     for (const poly of merged) {
       for (const ring of poly) {
         const r = simplify(ring as Ring, 0.02);
-        if (Math.abs(area(r)) < 0.5) continue;
+        // Rings under 0.5 px wide on average are slivers left where faces meet.
+        const per = r.slice(1).reduce((a, q, i) => a + Math.hypot(q[0] - r[i][0], q[1] - r[i][1]), 0);
+        if (Math.abs(area(r)) < 0.5 || (Math.abs(area(r)) * 2) / (per || 1) < 0.5) continue;
         for (const [x, y] of r) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
         d += "M" + r.slice(0, -1).map(([x, y]) => `${+x.toFixed(1)} ${+y.toFixed(1)}`).join(" ") + "Z";
       }
