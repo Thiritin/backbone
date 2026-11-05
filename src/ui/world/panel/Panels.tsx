@@ -55,7 +55,9 @@ export function StoragePanel({ loc, onClose }: Props) {
 // Fetched letters as paper: the current sheet in the middle, the sheets still to read stacked right, the ones gone through stacked left.
 export function PostPanel({ title, onClose }: { title: string; onClose: () => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
-  const letters = [...atDesk(game)].reverse();
+  // The post just fetched, oldest first so the first letter lies on top; letters read on an earlier visit are gone.
+  const [mine] = useState(() => new Set(atDesk(game).filter((x) => !x.read).map((x) => x.id)));
+  const letters = atDesk(game).filter((x) => mine.has(x.id));
   const [i, setI] = useState(0);
   const at = Math.min(i, letters.length - 1), l = letters[at];
   const go = (to: number) => setI(Math.max(0, Math.min(letters.length - 1, to)));

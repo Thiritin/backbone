@@ -20,9 +20,9 @@
 .wp-side { width: 120px; display: flex; justify-content: center; }
 .wp-sheet { position: relative; width: min(560px, calc((100vh - 220px) * 210 / 297)); }
 .wp-sheet .letter-fit { max-width: none; }
-.wp-corner { position: absolute; top: 0; right: 0; width: 104px; height: 104px; padding: 0 0 8px 8px; border: 0; display: flex; align-items: flex-end; justify-content: flex-start; font: 600 11px var(--font-ui); color: oklch(0.35 0.02 60); background: linear-gradient(225deg, transparent 50%, oklch(0.9 0.01 90) 50%); cursor: pointer; transform-origin: top right; }
+.wp-corner { position: absolute; bottom: 0; right: 0; width: 104px; height: 104px; padding: 0 8px 8px 0; border: 0; display: flex; align-items: flex-end; justify-content: flex-end; font: 600 11px var(--font-ui); color: oklch(0.35 0.02 60); background: linear-gradient(135deg, transparent 50%, oklch(0.9 0.01 90) 50%); cursor: pointer; transform-origin: bottom right; }
 .wp-corner:hover { color: var(--accent); }
-.wp-stamp { position: absolute; top: 28px; right: 24px; padding: 4px 10px; border: 3px solid oklch(0.55 0.15 150); color: oklch(0.5 0.15 150); font: 700 14px var(--font-ui); text-transform: uppercase; letter-spacing: 0.08em; transform: rotate(-8deg); }
+.wp-stamp { position: absolute; bottom: 28px; right: 24px; padding: 4px 10px; border: 3px solid oklch(0.55 0.15 150); color: oklch(0.5 0.15 150); font: 700 14px var(--font-ui); text-transform: uppercase; letter-spacing: 0.08em; transform: rotate(-8deg); }
 .wp-stack { position: relative; width: 105px; height: 148px; padding: 0; border: 0; background: none; cursor: pointer; }
 .wp-stack i { position: absolute; inset: 0; background: oklch(0.98 0.004 90); border: 1px solid oklch(0.84 0.01 90); transform: translate(calc(var(--k) * -2px), calc(var(--k) * -2px)); }
 .wp-stack.prev i { transform: translate(calc(var(--k) * 2px), calc(var(--k) * -2px)); }

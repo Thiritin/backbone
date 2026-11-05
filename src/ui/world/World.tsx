@@ -334,7 +334,7 @@ export const World = memo(function World() {
     storage: () => { if (game.devices.some((d) => d.store === loc.id && !d.chassisId)) setPanel({ kind: "storage", title: "" }); },
     power: () => setPanel({ kind: "power", title: t(label), id }),
     door: () => openDoor(),
-    post: () => { if (waiting) act(fetchPost); if (atDesk(useStore.getState().game).length) setPanel({ kind: "post", title: t(label) }); },
+    post: () => { if (waiting) act(fetchPost); if (atDesk(useStore.getState().game).some((x) => !x.read)) setPanel({ kind: "post", title: t(label) }); },
     scan: () => setPanel({ kind: "scan", title: t(label) }),
     console: () => { const g = useStore.getState().game, to = cartTarget(g, loc.id, getPlug()); if (to) setPlug(to); setPanel({ kind: "console", title: t(label) }); },
     stairs: () => { const fs = officeFloors(plan?.sections ?? []); setFloor(fs[(fs.indexOf(plan?.floor ?? 1) + 1) % fs.length]); setRackOpen(null); },

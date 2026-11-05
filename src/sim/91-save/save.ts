@@ -233,7 +233,7 @@ export function deserialize(raw: string): GameState {
     // Quotes from before the shop wrote its own were all written in Books.
     quotes: (data.quotes ?? []).map((q) => ({ ...q, origin: q.origin ?? "books" })),
     // Letters from before the letterbox lie at the desk, and the delivered ones are filed in DocuWhere.
-    letters: (data.letters ?? base.letters).map((l) => ({ ...l, box: l.box ?? null, addressedTo: l.addressedTo ?? l.box ?? null, scanned: l.scanned ?? l.arrived })),
+    letters: (data.letters ?? base.letters).map((l) => ({ ...l, box: l.read ? null : l.box ?? null, addressedTo: l.addressedTo ?? l.box ?? null, scanned: l.scanned ?? l.arrived })),
     waitlist: (data.waitlist ?? []).filter((w: { space: string }) => w.space !== "positions"),
     // Saves from before contracts get one per rented location at today's price.
     contracts: data.contracts?.map((c: Contract) => ({ ...c, retainedAt: c.retainedAt ?? null })) ?? locations.filter((l) => l.dc).map((l, i) => {
