@@ -30,8 +30,7 @@
 /* The close-up scene: the rack stands centred on a floor strip; the wheel zooms it up to twice its fitted height. */
 .wr-stage { position: relative; --depth: 22px; --tag-w: 260px; --tag-gap: 56px; flex: 1; min-height: 0; overflow: auto; container-type: size; background: oklch(0.2 0.018 255); }
 .wr-room { min-width: 100%; min-height: 100%; width: max-content; display: flex; flex-direction: column; align-items: center; padding: calc(var(--depth) + 10px) 48px 0; box-sizing: border-box; }
-.wr-scene { position: relative; z-index: 1; transition: transform 220ms ease-out; }
-.wr-scene.tagged { transform: translateX(calc(-0.5 * (var(--tag-w) + var(--tag-gap)))); }
+.wr-scene { position: relative; z-index: 1; transform: translateX(calc(-0.5 * (var(--tag-w) + var(--tag-gap)))); }
 .wr-cab { position: relative; z-index: 1; background: var(--rack); }
 /* The rack's lit top and its darker right side, drawn as faces around the front art. */
 .wr-cab::before { content: ""; position: absolute; pointer-events: none; }
@@ -231,37 +230,11 @@
 .wr-cart-back::before { content: "\2190"; font-size: 18px; }
 .wr-cart-back:hover { background: oklch(0.4 0.02 262); }
 
-/* The unit tag: a narrow paper tag with a drawn faceplate, then a grid of square pictogram keys. */
+/* The asset tag: flat paper with darker edge lines, and the slips that confirm a menu action. */
 .wr-tag.unit { width: 236px; }
-.wk-plate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; padding: 8px; background: oklch(0.27 0.02 255); border: 1px solid oklch(0.18 0.01 255); }
-.wk-gap { flex: 1; }
-.wk-power { position: relative; width: 40px; height: 40px; padding: 0; border: 2px solid oklch(0.55 0.015 255); border-radius: 0; background: oklch(0.36 0.015 255); color: oklch(0.88 0.01 255); cursor: pointer; box-shadow: 0 3px 0 oklch(0.16 0.01 255); }
-.wk-power:active { transform: translateY(2px); box-shadow: 0 1px 0 oklch(0.16 0.01 255); }
-.wk-power svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: square; }
-.wk-power i { position: absolute; right: 3px; top: 3px; width: 6px; height: 6px; background: oklch(0.4 0.01 255); }
-.wk-power.on i { background: oklch(0.78 0.2 150); box-shadow: 0 0 5px oklch(0.78 0.2 150); }
-.wk-power.armed { border-color: oklch(0.75 0.19 60); outline: 2px solid oklch(0.75 0.19 60); outline-offset: 2px; animation: wk-arm 0.6s steps(2) infinite; }
-.wk-power.armed i { background: oklch(0.75 0.19 60); }
-@keyframes wk-arm { 50% { background: oklch(0.45 0.09 60); } }
-.wk-state { flex-basis: 100%; font-size: 11px; color: oklch(0.85 0.01 255); }
-.wk-power.armed ~ .wk-state { color: oklch(0.8 0.17 60); }
-.wk-port { width: 34px; height: 26px; padding: 2px; border: 1px solid oklch(0.5 0.015 255); border-radius: 0; background: oklch(0.2 0.01 255); color: oklch(0.8 0.01 255); cursor: pointer; }
-.wk-port svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; }
-.wk-port:hover:not(:disabled), .wk-port.on { color: oklch(0.85 0.15 262); border-color: oklch(0.7 0.12 262); }
-.wk-port:disabled { opacity: 0.35; cursor: default; }
-.wk-grid { display: grid; grid-template-columns: repeat(4, 38px); gap: 6px; margin-top: 10px; }
-.wk-ic { position: relative; width: 38px; height: 38px; padding: 0; display: grid; place-items: center; border: 1px solid oklch(0.6 0.04 80); border-radius: 0; background: oklch(0.93 0.025 85); color: oklch(0.3 0.03 60); cursor: pointer; box-shadow: 0 2px 0 oklch(0.7 0.04 80); }
-.wk-ic:hover:not(:disabled), .wk-ic:focus-visible, .wk-ic.on { border-color: oklch(0.45 0.13 262); color: oklch(0.4 0.13 262); }
-.wk-ic:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 1px 0 oklch(0.7 0.04 80); }
-.wk-ic:disabled { opacity: 0.4; cursor: not-allowed; background: repeating-linear-gradient(135deg, oklch(0.93 0.025 85) 0 4px, oklch(0.88 0.03 85) 4px 8px); box-shadow: none; }
-.wk-badge { position: absolute; left: 0; right: 0; bottom: -1px; font-size: 9px; line-height: 11px; background: oklch(0.35 0.03 60); color: oklch(0.97 0.01 85); }
-.wk-tip { display: none; position: absolute; top: calc(100% + 3px); left: 0; z-index: 3; padding: 2px 6px; white-space: nowrap; pointer-events: none; font-size: 11px; background: oklch(0.3 0.03 60); color: oklch(0.97 0.01 85); }
-.wk-ic:nth-child(4n+3) .wk-tip, .wk-ic:nth-child(4n) .wk-tip { left: auto; right: 0; }
-.wk-ic:hover .wk-tip, .wk-ic:focus-visible .wk-tip { display: block; }
-.wk-flip { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; border-top: 1px dashed oklch(0.78 0.03 80); }
-.wk { padding: 5px 8px; border: 1px solid oklch(0.6 0.04 80); border-radius: 0; background: oklch(0.93 0.025 85); color: inherit; font: inherit; font-size: 12px; cursor: pointer; box-shadow: 0 2px 0 oklch(0.7 0.04 80); }
-.wk:hover:not(:disabled) { border-color: oklch(0.45 0.13 262); color: oklch(0.4 0.13 262); }
-.wk:disabled { opacity: 0.45; cursor: default; }
+.wr-asset .wr-tag-h input { box-sizing: border-box; width: 100%; min-width: 0; }
+.wr-asset .wr-tag-h { padding-bottom: 6px; border-bottom: 1px solid oklch(0.72 0.04 80); }
+.wr-asset-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed oklch(0.72 0.04 80); font: 12px var(--mono, monospace); color: oklch(0.4 0.03 60); }
 .wk-slip { margin-top: 10px; padding: 8px 10px; background: oklch(0.97 0.02 90); border: 1px dashed oklch(0.6 0.05 80); }
 .wk-slip-name { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.4 0.03 60); }
 .wk-slip-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 10px; }
@@ -286,15 +259,12 @@
 @keyframes rack-seat { 0%, 60% { fill: color-mix(in oklch, oklch(0.78 0.2 145) 70%, transparent); stroke: oklch(0.78 0.2 145); stroke-width: 2; } 100% { fill: transparent; stroke-width: 0; } }
 @media (prefers-reduced-motion: reduce) { .wr-cab .rack-seat, .wr-cab .rack-need, .wr-cab .rack-ok { animation: none; } }
 
-.wk-label-pw { margin-top: 4px; font: 700 16px var(--mono, monospace); letter-spacing: 0.04em; color: oklch(0.25 0.02 60); user-select: all; }
 
 /* A strip on the stage's right edge: the rack's equipment and the part of the rack in view; a click or drag moves the view. */
 .wr-mini { position: sticky; top: 0; left: 0; z-index: 5; width: 100cqw; height: 0; pointer-events: none; }
 .wr-mini-bar { position: absolute; right: 12px; top: 96px; width: 16px; height: calc(100cqh - 96px - 72px); background: oklch(0.15 0.012 255); border: 1px solid oklch(0.4 0.012 255); pointer-events: auto; cursor: pointer; touch-action: none; }
 .wr-mini-mark { position: absolute; left: 3px; right: 3px; background: oklch(0.6 0.04 255); }
 .wr-mini-view { position: absolute; left: -1px; right: -1px; border: 2px solid oklch(0.88 0.12 250); background: oklch(0.88 0.12 250 / 0.18); box-sizing: border-box; pointer-events: none; }
-.wk-power[data-guide], .wk-port[data-guide], .wk-ic[data-guide] { outline: 3px solid oklch(0.75 0.19 60); outline-offset: 2px; }
-.wk-power[data-guide]::after, .wk-port[data-guide]::after, .wk-ic[data-guide]::after { content: ""; position: absolute; left: -2px; top: -2px; width: 8px; height: 8px; background: oklch(0.75 0.19 60); }
 [data-end][data-guide] { stroke: oklch(0.75 0.19 60); stroke-width: 3; }
 .usb-hit[data-guide] { stroke: oklch(0.75 0.19 60); stroke-width: 3; }
 .rack-free[data-guide] rect { stroke: oklch(0.75 0.19 60); stroke-width: 3; }

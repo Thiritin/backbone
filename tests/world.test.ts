@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { ContextMenuHost } from "../src/ui/desktop/ContextMenu";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -77,14 +78,15 @@ describe("world", () => {
     try {
       const s = readyGame(7);
       useStore.setState({ game: s, speed: 0, surface: "world" });
-      const { container } = render(createElement(World));
+      const { container } = render(createElement("div", { className: "desktop" }, createElement(World), createElement(ContextMenuHost)));
       const rack = s.racks.find((r) => r.locationId === roomOf(s).id)!;
       const dev = s.devices.find((d) => d.rackId === rack.id && !d.chassisId && modelById(d.model).kind === "server")!;
       fireEvent.click(container.querySelector(`[data-rack="${rack.id}"]`)!);
       act(() => { vi.advanceTimersByTime(20_000); });
       const panel = screen.getByRole("dialog", { name: rack.name });
       fireEvent.click(panel.querySelector(`.rack-dev[aria-label="${dev.name}"]`)!);
-      fireEvent.click(screen.getByRole("button", { name: t("locations-1.changeParts") }));
+      fireEvent.contextMenu(panel.querySelector(`.rack-dev[aria-label="${dev.name}"]`)!, { clientX: 10, clientY: 10 });
+      fireEvent.click(screen.getByRole("menuitem", { name: t("locations-1.changeParts") }));
       act(() => { vi.advanceTimersByTime(1000); });
       const lid = panel.querySelector(`[data-lid="${dev.id}"]`)!;
       expect(lid.querySelector(".lid-view")).not.toBeNull();
@@ -113,7 +115,7 @@ describe("world", () => {
       expect(buyDevice(s, "part-fan", "Generic", 1, rack.locationId).ok).toBe(true);
       s.devices = s.devices.map((d) => (d.model === "part-fan" ? { ...d, store: rack.locationId, transitTo: null, arriveAt: null } : d));
       useStore.setState({ game: s, speed: 0, surface: "world" });
-      const { container } = render(createElement(World));
+      const { container } = render(createElement("div", { className: "desktop" }, createElement(World), createElement(ContextMenuHost)));
       expect(container.querySelector(`[data-rack="${rack.id}"] .w-led-fault`)).not.toBeNull();
       fireEvent.click(container.querySelector(`[data-rack="${rack.id}"]`)!);
       act(() => { vi.advanceTimersByTime(20_000); });
@@ -122,7 +124,8 @@ describe("world", () => {
       fireEvent.click(panel.querySelector(`.rack-dev[aria-label="${dev.name}"]`)!);
       const tag = panel.querySelector(`[data-device="${dev.id}"]`)!;
       expect(tag.firstElementChild!.textContent).toContain(t("locations-1.failed"));
-      fireEvent.click(screen.getByRole("button", { name: t("locations-1.changeParts") }));
+      fireEvent.contextMenu(panel.querySelector(`.rack-dev[aria-label="${dev.name}"]`)!, { clientX: 10, clientY: 10 });
+      fireEvent.click(screen.getByRole("menuitem", { name: t("locations-1.changeParts") }));
       act(() => { vi.advanceTimersByTime(1000); });
       const lid = panel.querySelector(`[data-lid="${dev.id}"]`)!;
       const bad = lid.querySelector('[data-wear="bad"]')!;

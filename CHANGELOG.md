@@ -3,7 +3,8 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
-- Every bookkeeping program now installs through its own setup pages, with licence, serial number and sign-up, and a first-steps guide in the style of its era ticks off each step until the books are ready.
+- Every bookkeeping program now installs through its own setup pages, with licence, serial number and sign-up, and a first-steps guide in the style of its era opens on first launch and ticks off each step until the books are ready.
+- Selecting a device in a rack now hangs a paper asset tag on it with its name, model, rack unit and inventory number, and the router password is read from the sticker on the router.
 - The letterbox panel now lays the first letter on top with the later ones stacked beside it, letters you have read no longer come back when you open the box again, and the scan corner sits at the bottom of the page.
 - Letters from the trade office, tax office and other authorities are now the bill itself, with the same letterhead everywhere and a stamp once paid.
 - Invoices dated up to 2008 print in monospace on continuous-form paper like a dot-matrix printer; later ones keep the styled layout.
