@@ -39,11 +39,11 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     it("street", -300, sy0, w + 300, sy1, 0, "front", { moving: true }),
     it("walk", -300, py1 + 0.4, w + 300, py1 + 0.4 + 1.8, 0, "front"),
     it("bays", w + 1, bayY(edge ? 1 : 3), w + 1 + BAY.l, bayY(-1), 0, "front", { count: edge ? 2 : 4 }),
-    carItem("hatchback", w + 1.4, bayY(0) + 0.35, PLAYER_CAR, "front", { kind: "hatchback" }),
-    ...Array.from({ length: edge ? 1 : Math.min(3, staff) }, (_, k) => carItem(["suv", "sedan", "van"][k], w + 1.2, bayY(k + 1) + 0.35, tone(5 + k), "front", { kind: ["suv", "sedan", "van"][k] })),
+    carItem("hatchback", w + 1.4, bayY(0) + 0.1, PLAYER_CAR, "front", { kind: "hatchback" }),
+    ...Array.from({ length: edge ? 1 : Math.min(3, staff) }, (_, k) => carItem(["hatchback", "sedan", "van"][k], w + 1.2, bayY(k + 1) + 0.1, tone(5 + k), "front", { kind: ["hatchback", "sedan", "van"][k] })),
     it("gate", gateX0, py1 - 0.3, gateX1, py1 + 0.3, M, "front", { kind: setting !== "business" && c.slide ? "slide" : "barrier" }),
     it("booth", gateX1 + 1.1, py1 - 1.6, boothX1, py1 + 0.7, Math.round(2.8 * M), "front"),
-    carItem(setting === "industrial" ? "delivery" : "coupe", -34, sy0 + 4.2, tone(7), "front", { kind: setting === "industrial" ? "delivery" : "coupe", moving: true }), carItem(setting === "industrial" ? "bintruck" : "suv", w + 16, sy0 + 1.4, tone(8), "front", { kind: setting === "industrial" ? "bintruck" : "suv", moving: true }),
+    carItem(setting === "industrial" ? "van" : "coupe", -34, sy0 + 4.2, tone(7), "front", { kind: setting === "industrial" ? "van" : "coupe", moving: true }), carItem(setting === "industrial" ? "van" : "hatchback", w + 16, sy0 + 1.4, tone(8), "front", { kind: setting === "industrial" ? "van" : "hatchback", moving: true }),
     it("cam", gateX0 - 1.6, py1 - 3.5, gateX0 - 1.4, py1 - 3.3, 5 * M, "front", { kind: "gate" }),
     ...fenceLine("x", py0, px0, px1, "back", dbl, top), ...fenceLine("y", px0, py0, py1, "back", dbl, top), ...fenceLine("y", px1, py0, py1, "front", dbl, top),
     ...fenceLine("x", py1, px0, gateX0, "front", false, 2.6), ...fenceLine("x", py1, boothX1, px1, "front", false, 2.6),
@@ -102,7 +102,7 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     if (setting === "business" && !edge && cls !== "S") {
       // More content as the site grows: planters on M, a second parking strip on L.
       items.push(it("planter", -6.5, cls === "L" ? 12.4 : 2, -5.3, cls === "L" ? 13.4 : 3, 26, "front"), it("planter", -6.5, cls === "L" ? 14 : 5, -5.3, cls === "L" ? 15 : 6, 26, "front"));
-      if (cls === "L") items.push(it("bays", -9.5, 2, -4.5, 2 + BAY.w * 4, 0, "front", { count: 4 }), carItem("coupe", -8.9, 2.35, tone(11), "front", { kind: "coupe", dir: "x" }), carItem("pickup", -8.9, 2 + BAY.w * 2 + 0.3, tone(12), "front", { kind: "pickup", dir: "x" }));
+      if (cls === "L") items.push(it("bays", -9.5, 2, -4.5, 2 + BAY.w * 4, 0, "front", { count: 4 }), carItem("coupe", -8.9, 2.35, tone(11), "front", { kind: "coupe", dir: "x" }), carItem("sedan", -8.9, 2 + BAY.w * 2 + 0.3, tone(12), "front", { kind: "sedan", dir: "x" }));
     }
   }
   if (c.siding) items.push(it("rail", px0 - 40, py0 - 14, px1 + 40, py0 - 11, 0, "back"));
@@ -118,5 +118,5 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     items.push(...street.filter((i) => !edge || i.t !== "rack"));
   }
   const seats = edge ? [] : lobbySlots(cls, h);
-  return { kind: "plot", setting, cls, seed, w, h, lift: 0, plot: { x0: px0, y0: py0, x1: px1, y1: py1 }, items, bay: { x: w + 1.4, y: bayY(0) + 0.35, dir: "x" }, seats, box: bounds(items, 0, w, h) };
+  return { kind: "plot", setting, cls, seed, w, h, lift: 0, plot: { x0: px0, y0: py0, x1: px1, y1: py1 }, items, bay: { x: w + 1.4, y: bayY(0) + 0.1, dir: "x" }, seats, box: bounds(items, 0, w, h) };
 }
