@@ -79,7 +79,7 @@ export function Cart({ host, btn, account }: ShopProps & { host: string; account
       <>
         <Checkout game={game} btn={btn} total={euroPrice(total)}
           lines={lines.map((l) => ({ label: lineName(l.product, l.edition, lineMajor(game, l), l.from), qty: l.qty, price: euroPrice((lineOffer(game, l)?.fee ?? 0) * l.qty) }))}
-          offer={{ supplier: "software", lines: feeLine(game, total), name: vendorName(lines[0].product) }}
+          offer={{ supplier: "software", lines: feeLine(game, total), name: vendorName(lines[0]?.product ?? "") }}
           emails={[defaultMailTo(game), ...ownAddresses(game).filter((x) => x !== defaultMailTo(game))]}
           place={(d) => attempt(checkout, host, { ...d, payment: d.payment.kind === "card" ? d.payment : { kind: "transfer" } }, d.payment.kind)}
           confirm={confirm} />
