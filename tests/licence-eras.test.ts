@@ -53,7 +53,8 @@ describe("licence eras", () => {
     const cash = s.cash;
     renewKeys(s);
     expect(s.licenses[0].covers).toEqual({ kind: "term", until: at(2026, 3, 15) });
-    expect(s.cash).toBe(cash - 96);
+    expect(s.cash).toBe(cash);
+    expect(s.payables.at(-1)).toMatchObject({ method: "transfer", amount: 96, paidAt: null });
 
     const g = Object.assign(withServer(startGame(41)), { hour: at(2024, 3) });
     const d = g.devices.find((x) => x.id === BASEMENT_SERVER)!, sockets = d.components.filter((p) => p.kind === "cpu").length;

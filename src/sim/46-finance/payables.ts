@@ -160,6 +160,22 @@ const SUPPLIER_OF: Record<string, SupplierId> = {
 export const UTILITY = "E.OFF";
 export const HARDWARE_SHOP = "Alternatte";
 
+// The month's lines no supplier invoices (leases, addresses, properties, modules): one document per payee, debited from the
+// bank or paid in cash before there is one.
+const LANDLORD = new Set(["ledger.officeRent", "ledger.officeLine", "ledger.upkeep", "ledger.hallUpkeep"]);
+const NETWORK = new Set(["ledger.addresses", "ledger.lirYearly"]);
+const DIRECT_SUPPLIER = (key: string): SupplierId => (key === "ledger.lease" ? "hardware" : LANDLORD.has(key) ? "landlord" : NETWORK.has(key) ? "network" : "services");
+export function billDirect(s: GameState, lines: LedgerEntry[]): void {
+  const by = new Map<string, { supplier: SupplierId; name: string; lines: LedgerEntry[] }>();
+  for (const l of lines) {
+    const supplier = DIRECT_SUPPLIER(l.key), name = l.key === "ledger.lease" ? String(l.params.lessor) : SUPPLIER_NAMES[supplier] ?? supplier;
+    const g = by.get(`${supplier}|${name}`) ?? { supplier, name, lines: [] };
+    g.lines.push(l);
+    by.set(`${supplier}|${name}`, g);
+  }
+  for (const g of by.values()) bill(s, { ...g, method: s.bank ? "debit" : "cash" });
+}
+
 // Turns the month's bills into one invoice per supplier and returns the lines still debited directly.
 export function billSuppliers(s: GameState, bills: LedgerEntry[], names: Partial<Record<SupplierId, string>>): LedgerEntry[] {
   const by = new Map<SupplierId, LedgerEntry[]>();

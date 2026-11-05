@@ -4,6 +4,7 @@ import { cents } from "../45-billing/billing";
 import { deskAiReady, deskHas, deskOf, type DeskAi } from "../10-catalog/desks";
 import { monthlySalary, STAFF_HOURS_PER_MONTH, TICKET_MINUTES, tasksPerHour } from "../10-catalog/economy";
 import type { Customer } from "../30-customers/customers";
+import { bill, invoice } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import { deskStatus, newDeskAiUsage } from "./desk";
 import { deskNote, held, WEB_SHARE } from "./desk-work";
@@ -126,9 +127,9 @@ export function billDeskAi(s: GameState): void {
     { key: "ledger.deskAi", params: { attempts: usage.attempts, drafts: usage.drafts, tokens: usage.tokens }, amount: tokens },
     { key: "ledger.deskAiAddon", params: { name: deskOf(s)!.name }, amount: addon },
   ];
-  for (const l of lines) {
-    if (l.amount <= 0) continue;
-    s.cash = cents(s.cash - l.amount);
-    s.ledger = [...s.ledger, { hour: s.hour, category: "ai", key: l.key, params: l.params, amount: -l.amount }];
-  }
+  const owed = lines.filter((l) => l.amount > 0).map((l) => ({ hour: s.hour, category: "ai" as const, key: l.key, params: l.params, amount: -l.amount }));
+  if (!owed.length) return;
+  const name = deskOf(s)!.name;
+  if (s.bank) invoice(s, "services", name, owed);
+  else bill(s, { supplier: "services", name, lines: owed, method: "cash" });
 }

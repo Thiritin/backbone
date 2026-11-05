@@ -4,6 +4,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-05
 - Hardware, software licences, Pear apps, shop modules and new datacenter space now come with an invoice or receipt, and renting space pays the rest of the first month at once.
+- Rent deposits, buildings, provider cables, network and domain fees, marketing, the website agency and other purchases now come with a receipt or an invoice, and refunds come with a credit note.
+- A notification tells you when post lands in a letterbox, and clicking it walks you to the letterbox.
+- Your figure now always appears in an office, also when your rooms are not on the ground floor, so you can no longer get stuck without it.
 - Importing a save no longer shows installer progress left over from the previous game.
 - Operating system installers, the webmail installer and the new virtual machine forms keep their progress when you switch to another window or tab.
 - Idle people and passing cars animate more smoothly with less load on the game.
