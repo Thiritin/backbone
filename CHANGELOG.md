@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The room shows the next step in a strip with an Open button, the TAN list marks the code to use next, the plug and mount steps outline the USB port and the free rack unit, and the shop list no longer overlaps beside the cart.
 - Each Getting started card now opens its exact next step: the shop on the sorted server list, the domain search, the website builder, the Debiant download, and the rack in the room, with a counter on multi-part cards.
 - The Debiant boot menu offers an automatic installation, the accounting vendor page installs the download with one button, the bank offers the TAN list at the TAN field, the Terminal types the login for you, and internet lines show speeds, prices and connection dates.
+- A crash cart with a monitor and keyboard stands beside the rack, plugs into a server through its VGA port on the back, and restarts it with Ctrl+Alt+Del.
 - The Exit icon leaves the desktop with one click, the dark mode button is gone from the menu bar, the Browser opens smaller, new apps join the end of the dock, windows no longer cascade off screen, and the notification panel pauses the clock while it is open.
 - The menu bar shows a dash instead of 0 € until you have a bank account.
 - The rack tag marks the key your current step needs, a first restart with no customers needs one click, and pressing F11 early opens the boot menu on the next start.

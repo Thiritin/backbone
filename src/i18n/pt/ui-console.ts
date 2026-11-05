@@ -15,6 +15,8 @@ export default {
   "console.vmScreen": () => "Ecrã da máquina virtual",
   "console.serverScreen": () => "Ecrã do servidor",
   "console.keys": () => "Teclas",
+  "console.keyDel": () => "Del",
+  "console.keyCad": () => "Ctrl+Alt+Del",
 
   "console.biosHelpRaid": () => "Enter percorre os níveis que os discos permitem. Um novo nível apaga a matriz.",
   "console.biosHelpRebuild": () => "Uma reconstrução rápida abranda o servidor, uma lenta deixa-o exposto durante mais tempo.",

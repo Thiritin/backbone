@@ -794,17 +794,29 @@ export function RackBox({ tile, units, items, leds, zoomed, mesh, neighbour, nam
   );
 }
 
-// A two-shelf parts cart with a handle, four castors and a box on its top shelf.
-export function Cart({ f }: { f: Fixture }) {
-  const x0 = f.x + 0.2, x1 = f.x + 0.8, y0 = f.y + 0.3, y1 = f.y + 0.7;
+// The crash cart: a trolley with a keyboard tray and a monitor on its top shelf, a beige CRT before 2010 and a flat panel after.
+export function Cart({ f, year }: { f: Fixture; year: number }) {
+  const x0 = f.x + 0.2, x1 = f.x + 0.8, y0 = f.y + 0.25, y1 = f.y + 0.75, mx = (x0 + x1) / 2;
   return (
     <>
-      {[[x0, y0], [x1, y0], [x0, y1], [x1, y1]].map(([x, y]) => <Prism key={`${x}-${y}`} x0={x - 0.02} y0={y - 0.02} x1={x + 0.02} y1={y + 0.02} z0={3} z1={30} tone="w-tone-shelf" />)}
+      {[[x0, y0], [x1, y0], [x0, y1], [x1, y1]].map(([x, y]) => <Prism key={`${x}-${y}`} x0={x - 0.02} y0={y - 0.02} x1={x + 0.02} y1={y + 0.02} z0={3} z1={34} tone="w-tone-dark" />)}
       {[[x0, y1], [x1, y1]].map(([x, y]) => <ellipse key={x} className="w-castor" cx={at3(x, y, 1.5).x} cy={at3(x, y, 1.5).y} rx="1.6" ry="1" />)}
-      <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={8} z1={10} tone="w-tone-shelf" />
-      <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={28} z1={30} tone="w-tone-shelf" />
-      <Prism x0={x0 + 0.08} y0={y0 + 0.06} x1={x0 + 0.38} y1={y1 - 0.06} z0={30} z1={38} tone="w-tone-card" />
-      <Prism x0={x1 - 0.02} y0={y0} x1={x1 + 0.02} y1={y1} z0={40} z1={42} tone="w-tone-shelf" />
+      <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={8} z1={10} tone="w-tone-dark" />
+      <Prism x0={x0} y0={y0} x1={x1} y1={y1} z0={34} z1={36} tone="w-tone-dark" />
+      <Prism x0={x0 + 0.03} y0={y1 - 0.18} x1={x1 - 0.03} y1={y1 + 0.06} z0={22} z1={24} tone="w-tone-dark" />
+      <Prism x0={x0 + 0.06} y0={y1 - 0.15} x1={x1 - 0.06} y1={y1 + 0.03} z0={24} z1={26} tone="w-tone-beige" />
+      {year < 2010 ? (
+        <>
+          <Prism x0={x0 + 0.05} y0={y0 + 0.02} x1={x1 - 0.05} y1={y1 - 0.08} z0={36} z1={54} tone="w-tone-beige" />
+          <Prism x0={x0 + 0.12} y0={y1 - 0.1} x1={x1 - 0.12} y1={y1 - 0.06} z0={39} z1={50} tone="w-tone-screen" />
+        </>
+      ) : (
+        <>
+          <Prism x0={mx - 0.07} y0={y0 + 0.2} x1={mx + 0.07} y1={y0 + 0.34} z0={36} z1={40} tone="w-tone-dark" />
+          <Prism x0={x0 + 0.03} y0={y0 + 0.3} x1={x1 - 0.03} y1={y0 + 0.38} z0={39} z1={55} tone="w-tone-dark" />
+          <Prism x0={x0 + 0.07} y0={y0 + 0.38} x1={x1 - 0.07} y1={y0 + 0.4} z0={42} z1={52} tone="w-tone-screen" />
+        </>
+      )}
     </>
   );
 }

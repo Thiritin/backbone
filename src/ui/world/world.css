@@ -62,6 +62,7 @@
 .w-tone-plate { --top: oklch(0.72 0.012 90); --left: oklch(0.64 0.014 90); --right: oklch(0.55 0.014 90); --edge: oklch(0.44 0.014 90); }
 .w-tone-handset { --top: oklch(0.82 0.035 84); --left: oklch(0.74 0.04 80); --right: oklch(0.64 0.04 76); --edge: oklch(0.5 0.04 72); }
 .w-tone-dark { --top: oklch(0.36 0.01 255); --left: oklch(0.3 0.01 255); --right: oklch(0.25 0.01 255); --edge: oklch(0.2 0.01 255); }
+.w-tone-screen { --top: oklch(0.5 0.05 200); --left: oklch(0.42 0.06 200); --right: oklch(0.36 0.06 200); --edge: oklch(0.28 0.05 200); }
 .w-box polygon { stroke: var(--edge); stroke-width: 0.6; stroke-linejoin: round; }
 .w-face-t { fill: var(--top); }
 .w-face-l { fill: var(--left); }
