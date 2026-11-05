@@ -51,9 +51,8 @@
 .rgp-badge[data-ns-status="silent"] { color: #8a1010; border-color: #c62828; }
 .rgp-prev { font-size: 12px; color: #444; }
 .rgp-nscell { min-width: 0; max-width: 240px; }
-.rgp-hosts { overflow-wrap: anywhere; }
+.rgp-hosts, .bks-table td.rgp-nscell .rgp-hosts { word-break: break-all; white-space: normal; }
 .rgp-nsline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 6px 0; }
-.rgp-ns .bks-form { width: 100%; }
-.rgp-ns .bks-form label { display: flex; align-items: center; gap: 8px; }
-.rgp-ns .bks-form input { flex: 1; min-width: 0; }
 .rgp-nscell .rgp-hosts { margin: 2px 0 3px; }
+.rgp-ns .bks-form, .bks.late .rgp-ns .bks-form { width: 100%; grid-template-columns: max-content minmax(0, 1fr); }
+.rgp-ns .bks-form input { width: 100%; min-width: 0; box-sizing: border-box; }
