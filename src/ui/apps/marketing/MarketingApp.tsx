@@ -57,7 +57,7 @@ export function MarketingApp() {
   const open = (id: Section) => id === "channels" || (id === "products" ? game.marketing.launched : full || (basics && (id === "reviews" || id === "community")));
   const [picked, setSection] = useState<Section | null>(null);
   const section = picked && open(picked) ? picked : "channels";
-  useFocus("Marketing", (f) => { if (f.kind === "page") setSection(f.id as Section); });
+  useFocus("Marketing", (f) => { if (f.kind === "page") setSection(f.id === "website" ? "channels" : f.id as Section); });
   const total = leadsThisMonth(game).reduce((n, b) => n + b.count, 0);
   const items: [Section, string, ReactNode, number | null][] = [
     ["channels", t("marketing.secChannels"), <Waypoints />, null],
@@ -104,6 +104,7 @@ function Channels() {
   const act = useStore((s) => s.act);
   const openApp = useStore((s) => s.openApp);
   const [managing, setManaging] = useState(false);
+  useFocus("Marketing", (f) => { if (f.kind === "page" && f.id === "website") setManaging(true); });
   const year = yearOf(game.hour), full = isAvailable("Marketing", game.unlocks);
   if (managing) return <>
     <div className="mkt-list"><button className="btn" style={{ justifySelf: "start" }} onClick={() => setManaging(false)}>{t("desktop.back")}</button></div>

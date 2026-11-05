@@ -17,6 +17,7 @@ import type { End, GameState, Location } from "../../sim/50-state";
 import { Defs } from "../art/fronts";
 import { rackItems } from "../apps/locations/RackView";
 import { uiSound, useStore } from "../store";
+import { NextStrip } from "./NextStrip";
 import { SpeedControl } from "../desktop/MenuBar";
 import { dateOf, formatClock } from "../../sim/00-core/time";
 import { iso, type Pt } from "./grid";
@@ -34,7 +35,7 @@ import { OrderChip } from "./OrderChip";
 import { visitThen } from "./visit";
 import { frontOf, seatOf } from "../../sim/90-actions/work-orders";
 import { PairPanel } from "./rack/PairPanel";
-import { menuOn } from "../desktop/ContextMenu";
+import { menuOn, menuTriggers } from "../desktop/ContextMenu";
 import { RoomCables } from "./rack/Cables";
 import { ConsolePanel, PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
 import { PhonePanel } from "./panel/PhonePanel";
@@ -101,7 +102,7 @@ export const World = memo(function World() {
   const [hint, setHint] = useState<string | null>(null);
   // The own hall is being edited.
   const [editing, setEditing] = useState(false);
-  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End } | null>(null);
+  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string; guide?: "cable" | "vga" | "usb" | "link" | "mount" } | null>(null);
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
   // A connection between two racks: the pair whose backs are open, and the rack or device a right-click started from.
@@ -276,6 +277,26 @@ export const World = memo(function World() {
     const a = hit && artOf(hit[0], hit[1]);
     if (hit && a?.label) use(hit[0], run(a.label, "letterbox").post, () => beside(hit[1]), t(a.label))({ stopPropagation() {} } as MouseEvent);
   });
+  // The boot card walks the player to the crash cart.
+  useEffect(() => {
+    if (seek !== "cart:") return;
+    useStore.getState().setSeek(null);
+    const hit = Object.entries(fx).find(([id, f]) => (f.kind ?? id) === "cart"), a = hit && artOf(hit[0], hit[1]);
+    if (hit && a?.label) use(hit[0], run(a.label).console, () => beside(hit[1]), t(a.label))({ stopPropagation() {} } as MouseEvent);
+  });
+  // The next-step card walks the player to a rack and opens its close-up: "rack:shelf" for the shelf, "rack:rack" for the first full rack.
+  useEffect(() => {
+    if (seek?.startsWith("dev:") || seek?.startsWith("cable:") || seek?.startsWith("vga:") || seek?.startsWith("usb:") || seek?.startsWith("link:")) {
+      useStore.getState().setSeek(null);
+      const kind = seek.split(":")[0], d = game.devices.find((x) => x.id === seek.slice(kind.length + 1)), r = racks.find((x) => x.id === d?.rackId);
+      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(kind === "cable" || kind === "vga" || kind === "usb" || kind === "link" ? { guide: kind } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+      return;
+    }
+    if (!seek?.startsWith("rack:")) return;
+    useStore.getState().setSeek(null);
+    const shelf = seek === "rack:shelf", r = racks.find((x) => (x.model === "shelf") === shelf) ?? racks[0];
+    if (r) use(r.id, () => setRackOpen({ id: r.id, guide: "mount" }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+  });
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   // A unit that landed in storage within the last day stands by the door as a parcel until it is mounted.
   const parcels = game.devices.filter((d) => d.store === loc.id && !d.chassisId && d.arrivedAt !== null && d.arrivedAt > game.hour - 24);
@@ -294,13 +315,15 @@ export const World = memo(function World() {
   // Things standing on the floor, sorted by x + y so nearer ones overlap farther ones; a fixture sorts by its farthest tile.
   const things: { depth: number; node: ReactNode; front?: boolean }[] = racks.map((r) => {
     const tile = tiles[r.id], glow = (cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id) || (from && from.rack !== r.id), leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on && !loc.tripped, fault: d.components.some((c) => c.failedAt !== null), flood: floodedDevice(game, d) && !loc.tripped, top: d.slot + modelById(d.model).height - 1 }));
+    const rackMenu = menuTriggers(menuOn(() => [{ label: t("world.newConnection"), run: () => setFrom({ rack: r.id }) }]));
     const p = rackPower(game, r.id), hot = !loc.tripped && p.limitWatts > 0 && p.watts >= 0.9 * p.limitWatts;
     return {
       depth: tile.x + tile.y,
       node: (
         <g key={r.id} className={`w-obj w-rack${lit === r.id ? " w-lit" : ""}${glow || hint === r.id ? " w-glow" : ""}`} data-rack={r.id} role="button" aria-label={r.name}
-          onClick={use(r.id, () => { if (from && from.rack !== r.id) { setPair({ a: from.rack, b: r.id, from: from.device }); setFrom(null); } else setRackOpen({ id: r.id }); }, () => frontOf(tile), r.name)}
-          onPointerDown={(e) => { if (!e.button && r.model !== "shelf") { e.stopPropagation(); link.current = r.id; dragged.current = false; } }}
+          onClick={(e) => { const go = use(r.id, () => { if (from && from.rack !== r.id) { setPair({ a: from.rack, b: r.id, from: from.device }); setFrom(null); } else setRackOpen({ id: r.id }); }, () => frontOf(tile), r.name); if (!rackMenu.swallowed()) go(e); }}
+          onPointerDown={(e) => { rackMenu.onPointerDown(e); if (!e.button && r.model !== "shelf") { e.stopPropagation(); link.current = r.id; dragged.current = false; } }}
+          onPointerMove={rackMenu.onPointerMove} onPointerUp={rackMenu.onPointerUp} onPointerCancel={rackMenu.onPointerCancel}
           onContextMenu={menuOn(() => [{ label: t("world.newConnection"), run: () => setFrom({ rack: r.id }) }])}>
           {r.model === "shelf"
             ? <ShelfUnit tile={tile} units={rackUnits(r.model)} devices={game.devices.filter((d) => d.rackId === r.id).map((d) => ({ id: d.id, slot: d.slot, height: modelById(d.model).height, light: isOfficeRouter(modelById(d.model)), on: d.on && !loc.tripped, flood: floodedDevice(game, d) && !loc.tripped }))} />
@@ -467,6 +490,7 @@ export const World = memo(function World() {
         })()}
       </svg>
       <OrderChip game={game} loc={loc} />
+      <NextStrip />
       <div className="w-clock">
         <SpeedControl speed={speed} setSpeed={setSpeed} />
         <span className="num">{formatClock(game.hour, game.minute)}</span>
@@ -484,7 +508,7 @@ export const World = memo(function World() {
       {panel?.kind === "tickets" && <TicketsPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "console" && <ConsolePanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "scan" && <ScanPanel title={panel.title} onClose={() => setPanel(null)} />}
-      {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)}
+      {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} device={rackOpen.device} guide={rackOpen.guide} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)}
         onConnectFrom={(device) => { setFrom({ rack: rackOpen.id, device }); setRackOpen(null); }} />}
       {pair && <PairPanel key={`${pair.a} ${pair.b}`} a={pair.a} b={pair.b} from={pair.from} onClose={() => setPair(null)} />}
     </div>

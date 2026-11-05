@@ -1,8 +1,9 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { dateOf, hourOf, yearOf } from "../../../../../sim/00-core/time";
+import { useStore } from "../../../../store";
 import { bankById, monthlyFee, plansFor, tanMethods, type Bank, type BankId, type Plan, type PlanId, type TanMethod } from "../../../../../sim/10-catalog/banks";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
 import { cardDetails, cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft, type Payee } from "../../../../../sim/46-finance/bank";
@@ -98,6 +99,8 @@ function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn
   const [number, setNumber] = useState(saved[0]), [pin, setPin] = useState(saved[1]), [failed, setFailed] = useState(false);
   const [plan, setPlanPick] = useState<PlanId | undefined>(() => plansFor(bank, game.registration?.form ?? "sole")[0]?.id);
   const other = !!game.bank && game.bank.id !== bank.id;
+  const open = useRef<HTMLButtonElement>(null);
+  useEffect(() => { open.current?.scrollIntoView({ block: "center" }); }, []);
   const submit = () => {
     const ok = game.bank?.id === bank.id && number.trim() === game.bank.number && pin.trim() === game.bank.pin;
     setFailed(!ok);
@@ -129,7 +132,7 @@ function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn
       <Box title={t("bank.site.plans")}>
         <Plans game={game} bank={bank} last={(p, serves) => (game.bank && !other ? null
           : <input type="radio" name="plan" aria-label={p.name} disabled={!serves} checked={plan === p.id} onChange={() => setPlanPick(p.id)} />)} />
-        {(!game.bank || other) && plan && <p><button className="bks-btn primary" onClick={() => {
+        {(!game.bank || other) && plan && <p><button ref={open} className="bks-btn primary" onClick={() => {
           if ((other ? act(switchBank, bank.id, plan) : act(openBankAccount, bank.id, plan)).ok) onOpen();
         }}>{other ? t("bank.site.switch", { bank: bank.name }) : t("bank.site.open")}</button></p>}
       </Box>
@@ -243,6 +246,7 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
           <div className="bks-row">
             <button className="bks-btn primary">{b.tan === "itan" || b.tan === "mtan" ? t("bank.site.send") : t(`bank.site.confirm.${b.tan}`)}</button>
             <button type="button" className="bks-btn" onClick={() => act(cancelTransfer)}>{t("bank.site.cancel")}</button>
+            {b.tan === "itan" && game.docs.some((d) => d.id === "tans") && <button type="button" className="bks-btn" onClick={() => useStore.getState().openDoc("tans")}>{t("doc.tans")}</button>}
           </div>
         </form>
       </Box>

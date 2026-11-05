@@ -31,12 +31,15 @@ function firstServer(s: GameState): string {
   for (const c of s.devices.find((d) => d.id === srv)!.components) if (c.kind === "psu") ok(setPlugged(s, srv, c.id, true));
   settle(s);
   expect(checkDone(s, "mountRouter")).toBe(false);
+  expect(checkDone(s, "serverLinked")).toBe(false);
   ok(connect(s, { device: srv, port: 0 }, { device: "dev5", port: 0 }));
   settle(s);
   expect(linkStatus(s, srv).online).toBe(false);
+  expect(checkDone(s, "serverLinked")).toBe(false);
   ok(connect(s, { device: "dev5", port: 4 }, { device: "dev6", port: 0 }));
   settle(s);
   expect(checkDone(s, "mountRouter")).toBe(true);
+  expect(checkDone(s, "serverLinked")).toBe(true);
   run(s, 1);
   expect(linkStatus(s, srv).online).toBe(true);
   ok(setPortShare(s, "dev5", srv, "web"));

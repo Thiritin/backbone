@@ -31,6 +31,7 @@ export function NoteApp({ id }: { id: string }) {
   if (doc.form) return <FormDoc doc={doc} />;
   // The bank's TAN list is printed: it shows the list as it stands and takes no typing.
   const printed = id === "tans";
+  if (printed) return <TanSheet />;
   return (
     <textarea
       className="note-body"
@@ -40,6 +41,26 @@ export function NoteApp({ id }: { id: string }) {
       spellCheck
       onChange={(e) => { pending.current = e.target.value; setBody(e.target.value); }}
     />
+  );
+}
+
+// The printed TAN list as a grid read down the columns; the code the bank asks for next is marked and scrolled into view.
+function TanSheet() {
+  const b = useStore((s) => s.game.bank), mark = useRef<HTMLElement>(null);
+  const next = b ? (b.pending?.index ?? b.tans.codes.findIndex((_, i) => !b.tans.used.includes(i))) : -1;
+  useEffect(() => { mark.current?.scrollIntoView?.({ block: "start" }); }, [next]);
+  if (!b) return null;
+  const rows = Math.ceil(b.tans.codes.length / 4);
+  return (
+    <div className="note-body tan-sheet" aria-label={t("doc.tans")}>
+      <div className="tan-grid" style={{ gridTemplateRows: `repeat(${rows}, auto)` }}>
+        {b.tans.codes.map((c, i) => (
+          <span key={i} ref={i === next ? mark : undefined} className={`tan-cell${i === next ? " now" : ""}${b.tans.used.includes(i) ? " used" : ""}`}>
+            <i>{String(i + 1).padStart(3, "0")}</i>{b.tans.used.includes(i) ? "------" : c}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 

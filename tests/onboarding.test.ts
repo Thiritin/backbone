@@ -51,7 +51,7 @@ describe("onboarding cards", () => {
     expect(b.current?.id).toBe("buyServer");
     s.checklist = [...s.checklist, "setup", "shareWeb"];
     expect(waiting(s, "hosting")).toBe(true);
-    s.checklist = [...s.checklist, "buyServer", "mountServer", "mountRouter", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "payBill"];
+    s.checklist = [...s.checklist, "buyServer", "mountServer", "mountRouter", "serverLinked", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "payBill"];
     expect(cardBoard(s).current).toBeUndefined();
     s.hour += 72;
     expect(waiting(s, "website")).toBe(false);
