@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { FullscreenButton } from "../FullscreenButton";
 import { floodedDevice } from "../../sim/60-infra/network";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
@@ -174,7 +175,7 @@ export function World() {
 
   // Escape drops a cable in progress; open panels close themselves.
   const escape = useRef(() => {});
-  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (!useEdit.getState().escape()) setEditing(false); } };
+  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (!useEdit.getState().escape()) setEditing(false); } else useStore.getState().setPause(true); };
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
@@ -424,6 +425,7 @@ export function World() {
 
   return (
     <div className="world" aria-label={loc.name}>
+      <FullscreenButton className="world-fs" />
       <svg ref={svg} className={`world-svg ${seasons}${night ? " w-night" : ""}`} style={leaf}
         viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
