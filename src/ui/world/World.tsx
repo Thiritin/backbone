@@ -263,7 +263,7 @@ export const World = memo(function World() {
   };
   const seat = (): Pt | null => seatOf(useStore.getState().game, loc.id, "player");
 
-  const staff = useFigures(game, loc, plan, tiles, speed);
+  const staff = useFigures(game, loc, plan, tiles, speed, !!(panel || rackOpen || pair));
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const waiting = boxAt(game, loc.id).length;
   // A letterbox notification clicks the box for the player.
@@ -327,7 +327,7 @@ export const World = memo(function World() {
   }
   const run = (label: string, id = ""): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
-    storage: () => setPanel({ kind: "storage", title: "" }),
+    storage: () => { if (game.devices.some((d) => d.store === loc.id && !d.chassisId)) setPanel({ kind: "storage", title: "" }); },
     power: () => setPanel({ kind: "power", title: t(label), id }),
     door: () => openDoor(),
     post: () => { if (waiting) act(fetchPost); if (atDesk(useStore.getState().game).length) setPanel({ kind: "post", title: t(label) }); },
