@@ -29,11 +29,23 @@ export function cleanRecord(zone: string, rec: RecordDraft): Omit<DnsRecord, "id
   return { type: rec.type, name, ttl: rec.ttl, data };
 }
 
+// Names the field that makes a draft invalid, so the player sees what to fix.
+export function recordError(zone: string, rec: RecordDraft): string {
+  const data = rec.data.trim();
+  if (!relative(zone, rec.name) || (rec.type === "CNAME" && relative(zone, rec.name) === "@")) return "error.recordName";
+  if (!data) return "error.recordValue";
+  if (rec.type === "A" && !isIpv4(data)) return "error.recordIp";
+  if (rec.type === "AAAA" && !/^[0-9a-f:]*:[0-9a-f:]*$/i.test(data)) return "error.recordIp";
+  if (rec.type === "MX" && !/^\d{1,5} [a-z0-9._-]+$/i.test(data)) return /^\d{1,5}( |$)/.test(data) ? "error.recordHost" : "error.recordPriority";
+  if (rec.type === "MX" && isIpv4(data.split(" ")[1].replace(/\.$/, ""))) return "error.recordHost";
+  return "error.badRecord";
+}
+
 // Saves a record; a record without an id is new. The change applies at once, and a wrong address for the site takes it offline.
 export function saveRecord(s: GameState, zone: string, rec: RecordDraft): ActionResult {
   if (!ownerOf(s, zone)) return fail("error.unknownZone");
   const clean = cleanRecord(zone, rec);
-  if (!clean) return fail("error.badRecord");
+  if (!clean) return fail(recordError(zone, rec));
   const z = zoneOf(s, zone), id = rec.id ?? `r${s.nextId++}`, next: DnsRecord = { id, ...clean };
   if (rec.id && !z.records.some((r) => r.id === rec.id)) return fail("error.badRecord");
   putZone(s, zone, { ...z, records: rec.id ? z.records.map((r) => (r.id === id ? next : r)) : [...z.records, next] });

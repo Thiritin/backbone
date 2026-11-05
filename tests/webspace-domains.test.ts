@@ -60,7 +60,7 @@ describe("zone editor", () => {
     expect(zoneOf(s, "sockenshop.de").records.find((r) => r.id === rid)!.data).toBe("203.0.113.10");
     ok(dom.deleteWebRecord(s, id, "sockenshop.de", rid));
     expect(zoneOf(s, "sockenshop.de").records.some((r) => r.id === rid)).toBe(false);
-    expect(err(dom.saveWebRecord(s, id, "sockenshop.de", { type: "A", name: "x", ttl: 3600, data: "nope" }))).toBe("error.badRecord");
+    expect(err(dom.saveWebRecord(s, id, "sockenshop.de", { type: "A", name: "x", ttl: 3600, data: "nope" }))).toBe("error.recordIp");
     expect(err(dom.saveWebRecord(s, id, "other.de", { type: "A", name: "x", ttl: 3600, data: "1.2.3.4" }))).toBe("error.unknownZone");
   });
 

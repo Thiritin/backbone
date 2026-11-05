@@ -263,7 +263,7 @@ export function BrowserApp() {
   const tab = tabs.find((x) => x.id === active) ?? tabs[0];
   const url = tab.history[tab.at];
   const r = resolve(game, url);
-  const [addr, setAddr] = useState(url);
+  const [addr, setAddr] = useState(url), field = useRef<HTMLInputElement>(null);
   useEffect(() => setAddr(url), [url, tab.id]);
 
   const patch = (id: number, f: (t: Tab) => Tab) => setTabs(tabs.map((x) => (x.id === id ? f(x) : x)));
@@ -352,7 +352,7 @@ export function BrowserApp() {
   const toggleMark = () => setMarks(marked ? marks.filter((m) => m.url !== url) : [...marks, { title: titleOf(game, r), url }]);
 
   return (
-    <div className="br" ref={root} onDragOver={(e) => carried && carried.win !== win.id && e.preventDefault()} onDrop={take}>
+    <div className="br" ref={root} onKeyDown={(e) => { if (e.key === "l" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); field.current?.focus(); field.current?.select(); } }} onDragOver={(e) => carried && carried.win !== win.id && e.preventDefault()} onDrop={take}>
       <div className="br-tabs" role="tablist">
         {tabs.map((x, i) => {
           const rx = resolve(game, x.history[x.at]);
@@ -378,7 +378,7 @@ export function BrowserApp() {
         <button className="btn icon ghost" aria-label={t("misc1.browser.home")} onClick={() => go(homeUrl())}><House aria-hidden /></button>
         <form className="br-addr" onSubmit={(e) => { e.preventDefault(); if (addr.trim()) go(addr); }}>
           <Favicon game={game} r={r} />
-          <input aria-label={t("misc1.browser.address")} value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />
+          <input ref={field} aria-label={t("misc1.browser.address")} value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} onMouseDown={(e) => { e.preventDefault(); e.currentTarget.focus(); e.currentTarget.select(); }} />
           <button type="button" className="br-star" aria-label={t("misc1.browser.bookmark")} aria-pressed={marked} disabled={isDefault} onClick={toggleMark}><Star aria-hidden /></button>
         </form>
         <DownloadsButton game={game} />

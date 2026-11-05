@@ -11,6 +11,7 @@ export default {
   "registrarPanel.status.transfer": () => "Transfert en cours",
   "registrarPanel.status.cancelled": () => "Résilié",
   "registrarPanel.status.gone": () => "Parti",
+  "registrarPanel.status.registering": () => "Enregistrement",
   "registrarPanel.generate": () => "Générer le code d'autorisation",
   "registrarPanel.cancel": () => "Résilier",
   "registrarPanel.renew": () => "Renouveler",
