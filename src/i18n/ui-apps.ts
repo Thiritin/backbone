@@ -222,7 +222,7 @@ export default {
   "apps.guide.setup": () => "Set up your first web host so customers can order web hosting. Each step is checked off once it is done.",
   "apps.guide.wiki": () => "Wiki",
   "apps.guide.time": () => "Time",
-  "apps.guide.timeText": () => "The clock starts paused. Press <kbd>Space</kbd> to start or pause it, and <kbd>1</kbd> to <kbd>3</kbd> to switch between 1×, 8× and 60× speed, and <kbd>4</kbd> to skip ahead until something happens. The buttons in the menu bar do the same.",
+  "apps.guide.timeText": () => "The clock runs at normal speed. Press <kbd>Space</kbd> to start or pause it, and <kbd>1</kbd> to <kbd>3</kbd> to switch between 1×, 8× and 60× speed, and <kbd>4</kbd> to skip ahead until something happens. The buttons in the menu bar do the same.",
   "apps.guide.windows": () => "Apps and windows",
   "apps.guide.windowsText": () => "Open apps from the dock at the bottom. Drag a window by its title bar and resize it from any edge. The three buttons on the left of a window close, minimize and zoom it.",
   "apps.guide.notifications": () => "Notifications",

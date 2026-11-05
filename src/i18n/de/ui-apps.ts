@@ -222,7 +222,7 @@ export default {
   "apps.guide.setup": () => "Richte deinen ersten Webhost ein, damit Kunden Webhosting bestellen können. Jeder Schritt wird abgehakt, sobald er erledigt ist.",
   "apps.guide.wiki": () => "Wiki",
   "apps.guide.time": () => "Zeit",
-  "apps.guide.timeText": () => "Die Uhr startet pausiert. Drücke <kbd>Leertaste</kbd>, um sie zu starten oder zu pausieren, <kbd>1</kbd> bis <kbd>3</kbd> für 1×, 8× und 60× Tempo und <kbd>4</kbd>, um vorzuspulen, bis etwas passiert. Die Schaltflächen in der Menüleiste tun dasselbe.",
+  "apps.guide.timeText": () => "Die Uhr läuft in normaler Geschwindigkeit. Drücke <kbd>Leertaste</kbd>, um sie zu starten oder zu pausieren, <kbd>1</kbd> bis <kbd>3</kbd> für 1×, 8× und 60× Tempo und <kbd>4</kbd>, um vorzuspulen, bis etwas passiert. Die Schaltflächen in der Menüleiste tun dasselbe.",
   "apps.guide.windows": () => "Apps und Fenster",
   "apps.guide.windowsText": () => "Öffne Apps über das Dock unten. Ziehe ein Fenster an der Titelleiste und ändere seine Größe an jeder Kante. Die drei Knöpfe links im Fenster schließen, minimieren und zoomen es.",
   "apps.guide.notifications": () => "Mitteilungen",

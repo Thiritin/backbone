@@ -222,7 +222,7 @@ export default {
   "apps.guide.setup": () => "Configura o teu primeiro host web para que os clientes possam encomendar hospedagem web. Cada passo fica assinalado assim que for concluído.",
   "apps.guide.wiki": () => "Wiki",
   "apps.guide.time": () => "Tempo",
-  "apps.guide.timeText": () => "O relógio começa em pausa. Prime <kbd>Espaço</kbd> para o iniciar ou pausar, <kbd>1</kbd> a <kbd>3</kbd> para alternar entre as velocidades 1×, 8× e 60×, e <kbd>4</kbd> para avançar até acontecer alguma coisa. Os botões da barra de menus fazem o mesmo.",
+  "apps.guide.timeText": () => "O relógio corre à velocidade normal. Prime <kbd>Espaço</kbd> para o iniciar ou pausar, <kbd>1</kbd> a <kbd>3</kbd> para alternar entre as velocidades 1×, 8× e 60×, e <kbd>4</kbd> para avançar até acontecer alguma coisa. Os botões da barra de menus fazem o mesmo.",
   "apps.guide.windows": () => "Apps e janelas",
   "apps.guide.windowsText": () => "Abre as apps a partir do Dock em baixo. Arrasta uma janela pela barra de título e redimensiona-a a partir de qualquer margem. Os três botões à esquerda de uma janela fecham-na, minimizam-na e ampliam-na.",
   "apps.guide.notifications": () => "Notificações",
