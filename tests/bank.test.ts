@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { dateOf, hourOf } from "../src/sim/00-core/time";
 import { cardDetails, iban, openAccount, type Draft } from "../src/sim/46-finance/bank";
-import { buyCart, deliveryWait, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
+import { buyCart, deliveryWait, paidOrders, PREPAY_HOURS, type CartLine } from "../src/sim/90-actions/hardware";
 import { applyCard, applyOverdraft, deleteStandingOrder, startStandingOrder } from "../src/sim/90-actions/bank";
 import { withServer, newGame, mailsAbout } from "./fixtures";
 import { lineCut, lineFactor, supplierAccount, supplierCode, supplierHost, type Payable } from "../src/sim/46-finance/payables";
@@ -249,9 +249,11 @@ describe("card and overdraft", () => {
     expect(s.cash).toBe(cash);
     const byCard = s.devices.at(-1)!;
     expect(byCard.arriveAt).toBe(s.hour + wait);
-    expect(buyCart(s, CART, { kind: "prepay" }, "loc1").ok).toBe(true);
+    expect(buyCart(s, CART, { kind: "transfer" }, "loc1").ok).toBe(true);
     expect(s.devices.at(-1)!.arriveAt).toBe(s.hour + wait + PREPAY_HOURS + 24);
-    expect(s.cash).toBeLessThan(cash);
+    expect(s.cash).toBe(cash);
+    const orders = s.payables.filter((p) => p.supplier === "hardware");
+    expect(orders.map((p) => [p.method, p.paidAt === null])).toEqual([["card", false], ["transfer", true]]);
     skip(s, hourOf(new Date(Date.UTC(2005, 1, 1))) - s.hour);
     expect(s.bank!.card!.spent).toEqual([]);
     expect(s.payables.find((p) => p.supplier === "card")).toMatchObject({ amount: 2500, paidAt: null });
@@ -259,7 +261,7 @@ describe("card and overdraft", () => {
 
   it("takes only a card for SuperMacro", () => {
     const s = banked();
-    expect(buyCart(s, [{ model: "g1-compute", brand: "SuperMacro", qty: 1 }], { kind: "prepay" }, "loc1")).toEqual({ ok: false, error: "error.cardOnly" });
+    expect(buyCart(s, [{ model: "g1-compute", brand: "SuperMacro", qty: 1 }], { kind: "transfer" }, "loc1")).toEqual({ ok: false, error: "error.cardOnly" });
   });
 
   it("keeps a company inside its overdraft solvent and charges interest", () => {
@@ -355,13 +357,19 @@ describe("payables", () => {
 
   it("invoices hardware after three paid orders and ships nothing while that invoice is overdue", () => {
     const s = banked();
-    expect(buyCart(s, CART, { kind: "invoice" }, "loc1")).toEqual({ ok: false, error: "error.noInvoice" });
-    for (let i = 0; i < 3; i++) { buyCart(s, [{ model: "sw-8", brand: "Sysko", qty: 1 }], { kind: "prepay" }, "loc1"); run(s, 1); }
-    expect(buyCart(s, CART, { kind: "invoice" }, "loc1").ok).toBe(true);
-    const bill = s.payables.find((p) => p.supplier === "hardware")!;
+    expect(buyCart(s, CART, { kind: "onAccount" }, "loc1")).toEqual({ ok: false, error: "error.noInvoice" });
+    for (let i = 0; i < 3; i++) {
+      buyCart(s, [{ model: "sw-8", brand: "Sysko", qty: 1 }], { kind: "transfer" }, "loc1");
+      expect(pay(s, s.payables.at(-1)!).ok).toBe(true);
+      run(s, 72);
+    }
+    expect(paidOrders(s)).toBe(3);
+    expect(buyCart(s, CART, { kind: "onAccount" }, "loc1").ok).toBe(true);
+    const bill = s.payables.filter((p) => p.supplier === "hardware").at(-1)!;
+    expect(bill).toMatchObject({ method: "onAccount", doc: "invoice", paidAt: null });
     expect(bill.name).toBe("Alternatte");
     run(s, bill.dueAt + 1 - s.hour);
-    expect(buyCart(s, CART, { kind: "prepay" }, "loc1")).toEqual({ ok: false, error: "error.shopUnpaid" });
+    expect(buyCart(s, CART, { kind: "transfer" }, "loc1")).toEqual({ ok: false, error: "error.shopUnpaid" });
   });
 });
 

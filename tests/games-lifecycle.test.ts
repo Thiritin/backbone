@@ -23,7 +23,7 @@ const ok = (r: ActionResult) => {
 };
 
 function game(title: string, year = 2018, panel: "tcadmen" | "multikraft" = "tcadmen") {
-  const s: GameState = { ...withServer(newGame(1)), cash: 100_000 };
+  const s: GameState = { ...withServer(newGame(3)), cash: 100_000 };
   const two = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, two, "rack2", 2));
   ok(connect(s, { device: two, port: 0 }, { device: "dev4", port: 1 }));

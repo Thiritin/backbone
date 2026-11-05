@@ -67,7 +67,7 @@ describe("datastores", () => {
     ok(attachDatastore(s, c, store, "fc"));
     expect(s.cash).toBe(cash - 1400);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.fcAdapters", amount: -1400 });
-    expect(s.payables).toMatchObject([{ supplier: "hardware", method: "cash", doc: "receipt", amount: 1400 }]);
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "hardware", method: "cash", doc: "receipt", amount: 1400 });
   });
 
   it("orders Fibre Channel adapters on an open invoice once a bank exists", () => {
@@ -77,7 +77,7 @@ describe("datastores", () => {
     expect(attachDatastore(s, c, store, "fc", "cash")).toMatchObject({ ok: false, error: "error.noCash" });
     ok(attachDatastore(s, c, store, "fc"));
     expect(s.cash).toBe(cash);
-    expect(s.payables).toMatchObject([{ supplier: "hardware", method: "transfer", doc: "invoice", amount: 1400, paidAt: null }]);
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "hardware", method: "transfer", doc: "invoice", amount: 1400, paidAt: null });
   });
 
   it("moves only datastore VMs live between nodes before 2012, and local ones too from 2012", () => {

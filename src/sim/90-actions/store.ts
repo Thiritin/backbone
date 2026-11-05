@@ -1,8 +1,9 @@
 import { yearOf } from "../00-core/time";
 import { isAvailable, SKILLS, skillById } from "../10-catalog/research";
-import { monthlyCharge, storeItem, subscriptionEntry } from "../10-catalog/store";
+import { storeItem, subscriptionEntry } from "../10-catalog/store";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { spend } from "./purchase";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -42,10 +43,8 @@ export function install(s: GameState, id: string): ActionResult {
   const blocked = storeBlocker(s, id);
   if (blocked) return fail(blocked);
   if (s.installed.includes(id)) return fail("error.installed");
-  const price = monthlyCharge(s, item);
-  if (price > 0 && s.cash < price) return fail("error.noCash");
-  s.cash = Math.round((s.cash - price) * 100) / 100;
-  if (price > 0) s.ledger = [...s.ledger, subscriptionEntry(s, item)];
+  const placed = spend(s, { supplier: "pear", name: "Pear", lines: [subscriptionEntry(s, item)] });
+  if (!placed.ok) return placed;
   s.installed = [...s.installed, id];
   return { ok: true };
 }
