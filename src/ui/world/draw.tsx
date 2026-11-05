@@ -27,10 +27,10 @@ const onLeft = (f: Fixture) => f.x === 0 && f.y > 0;
 // The plane d units out of the wall behind f, where the front of a box d deep sits.
 const wallFront = (f: Fixture, z: number, d: number) => (onLeft(f) ? onX(d / 32, f.y + 1, z) : onY(f.x, d / 32, z));
 // A box d units deep standing out of the wall behind f, from u0 to u1 along it and z0 to z1 high.
-function WallBox({ f, u0, u1, z0, z1, d, tone }: { f: Fixture; u0: number; u1: number; z0: number; z1: number; d: number; tone: string }) {
+function WallBox({ f, u0, u1, z0, z1, d, d0 = 0, tone }: { f: Fixture; u0: number; u1: number; z0: number; z1: number; d: number; d0?: number; tone: string }) {
   return onLeft(f)
-    ? <Prism x0={0} x1={d / 32} y0={f.y + 1 - u1 / 32} y1={f.y + 1 - u0 / 32} z0={z0} z1={z1} tone={tone} />
-    : <Prism x0={f.x + u0 / 32} x1={f.x + u1 / 32} y0={0} y1={d / 32} z0={z0} z1={z1} tone={tone} />;
+    ? <Prism x0={d0 / 32} x1={d / 32} y0={f.y + 1 - u1 / 32} y1={f.y + 1 - u0 / 32} z0={z0} z1={z1} tone={tone} />
+    : <Prism x0={f.x + u0 / 32} x1={f.x + u1 / 32} y0={d0 / 32} y1={d / 32} z0={z0} z1={z1} tone={tone} />;
 }
 
 // A box over the grid rectangle x0..x1, y0..y1 from height z0 to z1, in the face tones of its tone class.
@@ -856,8 +856,6 @@ export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number;
 export const CORDLESS_YEAR = 2010;
 export function Phone({ f, ringing, cordless, near = false }: { f: Fixture; ringing: boolean; cordless: boolean; near?: boolean }) {
   const [P0, P1] = wallSlot("phone", near), ring = ringing ? "w-ringing" : undefined;
-  // One handset outline lying across the plate: chunky ear and mouth caps joined by a narrower grip.
-  const handset = "M0.6,0 h1.4 q0.6,0 0.6,0.6 v0.7 h3.2 v-0.7 q0,-0.6 0.6,-0.6 h1.4 q0.6,0 0.6,0.6 v5.8 q0,0.6 -0.6,0.6 h-1.4 q-0.6,0 -0.6,-0.6 v-0.7 h-3.2 v0.7 q0,0.6 -0.6,0.6 h-1.4 q-0.6,0 -0.6,-0.6 v-5.8 q0,-0.6 0.6,-0.6 Z";
   return (
     <g data-slot="phone" data-phone={ringing ? "ringing" : "idle"}>
       {cordless ? (
@@ -879,26 +877,25 @@ export function Phone({ f, ringing, cordless, near = false }: { f: Fixture; ring
         </>
       ) : (
         <>
-          <WallBox f={f} u0={P0} u1={P1} z0={40} z1={71} d={3} tone="w-tone-beige" />
-          <WallBox f={f} u0={P0 + 3.4} u1={P0 + 5.4} z0={57.8} z1={60} d={4.6} tone="w-tone-slate" />
-          <WallBox f={f} u0={P0 + 8.6} u1={P0 + 10.6} z0={57.8} z1={60} d={4.6} tone="w-tone-slate" />
-          <WallBox f={f} u0={P0 + 1.5} u1={P0 + 10} z0={42} z1={56} d={4.2} tone="w-tone-beige" />
-          <g transform={wallFront(f, 56, 4.2)}>
+          <WallBox f={f} u0={P0 + 2} u1={P0 + 12} z0={44} z1={66} d={2} tone="w-tone-beige" />
+          <g transform={wallFront(f, 61.5, 2.2)}>
+            <path className="w-phone-coil" d={`M${P0 + 11.1},0 v0.9 ${"a0.8,0.7 0 1 0 0,0.9 ".repeat(17)}v1.1`} />
+          </g>
+          <WallBox f={f} u0={P0 + 3.5} u1={P0 + 7.5} z0={47} z1={57} d={3.5} d0={2} tone="w-tone-beige" />
+          <g transform={wallFront(f, 57, 3.5)}>
             {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => (
               <g key={`${r}${c}`}>
-                <rect className="w-phone-key-edge" x={P0 + 2.6 + c * 2.4} y={1.3 + r * 3.2 + 0.4} width="1.6" height="2" />
-                <rect className="w-phone-key" x={P0 + 2.6 + c * 2.4} y={1.3 + r * 3.2} width="1.6" height="2" />
+                <rect className="w-phone-key-edge" x={P0 + 3.95 + c * 1.3} y={1.6 + r * 2.2} width="0.9" height="1.5" />
+                <rect className="w-phone-key" x={P0 + 3.95 + c * 1.3} y={1.3 + r * 2.2} width="0.9" height="1.5" />
               </g>
             )))}
           </g>
+          <WallBox f={f} u0={P0 + 6.1} u1={P0 + 6.8} z0={60.2} z1={63.2} d={3} d0={2} tone="w-tone-slate" />
+          <WallBox f={f} u0={P0 + 7.2} u1={P0 + 7.9} z0={60.2} z1={63.2} d={3} d0={2} tone="w-tone-slate" />
           <g className={ring}>
-            <g transform={wallFront(f, 67, 6)}>
-              <path className="w-handset-side" d={handset} transform={`translate(${P0 + 3.4} 0.7)`} />
-              <path className="w-handset-face" d={handset} transform={`translate(${P0 + 2.8} 0)`} />
-            </g>
-          </g>
-          <g transform={wallFront(f, 60, 6)}>
-            <path className="w-phone-cord-wall" d={`M${P0 + 10.4},0 q0.8,0.4 1.3,1.2 ${Array.from({ length: 8 }, () => "q-1.8,0.5 0,1 q1.8,0.5 0,1").join(" ")}`} fill="none" />
+            <WallBox f={f} u0={P0 + 3} u1={P0 + 5.2} z0={61.9} z1={65} d={4} d0={2} tone="w-tone-handset" />
+            <WallBox f={f} u0={P0 + 8.8} u1={P0 + 11} z0={61.9} z1={65} d={4} d0={2} tone="w-tone-handset" />
+            <WallBox f={f} u0={P0 + 3} u1={P0 + 11} z0={63.2} z1={65} d={4} d0={2} tone="w-tone-handset" />
           </g>
         </>
       )}

@@ -2,7 +2,7 @@
 // Wall items span u0..u1 along the wall in units of 32 per tile; the light switch sits in the tile past the door's.
 export const WALL_SLOTS = {
   switch: [8, 14],
-  phone: [16, 26],
+  phone: [16, 30],
   letterbox: [15, 27],
 } as const;
 
