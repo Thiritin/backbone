@@ -11,6 +11,7 @@ export default {
   "registrarPanel.status.transfer": () => "Transfer läuft",
   "registrarPanel.status.cancelled": () => "Gekündigt",
   "registrarPanel.status.gone": () => "Weg",
+  "registrarPanel.status.registering": () => "Wird registriert",
   "registrarPanel.generate": () => "Auth-Code erzeugen",
   "registrarPanel.cancel": () => "Kündigen",
   "registrarPanel.renew": () => "Verlängern",

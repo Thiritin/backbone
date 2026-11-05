@@ -108,6 +108,8 @@ export default {
   "ionose.domain.points": (p) => `Eingehende E-Mails gehen an: ${p.provider}`,
   "ionose.domain.check": () => "Prüfen",
   "ionose.domain.registrar": () => "DNS-Einstellungen beim Registrar öffnen",
+  "ionose.domain.autoSet": () => "Einträge automatisch setzen",
+  "ionose.domain.autoSetDone": () => "Einträge gesetzt",
   "ionose.switch.create": () => "Legen Sie die Postfächer beim neuen Anbieter an.",
   "ionose.switch.mx": () => "Richten Sie die MX-Einträge der Domain auf den neuen Anbieter.",
   "ionose.switch.import": () => "Importieren Sie die E-Mails jedes Postfachs beim neuen Anbieter.",

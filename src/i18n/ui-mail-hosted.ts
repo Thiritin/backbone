@@ -109,6 +109,8 @@ export default {
   "ionose.domain.points": (p) => `Incoming mail goes to: ${p.provider}`,
   "ionose.domain.check": () => "Check",
   "ionose.domain.registrar": () => "Open DNS settings at the registrar",
+  "ionose.domain.autoSet": () => "Set records automatically",
+  "ionose.domain.autoSetDone": () => "Records set",
   "ionose.switch.create": () => "Create the mailboxes at the new provider.",
   "ionose.switch.mx": () => "Point the MX records of the domain at the new provider.",
   "ionose.switch.import": () => "Import the e-mail of every mailbox on the new side.",

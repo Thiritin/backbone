@@ -15,7 +15,7 @@ import type { GameState } from "../../../../../../sim/50-state";
 import { mxHostsAt, recordAt } from "../../../../../../sim/60-infra/company-zone";
 import { registrarUrl } from "../../../../../../sim/80-business/browser";
 import { endTenant, resubscribe, setTenantPlan } from "../../../../../../sim/90-actions/mail";
-import { checkIonoseDomain, orderIonose } from "../../../../../../sim/90-actions/mail-hosted";
+import { checkIonoseDomain, orderIonose, setIonoseRecords } from "../../../../../../sim/90-actions/mail-hosted";
 import {
   addAlias, createMailAccount, deleteMailAccount, removeAlias, requestPasswordReset, resetPassword, setAccountPassword, setAccountRoles, setCatchAll, setForward, setPrimary,
 } from "../../../../../../sim/90-actions/mailbox";
@@ -410,7 +410,7 @@ function Plan({ game, tenant }: ControlProps) {
 }
 
 function Domain({ game, tenant, go }: ControlProps & { go: (url: string) => void }) {
-  const act = usePageAct(), found = mxHostsAt(game, game.hour), target = mxTarget(game);
+  const act = usePageAct(), [auto, setAuto] = useState(false), found = mxHostsAt(game, game.hour), target = mxTarget(game);
   const spf = recordAt(game, "TXT", "@", game.hour).some((r) => r.data.replace(/"/g, "").trim() === IONOSE_SPF);
   return (
     <>
@@ -427,6 +427,8 @@ function Domain({ game, tenant, go }: ControlProps & { go: (url: string) => void
       <div className="io-buttons">
         <button type="button" onClick={() => act(checkIonoseDomain, tenant.id)}>{t("ionose.domain.check")}</button>
         <button type="button" className="io-quiet" onClick={() => go(`${registrarUrl(game)}login/dns`)}>{t("ionose.domain.registrar")}</button>
+        {game.registrar?.id === "nameCheep" && game.company.domain === tenant.domain && <button type="button" onClick={() => setAuto(act(setIonoseRecords, tenant.id).ok)}>{t("ionose.domain.autoSet")}</button>}
+        {auto && <span className="io-ok">{t("ionose.domain.autoSetDone")}</span>}
       </div>
     </>
   );

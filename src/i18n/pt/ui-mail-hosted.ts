@@ -108,6 +108,8 @@ export default {
   "ionose.domain.points": (p) => `O correio recebido é encaminhado para: ${p.provider}`,
   "ionose.domain.check": () => "Verificar",
   "ionose.domain.registrar": () => "Abrir as definições de DNS no registador",
+  "ionose.domain.autoSet": () => "Definir registos automaticamente",
+  "ionose.domain.autoSetDone": () => "Registos definidos",
   "ionose.switch.create": () => "Crie as caixas de correio no novo fornecedor.",
   "ionose.switch.mx": () => "Aponte os registos MX do domínio para o novo fornecedor.",
   "ionose.switch.import": () => "Importe os e-mails de cada caixa de correio no novo fornecedor.",

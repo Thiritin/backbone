@@ -108,6 +108,8 @@ export default {
   "ionose.domain.points": (p) => `Le courrier entrant est dirigé vers : ${p.provider}`,
   "ionose.domain.check": () => "Vérifier",
   "ionose.domain.registrar": () => "Ouvrir les paramètres DNS chez le bureau d'enregistrement",
+  "ionose.domain.autoSet": () => "Définir les enregistrements automatiquement",
+  "ionose.domain.autoSetDone": () => "Enregistrements définis",
   "ionose.switch.create": () => "Créez les boîtes aux lettres chez le nouveau prestataire.",
   "ionose.switch.mx": () => "Faites pointer les enregistrements MX du domaine vers le nouveau prestataire.",
   "ionose.switch.import": () => "Importez les e-mails de chaque boîte aux lettres chez le nouveau prestataire.",

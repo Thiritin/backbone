@@ -62,7 +62,7 @@ describe("managed zone records", () => {
 describe("record values", () => {
   it("refuse an address as MX target in every zone", () => {
     const s = readyGame(3);
-    expect(err(setCompanyRecord(s, { type: "MX", name: "@", ttl: 3600, data: "10 212.1.87.145" }))).toBe("error.badRecord");
+    expect(err(setCompanyRecord(s, { type: "MX", name: "@", ttl: 3600, data: "10 212.1.87.145" }))).toBe("error.recordHost");
     const zone = s.domains[0]?.name;
     if (zone) expect(saveRecord(s, zone, { type: "MX", name: "@", ttl: 3600, data: "10 212.1.87.145" }).ok).toBe(false);
   });

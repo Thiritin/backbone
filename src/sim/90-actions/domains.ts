@@ -2,7 +2,7 @@ import { nowHours } from "../00-core/time";
 import { isManaged, settled, visible, type CompanyRecord } from "../60-infra/company-zone";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
-import { cleanRecord, type RecordDraft } from "./netsvc-dns";
+import { cleanRecord, recordError, type RecordDraft } from "./netsvc-dns";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -14,7 +14,8 @@ export function setCompanyRecord(s: GameState, rec: RecordDraft): ActionResult {
   const domain = s.company.domain;
   if (!domain) return fail("error.needsDomain");
   const clean = cleanRecord(domain, rec), hour = nowHours(s), old = rec.id ? s.company.zone.find((r) => r.id === rec.id && !r.gone) : undefined;
-  if (!clean || (rec.id && !old)) return fail("error.badRecord");
+  if (!clean) return fail(recordError(domain, rec));
+  if (rec.id && !old) return fail("error.badRecord");
   if (isManaged(s, clean.type, clean.name)) return fail("error.managedRecord");
   const id = rec.id ?? `z${s.nextId++}`, next: CompanyRecord = { id, ...clean, at: hour, was: old ? visible(old, hour) : null };
   s.company = { ...s.company, zone: prune(old ? s.company.zone.map((r) => (r.id === id ? next : r)) : [...s.company.zone, next], hour) };

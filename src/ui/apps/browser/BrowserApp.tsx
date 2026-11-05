@@ -260,7 +260,7 @@ export function BrowserApp() {
   const tab = tabs.find((x) => x.id === active) ?? tabs[0];
   const url = tab.history[tab.at];
   const r = resolve(game, url);
-  const [addr, setAddr] = useState(url);
+  const [addr, setAddr] = useState(url), sel = useRef(false);
   useEffect(() => setAddr(url), [url, tab.id]);
 
   const patch = (id: number, f: (t: Tab) => Tab) => setTabs(tabs.map((x) => (x.id === id ? f(x) : x)));
@@ -375,7 +375,7 @@ export function BrowserApp() {
         <button className="btn icon ghost" aria-label={t("misc1.browser.home")} onClick={() => go(homeUrl())}><House aria-hidden /></button>
         <form className="br-addr" onSubmit={(e) => { e.preventDefault(); if (addr.trim()) go(addr); }}>
           <Favicon game={game} r={r} />
-          <input aria-label={t("misc1.browser.address")} value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />
+          <input aria-label={t("misc1.browser.address")} value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} onMouseUp={(e) => { if (sel.current) e.preventDefault(); sel.current = false; }} onMouseDown={(e) => { sel.current = document.activeElement !== e.currentTarget; }} />
           <button type="button" className="br-star" aria-label={t("misc1.browser.bookmark")} aria-pressed={marked} disabled={isDefault} onClick={toggleMark}><Star aria-hidden /></button>
         </form>
         <DownloadsButton game={game} />
