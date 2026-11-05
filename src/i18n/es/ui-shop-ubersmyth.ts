@@ -10,6 +10,7 @@ export default {
   "ubersmyth.nav.options": () => "Opciones de plan",
   "ubersmyth.nav.servers": () => "Gestor de dispositivos",
   "ubersmyth.nav.licence": () => "Licencia",
+  "ubersmyth.nav.settings": () => "Configuración",
   "ubersmyth.nav.updates": () => "Actualizaciones",
   "ubersmyth.group.overview": () => "Resumen",
   "ubersmyth.group.billing": () => "Facturación",

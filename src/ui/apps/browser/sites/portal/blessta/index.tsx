@@ -57,7 +57,7 @@ function Admin(props: SkinProps) {
       {era === "paradigm" && <p className="bl-crumb">{t(`blessta.group.${group}`)}</p>}
       <section className="bl-box">
         <h1 className="bl-boxhead">{label[current]}</h1>
-        <div className="bl-boxbody"><AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={props.browse} /></div>
+        <div className="bl-boxbody"><AdminScreen game={game} screen={screen} go={go} wizard toClient={(c) => open("client", {}, { c })} browse={props.browse} /></div>
       </section>
     </main>
   );
@@ -122,7 +122,7 @@ function ClientLogin({ game, open }: SkinProps) {
       <h2>{t("blessta.signIn")}</h2>
       <label>{t("shop-admin.client")}<select value={pick} onChange={(e) => setPick(e.target.value)}>{active.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
       <label>{t("shop-admin.password")}<input type="password" autoComplete="off" /></label>
-      <button type="submit" className="btn primary" disabled={!pick}>{t("shop-admin.login")}</button>
+      <button type="submit" className="pt-btn primary" disabled={!pick}>{t("shop-admin.login")}</button>
     </form>
   );
 }
@@ -134,7 +134,7 @@ function Login({ game, variant, major, onLogin, error, onForgot }: SkinProps & L
         <div className="bl-loginhead"><Wordmark /></div>
         <label>{t("shop-admin.username")}<input name="username" autoComplete="off" /></label>
         <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-        <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+        <button type="submit" className="pt-btn primary">{t("shop-admin.login")}</button>
         <LoginNote error={error} onForgot={onForgot} />
       </form>
       <VersionFooter game={game} variant={variant} />

@@ -1,3 +1,4 @@
+import { PBtn } from "./ui";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
 import { holdReason } from "../../../../../../sim/45-billing/billing";
@@ -38,7 +39,7 @@ export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { i
   return (
     <div className="pt-screen">
       <CustomerView game={game} id={c.id} tab={tab} onBack={() => go({ name: "clients" })} />
-      {toClient && <button className="btn" onClick={() => toClient(c.id)}>{t("shop-admin.loginAsClient")}</button>}
+      {toClient && <PBtn onClick={() => toClient(c.id)}>{t("shop-admin.loginAsClient")}</PBtn>}
       <h3>{servicesLabel(game.shop.variant)}</h3>
       <table className="pt-table">
         <thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-admin.price")}</th><th /></tr></thead>
@@ -50,8 +51,8 @@ export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { i
                 <td><a href="#" onClick={(e) => { e.preventDefault(); go({ name: "service", id: v.id }); }}>{v.label || PRODUCT[v.product]}</a></td>
                 <td className="num">{euroCents(v.price)}</td>
                 <td>
-                  <button className="btn" onClick={() => act(held ? unsuspendService : suspendService, v.id)}>{t(held ? "shop-admin.unsuspend" : "shop-admin.suspend")}</button>
-                  {v.endsAt === undefined && <button className="btn" onClick={() => act(terminateService, v.id, "notice", null)}>{t("shop-admin.terminate")}</button>}
+                  <PBtn onClick={() => act(held ? unsuspendService : suspendService, v.id)}>{t(held ? "shop-admin.unsuspend" : "shop-admin.suspend")}</PBtn>
+                  {v.endsAt === undefined && <PBtn onClick={() => act(terminateService, v.id, "notice", null)}>{t("shop-admin.terminate")}</PBtn>}
                 </td>
               </tr>
             );

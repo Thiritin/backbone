@@ -1,3 +1,4 @@
+import { PSelect } from "./ui";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../../sim/00-core/time";
@@ -42,14 +43,14 @@ export function ProductEdit({ game, go, id, tab = "details" }: ScreenProps & { i
           <dt>{t("shop-admin.productName")}</dt>
           <dd><CommitInput value={p.name} onCommit={(name) => patch({ name })} /></dd>
           <dt>{t("shop-admin.group")}</dt>
-          <dd><select value={p.groupId} onChange={(e) => patch({ groupId: e.target.value })}>{game.shop.productGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></dd>
+          <dd><PSelect value={p.groupId} onChange={(e) => patch({ groupId: e.target.value })}>{game.shop.productGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</PSelect></dd>
           <dt>{t("shop-admin.stock")}</dt>
           <dd>
-            <select aria-label={t("shop-admin.stock")} value={stockKind} onChange={(e) => patch({ stock: (e.target.value === "units" ? 10 : e.target.value) as Stock })}>
+            <PSelect aria-label={t("shop-admin.stock")} value={stockKind} onChange={(e) => patch({ stock: (e.target.value === "units" ? 10 : e.target.value) as Stock })}>
               <option value="off">{t("marketing.off")}</option>
               {v.autoStock && <option value="auto">{t("marketing.freeCapacity")}</option>}
               <option value="units">{t("marketing.units")}</option>
-            </select>
+            </PSelect>
             {typeof p.stock === "number" && <CommitInput className="num" type="number" min={0} aria-label={t("shop-admin.quantity")} value={String(p.stock)} onCommit={(x) => patch({ stock: Math.max(0, Math.floor(Number(x) || 0)) })} />}
           </dd>
           <dt>{t("shop-admin.hidden")}</dt>
@@ -95,17 +96,17 @@ export function ProductEdit({ game, go, id, tab = "details" }: ScreenProps & { i
           <dd>{software ? moduleName(software) : t("shop-admin.none")}</dd>
           <dt>{t("shop-admin.serverGroup")}</dt>
           <dd>
-            <select aria-label={t("shop-admin.serverGroup")} value={p.serverGroupId ?? ""} onChange={(e) => patch({ serverGroupId: e.target.value || null, packageName: null })}>
+            <PSelect aria-label={t("shop-admin.serverGroup")} value={p.serverGroupId ?? ""} onChange={(e) => patch({ serverGroupId: e.target.value || null, packageName: null })}>
               <option value="">{t("shop-admin.none")}</option>
               {serverGroups.map((g) => <option key={g.id} value={g.id} disabled={!groupProvisions(game, g)}>{g.name}</option>)}
-            </select>
+            </PSelect>
           </dd>
           <dt>{t("shop-admin.packageName")}</dt>
           <dd>
-            <select aria-label={t("shop-admin.packageName")} value={p.packageName ?? ""} onChange={(e) => patch({ packageName: e.target.value || null })}>
+            <PSelect aria-label={t("shop-admin.packageName")} value={p.packageName ?? ""} onChange={(e) => patch({ packageName: e.target.value || null })}>
               <option value="">{t("shop-admin.none")}</option>
               {packages.map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
+            </PSelect>
           </dd>
           <dt>{t("shop-admin.autoSetup")}</dt>
           <dd role="radiogroup" aria-label={t("shop-admin.autoSetup")}>

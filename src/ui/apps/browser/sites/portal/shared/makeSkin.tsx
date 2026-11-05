@@ -27,9 +27,9 @@ const ALL: ScreenName[] = ["home", "clients", "orders", "invoices", "quotes", "p
 // One shop system's admin, store front and client area: the shared screens inside the system's own frame.
 export function makeSkin(look: Look): Skin {
   const Frame = ({ game, variant, children, nav }: SkinProps & { children: ReactNode; nav?: ReactNode }) => (
-    <div className={`portal shop ${look.cls} ${look.cls}-${eraOf(game.hour)} nav-${look.nav}`}>
+    <div className={`portal pshop ${look.cls} ${look.cls}-${eraOf(game.hour)} nav-${look.nav}`}>
       <header className="shop-head"><span className="shop-logo">{shopById(variant).name}</span></header>
-      <div className="shop-body">{nav}<main className="shop-main">{children}</main></div>
+      <div className="ps-body">{nav}<main className="ps-main">{children}</main></div>
       <VersionFooter game={game} variant={variant} />
     </div>
   );

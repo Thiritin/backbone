@@ -33,22 +33,6 @@ const MENUS: [string, ScreenName[]][] = [
 
 const label = (n: ScreenName) => (n === "products" ? t("shop-admin.productsServices") : SCREEN_LABEL[n] ?? n);
 
-// Stroke icons of the flat sidebar on a 16 px grid.
-const ICON: Partial<Record<ScreenName, string>> = {
-  home: "M2 8l6-5 6 5M4 7v6h8V7",
-  clients: "M8 8a3 3 0 100-6 3 3 0 000 6zM2 14c1-3 3-4 6-4s5 1 6 4",
-  orders: "M3 3h10v10H3zM5 6h6M5 9h6M5 12h3",
-  invoices: "M4 2h8v12l-2-1-2 1-2-1-2 1zM6 5h4M6 8h4",
-  products: "M2 5l6-3 6 3-6 3zM2 5v6l6 3 6-3V5",
-  settings: "M3 4h10M3 8h10M3 12h10M6 2v4M10 6v4M5 10v4",
-  emails: "M2 4h12v8H2zM2 4l6 5 6-5",
-  marketplace: "M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z",
-  servers: "M2 3h12v4H2zM2 9h12v4H2zM4 5h1M4 11h1",
-  licence: "M5 9a3 3 0 113-3l5 5v2h-2v-1H9v-1",
-  updates: "M13 8a5 5 0 11-2-4M13 2v3h-3",
-};
-const Icon = ({ n }: { n: ScreenName }) => <svg className="whc-ico" viewBox="0 0 16 16" aria-hidden="true"><path d={ICON[n]} /></svg>;
-
 const link = (on: () => void) => (e: { preventDefault: () => void }) => { e.preventDefault(); on(); };
 const current = (s: Screen): ScreenName => navOf(s.name);
 
@@ -65,15 +49,13 @@ export function AdminFrame({ game, variant, major, nav, on, children }: SkinProp
   if (look === "flat") {
     return (
       <div className="portal whc whc-admin whc-flat">
-        <aside className="whc-side">
+        <header className="whc-top">
           <Wordmark go={home} />
-          {nav && <SideNav nav={nav} on={on} />}
-        </aside>
-        <div className="whc-col">
-          <header className="whc-top"><h1>{title}</h1><span className="whc-avatar" title={t("shop-admin.welcome", { name: adminFirstName(game) ?? "admin" })}>A</span></header>
-          <main className="whc-main">{children}</main>
-          <VersionFooter game={game} variant={variant} />
-        </div>
+          {nav && <MenuBar nav={nav} on={on} />}
+          <span className="whc-avatar" title={t("shop-admin.welcome", { name: adminFirstName(game) ?? "admin" })}>A</span>
+        </header>
+        <main className="whc-main"><h1 className="whc-title">{title}</h1>{children}</main>
+        <VersionFooter game={game} variant={variant} />
       </div>
     );
   }
@@ -110,19 +92,6 @@ function MenuBar({ nav, on }: { nav: Nav; on: ScreenName }) {
   );
 }
 
-function SideNav({ nav, on }: { nav: Nav; on: ScreenName }) {
-  return (
-    <nav className="whc-sidenav">
-      {MENUS.map(([key, items]) => (
-        <div key={key}>
-          {items.length > 1 && <h4>{t(key)}</h4>}
-          {items.map((n) => <a key={n} href="#" className={n === on ? "on" : ""} onClick={link(() => nav(n))}><Icon n={n} />{label(n)}</a>)}
-        </div>
-      ))}
-    </nav>
-  );
-}
-
 // The left column of the bevelled admin: shortcuts and the system box.
 function Sidebar({ game, variant, nav }: Pick<SkinProps, "game" | "variant"> & { nav: Nav }) {
   const pending = pendingOrders(game);
@@ -153,7 +122,7 @@ export function WhmCacheAdmin(props: SkinProps) {
   return (
     <AdminFrame {...props} nav={(n) => go({ name: n })} on={on}>
       <div className={`whc-s-${on}`}>
-        <AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={browse} />
+        <AdminScreen game={game} screen={screen} go={go} wizard={(parseInt(props.major, 10) || 0) >= 7} toClient={(c) => open("client", {}, { c })} browse={browse} />
       </div>
     </AdminFrame>
   );
@@ -170,7 +139,7 @@ export function WhmCacheLogin({ game, major, onLogin, error, onForgot }: SkinPro
         {look === "classic" && <h2>{t("shop-whmCache.adminLogin")}</h2>}
         <label>{t("shop-admin.username")}<input name="username" autoComplete="off" /></label>
         <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-        <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+        <button type="submit" className="pt-btn primary">{t("shop-admin.login")}</button>
         <small className="num">{t("shop-admin.footer", { name: "WHMCache", version: game.shop.install?.version ?? "" })}</small>
         <LoginNote error={error} onForgot={onForgot} />
       </form>

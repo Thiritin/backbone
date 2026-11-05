@@ -5,3 +5,15 @@
 .sk-modem .shop-nav { border-bottom: 1px solid #000; }
 .sk-modem .pt-table, .sk-modem .pt-table th, .sk-modem .pt-table td { border: 1px solid #000; }
 .sk-modem .pt-table th { background: #ddd; }
+.sk-modem .shop-nav { background: #eee; padding: 4px 12px; gap: 0; }
+.sk-modem .shop-nav a { color: #00c; padding: 2px 10px; border-right: 1px solid #999; }
+.sk-modem .shop-nav a.on { color: #a00; }
+.sk-modem .pt-btn { font: 11px Verdana, Arial, sans-serif; padding: 2px 10px; color: #000; background: #d4d0c8; border: 2px solid; border-color: #fff #404040 #404040 #fff; border-radius: 0; }
+.sk-modem .pt-btn.primary { font-weight: bold; }
+.sk-modem .pt-btn:active:not(:disabled) { border-color: #404040 #fff #fff #404040; }
+.sk-modem .pt-select, .sk-modem .pt-input, .sk-modem input, .sk-modem select { font: 11px Verdana, Arial, sans-serif; border: 1px solid #000; border-radius: 0; padding: 2px; }
+.sk-modem .pt-box, .sk-modem .pt-wizard { border: 1px solid #000; background: #fff; }
+.sk-modem .pt-box-h { background: #ddd; color: #a00; border-bottom: 1px solid #000; }
+.sk-modem .pt-wizard { background: #ffc; }
+.sk-modem .pt-tabs button { background: #ddd; border: 1px solid #000; border-bottom: 0; border-radius: 0; }
+.sk-modem .pt-badge { background: none; padding: 0; color: #000; font-weight: bold; }

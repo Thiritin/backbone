@@ -1,19 +1,21 @@
-import { pendingOrders } from "../../../../../../sim/80-business/shop-orders";
+import { useStore } from "../../../../../store";
+import { finishShopSetup } from "../../../../../../sim/90-actions/portal";
+import { Dashboard } from "./Dashboard";
+import { PBtn } from "./ui";
 import { t } from "../../../../../../i18n/en";
 import type { Screen, ScreenName, ScreenProps } from "./nav";
 import { Clients, ClientSummary } from "./Clients";
 import { Invoices } from "./Invoices";
 import { Quotes } from "./Quotes";
-import { Settings } from "./Settings";
+import { Settings, type SettingsTab } from "./Settings";
 import { ShopSetup } from "./Setup";
 import { OrderDetail, Orders } from "./Orders";
 import { ServiceDetail } from "./Service";
 import { Emails } from "./Emails";
 import { ProductEdit } from "./ProductEdit";
-import { Products } from "./Products";
+import { ProductCreate, Products } from "./Products";
 import { Servers } from "./Servers";
 import { Marketplace } from "./Marketplace";
-import { PaymentMethods } from "./Payments";
 import { LicenceScreen, UpdatesScreen } from "./Licence";
 
 export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
@@ -22,35 +24,41 @@ export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
   emails: t("shop-mail.emails"), marketplace: t("shop-market.title"), licence: t("shop-admin.licence"), updates: t("shop-admin.updates"),
 };
 
-function Home({ game, go }: ScreenProps) {
-  const pending = pendingOrders(game);
-  const rows: [ScreenName, number][] = [["orders", pending], ["clients", game.customers.filter((c) => c.churnedAt === null).length], ["products", game.shop.products.length]];
-  return (
-    <dl className="pt-fields">
-      {rows.map(([name, n]) => <div key={name}><dt><a href="#" onClick={(e) => { e.preventDefault(); go({ name }); }}>{SCREEN_LABEL[name]}</a></dt><dd className="num">{n}</dd></div>)}
-    </dl>
-  );
-}
-
 // The admin screen an address names; every shop system shows the same functions under its own navigation.
-export function AdminScreen({ screen, ...props }: ScreenProps & { screen: Screen }) {
-  if (screen.name === "setup" || (screen.name === "home" && props.game.shop.setupDone === false)) return <ShopSetup screen={screen} {...props} />;
+export function AdminScreen({ screen, wizard, ...props }: ScreenProps & { screen: Screen; wizard?: boolean }) {
+  if (screen.name === "setup") return <ShopSetup screen={screen} {...props} />;
   switch (screen.name) {
     case "products": return <Products {...props} />;
-    case "product": return <ProductEdit {...props} id={screen.id ?? ""} tab={screen.tab} />;
-    case "settings": return <Settings {...props} />;
+    case "product": if (screen.id === "new" || screen.id === "new-group") return <ProductCreate {...props} group={screen.id === "new-group"} />;
+      return <ProductEdit {...props} id={screen.id ?? ""} tab={screen.tab} />;
+    case "settings": return <Settings {...props} tab={(screen.tab as SettingsTab) ?? "general"} />;
+    case "gateways": return <Settings {...props} tab="gateways" />;
+    case "import": return <Settings {...props} tab="import" />;
     case "servers": return <Servers game={props.game} />;
-    case "marketplace": return <Marketplace game={props.game} />;
+    case "marketplace": return <Marketplace game={props.game} go={props.go} tab={screen.tab === "gateways" ? "gateways" : "modules"} />;
     case "orders": return <Orders {...props} />;
     case "order": return <OrderDetail {...props} id={screen.id ?? ""} />;
     case "service": return <ServiceDetail {...props} id={screen.id ?? ""} />;
     case "clients": return <Clients {...props} />;
     case "client": return <ClientSummary {...props} id={screen.id ?? ""} tab={screen.tab} />;
-    case "invoices": return <><Invoices {...props} /><PaymentMethods game={props.game} /></>;
+    case "invoices": return <Invoices {...props} />;
     case "quotes": return <Quotes {...props} id={screen.id} />;
     case "emails": return <Emails {...props} />;
     case "licence": return <LicenceScreen {...props} />;
     case "updates": return <UpdatesScreen {...props} />;
-    default: return <Home {...props} />;
+    default: return <><SetupPanel {...props} show={!!wizard} /><Dashboard {...props} /></>;
   }
+}
+
+// The first-login panel of the systems that opened the setup wizard on the first sign-in.
+function SetupPanel({ game, go, show }: ScreenProps & { show: boolean }) {
+  const act = useStore((s) => s.act);
+  if (!show || game.shop.setupDone !== false) return null;
+  return (
+    <div className="pt-wizard" role="region" aria-label={t("setup.title")}>
+      <strong>{t("setup.title")}</strong>
+      <PBtn primary onClick={() => go({ name: "setup" })}>{t("setup.title")}</PBtn>
+      <PBtn onClick={() => act(finishShopSetup)}>{t("shop-admin.d.dismiss")}</PBtn>
+    </div>
+  );
 }

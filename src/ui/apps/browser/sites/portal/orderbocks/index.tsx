@@ -122,7 +122,7 @@ function SignIn({ title, user, onSubmit }: { title: string; user: ReactNode; onS
       <h1>{title}</h1>
       {user}
       <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-      <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+      <button type="submit" className="pt-btn primary">{t("shop-admin.login")}</button>
     </form>
   );
 }

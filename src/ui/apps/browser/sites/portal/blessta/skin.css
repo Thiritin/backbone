@@ -14,7 +14,7 @@
 .bl .bl-fhead nav a { text-decoration: none; }
 .bl .shop-cart, .bl .pt-table { width: 100%; }
 .bl input, .bl select, .bl textarea { font: inherit; }
-.bl .shop-store .shop-name { display: block; padding: 0; }
+.bl .shop-store .ps-name { display: block; padding: 0; }
 .bl .num { font-family: inherit; font-variant-numeric: tabular-nums; }
 .bl .pt-key { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
 .bl .pt-key label { display: grid; gap: 4px; }
@@ -44,9 +44,9 @@
 .bl-classic .pt-table th { background: #dfe6ef; border: 1px solid #c1ccda; font-size: 11px; padding: 3px 6px; }
 .bl-classic .pt-table td { border: 1px solid #e0e5ec; padding: 3px 6px; }
 .bl-classic .pt-table tbody tr:nth-child(even) td { background: #f4f7fb; }
-.bl-classic .btn { font: bold 11px Tahoma, Verdana, sans-serif; padding: 3px 10px; color: #1b2430; background: linear-gradient(#fff, #d6dee9); border: 1px solid #7c8ea6; border-radius: 3px; cursor: pointer; }
-.bl-classic .btn:active { background: linear-gradient(#d6dee9, #fff); }
-.bl-classic .btn.primary { color: #fff; background: linear-gradient(#ffad66, #e8691d); border-color: #a9501a; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.25); }
+.bl-classic .pt-btn { font: bold 11px Tahoma, Verdana, sans-serif; padding: 3px 10px; color: #1b2430; background: linear-gradient(#fff, #d6dee9); border: 1px solid #7c8ea6; border-radius: 3px; cursor: pointer; }
+.bl-classic .pt-btn:active { background: linear-gradient(#d6dee9, #fff); }
+.bl-classic .pt-btn.primary { color: #fff; background: linear-gradient(#ffad66, #e8691d); border-color: #a9501a; text-shadow: 0 -1px 0 rgb(0 0 0 / 0.25); }
 .bl-classic input, .bl-classic select, .bl-classic textarea { border: 1px solid #8fa2ba; padding: 2px 3px; background: #fff; color: #1b2430; }
 .bl-classic .pt-tabs { border-bottom-color: #8fa2ba; }
 .bl-classic .pt-tabs button { font: bold 11px Tahoma, sans-serif; background: linear-gradient(#f6f8fb, #d6dee9); border-color: #8fa2ba; border-radius: 4px 4px 0 0; }
@@ -64,10 +64,10 @@
 .bl-classic .bl-hero .bl-wrap { padding: 0 14px; }
 .bl-classic .bl-fmain.bl-wrap { background: #fff; border: 1px solid #a9b7c8; border-top: 0; padding: 12px 14px 16px; }
 .bl-classic .shop-store h2 { font-size: 12px; margin: 10px 0 6px; padding-bottom: 3px; border-bottom: 2px solid var(--bl-accent); }
-.bl-classic .shop-list { gap: 0; border: 1px solid #c1ccda; }
+.bl-classic .ps-list { gap: 0; border: 1px solid #c1ccda; }
 .bl-classic .shop-item { padding: 6px 8px; border-bottom: 1px solid #e0e5ec; }
 .bl-classic .shop-item:nth-child(even) { background: #f4f7fb; }
-.bl-classic .shop-item .shop-name { font-weight: bold; }
+.bl-classic .shop-item .ps-name { font-weight: bold; }
 .bl-classic .shop-banner { background: #fff8d6; border-color: #e1cf7e; }
 /* classic sign-in and bare pages */
 .bl-classic.bl-gate { align-items: center; padding-top: 60px; }
@@ -102,11 +102,11 @@
 .bl-widgets .pt-table th { font-weight: 600; color: #6a7380; border-bottom: 2px solid #e3e6ea; padding: 7px 8px; }
 .bl-widgets .pt-table td { padding: 7px 8px; border-bottom: 1px solid #eef0f3; }
 .bl-widgets .pt-table tbody tr:hover td { background: #f5f8fc; }
-.bl-widgets .btn { font: inherit; padding: 5px 12px; color: #2b3038; background: #fff; border: 1px solid #c7cdd4; border-radius: 3px; cursor: pointer; }
-.bl-widgets .btn:hover { background: #f3f5f7; }
-.bl-widgets .btn.primary { color: #fff; background: #2a6db5; border-color: #2361a3; }
-.bl-widgets .btn.primary:hover { background: #2361a3; }
-.bl-widgets .btn:disabled { opacity: 0.5; cursor: default; }
+.bl-widgets .pt-btn { font: inherit; padding: 5px 12px; color: #2b3038; background: #fff; border: 1px solid #c7cdd4; border-radius: 3px; cursor: pointer; }
+.bl-widgets .pt-btn:hover { background: #f3f5f7; }
+.bl-widgets .pt-btn.primary { color: #fff; background: #2a6db5; border-color: #2361a3; }
+.bl-widgets .pt-btn.primary:hover { background: #2361a3; }
+.bl-widgets .pt-btn:disabled { opacity: 0.5; cursor: default; }
 .bl-widgets input, .bl-widgets select, .bl-widgets textarea { padding: 5px 8px; border: 1px solid #c7cdd4; border-radius: 3px; background: #fff; color: #2b3038; }
 .bl-widgets input:focus, .bl-widgets select:focus { outline: 0; border-color: #2a6db5; box-shadow: 0 0 0 3px rgb(42 109 181 / 0.18); }
 .bl-widgets .pt-tabs { border-bottom: 1px solid #d6dbe1; }
@@ -123,11 +123,11 @@
 .bl-widgets .bl-hero h1 { font-size: 26px; font-weight: 300; padding: 22px 0; }
 .bl-widgets .bl-fmain { padding-top: 22px; padding-bottom: 28px; }
 .bl-widgets .shop-store h2 { font-size: 18px; font-weight: 300; margin: 6px 0 12px; }
-.bl-widgets .shop-store .shop-list { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.bl-widgets .shop-store .ps-list { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
 .bl-widgets .shop-store .shop-item { flex-direction: column; align-items: stretch; text-align: center; gap: 8px; padding: 0 0 14px; background: #fff; border: 1px solid #d6dbe1; border-radius: 3px; }
-.bl-widgets .shop-store .shop-item .shop-name { padding: 10px; background: #f7f8fa; border-bottom: 1px solid #e3e6ea; font-weight: 600; font-size: 15px; }
+.bl-widgets .shop-store .shop-item .ps-name { padding: 10px; background: #f7f8fa; border-bottom: 1px solid #e3e6ea; font-weight: 600; font-size: 15px; }
 .bl-widgets .shop-store .shop-item > .num { font-size: 17px; color: #2a6db5; }
-.bl-widgets .shop-store .shop-item .btn { margin: 0 14px; text-align: center; }
+.bl-widgets .shop-store .shop-item .pt-btn { margin: 0 14px; text-align: center; }
 .bl-widgets.bl-admin a:not(.on) { color: #2a6db5; }
 .bl-widgets.bl-admin .bl-tabs a:not(.on) { color: #a8afb9; }
 .bl-widgets.bl-admin .bl-tabs a:hover { color: #fff; }
@@ -169,11 +169,11 @@
 .bl-paradigm .pt-table th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mute); border-bottom: 1px solid var(--line); padding: 8px 10px; }
 .bl-paradigm .pt-table td { padding: 10px; border-bottom: 1px solid var(--line); }
 .bl-paradigm .pt-table tbody tr:last-child td { border-bottom: 0; }
-.bl-paradigm .btn { font: 600 13px Inter, system-ui, sans-serif; padding: 7px 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
-.bl-paradigm .btn:hover { background: var(--hover); }
-.bl-paradigm .btn.primary { color: #fff; background: var(--bl-accent); border-color: transparent; }
-.bl-paradigm .btn.primary:hover { filter: brightness(1.06); }
-.bl-paradigm .btn:disabled { opacity: 0.45; cursor: default; }
+.bl-paradigm .pt-btn { font: 600 13px Inter, system-ui, sans-serif; padding: 7px 14px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.bl-paradigm .pt-btn:hover { background: var(--hover); }
+.bl-paradigm .pt-btn.primary { color: #fff; background: var(--bl-accent); border-color: transparent; }
+.bl-paradigm .pt-btn.primary:hover { filter: brightness(1.06); }
+.bl-paradigm .pt-btn:disabled { opacity: 0.45; cursor: default; }
 .bl-paradigm input, .bl-paradigm select, .bl-paradigm textarea { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
 .bl-paradigm input:focus, .bl-paradigm select:focus { outline: 2px solid color-mix(in srgb, var(--bl-accent) 45%, transparent); outline-offset: 0; }
 .bl-paradigm .pt-tabs { display: inline-flex; gap: 2px; padding: 3px; border: 0; border-radius: 10px; background: var(--hover); }
@@ -193,13 +193,13 @@
 .bl-paradigm .bl-hero h1 { font-size: 34px; font-weight: 750; letter-spacing: -0.03em; padding: 40px 0 34px; }
 .bl-paradigm .bl-fmain { padding-top: 28px; padding-bottom: 40px; }
 .bl-paradigm .shop-store h2 { font-size: 20px; letter-spacing: -0.01em; margin: 8px 0 14px; }
-.bl-paradigm .shop-store .shop-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 26px; }
+.bl-paradigm .shop-store .ps-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 26px; }
 .bl-paradigm .shop-store .shop-item { flex-direction: column; align-items: flex-start; gap: 6px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; transition: box-shadow 0.15s, transform 0.15s; }
 .bl-paradigm .shop-store .shop-item:hover { box-shadow: 0 10px 30px rgb(21 26 36 / 0.08); transform: translateY(-2px); }
-.bl-paradigm .shop-store .shop-name { font-size: 17px; font-weight: 700; }
+.bl-paradigm .shop-store .ps-name { font-size: 17px; font-weight: 700; }
 .bl-paradigm .shop-store .shop-item > .num { color: var(--mute); margin-bottom: 8px; }
-.bl-paradigm .shop-store .shop-item .btn, .bl-paradigm.bl-front .btn { border-radius: 999px; }
-.bl-paradigm .shop-store .shop-item .btn { align-self: stretch; color: #fff; background: var(--ink); border-color: transparent; }
+.bl-paradigm .shop-store .shop-item .pt-btn, .bl-paradigm.bl-front .pt-btn { border-radius: 999px; }
+.bl-paradigm .shop-store .shop-item .pt-btn { align-self: stretch; color: #fff; background: var(--ink); border-color: transparent; }
 .bl-paradigm .shop-steps { gap: 8px; }
 .bl-paradigm .shop-steps li { flex: 1; padding-top: 8px; border-top: 3px solid var(--line); color: var(--mute); font-size: 13px; }
 .bl-paradigm .shop-steps li.on { border-top-color: var(--bl-accent); color: var(--ink); font-weight: 650; }

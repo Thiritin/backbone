@@ -104,7 +104,7 @@ function Client(props: SkinProps) {
         <form className="bx-signin" onSubmit={(e) => { e.preventDefault(); if (who) open("client", {}, { c: who.id }); }}>
           <label>{t("shop-boxBillin.email")}<input name="email" type="email" autoComplete="off" /></label>
           <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-          <button type="submit" className="btn primary">{t("shop-boxBillin.signIn")}</button>
+          <button type="submit" className="pt-btn primary">{t("shop-boxBillin.signIn")}</button>
         </form>
       )}
     </StoreFrame>
@@ -119,7 +119,7 @@ function Login(props: SkinProps & LoginProps) {
         <header><Brand era={era} variant={props.variant} version={props.version} /></header>
         <label>{t("shop-setup.email")}<input name="username" type="email" autoComplete="off" /></label>
         <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-        <button type="submit" className="btn primary">{t("shop-boxBillin.signIn")}</button>
+        <button type="submit" className="pt-btn primary">{t("shop-boxBillin.signIn")}</button>
         <LoginNote error={props.error} onForgot={props.onForgot} />
       </form>
       <Version variant={props.variant} version={props.version} />
