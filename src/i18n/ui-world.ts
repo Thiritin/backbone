@@ -22,6 +22,8 @@ export default {
   "world.obj.fan": () => "Window fan",
   "world.obj.cooling": () => "Cooling unit",
   "world.obj.pdu": () => "PDU",
+  "world.obj.cart": () => "Crash cart",
+  "world.cartRestart": (p) => `${p.name} restarts`,
   "world.obj.extinguisher": () => "Fire extinguisher",
   "world.obj.noc": () => "NOC desk",
   "world.obj.dock": () => "Loading dock",

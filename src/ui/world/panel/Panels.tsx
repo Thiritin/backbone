@@ -12,6 +12,8 @@ import { devName } from "../../apps/hw";
 import { locationPower } from "../../apps/locations/ui";
 import { Letter } from "../../apps/PostApp";
 import { useStore } from "../../store";
+import { cartTarget, usePlug } from "../rack/cartPlug";
+import { CrashCart } from "../rack/CrashCart";
 import { Slab } from "./Slab";
 import "../../apps/paper.css";
 import "./panel.css";
@@ -221,5 +223,15 @@ function PduFace({ watts, limit, lit, tripped }: { watts: number; limit: number;
         );
       })}
     </svg>
+  );
+}
+
+// The crash cart close-up: its monitor shows the server the cable is plugged into.
+export function ConsolePanel({ loc, title, onClose }: { loc: Location; title: string; onClose: () => void }) {
+  const game = useStore((s) => s.game), plugged = usePlug();
+  return (
+    <Slab title={title} onClose={onClose} data={{ "console-panel": "" }}>
+      <CrashCart deviceId={cartTarget(game, loc.id, plugged)} onClose={onClose} />
+    </Slab>
   );
 }

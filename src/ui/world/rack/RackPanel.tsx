@@ -7,7 +7,6 @@ import { booting, connectError, deviceHealth, halting, heightIn, mountFrom, plug
 import { present } from "../../../sim/60-infra/handwork";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
-import { Screen } from "../../apps/console/Screen";
 import { Isometric } from "../../art/Isometric";
 import type { PanelOp } from "../../art/fronts";
 import { RackFront, shelfPitch, type RackItem } from "../../art/RackFront";
@@ -24,6 +23,8 @@ import { formatDay } from "../../apps/billing/format";
 import "../../apps/locations/locations.css";
 import { Slab } from "../panel/Slab";
 import { endName } from "./Cables";
+import { CrashCart } from "./CrashCart";
+import { noteSelected, setPlug, useCable } from "./cartPlug";
 import { LidScene } from "./LidScene";
 import { jackEntries, jacksOf, jackText, ProviderPanel } from "./ProviderPanel";
 import { panelOf } from "../../../sim/60-infra/panels";
@@ -69,7 +70,8 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   // The provider jack whose tag hangs open.
   const [jack, setJack] = useState<number | null>(null);
   const stage = useRef<HTMLDivElement>(null), scene = useRef<HTMLDivElement>(null), tagEl = useRef<HTMLDivElement>(null);
-  const pick = (id: string | null) => { setSel(id); setFree(null); setLid(null); setRenaming(false); setPort(null); setJack(null); };
+  const plugged = useCable(game);
+  const pick = (id: string | null) => { noteSelected(id); setSel(id); setFree(null); setLid(null); setRenaming(false); setPort(null); setJack(null); };
   const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }], true);
   const work = useHandWork();
   const loc = game.locations.find((l) => l.id === rack?.locationId), offSite = !!loc?.dc && !present(game, loc.id);
@@ -259,14 +261,14 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   else if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
   else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} onPanel={offSite ? undefined : (op) => press(dev.id, op)} back={back} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => turn(!back) : undefined}
-    onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => setCart(dev.id) : undefined} />; }
+    onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => { setPlug(dev.id); setCart(dev.id); } : undefined} />; }
   // A picked free unit sets what fits there on the floor beside the rack.
   const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} /> : null;
 
   const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
   const face = (side: boolean) => side ? (
     <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" away={offSite} onPanel={press} w={BACK_U * 19} u={BACK_U} duct
-      selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} hand={hand} portTitle={title} needs={needs} canLink={(a, b) => !connectError(game, a, b)}
+      selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} onConsole={present(game, rack.locationId) ? (id) => { setPlug(id); pick(id); } : undefined} consoleOn={plugged} hand={hand} portTitle={title} needs={needs} canLink={(a, b) => !connectError(game, a, b)}
       onPlug={(id, k) => { const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k]; if (d && psu) menus.plug(d, psu.id); }}
       onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }} />
   ) : (
@@ -321,32 +323,9 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
         {lid && dev && <LidScene key={lid} deviceId={lid} onClose={() => setLid(null)} />}
       </div>
       {menus.dialog}
-      {cart && game.devices.some((x) => x.id === cart) && <CrashCart deviceId={cart} onClose={() => setCart(null)} />}
+      {cart && game.devices.some((x) => x.id === cart) && <CrashCart deviceId={cart} onClose={() => setCart(null)} backLabel={t("console.back")} />}
       {work.dialog}
     </Slab>
-  );
-}
-
-// The crash cart: a monitor and keyboard on a trolley, drawn large in front of the rack; the keyboard types into the machine's own console.
-function CrashCart({ deviceId, onClose }: { deviceId: string; onClose: () => void }) {
-  const game = useStore((s) => s.game);
-  const d = game.devices.find((x) => x.id === deviceId)!;
-  return (
-    <div className="wr-cart" data-cart-panel={deviceId}>
-      <div className="wr-cart-monitor">
-        <Screen game={game} device={d} via="monitor" />
-      </div>
-      <svg className="wr-cart-frame" viewBox="0 -20 640 270" aria-hidden="true">
-        <rect className="wr-cart-post" x="48" y="30" width="10" height="190" />
-        <rect className="wr-cart-post" x="582" y="30" width="10" height="190" />
-        <rect className="wr-cart-shelf" x="30" y="150" width="580" height="10" />
-        <rect className="wr-cart-tray" x="20" y="14" width="600" height="20" />
-        <rect className="wr-kb" x="110" y="-18" width="420" height="32" rx="3" />
-        {[0, 1, 2, 3].map((r) => Array.from({ length: r === 3 ? 9 : 19 }, (_, c) => <rect key={`${r}${c}`} className="wr-key" x={r === 3 ? 190 + c * 26 : 118 + c * 21.2} y={-14 + r * 7} width={r === 3 ? 22 : 18} height="5" />))}
-        {[48, 582].map((x) => <g key={x}><rect className="wr-cart-post" x={x - 6} y="220" width="22" height="8" /><circle className="wr-wheel" cx={x + 5} cy="238" r="10" /><circle className="wr-hub" cx={x + 5} cy="238" r="3" /></g>)}
-      </svg>
-      <button className="wr-cart-back" aria-label={t("world.toRack")} onClick={onClose} />
-    </div>
   );
 }
 

@@ -23,7 +23,7 @@ const BASEMENT = {
     scanner: { x: 3, y: 0 }, hygrometer: { x: 3, y: 0 }, desk: { x: 4, y: 0 }, pc: { x: 4, y: 0 }, fan: { x: 4, y: 0 },
     fusebox: { x: 0, y: 1 }, jack: { x: 0, y: 1 }, shelf: { x: 0, y: 2 }, door: { x: 0, y: 4 }, letterbox: { x: 0, y: 5 }, phone: { x: 0, y: 3 },
     chair: { x: 4, y: 1 }, mat: { x: 1, y: 4 }, drain: { x: 3, y: 5 }, lamp: { x: 4, y: 4 },
-    duct: { x: 0, y: 0 }, switch: { x: 0, y: 4 }, corkboard: { x: 0, y: 6 },
+    duct: { x: 0, y: 0 }, switch: { x: 0, y: 4 }, corkboard: { x: 0, y: 6 }, cart: { x: 8, y: 2 },
   } as Record<string, Fixture>,
   // The shelf's tile, and the tiles left for racks bought later.
   shelf: { x: 6, y: 0, facing: "s" } as Tile,

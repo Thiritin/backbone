@@ -4,6 +4,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-05
 - The power button on a rack server now works: a press starts it or shuts it down, holding it for two seconds cuts the power, the recessed reset button reboots it hard, the router has a rocker switch on its back, the UPS a front button, and the rack floor reports what happened.
+- Shutting down or resetting a server that hosts customers asks first and names how many are affected.
+- A crash cart with a monitor and keyboard stands beside the rack, plugs into a server through its VGA port on the back, and restarts it with Ctrl+Alt+Del.
 - The Exit icon leaves the desktop with one click, the dark mode button is gone from the menu bar, the Browser opens smaller, new apps join the end of the dock, windows no longer cascade off screen, and the notification panel pauses the clock while it is open.
 - The menu bar shows a dash instead of 0 € until you have a bank account.
 - The rack tag marks the key your current step needs, a first restart with no customers needs one click, and pressing F11 early opens the boot menu on the next start.

@@ -6,6 +6,7 @@ How every game system meets the 2D plane. Decided 2026-11-03. The desktop stays 
 | --- | --- | --- | --- |
 | Racks and hardware | Racks and the shelf on their tiles, device LEDs blinking, failed parts with a red LED, heat haze above an overloaded rack | Rack scene with front and back, lid scene with the chassis pulled out, parts on paper tags | Rack view, inspector, remote hands from afar |
 | Cabling | Cables along the trays between racks and to the wall socket | Rack back with drag cabling, provider panel drawn large, side-by-side backs for cross-rack runs, order slips | Port inspector, port groups |
+| Crash cart | A trolley right of the rack in the basement and the rented halls, a beige CRT before 2010 and a flat panel after | The cart with its monitor and keyboard; the Ctrl+Alt+Del key restarts a server whose OS is up | The rack view keeps its own monitor |
 | Deliveries | Parcels drawn by the basement door for a day after arrival, crates on the shelf | Shelf with stored units on its boards | Shop, storage tab |
 | Post | Letters in the letterbox, a count on the flap | A4 sheet with a paper stack, Scan all, the scanner with its lid up | Post app, document app |
 | Power and cooling | The fuse box meter disc turning with the draw, the thermometer on the wall, the window fan spinning when the room is warm, cooling units with LEDs in a hall | The fuse box with breakers: an overload trips the main breaker and every device in the room goes dark until the breaker is reset by hand with less load; the PDU with its outlets | Power card, upgrades |
