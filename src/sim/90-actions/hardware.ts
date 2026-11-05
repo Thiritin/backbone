@@ -3,10 +3,11 @@ import { hallOf } from "../20-world/properties";
 import { rand } from "../00-core/rng";
 import { freeRackTiles, officePlan, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
-import { debitAllowed, HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance/payables";
-import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
+import { debitAllowed, HARDWARE_SHOP, type Method } from "../46-finance/payables";
+import { bankOf } from "../46-finance/bank";
+import { INVOICE_AFTER, paidOrders, placeOrder } from "./purchase";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
-import { hourOf, dateOf, monthIndexOf, yearOf } from "../00-core/time";
+import { DAYS_PER_MONTH, hourOf, dateOf, monthIndexOf, nextMonthStart, yearOf } from "../00-core/time";
 import { freeJack, isProviderPanel } from "../60-infra/panels";
 import { syncProviderPanels } from "./connectivity";
 import { boardVendor, modelName, manufacturerByName, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
@@ -86,6 +87,10 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   s.locations.push(loc);
   s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly, endsAt: null, retainedAt: null, ...(order && { billing: { company: order.company, name: order.name, address: { street: order.address.street, zip: order.address.zip, city: order.address.city } } }) });
   if (order?.payment.kind === "debit") s.bank = { ...s.bank!, mandates: [...s.bank!.mandates.filter((x) => x !== dc.name), dc.name] };
+  // The order confirmation is the contract document. The tick bills full months from the next month start, so the order
+  // pays the rest of this one pro rata, at once.
+  const rest = cents(monthly * Math.min(1, (nextMonthStart(s.hour) - s.hour) / (DAYS_PER_MONTH * 24)));
+  placeOrder(s, { supplier: "datacenter", name: dc.name, lines: rest > 0 ? [{ hour: s.hour, category: "rent", key: "ledger.space", params: { location: dc.name, dc: dc.id }, amount: -rest }] : [], method: !s.bank ? "cash" : order?.payment.kind === "debit" ? "debit" : "onAccount", doc: "contract", order: loc.id });
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
@@ -357,14 +362,9 @@ const families = (line: CartLine): string[] => { const m = modelById(line.model)
 export const deliveryWait = (s: GameState, lines: CartLine[]): number => (s.devices.some((d) => modelById(d.model).kind === "server")
   ? Math.round(deliveryHours(yearOf(s.hour)) * Math.max(1, ...lines.flatMap(families).map((f) => leadFactor(f, s.hour)))) : 0);
 
-// A card purchase books nothing yet: the card bill at the month start charges it. An invoiced one books when it is paid.
-function buyLine(s: GameState, line: CartLine, locationId: string, wait: number, pay: "now" | "card" | "later" = "now"): { id: string; entry: LedgerEntry } {
-  const ids = landed(s, stock(s, line, null, locationId, wait));
-  const entry = { hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: modelName(modelById(line.model), line.brand), qty: line.qty }, amount: -lineTotal(s, line) };
-  if (pay === "card") s.bank = { ...s.bank!, card: { ...s.bank!.card!, spent: [...s.bank!.card!.spent, entry] } };
-  else if (pay === "now") book(s, entry.category, entry.key, entry.params, entry.amount);
-  return { id: ids[0], entry };
-}
+const hardwareEntry = (s: GameState, line: CartLine): LedgerEntry => ({ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: modelName(modelById(line.model), line.brand), qty: line.qty }, amount: -lineTotal(s, line) });
+// Stocks one cart line; the order's one document is issued by the caller.
+const buyLine = (s: GameState, line: CartLine, locationId: string, wait: number): string => landed(s, stock(s, line, null, locationId, wait))[0];
 
 // A small-office router only fits the basement's carrier panel.
 const officeError = (s: GameState, modelId: string, locationId: string): string | null =>
@@ -376,53 +376,39 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);
   if (error) return fail(error);
-  if (s.cash < lineTotal(s, line)) return fail("error.noCash");
-  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])).id };
+  const placed = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines: [hardwareEntry(s, line)], method: s.bank ? "transfer" : "cash" });
+  if (!placed.ok) return placed;
+  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])) };
 }
 
-export type Payment = { kind: "cash" } | { kind: "prepay" } | { kind: "card" } | { kind: "invoice" } | { kind: "lease"; offerId: string };
-// The hardware shop sends an invoice to customers with three paid orders.
-export const INVOICE_AFTER = 3;
-export const paidOrders = (s: GameState): number => new Set(s.ledger.filter((e) => e.key === "ledger.hardware").map((e) => e.hour)).size;
+export type Payment = { kind: Method } | { kind: "lease"; offerId: string };
+export { INVOICE_AFTER, paidOrders };
 // A shop abroad takes only a card for the cart.
 export const cardOnly = (lines: CartLine[]): boolean => lines.some((l) => manufacturerByName(l.brand)?.cardOnly);
 
-// Pays now, by prepaid transfer (ships once the money arrives), by card, or leases the whole cart; the lease offer must be one
-// leaseOffers makes for the cart total right now.
+// Pays by one of the shop's methods or leases the whole cart; the lease offer must be one leaseOffers makes for the cart total
+// right now. A transfer ships the day after the money reaches the shop. Either way the order leaves one document.
 export function buyCart(s: GameState, lines: CartLine[], payment: Payment, locationId: string): ActionResult {
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   if (!lines.length) return fail("error.emptyCart");
   const error = lines.map((l) => lineError(s, l) ?? officeError(s, l.model, locationId)).find((e) => e);
   if (error) return fail(error);
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
-  if (payment.kind !== "lease" && shopBlocked(s)) return fail("error.shopUnpaid");
-  if (cardOnly(lines) && payment.kind !== "card" && payment.kind !== "lease") return fail("error.cardOnly");
-  if (payment.kind === "invoice") {
-    if (paidOrders(s) < INVOICE_AFTER) return fail("error.noInvoice");
-    const wait = deliveryWait(s, lines), bought = lines.map((l) => buyLine(s, l, locationId, wait, "later"));
-    invoice(s, "hardware", HARDWARE_SHOP, bought.map((b) => b.entry));
-    return { ok: true, id: bought[0].id };
-  }
-  if (payment.kind === "card") {
-    if (!cardReady(s)) return fail("error.noCard");
-    if (cardSpent(s) + total > s.bank!.card!.limit) return fail("error.cardLimit");
-    const wait = deliveryWait(s, lines);
-    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait, "card"))[0].id };
-  }
-  if (payment.kind === "cash" || payment.kind === "prepay") {
-    if (spendable(s) < total) return fail("error.noCash");
-    const wait = deliveryWait(s, lines);
-    // A prepaid order ships the day after the transfer reaches the shop.
-    const paid = payment.kind === "prepay" && wait ? PREPAY_HOURS + TRANSFER_HOURS[bankOf(s)?.speed ?? "nextDay"] : 0;
-    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait + paid))[0].id };
-  }
-  const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
-  if (!offer) return fail("error.offerExpired");
   const wait = deliveryWait(s, lines);
-  const lease = { id: newId(s, "lease"), lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: s.hour, paid: 0, devices: [] as string[] };
-  lease.devices = lines.flatMap((l) => landed(s, stock(s, l, lease.id, locationId, wait)));
-  s.leases = [...s.leases, lease];
-  return { ok: true, id: lease.devices[0] };
+  if (payment.kind === "lease") {
+    const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
+    if (!offer) return fail("error.offerExpired");
+    placeOrder(s, { supplier: "hardware", name: lessorName(offer.lessor), lines: [], method: "onAccount", doc: "contract" });
+    const lease = { id: newId(s, "lease"), lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: s.hour, paid: 0, devices: [] as string[] };
+    lease.devices = lines.flatMap((l) => landed(s, stock(s, l, lease.id, locationId, wait)));
+    s.leases = [...s.leases, lease];
+    return { ok: true, id: lease.devices[0] };
+  }
+  if (cardOnly(lines) && payment.kind !== "card") return fail("error.cardOnly");
+  const placed = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines: lines.map((l) => hardwareEntry(s, l)), method: payment.kind });
+  if (!placed.ok) return placed;
+  const delay = payment.kind === "transfer" && wait ? PREPAY_HOURS + TRANSFER_HOURS[bankOf(s)?.speed ?? "nextDay"] : 0;
+  return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait + delay))[0] };
 }
 
 // Pays the remaining payments at once; the devices become owned.

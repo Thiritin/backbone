@@ -17,6 +17,8 @@ beforeEach(() => { vi.spyOn(cpuLoad, "of").mockReturnValue(1); });
 afterEach(() => { vi.restoreAllMocks(); });
 
 const rich = (cash = 1_000_000): GameState => ({ ...withServer(newGame(1)), cash });
+// The rest of the first month, which each rented location pays when it is ordered.
+const rentPaid = (s: GameState) => s.payables.filter((p) => p.doc === "contract").reduce((n, p) => n + p.amount, 0);
 const ok = (r: ReturnType<typeof addLocation>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;
@@ -68,7 +70,7 @@ describe("addLocation and closeLocation", () => {
     expect(s.devices.find((d) => d.panel === id)).toMatchObject({ model: "handoff", rackId: null, name: "fra2-gw-01" });
     expect(loc(s, ok(addLocation(freeFloor(s), "tellyhouse-north", "suite", 20))).readyAt).toBe(2160);
     expect(loc(s, ok(addLocation(freeFloor(s), "hetzler-park", "share", 1))).readyAt).toBe(48);
-    expect(s.cash).toBe(1_000_000);
+    expect(s.cash).toBeCloseTo(1_000_000 - rentPaid(s), 2);
     expect(freePositions(s, id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
   it("rejects unknown datacenters and sizes, missing cages and too little cash", () => {
@@ -100,7 +102,7 @@ describe("racks", () => {
     const id = ok(addLocation(freeFloor(s), "interaction-fra", "cage", 4));
     const r = ok(buyRack(s, id, "rack-42", 2));
     expect(rack(s, r)).toEqual({ id: r, model: "rack-42", locationId: id, position: 2, name: "fra2-rack-01", arriveAt: null, price: 800, boughtAt: 0, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: 0, flatKwAt: null, overSince: { a: null, b: null }, tile: expect.any(Object) });
-    expect(s.cash).toBe(9200);
+    expect(s.cash).toBeCloseTo(10_000 - rentPaid(s) - 800, 2);
     expect(s.ledger.at(-1)).toMatchObject({ category: "hardware", key: "ledger.hardware", params: { model: "42U rack", device: "fra2-rack-01" }, amount: -800 });
     expect(freePositions(s, id)).toEqual([1, 3, 4]);
     // Devices in a location that is not ready have no power.
@@ -160,7 +162,7 @@ describe("moveRack", () => {
     expect(moveCost(s, "rack2", fr5)).toEqual({ price: 300, hours: 24 });
     ok(moveRack(s, "rack2", fr5, 1));
     expect(rack(s, "rack2")).toMatchObject({ locationId: fr5, position: 1, arriveAt: 24, name: "fra1-rack-01" });
-    expect(s.cash).toBe(9700);
+    expect(s.cash).toBeCloseTo(10_000 - rentPaid(s) - 300, 2);
     expect(s.ledger.at(-1)).toEqual({ hour: 0, category: "moving", key: "ledger.move", params: { rack: "fra1-rack-01", location: "Equinox FR5" }, amount: -300 });
     // The server-to-switch cable stays inside the rack; the cable to the home router is unplugged.
     expect(s.cables.map((c) => c.id)).toEqual(["cab6"]);
@@ -181,7 +183,8 @@ describe("moveRack", () => {
     const s = rich(10_000);
     const lon = ok(addLocation(freeFloor(s), "tellyhouse-north", "cage", 4));
     ok(moveRack(s, "rack2", lon, 1));
-    expect([rack(s, "rack2").arriveAt, s.cash]).toEqual([72, 8800]);
+    expect(rack(s, "rack2").arriveAt).toBe(72);
+    expect(s.cash).toBeCloseTo(10_000 - rentPaid(s) - 1200, 2);
     run(s, 71);
     expect(rack(s, "rack2").arriveAt).toBe(72);
     run(s, 1);
@@ -222,7 +225,7 @@ describe("breakers", () => {
     expect(linkStatus(s, "dev5").online).toBe(false);
     expect(powerPerHour(s)).toBe(0);
     s.workloads = [];
-    ok(unmountDevice(s, "dev8", true));
+    ok(unmountDevice(s, "dev10", true));
     expect(resetBreaker(s, "loc1").ok).toBe(true);
     s.hour++;
     expect(linkStatus(s, "dev3").online).toBe(true);
@@ -261,10 +264,10 @@ describe("monthly bills", () => {
     const power = Math.round(0.118 * 744 * 0.09 * 1.6 * 100) / 100;
     expect(power).toBe(12.64);
     // The business DSL line costs €59.
-    expect(s.cash).toBe(START_CASH - 2500 - 198 - 59 - power);
+    expect(s.cash).toBe(START_CASH - 2500 - 198 - 198 - 59 - power);
     expect(s.powerDue).toBe(0);
-    expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["power", "ledger.powerUse", -power], ["rent", "ledger.space", -198], ["rent", "ledger.homeLine", -59]]);
-    expect(s.ledger[0].params).toMatchObject({ kwh: 88, ct: 14.4 });
+    expect(s.ledger.map((l) => [l.category, l.key, l.amount])).toEqual([["rent", "ledger.space", -198], ["power", "ledger.powerUse", -power], ["rent", "ledger.space", -198], ["rent", "ledger.homeLine", -59]]);
+    expect(s.ledger[1].params).toMatchObject({ kwh: 88, ct: 14.4 });
     expect(events).toContainEqual({ app: "Books", key: "event.bills", params: { power, rent: 257, leasing: 0, subscriptions: 0, total: 257 + power } });
   });
 });
