@@ -177,9 +177,11 @@ function formInvoice(s: GameState, id: string): void {
 
 export function firstOrder(s: GameState, events: SimEvent[]): void {
   if (s.webOpenedAt === null) return;
-  const day = Math.floor((s.hour - s.webOpenedAt) / 24);
   // The customer writes by email, so the order waits while the domain's MX is wrong.
-  if (day >= FIRST_ORDER_DAYS || s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
+  if (s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
+  s.firstOrderFrom ??= s.hour;
+  const day = Math.floor((s.hour - s.firstOrderFrom) / 24);
+  if (day >= FIRST_ORDER_DAYS) return;
   if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
 }
 

@@ -49,14 +49,28 @@ describe("onboarding cards", () => {
     const b = cardBoard(s);
     expect(b.wait[b.cards.findIndex((c) => c.id === "website")]).toBe(true);
     expect(b.current?.id).toBe("buyServer");
+    s.checklist = [...s.checklist, "setup", "shareWeb"];
+    expect(waiting(s, "hosting")).toBe(true);
+    s.checklist = [...s.checklist, "buyServer", "mountServer", "mountRouter", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "payBill"];
+    expect(cardBoard(s).current).toBeUndefined();
     s.hour += 72;
     expect(waiting(s, "website")).toBe(false);
+    expect(waiting(s, "hosting")).toBe(false);
   });
 
   it("brings the first order within three game days of web hosting going online", () => {
     expect(FIRST_ORDER_DAYS).toBe(3);
     const s = startGame(1);
     s.webOpenedAt = s.hour;
+    s.marketing = { ...s.marketing, lines: ["webHosting"] };
+    for (let h = 0; h < 24 * FIRST_ORDER_DAYS + 12 && !s.sales.requests.some((r) => r.kind === "order"); h++) tick(s);
+    expect(s.sales.requests.some((r) => r.kind === "order")).toBe(true);
+  });
+
+  it("starts the three days when the product is listed, not when the panel host came online", () => {
+    const s = startGame(1);
+    s.webOpenedAt = s.hour;
+    s.hour += 24 * 10;
     s.marketing = { ...s.marketing, lines: ["webHosting"] };
     for (let h = 0; h < 24 * FIRST_ORDER_DAYS + 12 && !s.sales.requests.some((r) => r.kind === "order"); h++) tick(s);
     expect(s.sales.requests.some((r) => r.kind === "order")).toBe(true);

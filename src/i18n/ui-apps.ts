@@ -366,4 +366,5 @@ export default {
   "guide.next.waiting": () => "Waiting",
   "guide.next.all": () => "All steps",
   "guide.next.done": () => "All steps done",
+  "guide.help": () => "Game help",
 } satisfies Dict;

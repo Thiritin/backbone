@@ -23,7 +23,8 @@
 .next-count { font-variant-numeric: tabular-nums; color: var(--text-2); }
 .next-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .next-bar i { display: block; height: 100%; background: var(--accent); }
-.next .btn { justify-self: start; }
+
 .next-wait { color: var(--text-2); }
 .next-all summary { cursor: pointer; }
 .next-all .chk-row.cur .cus-strong { color: var(--accent); }
+.next-actions { display: flex; gap: 8px; align-items: center; }

@@ -12,7 +12,7 @@ A new game opens paused on 1 January 2005 at 00:00 with no cash and €3,500 of 
 | Reseller accounts | None. The first registrar contract is signed in the first month (NameCheep needs no signup), and every domain costs the partner's wholesale a month (Sales and quotes, Domains) |
 | Company domain and email | None. A domain and a mail service are needed before the website and the first email order (Sales and quotes, Domains and Company email) |
 | Product lines | None offered; each line unlocks once the player can deliver it (Addresses and internet, The start) |
-| Customers | None. The first order email arrives within 3 days of the first hosting panel running on a server the internet reaches (see Sales and quotes) |
+| Customers | None. The first order email arrives within 3 days of web hosting being listed while the first hosting panel running on a server the internet reaches (see Sales and quotes) |
 
 
 ### Weekly challenges

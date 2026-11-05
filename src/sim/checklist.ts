@@ -121,6 +121,8 @@ export function waiting(s: GameState, id: string): boolean {
   switch (id) {
     case "payBill": return !!s.registration && !s.payables.some((p) => (p.doc ?? "invoice") === "invoice");
     case "website": return s.marketing.siteReady !== null && !siteBuilt(s);
+    // The last goal of the card needs the finished site.
+    case "hosting": return checkDone(s, "setup") && checkDone(s, "shareWeb") && !checkDone(s, "launch") && s.marketing.siteReady !== null && !siteBuilt(s);
     case "firstOrder": return s.webOpenedAt !== null && !checkDone(s, "firstCustomer") && !s.sales.requests.some((r) => r.kind === "order");
     default: return false;
   }
@@ -136,7 +138,10 @@ export function cardBoard(s: GameState): Board {
   const cards = over ? LATER.filter((g) => shown.has(g)).map((g): Card => ({ id: g, goals: [g], chapter: 2 })) : first;
   const done = cards.map((c) => c.goals.every((g) => checkDone(s, g)));
   const wait = cards.map((c, i) => !done[i] && waiting(s, c.id));
-  return { cards, done, wait, current: cards.find((_, i) => !done[i] && !wait[i]) };
+  // The first order needs web hosting online, so it is not offered while that card is unfinished.
+  const hosting = cards.findIndex((c) => c.id === "hosting");
+  const blocked = (c: Card) => c.id === "firstOrder" && !done[hosting];
+  return { cards, done, wait, current: cards.find((c, i) => !done[i] && !wait[i] && !blocked(c)) };
 }
 
 // The first goal of a card that is not ticked yet; the card's button opens that goal's screen.
