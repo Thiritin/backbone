@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { t } from "../src/i18n/en";
 import { atDesk, inbox, post } from "../src/sim/40-support/letters";
 import { openAccount } from "../src/sim/46-finance/bank";
 import { bill } from "../src/sim/46-finance/payables";
@@ -69,6 +70,14 @@ describe("era", () => {
     const p = bill(s, { supplier: "landlord", name: "Dwell Immobilien", lines: [fee(s)], method: "cash" });
     return render(<SupplierInvoice game={s} p={p} />).container;
   };
+  it.each([2005, 2012])("omits the bank block on a cash receipt and shows a VAT line in %s", (year) => {
+    const s = newGame(3);
+    s.hour = (year - 2005) * 365 * 24;
+    const p = bill(s, { supplier: "landlord", name: "Dwell Immobilien", lines: [fee(s)], method: "cash" });
+    const c = render(<SupplierInvoice game={s} p={p} />).container;
+    expect(c.textContent).not.toContain(t("paperwork.letter.bank"));
+    expect(c.textContent).toContain(t("purchase.vatFree"));
+  });
   it("prints 2005 in monospace on continuous forms and 2012 styled", () => {
     expect(vendor(2005).querySelector(".inv-dot .dot-strip")).toBeTruthy();
     cleanup();

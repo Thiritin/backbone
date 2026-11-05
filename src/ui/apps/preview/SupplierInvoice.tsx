@@ -64,7 +64,9 @@ export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
 
 // Small companies printed their invoices on a dot-matrix printer on continuous forms up to 2008; the laser PDF follows.
 export const DOT_UNTIL = 2009;
-const W = 46;
+// The site line from the short brand: a legal name too long for an address falls back to its first word.
+const webOf = (name: string): string => { const h = supplierHost(name); return `www.${h.length > 24 ? `${name.split(" ")[0].toLowerCase().replace(/[^a-z0-9]/g, "")}.de` : h}`; };
+const W = 60;
 const wrap = (text: string, n: number): string[] => text.split(" ").reduce<string[]>((o, w) => {
   const last = o[o.length - 1];
   if (last !== undefined && last.length + 1 + w.length <= n) o[o.length - 1] = `${last} ${w}`; else o.push(w);
@@ -73,13 +75,13 @@ const wrap = (text: string, n: number): string[] => text.split(" ").reduce<strin
 type Ln = string | [string, string];
 
 function DotInvoice({ game, p }: { game: GameState; p: Payable }) {
-  const web = `www.${supplierHost(p.name)}`, total = p.lines.reduce((n, l) => n - l.amount, 0), doc = p.doc ?? "invoice";
+  const web = webOf(p.name), total = p.lines.reduce((n, l) => n - l.amount, 0), doc = p.doc ?? "invoice";
   const rate = vatRate(p.issuedAt), taxed = p.lines.filter((l) => INPUT_CATEGORIES.includes(l.category));
   const vat = -taxed.reduce((n, l) => n + l.amount, 0) * rate / (1 + rate);
   const bank = ibanEra(game) ? `${t("checkout.iban")} ${groupIban(supplierIban(p.supplier))}` : `${t("paperwork.letter.account")} ${supplierAccount(p.supplier)} ${t("paperwork.letter.code")} ${SUPPLIER_CODE}`;
   const title = t(`purchase.doc.${doc}`);
   const head: Ln[] = [
-    p.name.toUpperCase(), web, "", ...addressLines(ownAddress(game)), "",
+    ...wrap(p.name.toUpperCase(), W), web, "", ...addressLines(ownAddress(game)), "",
     [doc === "invoice" ? t("preview.number") : t(`purchase.no.${doc}`), p.number], [t("preview.date"), formatDay(p.issuedAt)],
     ...(doc === "invoice" ? [[t("preview.due"), formatDay(p.dueAt)] as Ln] : []),
     [t("purchase.pay"), t(`purchase.method.${p.method ?? "transfer"}`)],
@@ -87,7 +89,7 @@ function DotInvoice({ game, p }: { game: GameState; p: Payable }) {
   ];
   const body: Ln[] = [
     ...p.lines.flatMap((l, n): Ln[] => wrap(t(l.key, l.params), W - 18).map((x, i) => (i ? [`    ${x}`, ""] : [`${String(n + 1).padStart(2)}. ${x}`, euroCents(-l.amount)]) as Ln)),
-    ...(taxed.length ? [[t("purchase.net"), euroCents(total - vat)], [t("purchase.vat", { rate: rate.toLocaleString(LOCALE, { style: "percent" }) }), euroCents(vat)], [t("purchase.gross"), euroCents(total)]] as Ln[] : []),
+    ...(!taxed.length ? [[t("purchase.vatFree"), ""] as Ln] : taxed.length ? [[t("purchase.net"), euroCents(total - vat)], [t("purchase.vat", { rate: rate.toLocaleString(LOCALE, { style: "percent" }) }), euroCents(vat)], [t("purchase.gross"), euroCents(total)]] as Ln[] : []),
   ];
   const out = (ls: Ln[]) => ls.map((l, i) => typeof l === "string" ? <div key={i}>{l || "\u00a0"}</div> : <div key={i} className="dot-row"><span>{l[0]}</span><span className="num">{l[1]}</span></div>);
   return (
@@ -102,7 +104,7 @@ function DotInvoice({ game, p }: { game: GameState; p: Payable }) {
           <hr className="dbl" />
           <div className="dot-row"><span>{t("books.total").toUpperCase()}</span><span className="num">{euroCents(total)}</span></div>
           <div>&nbsp;</div>
-          <div>{t("paperwork.letter.bank")}: {bank}</div>
+          {doc === "invoice" && <div>{t("paperwork.letter.bank")}: {bank}</div>}
         </div>
       </article>
     </div>
@@ -111,7 +113,7 @@ function DotInvoice({ game, p }: { game: GameState; p: Payable }) {
 
 function StyledInvoice({ game, p }: { game: GameState; p: Payable }) {
   const { color, logo, layout } = supplierBrand(p.name);
-  const web = `www.${supplierHost(p.name)}`, total = p.lines.reduce((n, l) => n - l.amount, 0);
+  const web = webOf(p.name), total = p.lines.reduce((n, l) => n - l.amount, 0);
   const rate = vatRate(p.issuedAt);
   // Prices are gross, so the VAT is the share the input-tax lines carry.
   const taxed = p.lines.filter((l) => INPUT_CATEGORIES.includes(l.category));
@@ -147,6 +149,7 @@ function StyledInvoice({ game, p }: { game: GameState; p: Payable }) {
             <tr className="inv-total"><td /><td>{t("books.total")}</td><td className="r num">{euroCents(total)}</td></tr>
           </tbody>
         </table>
+        {taxed.length === 0 && <dl className="inv-sum num"><div><dt>{t("purchase.vatFree")}</dt></div></dl>}
         {taxed.length > 0 && (
           <dl className="inv-sum num">
             <div><dt>{t("purchase.net")}</dt><dd>{euroCents(total - vat)}</dd></div>
@@ -155,7 +158,7 @@ function StyledInvoice({ game, p }: { game: GameState; p: Payable }) {
           </dl>
         )}
         <footer className="inv-foot">
-          <span>{p.name}</span><span>{web}</span><span>{t("paperwork.letter.bank")}: <span className="num">{bank}</span></span>
+          <span>{p.name}</span><span>{web}</span>{doc === "invoice" && <span>{t("paperwork.letter.bank")}: <span className="num">{bank}</span></span>}
         </footer>
       </article>
     </div>
