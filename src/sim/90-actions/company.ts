@@ -4,6 +4,7 @@ import { STARTER_APPS } from "../10-catalog/store";
 import { LEGAL_FORMS, officeOpen, registerNumber } from "../80-business/office";
 import { bankById, planById } from "../10-catalog/banks";
 import { renameStartBox } from "../42-mail/model";
+import { provisionStarterMail } from "../43-pear-mail/setup";
 
 // Logo marks by id; the UI draws each one as an icon on a tile in the chosen colour.
 export const COMPANY_LOGOS = ["server", "cloud", "zap", "globe", "rocket", "database", "cpu", "shield", "leaf", "mountain", "waves", "flame", "wolf", "fox", "cat", "toaster"];
@@ -53,5 +54,6 @@ export function registerCompany(s: GameState, name: string, owner: string, form:
   setCompany(s, { name, address: { street: address.street.trim(), zip: address.zip.trim(), city: address.city.trim() } });
   s.registration = { hour: s.hour, owner: owner.trim(), form, number: registerNumber(s.seed) };
   s.installed = [...new Set([...s.installed, ...STARTER_APPS])];
+  provisionStarterMail(s);
   return { ok: true };
 }

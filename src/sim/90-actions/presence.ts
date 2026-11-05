@@ -1,5 +1,6 @@
 // Whose hands do hands-on work (docs/design/gdd/the-world.md, Simulation pieces): the player's on site, the datacenter's remote hands
 // from afar, nobody's in the basement while the player is away.
+import { canPay } from "../46-finance/payables";
 import { datacenterById } from "../20-world/datacenters";
 // A cycle with hardware.ts, which calls viaHands; neither uses the other while loading.
 import type { GameState, WorkOrder } from "../50-state";
@@ -86,7 +87,7 @@ export function viaHands(s: GameState, action: HandsAction, args: unknown[], loc
   }
   if (!self) {
     const q = jobQuote(s, locationId, kind)!;
-    if (s.cash < q.fee) return { ok: false, error: "error.noCash" };
+    if (!canPay(s, q.fee)) return { ok: false, error: "error.noCash" };
     return orderWork(s, "provider", locationId, target, act, { kind, workMin: JOB_HOURS[kind] * 60, waitMin: (q.wait - JOB_HOURS[kind]) * 60, fee: q.fee, deviceId });
   }
   if (opensOf(s, "player").length >= ORDERS.max) return { ok: false, error: "error.queueFull" };

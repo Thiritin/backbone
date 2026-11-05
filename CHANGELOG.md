@@ -3,8 +3,11 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
-- Your figure walks back to its seat a few seconds after visiting the letterbox, a shelf or a rack.
-- The empty storage shelf no longer opens a blank view, and the job label on the back of a rack no longer covers the cable markers.
+- Your figure walks back to its seat a few seconds after visiting the letterbox, a shelf or a rack, once nothing is open.
+- The empty storage shelf no longer opens a blank view, the job label on the back of a rack no longer covers the cable markers, and the room is either day or night with no fade.
+- The registrar page now shows which name servers a domain uses, the registrar's or your own, with a status that reads Active, Propagating or Not responding; your own name servers only answer while you run a DNS server.
+- Used hardware, hall fittings, remote hands, training, market studies, certificates and monthly network charges now come with a receipt or an invoice, and a company with a bank account no longer needs cash on hand to order them.
+- Your GMix mailbox is set up for you when you register your company, so Pear Mail fetches your mail right away and the GMix site opens your inbox without a password reset.
 - Hardware, software licences, Pear apps, shop modules and new datacenter space now come with an invoice or receipt, and renting space pays the rest of the first month at once.
 - Receipts, credit notes and order confirmations open like invoices, show the payment method with net, VAT and gross, and the payables list in Books has a document and payment method column.
 - Rent deposits, buildings, provider cables, network and domain fees, marketing, the website agency and other purchases now come with a receipt or an invoice, and refunds come with a credit note.

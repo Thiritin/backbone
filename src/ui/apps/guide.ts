@@ -35,6 +35,11 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.bank"), text: t("apps.guide.step.bank"), app: "Browser", focus: { kind: "url", id: HOME_URL } };
     case "register":
       return { title: t("guide.step.register"), text: t("apps.guide.step.register"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
+    case "mail": {
+      const box = s.mail.accounts.find((a) => a.id === s.mail.primary);
+      if (!s.registration || !box) return { title: t("guide.step.mail"), text: t("apps.guide.step.mailPending"), app: "Browser", focus: { kind: "url", id: OFFICE_URL } };
+      return { title: t("guide.step.mail"), text: t("apps.guide.step.mail", { address: `${box.local}@${box.domain}` }), app: "Pear Mail" };
+    }
     case "payBill":
       return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post" };
     case "payBills": {
@@ -110,7 +115,5 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.hire"), text: t("apps.guide.step.hire"), app: "Staff" };
     case "study":
       return { title: t("guide.step.study"), text: t("apps.guide.step.study"), app: "Market" };
-    case "pearMail":
-      return { title: t("guide.step.pearMail"), text: t("apps.guide.step.pearMail"), app: "Pear Mail", focus: { kind: "addAccount", id: "" } };
   }
 }

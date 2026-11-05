@@ -224,6 +224,7 @@ export function credit(s: GameState, c: Customer, share: number): void {
   const amount = cents(share * monthlyValue(s.services, c.id));
   bump(c, 30 * share);
   if (amount <= 0) return;
+  // A credit to a customer is a refund, not a vendor purchase.
   s.cash = cents(s.cash - amount);
   s.ledger = [...s.ledger, { hour: s.hour, category: "credit", key: "ledger.credit", params: { customer: c.name }, amount: -amount }];
 }
