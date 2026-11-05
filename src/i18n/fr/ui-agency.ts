@@ -36,7 +36,7 @@ export default {
   "agency.quote.price": () => "Prix",
   "agency.quote.orderNew": () => "Commander le design du site",
   "agency.quote.orderRedo": () => "Commander une refonte",
-  "agency.quote.deliveredOn": (p) => `Livraison le ${p.date}`,
+  "agency.quote.deliveredOn": (p) => `le ${p.date}`,
   "agency.foot": (p) => `© ${p.year} Young von Mutt`,
   "agency.frame.marquee": () => "Bienvenue sur notre page d'accueil ! De nouveaux produits arrivent bientôt !",
   "agency.frame.best": () => "Optimisé pour 800x600",
