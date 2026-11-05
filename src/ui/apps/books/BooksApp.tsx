@@ -25,6 +25,9 @@ import { OverviewTab, StatementTab, StatisticsTab } from "./Reports";
 import { TaxTab } from "./TaxTab";
 import { Register } from "./Register";
 import { BooksSetup } from "./BooksSetup";
+import { InstallGuide } from "./guide/InstallGuide";
+import { Installer } from "./guide/Installer";
+import { setupOf } from "../../../sim/80-business/books-guide";
 import type { AppMenu } from "../../desktop/menu";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
@@ -63,6 +66,7 @@ export function BooksApp() {
   return (
     <div className="books books-link">
       <button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: booksAppUrl(v) })}>{t("books.openWeb", { program: v.program })}</button>
+      <InstallGuide />
     </div>
   );
 }
@@ -76,11 +80,14 @@ export function BooksProgram() {
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);
   const [setup, setSetup] = useSessionState("books.setup", false);
+  const [guide, setGuide] = useSessionState("books.guide", false);
+  const [signup, setSignup] = useSessionState("books.signup", game.books.setupDone === false && !setupOf(game).company);
   useFocus("Books", (got) => {
     const f = got.kind === "url" ? got.inner : got;
     if (!f) return;
     if (f.kind === "register") return setRegister(true);
     if (f.kind === "setup") return setSetup(true);
+    if (f.kind === "guide") return setGuide(true);
     const to = f.kind === "invoice" ? (hasFeature(game, "dunning") && game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
       : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : f.kind === "payable" ? "payables" : null;
     if (!to) return;
@@ -106,13 +113,16 @@ export function BooksProgram() {
     <div className="books" style={skin && { "--accent": skin.accent, "--bk-bar": skin.bar, "--bk-ink": skin.ink } as CSSProperties}>
       <Layout v={v!} entries={entries} active={current.id} pick={pick}>
         <div className="books-top">
+            {v && game.books.setupDone === false && <button className="btn books-guide-open" aria-expanded={guide} onClick={() => setGuide(!guide)}>{t("bkguide.menu")}</button>}
             {v?.deployment === "browser" && current.id === "overview" && <button className="btn" onClick={() => setSetup(true)}>{t("setup.title")}</button>}
             {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
             {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
         </div>
         {register && keys && <Register onClose={() => setRegister(false)} />}
+        {guide && <div className="books-guide"><InstallGuide go={pick} /></div>}
         <div className="books-body">
           {v && booksOffline(game) ? <Offline v={v} />
+            : v?.deployment === "browser" && signup ? <Installer id={v.id} inline onClose={() => setSignup(false)} />
             : v && (setup || game.books.setupDone === false) ? <BooksSetup v={v} game={game} close={(to) => { setSetup(false); if (shown.some((x) => x.id === to)) pick(to!); }} />
             : <Body key={`${current.id}:${focus}`} focus={focus} go={pick} />}
         </div>
@@ -132,4 +142,7 @@ function Offline({ v }: { v: BooksVendor }) {
 }
 
 // The installed program offers the setup wizard in its app menu; the web version on its overview.
-export const booksMenus = (): AppMenu[] => [{ id: "app", title: "", items: [{ label: t("setup.title"), run: () => useStore.getState().openApp("Books", { kind: "setup", id: "" }) }] }];
+export const booksMenus = (): AppMenu[] => [{ id: "app", title: "", items: [
+  { label: t("bkguide.menu"), run: () => useStore.getState().openApp("Books", { kind: "guide", id: "" }) },
+  { label: t("setup.title"), run: () => useStore.getState().openApp("Books", { kind: "setup", id: "" }) },
+] }];

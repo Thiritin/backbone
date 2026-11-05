@@ -1,0 +1,94 @@
+/* Install guide: one structure, four looks (booklet, help article, onboarding checklist, manual chapter). */
+.books-guide { max-height: 55%; overflow: auto; border-bottom: var(--ar-bw, 1px) solid var(--line, #bbb); }
+.bg { --bg-ink: var(--text, #222); --bg-paper: var(--win, #fff); --bg-line: #c9c9c9; --bg-ok: oklch(0.55 0.14 150); padding: 14px 18px; color: var(--bg-ink); background: var(--bg-paper); }
+.bg-head { display: flex; align-items: baseline; gap: 12px; }
+.bg-head h2 { margin: 0; font-size: 1.15em; flex: 1; }
+.bg-count { color: var(--text-3, #666); font-size: 0.9em; }
+.bg-bar { height: 6px; margin: 8px 0 10px; background: var(--bg-line); border-radius: 3px; overflow: hidden; }
+.bg-bar i { display: block; height: 100%; background: var(--bg-ok); transition: width 0.3s; }
+.bg-allDone { margin: 4px 0 8px; font-weight: 600; color: var(--bg-ok); }
+.bg-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bg-step { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid transparent; }
+.bg-step.current { border-color: var(--accent, #3b82c4); background: color-mix(in oklch, var(--accent, #3b82c4) 10%, transparent); }
+.bg-step.ticked { opacity: 0.75; }
+.bg-mark { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 1.5px solid var(--bg-line); border-radius: 50%; font-size: 0.8em; }
+.bg-step.ticked .bg-mark { background: var(--bg-ok); border-color: var(--bg-ok); color: #fff; }
+.bg-mark svg { width: 14px; height: 14px; }
+.bg-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bg-opt { margin-left: 8px; font-weight: 400; font-style: normal; font-size: 0.8em; color: var(--text-3, #666); text-transform: uppercase; letter-spacing: 0.04em; }
+.bg-value { font-weight: 600; }
+.bg-act { margin-top: 4px; }
+.bg-field { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+.bg-field label, .bki-field { display: flex; flex-direction: column; gap: 2px; font-size: 0.85em; }
+.bg-err, .bki-err { margin: 4px 0 0; color: oklch(0.55 0.2 25); }
+
+/* Booklet: a printed Erste Schritte leaflet, serif on cream paper with numbered steps. */
+.bg-booklet { --bg-paper: #fbf6e6; --bg-ink: #2a2418; --bg-line: #cdbf98; font-family: Georgia, "Times New Roman", serif; box-shadow: inset 0 0 0 4px #fbf6e6, inset 0 0 0 5px #cdbf98; }
+.bg-booklet .bg-head h2 { font-size: 1.4em; letter-spacing: 0.04em; text-transform: uppercase; border-bottom: 2px solid var(--bg-ink); padding-bottom: 4px; }
+.bg-booklet .bg-mark { border-radius: 2px; }
+.bg-booklet .bg-step { border-bottom: 1px dotted var(--bg-line); }
+
+/* Help article: a vendor help-centre page with a card per step. */
+.bg-help { --bg-paper: #f6f8fb; font-family: system-ui, sans-serif; }
+.bg-help .bg-step { background: #fff; border: 1px solid #dde3ec; border-radius: 6px; }
+.bg-help .bg-step.current { border-color: var(--accent, #3b82c4); }
+
+/* Onboarding checklist: rounded card with big progress, as web programs show on their first screen. */
+.bg-checklist { --bg-paper: var(--win, #fff); border-radius: 12px; margin: 12px; box-shadow: 0 1px 6px rgb(0 0 0 / 0.18); font-family: system-ui, sans-serif; }
+.bg-checklist .bg-bar { height: 10px; border-radius: 5px; }
+.bg-checklist .bg-step { border-radius: 8px; }
+.bg-checklist .bg-mark { width: 26px; height: 26px; }
+
+/* Manual chapter: monospace-free documentation page with chapter numbers. */
+.bg-manual { --bg-paper: #fff; font-family: "DejaVu Serif", Georgia, serif; counter-reset: bgs; border-left: 4px solid #6a9a3a; }
+.bg-manual .bg-head h2::before { content: "1. "; }
+.bg-manual .bg-steps { counter-reset: bgs; }
+.bg-manual .bg-mark { border: 0; border-radius: 0; width: auto; min-width: 2.6em; justify-content: start; background: none; color: inherit; }
+.bg-manual .bg-mark .num::before { content: "1."; }
+.bg-manual .bg-step.ticked .bg-mark { background: none; color: var(--bg-ok); }
+
+/* Installer */
+.bki-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: oklch(0 0 0 / 0.25); }
+.bki { width: min(560px, 94vw); background: #ece9d8; color: #000; font: 13px/1.4 Tahoma, "Segoe UI", sans-serif; display: flex; flex-direction: column; border: 2px outset #fff; box-shadow: 0 6px 24px rgb(0 0 0 / 0.4); }
+.bki-title { background: linear-gradient(90deg, #0a246a, #a6caf0); color: #fff; font-weight: 700; padding: 3px 8px; }
+.bki-main { display: flex; min-height: 280px; }
+.bki-banner { flex: none; width: 150px; padding: 14px 10px; background: linear-gradient(#1f3c88, #0a1850); color: #fff; }
+.bki-banner b { display: block; margin-bottom: 14px; font-size: 1.1em; }
+.bki-banner ol { list-style: none; margin: 0; padding: 0; font-size: 0.85em; opacity: 0.9; }
+.bki-banner li { padding: 2px 0; opacity: 0.55; }
+.bki-banner li.on { opacity: 1; font-weight: 700; }
+.bki-banner li.past { opacity: 0.8; }
+.bki-page { flex: 1; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: #fff; }
+.bki-page h3 { margin: 0 0 4px; font-size: 1.1em; }
+.bki-licence { width: 100%; height: 140px; resize: none; font: inherit; }
+.bki-check { display: flex; gap: 8px; align-items: center; }
+.bki-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid #aca899; }
+.bki-bar { height: 16px; border: 1px solid #7f9db9; background: #fff; }
+.bki-bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, #2c8c2c 0 8px, #fff 8px 10px); }
+
+/* 2010 to 2015: the wizard of the time, glossy title, light banner */
+.bki-wizard { background: #f0f0f0; border-radius: 8px 8px 0 0; border: 1px solid #5a7aa0; font-family: "Segoe UI", sans-serif; }
+.bki-wizard .bki-title { background: linear-gradient(#bcd4ee, #8fb0d8); color: #000; border-radius: 7px 7px 0 0; }
+.bki-wizard .bki-banner { background: linear-gradient(#f6fafe, #cfe0f3); color: #1b3a63; }
+.bki-wizard .bki-bar i { background: linear-gradient(#7fdc7f, #2fa82f); }
+
+/* 2016 on: flat page, no frame, accent bar */
+.bki-flat { background: #fff; border: 0; border-radius: 4px; font-family: "Segoe UI", system-ui, sans-serif; }
+.bki-flat .bki-title { background: var(--accent, #1170d0); border-radius: 4px 4px 0 0; }
+.bki-flat .bki-banner { width: 120px; background: #f3f3f3; color: #333; }
+.bki-flat .bki-bar { border: 0; height: 4px; background: #e3e3e3; }
+.bki-flat .bki-bar i { background: var(--accent, #1170d0); }
+.bki-flat .bki-foot { border-top: 0; background: #f3f3f3; }
+
+/* The register program's setup: a plain Inno style page without the side banner's gradient */
+.bki-inno { background: #f0f0f0; border: 1px solid #888; font-family: Tahoma, sans-serif; }
+.bki-inno .bki-title { background: #fff; color: #000; border-bottom: 1px solid #ccc; }
+.bki-inno .bki-banner { width: 130px; background: #fff; color: #000; border-right: 1px solid #ccc; }
+.bki-inno .bki-bar i { background: #3a7bd5; }
+
+/* Sign-up of a web program, drawn inline in the program's page */
+.bki-signup { width: min(520px, 100%); margin: 24px auto; background: var(--win, #fff); border: 0; border-radius: 12px; box-shadow: 0 1px 8px rgb(0 0 0 / 0.2); font-family: system-ui, sans-serif; }
+.bki-signup .bki-title { background: var(--bk-bar, var(--accent, #1170d0)); color: var(--bk-ink, #fff); border-radius: 12px 12px 0 0; padding: 8px 14px; }
+.bki-signup .bki-banner { width: 130px; background: color-mix(in oklch, var(--accent, #1170d0) 12%, transparent); color: inherit; }
+.bki-signup .bki-foot { border-top: 0; }
+.bki-inline.bki-signup { position: static; }
