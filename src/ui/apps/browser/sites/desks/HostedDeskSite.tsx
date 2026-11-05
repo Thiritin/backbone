@@ -102,7 +102,7 @@ function Account({ game, id, to, go }: Props & { go: (url: string) => void }) {
           <tr><th>{t("desk-sites.address")}</th><td>{tenantHost(d, mine)}</td></tr>
           <tr><th>{t("desk-sites.agents")}</th><td className="num">{seats(game)}</td></tr>
           <tr><th>{t("desk-sites.monthly")}</th><td className="num">{euroCents(monthlyCharge(game, deskItem(d)))}</td></tr>
-          {bill && <tr><th>{t("payB.billing")}</th><td><OrderDone game={game} payable={bill.id} /></td></tr>}
+          {bill && <tr><th>{t("payB.billing")}</th><td><OrderDone payable={bill.id} /></td></tr>}
         </tbody>
       </table>
       <DomainRecords game={game} go={go} />

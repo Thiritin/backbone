@@ -113,7 +113,7 @@ describe("network and addresses", () => {
     expect(joinLir(poor)).toEqual({ ok: false, error: "error.noCash" });
   });
 
-  it("bills a provider cable when it is installed", () => {
+  it("confirms a provider cable at the order and bills it when it is installed", () => {
     const s = freeFloor({ ...newGame(1), cash: 1e7 });
     s.hour = at(2010, 1, 1, 9);
     s.unlocks = ["network"];
@@ -122,7 +122,8 @@ describe("network and addresses", () => {
     const racks = locs.map((id) => s.racks.find((r) => r.locationId === id)!);
     const cash = s.cash;
     ok(orderProviderCable(s, racks[0].id, 0, racks[1].id, 0));
-    const cables = () => s.payables.filter((p) => p.supplier === "network");
+    const cables = () => s.payables.filter((p) => p.supplier === "network" && p.doc !== "contract");
+    expect(s.payables.filter((p) => p.supplier === "network")).toMatchObject([{ doc: "contract", amount: 0, name: "Equinox FR5" }]);
     expect(cables()).toHaveLength(0);
     while (!cables().length) tick(s);
     expect(last(s)).toMatchObject({ supplier: "network", method: "cash", doc: "receipt" });

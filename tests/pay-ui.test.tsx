@@ -6,12 +6,16 @@ import { openAccount } from "../src/sim/46-finance/bank";
 import type { GameState, LedgerEntry } from "../src/sim/50-state";
 import { methodsFor, placeOrder } from "../src/sim/90-actions/purchase";
 import { Checkout } from "../src/ui/apps/browser/sites/shared/Checkout";
-import { PayMethods } from "../src/ui/apps/browser/sites/shared/PayMethods";
+import { PayStep } from "../src/ui/apps/browser/sites/shared/PayStep";
+import type { SupplierId } from "../src/sim/46-finance/payables";
+import { hourOf } from "../src/sim/00-core/time";
 import { SupplierInvoice } from "../src/ui/apps/preview/SupplierInvoice";
 import { newGame } from "./fixtures";
 
 afterEach(cleanup);
 const line = (amount: number): LedgerEntry => ({ hour: 0, category: "hardware", key: "ledger.hardware", params: {}, amount });
+const step = (s: GameState, supplier: SupplierId, amount = 100) =>
+  render(<PayStep game={s} buy={{ supplier, name: "Alternatte", amount, run: () => ({ ok: true }) }} onClose={() => {}} />);
 const banked = (): GameState => {
   const s = newGame(2);
   s.bank = { ...openAccount(s, "sparklasse"), welcomed: true };
@@ -44,7 +48,7 @@ describe("document kinds", () => {
 describe("method list", () => {
   it("offers what methodsFor allows and words the rest", () => {
     const s = banked(), lines = [line(-100)];
-    render(<PayMethods game={s} supplier="hardware" lines={lines} value="transfer" onChange={() => {}} />);
+    step(s, "hardware");
     const on = methodsFor(s, "hardware", lines);
     for (const m of ["transfer", "onAccount", "card", "debit"] as const) {
       const box = screen.getByLabelText(new RegExp(t(`purchase.method.${m}`))) as HTMLInputElement;
@@ -56,15 +60,29 @@ describe("method list", () => {
   });
 
   it("offers cash alone before a bank account", () => {
-    render(<PayMethods game={newGame(1)} supplier="landlord" lines={[line(-100)]} value="cash" onChange={() => {}} />);
+    step(newGame(1), "landlord");
     expect(screen.getAllByRole("radio")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: t("payD.pay") })).toBeTruthy();
   });
 
   it("shows the card limit once the card is full", () => {
     const s = banked();
     s.bank!.card = { limit: 50, readyAt: 0, spent: [] } as unknown as NonNullable<GameState["bank"]>["card"];
-    render(<PayMethods game={s} supplier="landlord" lines={[line(-100)]} value="transfer" onChange={() => {}} />);
+    step(s, "landlord");
     expect(screen.getByText(t("purchase.off.cardLimit"))).toBeTruthy();
+    expect((screen.getByLabelText(new RegExp(t("purchase.method.card"))) as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it("offers transfer and card in a 2012 company with a bank and a card, and confirms with the order button", () => {
+    const s = banked();
+    s.hour = hourOf(new Date(Date.UTC(2012, 2, 1, 9)));
+    s.bank!.card = { limit: 5000, readyAt: 0, spent: [] } as unknown as NonNullable<GameState["bank"]>["card"];
+    step(s, "landlord");
+    const on = (m: string) => !(screen.getByLabelText(new RegExp(t(`purchase.method.${m}`))) as HTMLInputElement).disabled;
+    expect(on("transfer") && on("card")).toBe(true);
+    expect(screen.queryByText(t("purchase.method.cash"))).toBeNull();
+    expect(screen.getAllByRole("radio").filter((r) => (r as HTMLInputElement).checked)).toHaveLength(1);
+    expect(screen.getByRole("button", { name: t("checkout.placeOrder") })).toBeTruthy();
   });
 
   it("drives the shared checkout payment step", () => {

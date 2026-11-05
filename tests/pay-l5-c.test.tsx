@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { t } from "../src/i18n/en";
 import { yearOf } from "../src/sim/00-core/time";
-import { FLYER_SIZES, flyerPrice } from "../src/sim/10-catalog/flyers";
+import { FLYER_NAME, FLYER_SIZES, flyerPrice } from "../src/sim/10-catalog/flyers";
 import { modelById, OOB_PORT, oobPorts } from "../src/sim/10-catalog/hardware";
 import { HARDWARE_SHOP, type Method, type SupplierId } from "../src/sim/46-finance/payables";
 import { AD, JOB_BOARD, staffPrice } from "../src/sim/47-staff/staff";
@@ -59,6 +59,7 @@ function opens(p: { id: string; paidAt: number | null }) {
 }
 
 const banked = () => withCard(readyGame(3));
+const confirm = () => fireEvent.click(screen.getByRole("button", { name: t("checkout.placeOrder") }));
 
 describe("agency quote", () => {
   const Live = () => <AgencySite game={useStore((s) => s.game)} path="/quote" go={() => {}} />;
@@ -68,8 +69,10 @@ describe("agency quote", () => {
     s.bank = null;
     put(s);
     render(<Live />);
+    fireEvent.click(screen.getByText(t("agency.quote.orderNew")));
     offers("services", AGENCY_TITLE, designQuote(s));
     expect(rows().map((l) => l.querySelector("span")!.textContent)).toEqual([label("cash")]);
+    expect(screen.getByRole("button", { name: t("payD.pay") })).toBeTruthy();
   });
 
   it("passes the chosen method to the redesign and links its document", () => {
@@ -77,8 +80,9 @@ describe("agency quote", () => {
     setUpChannel(s, "website");
     put(s);
     render(<Live />);
+    fireEvent.click(screen.getByText(t("agency.quote.orderRedo")));
     offers("services", AGENCY_TITLE, designQuote(s));
-    opens(orders("card", () => fireEvent.click(screen.getByText(t("agency.quote.orderRedo")))));
+    opens(orders("card", confirm));
   });
 });
 
@@ -89,9 +93,9 @@ describe("marketing channels", () => {
     setUpChannel(s, "website");
     put(s);
     render(<MarketingApp />);
+    fireEvent.click(screen.getAllByText(t("marketing.setUp")).find((b) => b.tagName === "BUTTON" && !(b as HTMLButtonElement).disabled)!);
     offers("services", AGENCY_TITLE, Math.max(...Object.values(OWNED).map((d) => d.setup)));
-    const buy = screen.getAllByText(t("marketing.setUp")).find((b) => b.tagName === "BUTTON" && !(b as HTMLButtonElement).disabled)!;
-    opens(orders("transfer", () => fireEvent.click(buy)));
+    opens(orders("transfer", confirm));
   });
 });
 
@@ -102,8 +106,9 @@ describe("staff job ad", () => {
     render(<StaffApp />);
     fireEvent.click(screen.getAllByText(t("misc.jobMarket"))[0]);
     const year = yearOf(s.hour);
-    offers("services", JOB_BOARD, Math.max(staffPrice(AD.standard.price, year), staffPrice(AD.premium.price, year)));
-    opens(orders("onAccount", () => fireEvent.click(screen.getByText(t("misc.standardAd")))));
+    fireEvent.click(screen.getByText(t("misc.standardAd")));
+    offers("services", JOB_BOARD, staffPrice(AD.standard.price, year));
+    opens(orders("onAccount", confirm));
   });
 });
 
@@ -112,8 +117,10 @@ describe("flyer order", () => {
     const s = banked(), go = vi.fn();
     put(s);
     render(<FlyerlarmSite game={useStore.getState().game} path="/flyers" go={go} />);
-    offers("services", AGENCY_TITLE, flyerPrice(FLYER_SIZES[1], yearOf(s.hour)));
-    const p = orders("card", () => fireEvent.click(screen.getByText(t("flyers.order"))));
+    fireEvent.click(screen.getByText(t("flyers.order")));
+    offers("services", FLYER_NAME, flyerPrice(FLYER_SIZES[1], yearOf(s.hour)));
+    const p = orders("card", confirm);
+    expect(p.name).toBe(FLYER_NAME);
     expect(go).toHaveBeenCalledWith(expect.stringContaining(`/orders?doc=${p.id}`));
     cleanup();
     render(<FlyerlarmSite game={game()} path={`/orders?doc=${p.id}`} go={go} />);
@@ -136,7 +143,8 @@ describe("ATX adapter", () => {
   it("fits the adapter with the chosen method", () => {
     put(kvm(banked()));
     render(<Live />);
+    fireEvent.click(screen.getByText("ATX", { exact: false }));
     offers("hardware", HARDWARE_SHOP, ATX_PRICE);
-    opens(orders("card", () => fireEvent.click(screen.getByText("ATX", { exact: false }))));
+    opens(orders("card", confirm));
   });
 });

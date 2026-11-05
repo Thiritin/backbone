@@ -8,10 +8,11 @@ import { PANEL_JACKS, PROVIDER_CABLE, uplinkOffers, uplinkPrice } from "../../..
 import { datacenterById } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState } from "../../../sim/50-state";
 import { freeJack, jackRoles, type JackRole } from "../../../sim/60-infra/panels";
-import { cancelProviderCable, orderProviderCable } from "../../../sim/90-actions/connectivity";
+import { cancelProviderCable } from "../../../sim/90-actions/connectivity";
 import { orderExchangePort, orderTransit } from "../../../sim/90-actions/network";
 import { formatDay } from "../../apps/billing/format";
-import { reachable, roleName } from "../../apps/locations/ProviderJack";
+import { cableOrder, reachable, roleName } from "../../apps/locations/ProviderJack";
+import type { Purchase } from "../../apps/browser/sites/shared/PayStep";
 import { speed } from "../../apps/locations/NetworkTab";
 import type { MenuEntry } from "../../desktop/menu";
 import { useStore } from "../../store";
@@ -104,7 +105,8 @@ export function ProviderPanel({ game, panel, picked = null, hand = null, onJack,
 }
 
 // The lines on a provider jack's tag: book an uplink or order a provider cable from a free jack, or cancel a queued order.
-export function jackEntries(game: GameState, panel: Device, i: number): MenuEntry[] {
+// A cable goes to onCable, which asks for the payment method.
+export function jackEntries(game: GameState, panel: Device, i: number, onCable: (buy: Purchase & { key: string }) => void): MenuEntry[] {
   const act = useStore.getState().act, j = jacksOf(game, panel)[i], rack = panel.rackId!;
   if (j.order) return [{ label: t("locations-2.cancel"), run: () => act(cancelProviderCable, j.order!) }];
   if (j.role !== "free") return [];
@@ -120,7 +122,7 @@ export function jackEntries(game: GameState, panel: Device, i: number): MenuEntr
   const to = reachable(game, rack).map((r) => ({ r, jack: freeJack(game, r.id) })).filter((x) => x.jack);
   return [
     lines.length > 0 && { label: t("world.bookUplink"), items: lines },
-    to.length > 0 && { label: roleName("provider-cable"), items: to.map(({ r, jack }) => ({ label: `${r.name} ${jack!.port + 1} · ${cable}`, run: () => act(orderProviderCable, rack, i, r.id, jack!.port) })) },
+    to.length > 0 && { label: roleName("provider-cable"), items: to.map(({ r, jack }) => ({ label: `${r.name} ${jack!.port + 1} · ${cable}`, run: () => onCable(cableOrder(game, rack, i, r.id, jack!.port)) })) },
   ];
 }
 

@@ -39,7 +39,7 @@ export function PayStep({ game, buy, onClose, onDone, onPick }: {
 }) {
   const [chosen, setChosen] = useState<string | null>(null);
   const [placed, setPlaced] = useState<{ payable?: string } | null>(null);
-  if (placed) return <div className="pay-step">{placed.payable ? <OrderDone game={game} payable={placed.payable} /> : t("purchase.done.ordered")}</div>;
+  if (placed) return <div className="pay-step">{placed.payable ? <OrderDone payable={placed.payable} /> : t("purchase.done.ordered")}</div>;
   const rows = payRows(game, buy), pick = startRow(game, buy, rows, chosen);
   const extra = buy.extra?.some((r) => r.id === pick);
   const place = () => {

@@ -86,7 +86,7 @@ export function Cart() {
           );
         })}
         {!cart.length && <div className="shop-none">{t("shop.empty")}</div>}
-        {!cart.length && done && <div className="shop-cart-foot"><OrderDone game={game} payable={done} /></div>}
+        {!cart.length && done && <div className="shop-cart-foot"><OrderDone payable={done} /></div>}
       </div>
       {cart.length > 0 && <>
         <div className="shop-dest" role="group" aria-label={t("shop.deliverTo")}>

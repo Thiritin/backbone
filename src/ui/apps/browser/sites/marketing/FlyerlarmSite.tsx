@@ -77,7 +77,7 @@ function Orders({ game, doc }: { game: GameState; doc: string | null }) {
   return (
     <section className="fl-card">
       <h2>{t("flyers.nav.orders")}</h2>
-      {doc && <p><OrderDone game={game} payable={doc} /></p>}
+      {doc && <p><OrderDone payable={doc} /></p>}
       {runs.length ? (
         <table className="fl-table">
           <thead><tr><th>{t("flyers.ordered")}</th><th>{t("flyers.city")}</th><th className="r">{t("flyers.run")}</th><th>{t("flyers.status")}</th><th className="r">{t("flyers.left")}</th><th className="r">{t("flyers.leads")}</th></tr></thead>

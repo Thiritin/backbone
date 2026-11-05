@@ -98,7 +98,7 @@ export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer
         <table className="co-table"><tbody>{placed.info.bank.map(([k, v]) => <tr key={k}><td>{k}</td><td className="num">{v}</td></tr>)}</tbody></table>
       </>}
       <p>{placed.info.next}</p>
-      {placed.doc && <p><OrderDone game={game} payable={placed.doc} btn={btn} /></p>}
+      {placed.doc && <p><OrderDone payable={placed.doc} btn={btn} /></p>}
     </div>
   );
 

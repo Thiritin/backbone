@@ -11,8 +11,8 @@ import "./order-done.css";
 export const openPayable = (id: string) => useStore.getState().openApp("Preview", { kind: "payable", id });
 
 // The outcome of an order: "Ordered" or "Paid" by the payable's state, and a button that opens its document.
-export function OrderDone({ game, payable, btn = "btn sm" }: { game: GameState; payable: string; btn?: string }) {
-  const p = game.payables.find((x) => x.id === payable);
+export function OrderDone({ payable, btn = "btn sm" }: { payable: string; btn?: string }) {
+  const p = useStore((s) => s.game.payables.find((x) => x.id === payable));
   if (!p) return null;
   return (
     <span className="order-done" role="status">

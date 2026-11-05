@@ -113,7 +113,7 @@ function Channels() {
     <div className="mkt-list"><SiteCard /></div>
   </>;
   return <>
-    {setupDoc && <div className="mkt-pay"><OrderDone game={game} payable={setupDoc} /></div>}
+    {setupDoc && <div className="mkt-pay"><OrderDone payable={setupDoc} /></div>}
     <div className="shop-grid mkt-flat">
       <div className="shop-card">
         <div className="shop-name"><strong>{t("marketing.website")}</strong><span>{t("marketing.websiteText")}</span></div>
@@ -377,7 +377,7 @@ function FairCard({ d }: { d: FairDate }) {
           </div>
         </div>
       )}
-      <div className="shop-buy">{doc && <OrderDone game={game} payable={doc} />}<span className="grow" />{state}</div>
+      <div className="shop-buy">{doc && <OrderDone payable={doc} />}<span className="grow" />{state}</div>
     </div>
   );
 }

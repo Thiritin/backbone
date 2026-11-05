@@ -19,7 +19,7 @@ import { orderProviderCable } from "../src/sim/90-actions/connectivity";
 import { subscribeDesk } from "../src/sim/90-actions/desk-install";
 import { addLocation } from "../src/sim/90-actions/hardware";
 import { methodsFor } from "../src/sim/90-actions/purchase";
-import { pickMethod } from "../src/ui/apps/browser/sites/shared/OrderDone";
+import { startMethod } from "../src/ui/apps/browser/sites/shared/OrderDone";
 import { HostedDeskSite } from "../src/ui/apps/browser/sites/desks/HostedDeskSite";
 import { Properties } from "../src/ui/apps/locations/Properties";
 import { NetworkTab } from "../src/ui/apps/locations/NetworkTab";
@@ -60,7 +60,7 @@ function payWith(supplier: SupplierId, name: string, amount: number, pick: Metho
   expect(radios.filter((r) => !r.disabled).map((r) => r.parentElement!.textContent)).toEqual(on.map(method));
   const start = radios.find((r) => r.checked)!;
   expect(start.disabled).toBe(false);
-  expect(start.parentElement!.textContent).toBe(method(pickMethod(g(), { supplier, lines: line(amount), name }, null)));
+  expect(start.parentElement!.textContent).toBe(method(startMethod(g(), { supplier, lines: line(amount), name })!));
   fireEvent.click(screen.getByLabelText(method(pick)));
   fireEvent.click(screen.getByRole("button", { name: confirm }));
 }
@@ -68,7 +68,7 @@ function payWith(supplier: SupplierId, name: string, amount: number, pick: Metho
 // The outcome names the payable's state and its button opens the document in Preview.
 function opensDoc() {
   const p = g().payables.at(-1)!;
-  expect(screen.getByText(t(p.paidAt !== null ? "purchase.done.paid" : "purchase.done.ordered"), { exact: false })).toBeTruthy();
+  expect(screen.getByText(t(p.paidAt !== null && p.doc !== "contract" ? "purchase.done.paid" : "purchase.done.ordered"), { exact: false })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: t(`purchase.doc.${p.doc ?? "invoice"}`) }));
   expect(useStore.getState().windows.some((w) => w.app === "Preview")).toBe(true);
   return p;
@@ -105,14 +105,14 @@ describe("pay step in properties, network and desk screens", () => {
     expect(opensDoc()).toMatchObject({ method: "transfer" });
   });
 
-  it("orders a provider cable by card and bills it on completion with that card", () => {
+  it("orders a provider cable by card, links its order confirmation and bills it on completion with that card", () => {
     const s = game(), a = shareRack(s);
     shareRack(s);
     show(s, ProviderJack, { device: panelOf(s, a.id)!, port: 0 });
     fireEvent.click(document.querySelector<HTMLButtonElement>(".loc-connect .btn.primary")!);
     payWith("network", datacenterById("equinox-fr5").name, PROVIDER_CABLE.fee, "card");
     expect(g().providerCables).toMatchObject([{ method: "card" }]);
-    expect(screen.getByText(t("purchase.done.ordered"))).toBeTruthy();
+    expect(opensDoc()).toMatchObject({ doc: "contract", amount: 0, supplier: "network", name: datacenterById("equinox-fr5").name });
     const after = g();
     while (after.providerCables.length) tick(after);
     expect(after.payables.at(-1)).toMatchObject({ method: "card", amount: PROVIDER_CABLE.fee });
@@ -122,7 +122,8 @@ describe("pay step in properties, network and desk screens", () => {
     const s = game(2014);
     let url = "";
     show(s, HostedDeskSite, { id: "freshdusk" as const, path: "/signup", go: (u: string) => { url = u; } });
-    payWith("services", deskById("freshdusk")!.name, -subscriptionEntry(s, deskItem(deskById("freshdusk")!)).amount, "card", t("desk-sites.create"));
+    fireEvent.click(screen.getByRole("button", { name: t("desk-sites.create") }));
+    payWith("services", deskById("freshdusk")!.name, -subscriptionEntry(s, deskItem(deskById("freshdusk")!)).amount, "card");
     expect(url).toMatch(/\/account$/);
     cleanup();
     show(g(), HostedDeskSite, { id: "freshdusk" as const, path: "/account", go: () => {} });
