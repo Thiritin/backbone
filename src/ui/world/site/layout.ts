@@ -47,7 +47,7 @@ export function visibleBehind(x: number, y: number, z: number, w: number, h: num
 export const M = 32;
 export const STREET = 7, KERB = 0.15, WALK = 1.8, BAY = { w: 2.5, l: 5 };
 // Real footprints of the baked cars (L x W in m), by model.
-export const CAR_SIZE: Record<string, [number, number]> = { sedan: [5, 2], hatchback: [4, 2], van: [5, 2], coupe: [4, 2], suv: [5, 2], delivery: [7, 2], pickup: [5, 2], bintruck: [7, 3] };
+export const CAR_SIZE: Record<string, [number, number]> = { sedan: [5, 2], hatchback: [4, 2], van: [5, 2], coupe: [4, 2], suv: [5, 2] };
 const LOT_CARS = ["hatchback", "coupe"];
 
 export const it = (t: ItemType, x0: number, y0: number, x1: number, y1: number, top: number, layer: Item["layer"], o: Partial<Item> = {}): Item => ({ t, x0, y0, x1, y1, top, layer, ...o });

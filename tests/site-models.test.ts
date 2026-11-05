@@ -5,7 +5,7 @@ import { MODELS } from "../src/ui/world/site/models.gen";
 import { CAR_SIZE } from "../src/ui/world/site/layout";
 
 const css = readFileSync("src/ui/world/site/materials.css", "utf8");
-const group = (id: string) => (/^(sedan|hatchback|van|coupe|suv|delivery|pickup|bintruck)/.test(id) ? "car" : /^(oak|pine|tree|bush)/.test(id) ? "tree" : /^(house|shop|office)/.test(id) ? "house" : /^(hall|warehouse|tank|container|solar|windmill|chimney|water)/.test(id) ? "industrial" : "prop");
+const group = (id: string) => (/^(sedan|hatchback|van|coupe|suv)/.test(id) ? "car" : /^(oak|pine|tree|bush)/.test(id) ? "tree" : /^(house|shop|office)/.test(id) ? "house" : /^(hall|warehouse|tank|container|solar|windmill|chimney|water)/.test(id) ? "industrial" : "prop");
 const CAP = { car: 30, tree: 12, house: 45, industrial: 50, prop: 15 };
 
 describe("model library", () => {
@@ -14,7 +14,7 @@ describe("model library", () => {
   });
   it("stands the scale-table heights", () => {
     const h = (id: string) => bakeConfig.models.find((m) => m.id === id)!.size[2];
-    const table: Record<string, number> = { sedan: 1.45, hatchback: 1.45, suv: 1.7, van: 2.0, delivery: 3.2, house: 7, warehouse: 7 };
+    const table: Record<string, number> = { sedan: 1.45, hatchback: 1.45, suv: 1.7, van: 2.0, house: 7, warehouse: 7 };
     for (const [id, v] of Object.entries(table)) expect(Math.abs(h(id) - v) / v, id).toBeLessThanOrEqual(0.05);
     for (const m of bakeConfig.models.filter((x) => group(x.id) === "tree" && !x.id.startsWith("bush"))) expect(m.size[2], m.id).toBeGreaterThanOrEqual(6);
   });

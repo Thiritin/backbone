@@ -310,7 +310,8 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
         const r = simplify(ring as Ring, 0.02);
         // Rings under 0.5 px wide on average are slivers left where faces meet.
         const per = r.slice(1).reduce((a, q, i) => a + Math.hypot(q[0] - r[i][0], q[1] - r[i][1]), 0);
-        if (Math.abs(area(r)) < 0.5 || (Math.abs(area(r)) * 2) / (per || 1) < 0.5) continue;
+        // Lone triangles under 20 px2 are leftovers of mesh corners, not detail.
+        if (Math.abs(area(r)) < 0.5 || (Math.abs(area(r)) * 2) / (per || 1) < 0.5 || (r.length === 4 && Math.abs(area(r)) < 20)) continue;
         for (const [x, y] of r) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
         d += "M" + r.slice(0, -1).map(([x, y]) => `${+x.toFixed(1)} ${+y.toFixed(1)}`).join(" ") + "Z";
       }
