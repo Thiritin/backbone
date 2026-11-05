@@ -412,8 +412,8 @@ export function LightSwitch({ f, on }: { f: Fixture; on: boolean }) {
   const [a, b] = WALL_SLOTS.switch, u0 = 32 + a, u1 = 32 + b;
   return (
     <g data-slot="switch" data-switch={on ? "on" : "off"}>
-      <WallBox f={f} u0={u0} u1={u1} z0={35} z1={42} d={1} tone="w-tone-plate" />
-      <WallBox f={f} u0={u0 + 1.6} u1={u1 - 1.6} z0={on ? 38.4 : 36} z1={on ? 40.4 : 38} d={1.8} tone="w-tone-enamel" />
+      <WallBox f={f} u0={u0} u1={u1} z0={39} z1={46} d={1} tone="w-tone-plate" />
+      <WallBox f={f} u0={u0 + 1.6} u1={u1 - 1.6} z0={on ? 42.4 : 40} z1={on ? 44.4 : 42} d={1.8} tone="w-tone-enamel" />
     </g>
   );
 }
