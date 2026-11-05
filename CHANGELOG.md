@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Your GMix mailbox is set up for you when you register your company, so Pear Mail fetches your mail right away and the GMix site opens your inbox without a password reset.
 - Hardware, software licences, Pear apps, shop modules and new datacenter space now come with an invoice or receipt, and renting space pays the rest of the first month at once.
 - Receipts, credit notes and order confirmations open like invoices, show the payment method with net, VAT and gross, and the payables list in Books has a document and payment method column.
 - Rent deposits, buildings, provider cables, network and domain fees, marketing, the website agency and other purchases now come with a receipt or an invoice, and refunds come with a credit note.
