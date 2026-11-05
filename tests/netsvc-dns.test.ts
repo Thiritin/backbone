@@ -33,9 +33,9 @@ describe("dns zones", () => {
   it("refuses records the real tool would refuse", () => {
     const { s } = setup(), zone = dnsZones(s, find(s, "dns"))[0];
     const bad = (r: object) => saveRecord(s, zone, { type: "A", name: "x", ttl: 3600, data: "1.2.3.4", ...r });
-    expect(bad({ data: "999.1.1.1" })).toEqual({ ok: false, error: "error.badRecord" });
-    expect(bad({ type: "CNAME", name: "@", data: "x.net" })).toEqual({ ok: false, error: "error.badRecord" });
-    expect(bad({ name: "a.other.org." })).toEqual({ ok: false, error: "error.badRecord" });
+    expect(bad({ data: "999.1.1.1" })).toEqual({ ok: false, error: "error.recordIp" });
+    expect(bad({ type: "CNAME", name: "@", data: "x.net" })).toEqual({ ok: false, error: "error.recordName" });
+    expect(bad({ name: "a.other.org." })).toEqual({ ok: false, error: "error.recordName" });
     expect(bad({ ttl: 5 })).toEqual({ ok: false, error: "error.badRecord" });
     expect(saveRecord(s, "nowhere.com", { type: "A", name: "x", ttl: 300, data: "1.2.3.4" })).toEqual({ ok: false, error: "error.unknownZone" });
     expect(bad({}).ok).toBe(true);

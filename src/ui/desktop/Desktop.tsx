@@ -35,6 +35,9 @@ const AUTOSAVE_MS = 15_000;
 
 const dark = matchMedia("(prefers-color-scheme: dark)");
 
+// Elements that take the keys themselves, so the speed shortcuts leave them alone.
+export const KEYS_OWN = "input, textarea, select, button, a, summary, [role=button], [role=menuitem], [role=radio], [role=checkbox], [role=alertdialog], [role=dialog], [role=menu]";
+
 export function Desktop() {
   const { started, theme: pref, setTheme } = useStore();
   const [system, setSystem] = useState(dark.matches ? "dark" : "light");
@@ -103,7 +106,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") return void escapeStep(e, useStore.getState());
       if (useStore.getState().game.player.until > useStore.getState().game.hour) return;
-      if ((e.target as HTMLElement).closest("input, textarea, select, [role=alertdialog], [role=dialog], [role=menu]")) return;
+      if ((e.target as HTMLElement).closest(KEYS_OWN)) return;
       if (e.code === "Space") { e.preventDefault(); setSpeed(speed ? 0 : 1); }
       const n = Number(e.key);
       if (n >= 1 && n <= 4) setSpeed(SPEEDS[n]);
