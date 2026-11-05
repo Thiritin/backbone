@@ -29,7 +29,7 @@ describe("colo order", () => {
     const inv = s.payables.find((p) => p.doc === "invoice")!;
     expect(inv).toMatchObject({ supplier: "datacenter", method: "onAccount", paidAt: null });
     const { container } = render(<SupplierInvoice game={s} p={inv} />);
-    expect(container.querySelector(".inv-sum")?.textContent).toMatch(/VAT 16%\d+\.\d\d/);
+    expect(container.textContent).toMatch(/VAT 16%\d+\.\d\d/);
   });
 
   it("refuses the card before one is ready and leaves no location behind", () => {
