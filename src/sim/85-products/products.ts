@@ -15,7 +15,8 @@ import type { Customer, Product } from "../30-customers/customers";
 import { bump, createTicket, slowed } from "../40-support/tickets";
 import { deliverMail } from "../42-mail/sources";
 import { spendable } from "../46-finance/bank";
-import type { Device, GameState, Licence, Location } from "../50-state";
+import type { Device, GameState, LedgerEntry, Licence, Location } from "../50-state";
+import { bill, invoice } from "../46-finance/payables";
 import { clusterReachable, insideVm, isOwnVm, lostDisk, servedBy, vmOf, type Cluster, type Workload } from "../60-infra/cluster";
 import { exitsOf } from "../60-infra/network";
 import { backupTarget, repoRoom, repoUsed, runBackups } from "../60-infra/backups";
@@ -267,9 +268,11 @@ function billLicenses(s: GameState) {
   const held = new Set([...s.devices, ...s.workloads, ...s.ops.seized.map((x) => x.device), ...(shopMachine(s) ? [shopMachine(s)!] : [])].map((m) => m.id));
   s.licenses = s.licenses.map((k) => (k.machineId !== null && !held.has(k.machineId) ? { ...k, machineId: null } : k));
   if (!lines.length) return;
-  s.cash = Math.round((s.cash + lines.reduce((n, l) => n + l.amount, 0)) * 100) / 100;
-  s.ledger = [...s.ledger, ...lines];
+  vendorBill(s, "Pear", lines);
 }
+
+// A licence charge: an invoice paid the way the company paid this vendor last, cash before there is a bank.
+const vendorBill = (s: GameState, name: string, lines: LedgerEntry[]) => (s.bank ? invoice(s, "software", name, lines) : bill(s, { supplier: "software", name, lines, method: "cash" }));
 
 // The fee per term of a subscription key: its edition's or its product's price per account, server, game server beyond the
 // free ones, or core of its machine, a server counting at least the era's minimum cores, at the year's price rises. An
@@ -326,8 +329,7 @@ export function renewKeys(s: GameState): void {
     if (spendable(s) >= fee) {
       extendKey(s, k.id, late ? s.hour : renewsAt);
       if (fee <= 0) continue;
-      s.cash = Math.round((s.cash - fee) * 100) / 100;
-      s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: "ledger.licenceRenewal", params: { name, key: k.key }, amount: -fee }];
+      vendorBill(s, name, [{ hour: s.hour, category: "licenses", key: "ledger.licenceRenewal", params: { name, key: k.key }, amount: -fee }]);
       const at = `${name}\n${k.mailTo ?? ""}`, r = receipts.get(at) ?? { name, to: k.mailTo, count: 0, amount: 0 };
       receipts.set(at, { ...r, count: r.count + 1, amount: Math.round((r.amount + fee) * 100) / 100 });
     } else if (late && k.lapsedAt === null) {

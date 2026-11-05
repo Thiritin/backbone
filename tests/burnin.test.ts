@@ -140,6 +140,7 @@ describe("buyer protection", () => {
     breakPart(s, d());
     expect(s.cash).toBeCloseTo(cash + l.price / l.qty / 2, 1);
     expect(s.ledger.at(-1)!.key).toBe("ledger.usedRefund");
+    expect(s.payables.at(-1)).toMatchObject({ method: "cash", doc: "credit", amount: -l.price / l.qty / 2 });
     const after = s.cash;
     s.devices = s.devices.map((x) => (x.id === d().id ? failComponents(s, x, [x.components[1].id]) : x));
     expect(s.cash).toBe(after);

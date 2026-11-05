@@ -42,7 +42,7 @@ describe("bookkeeping vendors", () => {
       expect(s.installed).toContain("Books");
       expect(s.books.edition).toBe(e.id);
       // The monthly fee starts as the vendor's invoice.
-      expect(s.payables.filter((p) => p.name === v.name).map((p) => p.amount)).toEqual(web ? [e.price] : []);
+      expect(s.payables.filter((p) => p.name === v.name).map((p) => p.amount)).toEqual(e.price ? [e.price] : []);
     }
   });
 
@@ -58,11 +58,11 @@ describe("bookkeeping vendors", () => {
     expect(s.payables.filter((p) => p.name === "Kontomix").length).toBe(2);
   });
 
-  it("debits the fee straight off the cash without a bank account", () => {
+  it("pays the fee in cash with a receipt without a bank account", () => {
     const s = game(2005, false);
     own(s, "collmix");
     expect(s.cash).toBe(5_000 - 6);
-    expect(s.payables).toEqual([]);
+    expect(s.payables).toMatchObject([{ supplier: "books", method: "cash", doc: "receipt", amount: 6, paidAt: s.hour }]);
   });
 
   it("switching keeps the data and the shop modules, and runs the new program's smallest edition", () => {
@@ -71,9 +71,9 @@ describe("bookkeeping vendors", () => {
     s.modules = [...s.modules, "shop-link"];
     s.invoices = [{ id: "inv1" } as never];
     s.transfers = [{ id: "tr1" } as never];
-    const before = { customers: s.customers, invoices: s.invoices, quotes: s.quotes, transfers: s.transfers, payables: s.payables };
+    const before = { customers: s.customers, invoices: s.invoices, quotes: s.quotes, transfers: s.transfers };
     expect(own(s, "orgamin")).toEqual({ ok: true });
-    expect({ customers: s.customers, invoices: s.invoices, quotes: s.quotes, transfers: s.transfers, payables: s.payables }).toEqual(before);
+    expect({ customers: s.customers, invoices: s.invoices, quotes: s.quotes, transfers: s.transfers }).toEqual(before);
     expect(s.books.edition).toBe("standard");
     expect(s.modules).toContain("shop-link");
     // A program bought once installs again for free.
@@ -91,7 +91,7 @@ describe("bookkeeping vendors", () => {
       booksTick(s);
       s.hour++;
       booksTick(s);
-      expect(s.payables.filter((p) => p.name === "Taxware").length).toBe(year);
+      expect(s.payables.filter((p) => p.name === "Taxware").length).toBe(year + 1);
       expect(s.payables.at(-1)).toMatchObject({ amount: 99, supplier: "books" });
       expect(upgradeBooks(s, "financial-office")).toEqual({ ok: false, error: "error.updateOpen" });
       s.payables.at(-1)!.paidAt = s.hour;
