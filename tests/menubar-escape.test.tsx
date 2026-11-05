@@ -8,7 +8,7 @@ import { newGame } from "./fixtures";
 describe("menu bar", () => {
   it("closes an open menu on Escape", () => {
     useStore.setState({ game: newGame(1), surface: "desktop", windows: [] });
-    render(<MenuBar theme="light" onTheme={() => {}} onBell={() => {}} />);
+    render(<MenuBar onBell={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "raid0" }));
     expect(screen.getByRole("menu")).toBeTruthy();
     fireEvent.keyDown(window, { key: "Escape" });
