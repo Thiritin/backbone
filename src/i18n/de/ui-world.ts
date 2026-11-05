@@ -21,6 +21,8 @@ export default {
   "world.obj.fan": () => "Fensterlüfter",
   "world.obj.cooling": () => "Klimagerät",
   "world.obj.pdu": () => "PDU",
+  "world.obj.cart": () => "Servicewagen",
+  "world.cartRestart": (p) => `${p.name} startet neu`,
   "world.obj.extinguisher": () => "Feuerlöscher",
   "world.obj.noc": () => "NOC-Arbeitsplatz",
   "world.obj.dock": () => "Laderampe",
