@@ -26,6 +26,8 @@ import type { Resources } from "../../../../../sim/10-catalog/products";
 import { AlarmsPage, DrsPage, Licensing, PoolsPage } from "./Admin";
 import "./vmwhere.css";
 import { usePageAct } from "../../pageAct";
+import { HARDWARE_SHOP } from "../../../../../sim/46-finance/payables";
+import { useOrder } from "../../sites/shared/OrderDone";
 
 // docs/design/software.md, section 10: one look per vSphear client generation, ids as in UI_LOOKS.
 const LOOKS = looks({ thickClient: 2004, flecks: 2011, clearity: 2016 });
@@ -214,6 +216,7 @@ function Datastores({ game, c }: { game: GameState; c: Cluster }) {
   const free = game.devices.filter((d) => modelById(d.model).server && !datastoreBlock(game, c, d.id));
   const protocols = (Object.keys(DATASTORE_FROM) as DatastoreProtocol[]).filter((x) => DATASTORE_FROM[x] <= year);
   const [pick, setPick] = useState(""), [protocol, setProtocol] = useState<DatastoreProtocol>("nfs");
+  const hba = useOrder(game, "hardware", HARDWARE_SHOP, FC_HBA_PRICE * c.nodes.length);
   const server = free.some((d) => d.id === pick) ? pick : free[0]?.id ?? "";
   return (
     <>
@@ -249,9 +252,11 @@ function Datastores({ game, c }: { game: GameState; c: Cluster }) {
               {protocols.map((x) => <option key={x} value={x}>{x === "fc" ? `${PROTOCOL.fc}, ${euro(FC_HBA_PRICE * c.nodes.length)}` : PROTOCOL[x]}</option>)}
             </select>
           </label>
-          <button className="cx-btn primary" onClick={() => act(attachDatastore, c.id, server, protocol)}>{t("browser-consoles-2.newDatastore")}</button>
+          <button className="cx-btn primary" onClick={() => hba.place(() => act(attachDatastore, c.id, server, protocol, protocol === "fc" ? hba.method : undefined))}>{t("browser-consoles-2.newDatastore")}</button>
         </div>
       )}
+      {c.datastores.length < DATASTORES_MAX && free.length > 0 && protocol === "fc" && <div className="pay-row">{hba.picker}</div>}
+      {hba.done && <div className="pay-row">{hba.done}</div>}
     </>
   );
 }

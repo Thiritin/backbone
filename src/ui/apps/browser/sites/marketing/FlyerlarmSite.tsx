@@ -9,6 +9,8 @@ import { handingOut } from "../../../../../sim/80-business/flyers";
 import { orderFlyers } from "../../../../../sim/90-actions/marketing";
 import { formatDay } from "../../../billing/format";
 import { usePageAct } from "../../pageAct";
+import { AGENCY_TITLE } from "../../../../../sim/80-business/browser";
+import { OrderDone, useOrder } from "../shared/OrderDone";
 import { eraOf } from "../era";
 import "./flyerlarm.css";
 
@@ -52,6 +54,7 @@ function Seg<T extends string | number>({ label, value, options, onChange }: { l
 function Order({ game, year, go }: { game: GameState; year: number; go: (url: string) => void }) {
   const act = usePageAct(), cities = [...new Set(game.locations.map((l) => l.city))];
   const [city, setCity] = useState(cities[0]), [size, setSize] = useState(FLYER_SIZES[1]);
+  const pay = useOrder(game, "services", AGENCY_TITLE, flyerPrice(size, year));
   return (
     <section className="fl-card">
       <h2>{t("flyers.nav.order")}</h2>
@@ -63,17 +66,19 @@ function Order({ game, year, go }: { game: GameState; year: number; go: (url: st
         <div><dt>{t("flyers.handOut")}</dt><dd>{t("flyers.nDays", { n: FLYER_HAND_OUT_DAYS })}</dd></div>
         <div><dt>{t("flyers.price")}</dt><dd className="fl-num"><b>{euroCents(flyerPrice(size, year))}</b></dd></div>
       </dl>
-      <button type="button" className="fl-button" onClick={() => { if (act(orderFlyers, city, size).ok) go(`www.${FLYER_HOST}/orders`); }}>{t("flyers.order")}</button>
+      {pay.picker}
+      <button type="button" className="fl-button" onClick={() => { const r = pay.place(() => act(orderFlyers, city, size, pay.method)); if (r.ok) go(`www.${FLYER_HOST}/orders${r.payable ? `?doc=${r.payable}` : ""}`); }}>{t("flyers.order")}</button>
     </section>
   );
 }
 
-function Orders({ game }: { game: GameState }) {
+function Orders({ game, doc }: { game: GameState; doc: string | null }) {
   const runs = [...game.marketing.flyers].reverse();
   const status = (r: GameState["marketing"]["flyers"][number]) => (r.flyersLeft === 0 ? "flyers.done" : handingOut(game, r) ? "flyers.handing" : "flyers.printing");
   return (
     <section className="fl-card">
       <h2>{t("flyers.nav.orders")}</h2>
+      {doc && <p><OrderDone game={game} payable={doc} /></p>}
       {runs.length ? (
         <table className="fl-table">
           <thead><tr><th>{t("flyers.ordered")}</th><th>{t("flyers.city")}</th><th className="r">{t("flyers.run")}</th><th>{t("flyers.status")}</th><th className="r">{t("flyers.left")}</th><th className="r">{t("flyers.leads")}</th></tr></thead>
@@ -106,7 +111,7 @@ export function FlyerlarmSite({ game, path, go }: { game: GameState; path: strin
         {PAGES.map(([k, label, p]) => <a key={k} href={`#${k}`} aria-current={k === page ? "page" : undefined} onClick={link(`www.${FLYER_HOST}${p}`)}>{t(label)}</a>)}
       </nav>
       <main className="fl-main">
-        {page === "home" ? <Home year={year} go={go} /> : page === "flyers" ? <Order game={game} year={year} go={go} /> : <Orders game={game} />}
+        {page === "home" ? <Home year={year} go={go} /> : page === "flyers" ? <Order game={game} year={year} go={go} /> : <Orders game={game} doc={new URLSearchParams(path.split("?")[1] ?? "").get("doc")} />}
       </main>
       <footer className="fl-foot">
         <span>{t("flyers.footer", { year })}</span>

@@ -217,7 +217,7 @@ export function Inspector({ game, device, port, side = "front", onSelect, onHot,
       {isServerInRack(device)
         ? <PowerCard game={game} device={device} onOp={(op) => menus.op(device, op)} onFront={(op) => menus.front(device, op)}>{serverActs}</PowerCard>
         : server && device.store && <div className="loc-card"><div className="act-tiles">{serverActs}</div></div>}
-      <RemoteCard game={game} device={device} />
+      <RemoteCard key={device.id} game={game} device={device} />
 
       {sel.length === 1 && !server && <PortCard game={game} device={device} model={model} port={sel[0]} peer={peers[sel[0]]} onSelect={onSelect} />}
       {server && <NodeCard game={game} device={device} />}

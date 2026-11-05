@@ -5,7 +5,7 @@ import { runwayMonths } from "../../../sim/46-finance/finance";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import {
-  activeBots, AD, hourlyWage, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, monthlyPay, needsTraining, payOf, ROLES, salaryUpToNow, staffPrice, TASKS, TRAINER_HOURS, teamOf, trainerFor, visibleCandidates, weekHours,
+  activeBots, AD, JOB_BOARD, hourlyWage, atFair, BOT_RIGHT, BOT_SPEED, COURSE_HOURS, COURSE_PRICE, fullyTrained, marketSalary, monthlyPay, needsTraining, payOf, ROLES, salaryUpToNow, staffPrice, TASKS, TRAINER_HOURS, teamOf, trainerFor, visibleCandidates, weekHours,
   type AdTier, type Assignment, type Candidate, type Employee, type Role, type Task,
 } from "../../../sim/47-staff/staff";
 import { storeItem, subscriptionPrice } from "../../../sim/10-catalog/store";
@@ -26,6 +26,7 @@ import { TechPanel } from "./TechPanel";
 import { Shifts, teamName } from "./Shifts";
 import { formatDay } from "../billing/format";
 import { initials } from "../support/labels";
+import { useOrder } from "../browser/sites/shared/OrderDone";
 import "../shop/shop.css";
 import "./staff.css";
 import { LOCALE } from "../../../i18n/lang";
@@ -328,6 +329,7 @@ function Market({ game, role, setRole, onHired }: { game: GameState; role: Role;
   const list = visibleCandidates(game).filter((c) => c.role === role).sort((a, b) => b.skill - a.skill);
   const coming = game.candidates.filter((c) => c.role === role && c.arriveAt > game.hour).length;
   const year = yearOf(game.hour);
+  const ad = useOrder(game, "services", JOB_BOARD, Math.max(...TIERS.map((x) => staffPrice(AD[x].price, year))));
   return (
     <div className="shop-main">
       <div className="shop-bar">
@@ -337,11 +339,12 @@ function Market({ game, role, setRole, onHired }: { game: GameState; role: Role;
         <span className="grow" />
         {coming > 0 && <span className="st-coming">{t("misc.applicantsOnTheWay")} <span className="num">{coming}</span></span>}
         {TIERS.map((tier) => (
-          <button key={tier} className="btn" disabled={game.cash < staffPrice(AD[tier].price, year)} onClick={() => act(postJobAd, role, tier)}>
+          <button key={tier} className="btn" disabled={ad.method === "cash" && game.cash < staffPrice(AD[tier].price, year)} onClick={() => ad.place(() => act(postJobAd, role, tier, ad.method))}>
             <Megaphone />{tier === "standard" ? t("misc.standardAd") : t("misc.premiumAd")} <span className="num">{euro(staffPrice(AD[tier].price, year))}</span>
           </button>
         ))}
       </div>
+      <div className="pay-row">{ad.picker}{ad.done}</div>
       <div className="shop-grid">
         {list.map((c) => <CandidateCard key={c.id} c={c} onHire={() => setHiring(c)} />)}
         {!list.length && <div className="shop-none">{t("misc.noneLooking", { role: ROLE[role].many })}</div>}

@@ -6,7 +6,8 @@ import { euro } from "../../sim/00-core/money";
 import { formatClock, MS_PER_HOUR, nowHours } from "../../sim/00-core/time";
 import { COUNTRY, datacenterById, listed } from "../../sim/20-world/datacenters";
 import { playerAt } from "../../sim/60-infra/handwork";
-import { drive, travelTo } from "../../sim/90-actions/travel";
+import { drive, TRAVEL_VENDOR, travelTo } from "../../sim/90-actions/travel";
+import { useOrder } from "../apps/browser/sites/shared/OrderDone";
 import { GeoLayer, geoPaths } from "../map/GeoLayer";
 import { cityNamed, LAND, WorldGeo, WorldMap, X, XF, Y, type Marker } from "../map/WorldMap";
 import { useStore } from "../store";
@@ -61,6 +62,7 @@ function TravelMap() {
   const inFocus = spots.filter((x) => focus ? x.l.city === focus : true), lons = inFocus.map((x) => x.lon), lats = inFocus.map((x) => x.lat);
   const spread = new Set(inFocus.map((x) => COUNTRY[x.l.city])).size > 1;
   const padX = focus ? 0.03 : (Math.max(...lons) - Math.min(...lons)) * 0.1 + 0.03, padY = focus ? 0.02 : (Math.max(...lats) - Math.min(...lats)) * 0.1 + 0.02;
+  const pay = useOrder(game, "services", TRAVEL_VENDOR, Math.max(0, ...spots.map((x) => x.d?.fee ?? 0)));
   const initial = !inFocus.length || (!focus && spread) ? undefined : { west: Math.min(...lons) - padX, east: Math.max(...lons) + padX, south: Math.min(...lats) - padY, north: Math.max(...lats) + padY };
 
   useEffect(() => {
@@ -75,7 +77,7 @@ function TravelMap() {
     const id = raw.replace(/^region:/, "");
     if (id === here.id) return;
     const s = useStore.getState(), from = playerAt(s.game);
-    const r = s.act(travelTo, id);
+    const r = s.act(travelTo, id, pay.method);
     if (!r.ok) return setError(t(r.error, r.params));
     void loadRoutes();
     void loadRoads();
@@ -88,6 +90,7 @@ function TravelMap() {
       <WorldMap key={focus ?? ""} className="wm-geo" initial={initial} markers={markers} onMarkerClick={pick} minW={0.04} layer={streets && <GeoLayer geo={geo} streets={streets} />} />
       {streets && <div className="travel-osm">{t("travel.osm")}</div>}
       <button className="travel-close" onClick={() => send("close")}>{t("travel.close")}</button>
+      <div className="travel-pay">{pay.picker}</div>
       {error && <div className="travel-error" role="alert">{error}</div>}
     </div>
   );
