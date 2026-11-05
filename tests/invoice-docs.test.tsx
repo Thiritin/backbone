@@ -29,7 +29,7 @@ describe("authority fee", () => {
     const s = withFee();
     const l = inbox(s)[0], p = s.payables.find((x) => x.id === l.payable)!;
     expect(p.supplier).toBe("office");
-    expect(Object.values(s.mail.msgs).flat().some((m) => m.p?.payable === p.id || m.att?.some((a) => a.id === p.id))).toBe(false);
+    expect(Object.values(s.mail.msgs).flat().some((m) => m.p?.payable === p.id || m.att?.some((a) => "id" in a && a.id === p.id))).toBe(false);
     expect(atDesk(s).length + inbox(s).length).toBeGreaterThan(0);
     p.paidAt = s.hour; p.sent = p.amount;
     expect(checkDone(s, "payBill")).toBe(true);
