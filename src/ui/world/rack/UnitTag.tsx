@@ -114,7 +114,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
       <div className="wr-model">{m.kind === "server" ? `${d.brand} ${modelName(m, d.brand)}` : m.name}</div>
       {m.kind !== "patch" && (
         <div className="wk-plate">
-          <button className={`wk-power ${lampOn}${armed ? " armed" : ""}`} data-power={lampOn} data-guide={guide === "power" && !d.on ? "" : undefined} aria-pressed={armed} aria-label={armed ? POWER_LABEL.shutdown : d.on ? t("locations-1.powerOff") : t("locations-1.powerOn")} onClick={onKey}>
+          <button className={`wk-power ${lampOn}${armed ? " armed" : ""}`} data-power={lampOn} data-guide={guide === "power" && !d.on ? "" : undefined} aria-pressed={armed} aria-label={armed ? POWER_LABEL.shutdown : d.on ? t("locations-1.powerOff") : t("locations-1.powerOn")} title={armed ? POWER_LABEL.shutdown : d.on ? t("locations-1.powerOff") : t("locations-1.powerOn")} onClick={onKey}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9M6.6 6.8a8 8 0 1 0 10.8 0" /></svg>
             <i />
           </button>

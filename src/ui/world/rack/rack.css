@@ -294,3 +294,4 @@
 .wr-mini-mark { position: absolute; left: 3px; right: 3px; background: oklch(0.6 0.04 255); }
 .wr-mini-view { position: absolute; left: -1px; right: -1px; border: 2px solid oklch(0.88 0.12 250); background: oklch(0.88 0.12 250 / 0.18); box-sizing: border-box; pointer-events: none; }
 .wk-power[data-guide], .wk-port[data-guide], .wk-ic[data-guide] { outline: 3px solid oklch(0.75 0.19 60); outline-offset: 2px; }
+.wk-power[data-guide]::after, .wk-port[data-guide]::after, .wk-ic[data-guide]::after { content: ""; position: absolute; left: -2px; top: -2px; width: 8px; height: 8px; background: oklch(0.75 0.19 60); }

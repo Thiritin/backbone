@@ -119,6 +119,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const os = useOsScreen(game, d, active, usb), kind = os.screen.kind;
   useEffect(() => { if (active) focusIn(box.current); }, [active, kind]);
   useEffect(() => { if (queued && kind === "post") { setMenuFor(d.bootUntil ?? 0); setPick(0); setQueued(false); } }, [queued, kind, d.bootUntil]);
+  useEffect(() => { if (!queued) return; const id = setTimeout(() => setQueued(false), 8000); return () => clearTimeout(id); }, [queued]);
   const menu = menuFor !== null && menuFor === d.bootUntil && kind !== "setup" && kind !== "dark";
   const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
