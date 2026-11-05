@@ -11,17 +11,35 @@ const site = (ym: string, path = "/") => {
 };
 
 describe("Taxware site", () => {
-  it("lists the edition features as a plain list before 2010", () => {
+  it("lays the 2005 portal out as a table with a plain edition list", () => {
     const html = site("2007-03");
     expect(html).toContain("lx-classic");
+    expect(html).toContain("<table class=\"lx-frame\"");
     expect(html).toContain("<li>");
     expect(html).not.toContain("bv-table");
   });
 
-  it("shows a comparison table from 2010 on", () => {
+  it("gives 2009 a product dropdown and a comparison table", () => {
     const html = site("2012-06");
     expect(html).toContain("lx-modern");
+    expect(html).toContain("lx-pick");
+    expect(html).not.toContain("lx-frame");
     expect(html).toContain("bv-table");
+  });
+
+  it("gives 2015 a mega menu", () => {
+    const html = site("2016-06");
+    expect(html).toContain("lx-flat");
+    expect(html).toContain("lx-mega");
+    expect(html).not.toContain("lx-pick");
+  });
+
+  it.each(["2007-03", "2012-06", "2016-06"])("offers the download button, requirements and install guide in %s", (ym) => {
+    const html = site(ym);
+    expect(html).toContain("bv-buy");
+    expect(html).toContain("System requirements");
+    expect(html).toContain("Installation guide");
+    expect(html).toContain("href=\"?s=guide\"");
   });
 
   it("keeps the edition page and the support page", () => {

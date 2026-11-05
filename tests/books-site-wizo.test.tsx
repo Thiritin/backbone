@@ -11,17 +11,38 @@ const page = (ym: string, path = "/") => {
 };
 
 describe("WARUM site", () => {
-  it("lists the editions as a plain bulleted list until 2010", () => {
-    const html = page("2010-06");
-    expect(html).toContain("wz-classic");
+  it("is a framed layout table with a plain edition list in 2006", () => {
+    const html = page("2006-03");
+    expect(html).toContain("wz-portal");
+    expect(html).toContain("wz-layout");
     expect(html).toContain("<li>");
     expect(html).not.toContain("bv-table");
   });
 
-  it("compares the editions in a pricing table from 2011", () => {
+  it("is a rounded shop with a starburst in 2011", () => {
     const html = page("2011-01");
-    expect(html).toContain("wz-modern");
-    expect(html).toContain("bv-table");
+    expect(html).toContain("wz-shop");
+    expect(html).toContain("wz-burst");
+    expect(html).not.toContain("wz-layout");
+  });
+
+  it("compares the editions in a table on the flat and the dark site", () => {
+    const flat = page("2016-01"), modern = page("2021-01");
+    expect(flat).toContain("wz-flat");
+    expect(flat).toContain("bv-table");
+    expect(modern).toContain("wz-modern");
+    expect(modern).toContain("wz-cookies");
+    expect(modern).toContain("bv-table");
+  });
+
+  it("sells and links the install guide on every look", () => {
+    for (const ym of ["2006-03", "2011-01", "2016-01", "2021-01"]) {
+      const html = page(ym);
+      expect(html).toContain("bv-buy");
+      expect(html).toContain('href="?s=guide"');
+      expect(html).toContain("wz-download");
+      expect(html).toContain("System requirements");
+    }
   });
 
   it("shows only the edition its path names", () => {

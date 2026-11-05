@@ -11,17 +11,25 @@ const page = (month: string, path = "/") => {
 };
 
 describe("GnuCache site", () => {
-  it("keeps its one free edition as a plain list and moves from the forge page to the redesign in 2013", () => {
-    const early = page("2006-04");
+  it("keeps its one free edition as a plain list in all three eras", () => {
+    const early = page("2006-04"), mid = page("2014-04"), late = page("2021-03");
     expect(early).toContain("gc-forge");
-    expect(early).toContain("<li>");
-    expect(early).not.toContain("bv-table");
+    expect(early).toContain("gc-frame");
     expect(early).toContain("GnuCache 2.0");
-    const late = page("2021-03");
+    expect(mid).toContain("gc-wiki");
+    expect(mid).toContain("gc-gallery");
     expect(late).toContain("gc-modern");
-    expect(late).toContain("<li>");
-    expect(late).not.toContain("bv-table");
+    expect(late).toContain("gc-cards");
     expect(late).toContain("GnuCache 4.0");
+    for (const html of [early, mid, late]) {
+      expect(html).toContain("<li>");
+      expect(html).not.toContain("bv-table");
+      expect(html).toContain("bv-buy");
+      expect(html).toContain("gc-req");
+      expect(html).toContain('href="?s=guide"');
+    }
+    expect(early).not.toContain("gc-gallery");
+    expect(mid).not.toContain("gc-cards");
   });
 
   it("shows the edition on its edition path with the nav link back", () => {

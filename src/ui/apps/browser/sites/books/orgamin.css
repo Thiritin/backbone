@@ -1,48 +1,136 @@
-/* orgaMIN: a developer-made homepage with a left menu until 2010, a relaunched site with a price table from 2011. */
-.om { min-height: 100%; background: #fff; color: #333; }
-.om a { color: #d2640f; }
-.om h1, .om h2, .om p { margin: 0; }
-.om .bv-state { font-weight: bold; color: #3a8a1e; }
-.om .bv-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+/* orgaMIN: a home-made menu page, a tabbed portal, a rated flat shop, a dark chooser page. */
+.om { min-height: 100%; }
+.om p { margin: 0 0 8px; }
+.om-logo { display: inline-flex; align-items: center; gap: 8px; font: 600 26px/1 Arial, Helvetica, sans-serif; letter-spacing: -1px; text-decoration: none; }
+.om-logo b { color: #e8731c; font-weight: 800; margin-left: -8px; }
+.om-req p { margin: 0 0 3px; }
+.om-ico { display: block; width: 34px; height: 34px; margin-bottom: 8px; border-radius: 8px; background: #e8731c; }
+.om-ico2 { border-radius: 50%; background: #3a2a1c; }
+.om-ico3 { border-radius: 50% 50% 0 50%; background: #f2b277; }
+.om .bv-buy { cursor: pointer; }
+.om .bv-state { color: #2f7d1a; }
+.om-guide { display: inline-block; margin-top: 6px; }
 
-/* 2005: full-width page, logo on white over an orange rule, light orange menu column, Tahoma 12 px. */
-.om-home { font: 12px/1.5 Tahoma, Verdana, Geneva, sans-serif; }
-.om-home .om-head { display: flex; align-items: baseline; gap: 16px; padding: 14px 18px 8px; border-bottom: 4px solid #e8731c; }
-.om-home .om-logo { font: 28px/1 Arial, Helvetica, sans-serif; color: #666; letter-spacing: -1px; }
-.om-home .om-logo b { color: #e8731c; }
-.om-home .om-tag { color: #888; font-size: 11px; }
-.om-home .om-body { display: flex; }
-.om-home .om-nav { flex: none; width: 150px; min-height: 260px; padding: 10px 0; background: #fbe6d4; border-right: 1px solid #f0c9a6; }
-.om-home .om-nav a { display: block; padding: 3px 14px; color: #333; text-decoration: none; }
-.om-home .om-nav a::before { content: "\203A  "; color: #e8731c; font-weight: bold; }
-.om-home .om-nav a[aria-current] { font-weight: bold; color: #d2640f; }
-.om-home .om-main { flex: 1; padding: 12px 20px 20px; }
-.om-home h1 { font: bold 16px Arial, Helvetica, sans-serif; color: #e8731c; margin-bottom: 10px; }
-.om-home h2 { font-size: 12px; color: #444; margin-top: 12px; }
-.om-home ul { margin: 2px 0 4px; padding-left: 24px; }
-.om-home .bv-buy { font: 11px Tahoma, Verdana, sans-serif; padding: 1px 10px; cursor: pointer; }
-.om-home .om-foot { padding: 6px 18px; border-top: 1px solid #ddd; color: #999; font-size: 10px; }
+/* 2005: left-aligned, no centre column, a plain menu and a visitor counter. */
+.om-home { background: #fffdf8; color: #222; font: 12px/1.5 Verdana, Arial, sans-serif; }
+.om-home a { color: #0033cc; }
+.om-home .om-head { display: flex; align-items: center; gap: 16px; padding: 8px 14px; border-bottom: 4px solid #e8731c; background: #fff; }
+.om-home .om-logo { color: #444; }
+.om-home .om-head > span:last-child { color: #777; font-style: italic; }
+.om-home .om-body { display: flex; align-items: flex-start; }
+.om-home .om-menu { flex: 0 0 176px; display: flex; flex-direction: column; padding: 8px 0 12px 10px; margin: 0; border-right: 1px solid #e0c7a8; background: #fbf1e2; min-height: 420px; }
+.om-home .om-menu a { padding: 3px 8px; text-decoration: none; color: #8a3d00; border-bottom: 1px dotted #d9b88f; }
+.om-home .om-menu a[aria-current] { background: #e8731c; color: #fff; font-weight: bold; }
+.om-home main { flex: 1; padding: 6px 18px 18px; min-width: 0; }
+.om-home h1 { margin: 6px 0; font: bold 20px Georgia, "Times New Roman", serif; color: #8a3d00; }
+.om-home h2 { margin: 12px 0 4px; font-size: 13px; background: #fbe3c4; padding: 2px 6px; }
+.om-home .om-shots { display: flex; gap: 8px; margin: 8px 0; }
+.om-home .om-shots i { width: 92px; height: 64px; border: 2px outset #ccc; background: linear-gradient(#0a246a 0 9px, #ece9d8 9px); }
+.om-home .bv-edition { border-left: 3px solid #e8731c; padding-left: 8px; }
+.om-home .bv-buy { font: 11px Verdana, sans-serif; color: #000; background: #ece9d8; border: 2px outset #fff; padding: 1px 8px; }
+.om-home .om-download { margin-top: 12px; border: 1px solid #d9b88f; padding: 6px 10px; background: #fff; }
+.om-home .om-download h2 { margin-top: 0; }
+.om-home .om-download h3 { margin: 0 0 3px; font-size: 12px; }
+.om-home .om-foot { padding: 6px 14px; border-top: 1px solid #e0c7a8; font-size: 10px; color: #666; background: #fbf1e2; }
+.om-home .om-foot a, .om-home .om-foot span { margin-right: 14px; }
 
-/* 2011: centred 960 px site, grey header bar with orange nav tabs, a price table, Arial 13 px. */
-.om-relaunch { background: #eeeeee; font: 13px/1.5 Arial, Helvetica, sans-serif; padding-bottom: 24px; }
-.om-relaunch .om-head, .om-relaunch .om-body, .om-relaunch .om-foot { max-width: 960px; margin: 0 auto; }
-.om-relaunch .om-head { display: flex; align-items: baseline; gap: 18px; padding: 22px 24px 14px; background: #fff; }
-.om-relaunch .om-logo { font: 32px/1 Arial, Helvetica, sans-serif; color: #555; letter-spacing: -1px; }
-.om-relaunch .om-logo b { color: #e8731c; }
-.om-relaunch .om-tag { color: #777; }
-.om-relaunch .om-body { background: #fff; }
-.om-relaunch .om-nav { display: flex; padding: 0 24px; background: #4a4a4a; }
-.om-relaunch .om-nav a { padding: 9px 18px; color: #fff; text-decoration: none; font-weight: bold; }
-.om-relaunch .om-nav a[aria-current] { background: #e8731c; }
-.om-relaunch .om-main { padding: 24px; }
-.om-relaunch h1 { font-size: 22px; font-weight: normal; color: #444; margin-bottom: 18px; }
-.om-relaunch .bv-table { border-collapse: collapse; width: 100%; }
-.om-relaunch .bv-table th, .om-relaunch .bv-table td { padding: 8px 12px; border-bottom: 1px solid #e2e2e2; text-align: center; }
-.om-relaunch .bv-table th[scope="row"] { text-align: left; font-weight: normal; color: #555; }
-.om-relaunch .bv-table thead th { background: #e8731c; color: #fff; font-size: 15px; border-left: 2px solid #fff; }
-.om-relaunch .bv-table thead th:first-child { background: none; }
-.om-relaunch .bv-table td:nth-child(odd) { background: #fdf3ea; }
-.om-relaunch .bv-price td { font-size: 20px; font-weight: bold; color: #d2640f; }
-.om-relaunch .bv-price small { display: block; font-size: 11px; font-weight: normal; color: #777; }
-.om-relaunch .bv-buy { font: bold 13px Arial, Helvetica, sans-serif; color: #fff; background: linear-gradient(#f28a35, #d2640f); border: 0; border-radius: 4px; padding: 6px 20px; cursor: pointer; }
-.om-relaunch .om-foot { padding: 12px 24px; background: #4a4a4a; color: #bbb; font-size: 11px; }
+/* 2010: centred portal, rounded tabs, an orange teaser and three boxes. */
+.om-portal { max-width: 960px; margin: 0 auto; padding: 0 0 20px; background: #f4f1ec; color: #3a2a1c; font: 13px/1.5 Tahoma, "Lucida Grande", Arial, sans-serif; box-shadow: 0 0 0 1px #d8cfc2; }
+.om-portal a { color: #c25a0c; }
+.om-portal .om-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 22px; background: linear-gradient(#fff, #ece6dc); }
+.om-portal .om-logo { color: #555; font-size: 34px; }
+.om-portal .om-hotline { padding: 4px 12px; border-radius: 12px; background: #3a2a1c; color: #fff; font-size: 11px; }
+.om-portal .om-tabs { display: flex; gap: 3px; padding: 0 22px; background: #3a2a1c; }
+.om-portal .om-tabs a { padding: 8px 20px 7px; margin-top: 4px; border-radius: 8px 8px 0 0; background: #6b5440; color: #fff; text-decoration: none; font-weight: bold; }
+.om-portal .om-tabs a[aria-current] { background: #e8731c; }
+.om-portal .om-teaser { display: flex; align-items: flex-end; justify-content: space-between; padding: 26px 22px 14px; background: linear-gradient(135deg, #f08a3a, #c25a0c); color: #fff; }
+.om-portal .om-teaser div { max-width: 600px; }
+.om-portal h1 { margin: 0 0 4px; font: 800 32px/1.1 Arial, sans-serif; text-shadow: 0 1px 2px rgb(0 0 0 / 0.3); }
+.om-portal .om-claim { font-size: 17px; font-weight: bold; color: #ffe8cf; }
+.om-portal .om-dots i { display: inline-block; width: 10px; height: 10px; margin-left: 5px; border-radius: 50%; background: rgb(255 255 255 / 0.4); }
+.om-portal .om-dots i.on { background: #fff; }
+.om-portal .om-boxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 14px 22px; }
+.om-portal .om-boxes a { display: block; padding: 14px; text-align: center; font-weight: bold; text-decoration: none; background: #fff; border: 1px solid #d8cfc2; border-top: 4px solid #e8731c; border-radius: 4px; }
+.om-portal .om-boxes a:nth-child(2) { background: #fff3e6; }
+.om-portal .om-feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 4px 22px; }
+.om-portal .om-feats section { background: #fff; padding: 10px 12px; border: 1px solid #e3dccf; }
+.om-portal .om-feats h3 { margin: 0 0 2px; font-size: 14px; }
+.om-portal .om-shop, .om-portal .om-download, .om-portal > p { margin: 14px 22px 0; }
+.om-portal h2 { margin: 0 0 6px; font-size: 18px; border-bottom: 2px solid #e8731c; padding-bottom: 2px; }
+.om-portal .bv-edition { background: #fff; border: 1px solid #e3dccf; padding: 8px 12px; }
+.om-portal .bv-buy { font: bold 12px Tahoma, Arial, sans-serif; color: #fff; background: linear-gradient(#f08a3a, #c25a0c); border: 1px solid #9d4a0a; border-radius: 3px; padding: 3px 12px; }
+.om-portal .om-download { padding: 8px 12px; background: #fff; border: 1px solid #e3dccf; }
+.om-portal .om-download h2 { font-size: 16px; }
+.om-portal .om-download h3 { margin: 0 0 3px; font-size: 12px; }
+.om-portal .om-foot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; padding: 16px 22px; background: #3a2a1c; color: #d8c9b6; font-size: 12px; }
+.om-portal .om-foot div { display: flex; flex-direction: column; }
+.om-portal .om-foot a { color: #fff; text-decoration: none; }
+.om-portal .om-foot p { grid-column: 1 / -1; margin: 0; border-top: 1px solid #6b5440; padding-top: 8px; }
+
+/* 2016: utility bar with rating, white nav, hero with a configurator card, flat tables. */
+.om-flat { background: #fff; color: #333; font: 15px/1.6 "Helvetica Neue", Arial, sans-serif; }
+.om-flat .om-util { display: flex; justify-content: space-between; gap: 12px; padding: 6px 40px; background: #3a2a1c; color: #f1e6d8; font-size: 12px; }
+.om-flat .om-stars { color: #ffb02e; font-style: normal; letter-spacing: 1px; }
+.om-flat .om-head { display: flex; align-items: center; gap: 28px; padding: 14px 40px; box-shadow: 0 2px 8px rgb(0 0 0 / 0.08); }
+.om-flat .om-logo { color: #555; }
+.om-flat .om-head nav { flex: 1; display: flex; gap: 24px; }
+.om-flat .om-head nav a { color: #333; text-decoration: none; font-weight: 600; }
+.om-flat .om-cta { background: #e8731c; color: #fff; padding: 10px 22px; border-radius: 3px; text-decoration: none; font-weight: 700; }
+.om-flat .om-hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; padding: 50px 40px; background: linear-gradient(100deg, #fff 55%, #fdeede 55%); }
+.om-flat h1 { margin: 0 0 6px; font-size: 42px; line-height: 1.1; font-weight: 300; color: #3a2a1c; }
+.om-flat .om-claim { font-size: 20px; color: #e8731c; }
+.om-flat .om-users { display: inline-block; margin-top: 6px; padding-bottom: 2px; border-bottom: 3px solid #e8731c; }
+.om-flat .om-conf { background: #fff; padding: 22px; border-radius: 4px; box-shadow: 0 6px 24px rgb(58 42 28 / 0.18); }
+.om-flat .om-conf h2 { margin: 0; font-size: 22px; }
+.om-flat .om-conf label { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #eee; }
+.om-flat .om-conf label span { width: 18px; height: 18px; border: 2px solid #c9b8a4; border-radius: 3px; }
+.om-flat .om-conf label span.on { background: #e8731c; border-color: #e8731c; box-shadow: inset 0 0 0 3px #fff; }
+.om-flat .om-band { padding: 40px; }
+.om-flat .om-tint { background: #faf6f1; }
+.om-flat h2 { margin: 0 0 14px; font-size: 26px; font-weight: 300; }
+.om-flat .om-feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+.om-flat .om-feats h3 { margin: 0 0 4px; font-size: 17px; }
+.om-flat .bv-table { background: #fff; border-top: 4px solid #e8731c; }
+.om-flat .bv-table thead th { font-size: 18px; padding: 12px; }
+.om-flat .bv-price td { font-size: 22px; color: #e8731c; }
+.om-flat .bv-table th, .om-flat .bv-table td { border-bottom: 1px solid #eee; }
+.om-flat .bv-buy { background: #e8731c; color: #fff; border: 0; border-radius: 3px; padding: 8px 16px; font: 700 14px "Helvetica Neue", Arial, sans-serif; }
+.om-flat .om-split { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+.om-flat .om-download h2 { margin-bottom: 6px; }
+.om-flat .om-download h3 { margin: 0 0 4px; font-size: 14px; color: #8a7a68; }
+.om-flat .om-foot { display: flex; flex-wrap: wrap; gap: 22px; padding: 22px 40px; background: #3a2a1c; color: #c9b8a4; font-size: 13px; }
+.om-flat .om-foot a { color: #fff; text-decoration: none; }
+
+/* 2020: charcoal hero with two big cards, a customer strip and rounded sheets. */
+.om-modern { background: #f6f4f1; color: #24211e; font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.om-modern .om-head { display: flex; align-items: center; gap: 24px; padding: 16px 48px; background: #24211e; }
+.om-modern .om-logo { color: #fff; }
+.om-modern .om-head nav { flex: 1; display: flex; gap: 8px; justify-content: center; }
+.om-modern .om-head nav a { color: #d9d2c8; text-decoration: none; padding: 6px 14px; border-radius: 99px; font-size: 14px; }
+.om-modern .om-cta { display: inline-block; background: #e8731c; color: #fff; padding: 10px 24px; border-radius: 99px; text-decoration: none; font-weight: 700; }
+.om-modern .om-hero { padding: 64px 48px 90px; background: #24211e; color: #fff; text-align: center; }
+.om-modern h1 { margin: 0; font-size: 58px; line-height: 1.05; letter-spacing: -2px; font-weight: 800; }
+.om-modern .om-claim { margin-bottom: 36px; font-size: 22px; color: #f2b277; }
+.om-modern .om-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 880px; margin: 0 auto; text-align: left; }
+.om-modern .om-cards > div { padding: 28px; border-radius: 28px; }
+.om-modern .om-cards h2 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.5px; }
+.om-modern .om-quiz { background: #e8731c; color: #fff; }
+.om-modern .om-quiz .om-cta { background: #24211e; margin-top: 8px; }
+.om-modern .om-pc { background: #fff; color: #24211e; }
+.om-modern .om-pc strong { display: block; margin-top: 10px; font-size: 18px; color: #c25a0c; }
+.om-modern .om-crowd { max-width: 880px; margin: -40px auto 0; padding: 16px 28px; display: flex; justify-content: space-between; gap: 16px; background: #fff; border-radius: 20px; box-shadow: 0 12px 30px rgb(36 33 30 / 0.15); position: relative; }
+.om-modern .om-crowd p { margin: 0; color: #7b7268; }
+.om-modern .om-sheet { max-width: 1000px; margin: 0 auto; padding: 44px 24px 0; }
+.om-modern h2 { font-size: 30px; letter-spacing: -0.8px; margin: 0 0 14px; }
+.om-modern .om-feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.om-modern .om-feats section { padding: 20px; border: 2px solid #24211e; border-radius: 20px; background: #fff; }
+.om-modern .om-feats h3 { margin: 0 0 4px; font-size: 18px; }
+.om-modern .om-card { background: #fff; border-radius: 24px; padding: 22px; box-shadow: 0 8px 24px rgb(36 33 30 / 0.08); }
+.om-modern .bv-table thead th { font-size: 18px; padding: 10px; }
+.om-modern .bv-table th, .om-modern .bv-table td { border-bottom: 1px solid #efeae4; }
+.om-modern .bv-price td { font-size: 26px; font-weight: 800; color: #e8731c; }
+.om-modern .bv-buy { border: 0; border-radius: 99px; padding: 8px 20px; background: #24211e; color: #fff; font: 600 14px system-ui, sans-serif; }
+.om-modern .om-download h2 { font-size: 24px; margin-bottom: 4px; }
+.om-modern .om-download h3 { margin: 0 0 6px; font-size: 14px; color: #7b7268; }
+.om-modern .om-foot { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 44px; padding: 26px 24px; background: #24211e; color: #a99f93; font-size: 13px; }
+.om-modern .om-foot a { color: #fff; text-decoration: none; }
