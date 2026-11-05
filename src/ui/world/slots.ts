@@ -11,7 +11,7 @@ interface Rect { x0: number; x1: number; y0: number; y1: number }
 export const DESK_SLOTS: Record<"side" | "main", Record<string, Rect>> = {
   side: {
     lamp: { x0: 0.78, x1: 0.88, y0: 0.14, y1: 0.24 },
-    scanner: { x0: 0.18, x1: 0.74, y0: 0.14, y1: 0.64 },
+    scanner: { x0: 0.18, x1: 0.74, y0: 0.2, y1: 0.7 },
   },
   main: {
     monitor: { x0: 0.12, x1: 0.88, y0: 0.22, y1: 0.38 },

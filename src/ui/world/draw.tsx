@@ -172,8 +172,8 @@ export function Scanner({ x }: { x: number }) {
   return (
     <g data-slot="scanner">
       <Prism x0={x + S.x0} y0={S.y0} x1={x + S.x1} y1={S.y1} z0={DESK_Z} z1={z} tone="w-tone-pc" />
-      <polygon className="w-lid" points={pts(at3(x + 0.27, 0.22, z), at3(x + 0.66, 0.22, z), at3(x + 0.66, 0.56, z), at3(x + 0.27, 0.56, z))} />
-      <circle className="w-pled" cx={at3(x + 0.67, 0.64, z - 3).x} cy={at3(x + 0.67, 0.64, z - 3).y} r="0.7" />
+      <polygon className="w-lid" points={pts(at3(x + 0.27, 0.28, z), at3(x + 0.66, 0.28, z), at3(x + 0.66, 0.62, z), at3(x + 0.27, 0.62, z))} />
+      <circle className="w-pled" cx={at3(x + 0.67, 0.7, z - 3).x} cy={at3(x + 0.67, 0.7, z - 3).y} r="0.7" />
     </g>
   );
 }
@@ -412,7 +412,7 @@ export function LightSwitch({ f, on }: { f: Fixture; on: boolean }) {
   const [a, b] = WALL_SLOTS.switch, u0 = 32 + a, u1 = 32 + b;
   return (
     <g data-slot="switch" data-switch={on ? "on" : "off"}>
-      <WallBox f={f} u0={u0} u1={u1} z0={32} z1={39} d={1} tone="w-tone-enamel" />
+      <WallBox f={f} u0={u0} u1={u1} z0={32} z1={39} d={1} tone="w-tone-plate" />
       <WallBox f={f} u0={u0 + 1.6} u1={u1 - 1.6} z0={on ? 35.4 : 33} z1={on ? 37.4 : 35} d={1.8} tone="w-tone-enamel" />
     </g>
   );
