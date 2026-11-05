@@ -11,10 +11,11 @@ import "./pay-step.css";
 
 // A purchase waiting for its payment method: run places it with the chosen one. extra rows (lease offers) follow the
 // methods in the same list and place the order through runExtra. A cardOnly purchase takes the card or an extra row.
-// blocked is the error key of a purchase known to fail, shown in place of a confirm that would only report it.
+// blocked is the error key of a purchase known to fail, shown in place of a confirm that would only report it. note is
+// the key of a line the outcome adds.
 export interface Purchase {
   supplier: SupplierId; name: string; amount: number; run: (m: Method) => ActionResult;
-  cardOnly?: boolean; extra?: PayRow[]; runExtra?: (id: string) => ActionResult; blocked?: string | null;
+  cardOnly?: boolean; extra?: PayRow[]; runExtra?: (id: string) => ActionResult; blocked?: string | null; note?: string;
 }
 
 export const orderLines = (s: GameState, amount: number): LedgerEntry[] => [{ hour: s.hour, category: "", key: "", params: {}, amount: -amount }];
@@ -43,7 +44,12 @@ export function PayStep({ game, buy, onClose, onDone, onPick }: {
   const [placed, setPlaced] = useState<{ payable?: string } | null>(null), [error, setError] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null), seen = useRef<string | null>(null);
   useEffect(() => reveal(root.current), []);
-  if (placed) return <div className="pay-step">{placed.payable ? <OrderDone payable={placed.payable} /> : t("purchase.done.ordered")}</div>;
+  if (placed) return (
+    <div className="pay-step">
+      {placed.payable ? <OrderDone payable={placed.payable} /> : t("purchase.done.ordered")}
+      {buy.note && <p className="pay-step-note">{t(buy.note)}</p>}
+    </div>
+  );
   const rows = payRows(game, buy), pick = startRow(game, buy, rows, chosen);
   // The row the player last saw selected; a later switch away from it, such as a revoked mandate, is named.
   seen.current ??= pick;
@@ -71,12 +77,14 @@ export function PayStep({ game, buy, onClose, onDone, onPick }: {
   );
 }
 
-// Scrolls the nearest scrolling ancestor just far enough to show el's bottom edge, where the confirm button sits.
+// Scrolls the nearest scrolling ancestor just far enough to show el's bottom edge, where the confirm button sits, but never
+// past the top of a dialog it holds, so the dialog's title stays in view.
 function reveal(el: HTMLElement | null) {
   for (let p = el?.parentElement; el && p; p = p.parentElement) {
     if (p.scrollHeight <= p.clientHeight || !/auto|scroll/.test(getComputedStyle(p).overflowY)) continue;
-    const below = el.getBoundingClientRect().bottom - p.getBoundingClientRect().bottom;
-    if (below > 0) p.scrollTop += below + 8;
+    const top = p.getBoundingClientRect().top, below = el.getBoundingClientRect().bottom - p.getBoundingClientRect().bottom;
+    const d = el.closest('[role="dialog"]'), room = d && d !== p && p.contains(d) ? d.getBoundingClientRect().top - top : Infinity;
+    if (below > 0) p.scrollTop += Math.min(below + 8, Math.max(0, room));
     return;
   }
 }

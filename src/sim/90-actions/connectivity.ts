@@ -61,20 +61,28 @@ const cableVendor = (s: GameState, deviceId: string): string => {
   return loc?.dc ? datacenterById(loc.dc).name : "DE-KICKS";
 };
 
+// The error a provider cable order runs into before any payment, or null.
+export function providerCableError(s: GameState, rackA: string, jackA: number, rackB: string, jackB: number): string | null {
+  const ra = s.racks.find((r) => r.id === rackA), rb = s.racks.find((r) => r.id === rackB);
+  if (!ra || !rb) return "error.unknownRack";
+  if (ra.id === rb.id) return "error.providerCableSameRack";
+  const la = s.locations.find((l) => l.id === ra.locationId)!, lb = s.locations.find((l) => l.id === rb.locationId)!;
+  if (!la.dc || la.dc !== lb.dc) return "error.otherBuilding";
+  if (la.id === lb.id && la.space !== "share") return "error.cableByHand";
+  const pa = panelOf(s, ra.id), pb = panelOf(s, rb.id);
+  if (!pa || !pb) return "error.noProviderPanel";
+  const ok = (j: number) => Number.isInteger(j) && j >= 0 && j < PANEL_JACKS;
+  if (!ok(jackA) || !ok(jackB)) return "error.unknownPort";
+  if (jackRoles(s, pa.id)[jackA] !== "free" || jackRoles(s, pb.id)[jackB] !== "free") return "error.jackTaken";
+  return null;
+}
+
 // Orders a cable from a jack on one rented rack's panel to a jack on another's in the same building. The provider confirms
 // the order at once and bills it on completion.
 export function orderProviderCable(s: GameState, rackA: string, jackA: number, rackB: string, jackB: number, method?: Method): ActionResult {
-  const ra = s.racks.find((r) => r.id === rackA), rb = s.racks.find((r) => r.id === rackB);
-  if (!ra || !rb) return fail("error.unknownRack");
-  if (ra.id === rb.id) return fail("error.providerCableSameRack");
-  const la = s.locations.find((l) => l.id === ra.locationId)!, lb = s.locations.find((l) => l.id === rb.locationId)!;
-  if (!la.dc || la.dc !== lb.dc) return fail("error.otherBuilding");
-  if (la.id === lb.id && la.space !== "share") return fail("error.cableByHand");
-  const pa = panelOf(s, ra.id), pb = panelOf(s, rb.id);
-  if (!pa || !pb) return fail("error.noProviderPanel");
-  const ok = (j: number) => Number.isInteger(j) && j >= 0 && j < PANEL_JACKS;
-  if (!ok(jackA) || !ok(jackB)) return fail("error.unknownPort");
-  if (jackRoles(s, pa.id)[jackA] !== "free" || jackRoles(s, pb.id)[jackB] !== "free") return fail("error.jackTaken");
+  const no = providerCableError(s, rackA, jackA, rackB, jackB);
+  if (no) return fail(no);
+  const pa = panelOf(s, rackA)!, pb = panelOf(s, rackB)!;
   const id = `pc${s.nextId++}`;
   s.providerCables = [...s.providerCables, { id, a: { device: pa.id, port: jackA }, b: { device: pb.id, port: jackB }, fee: PROVIDER_CABLE.fee, dueAt: s.hour + PROVIDER_CABLE.leadHours, method }];
   bill(s, { supplier: "network", name: cableVendor(s, pa.id), lines: [], method: method ?? (s.bank ? "transfer" : "cash"), doc: "contract" });

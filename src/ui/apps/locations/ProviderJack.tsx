@@ -7,7 +7,7 @@ import { PROVIDER_CABLE } from "../../../sim/10-catalog/uplinks";
 import { datacenterById } from "../../../sim/20-world/datacenters";
 import type { Device, GameState } from "../../../sim/50-state";
 import { jackRoles, panelOf, type JackRole } from "../../../sim/60-infra/panels";
-import { cancelProviderCable, orderProviderCable } from "../../../sim/90-actions/connectivity";
+import { cancelProviderCable, orderProviderCable, providerCableError } from "../../../sim/90-actions/connectivity";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { PayStep, type Purchase } from "../browser/sites/shared/PayStep";
@@ -32,7 +32,7 @@ export function cableOrder(game: GameState, rackA: string, jackA: number, rackB:
   const dc = game.locations.find((l) => l.id === game.racks.find((r) => r.id === rackA)?.locationId)?.dc;
   return {
     key: `${rackA}-${jackA}-${rackB}-${jackB}`, supplier: "network", name: dc ? datacenterById(dc).name : "DE-KICKS", amount: PROVIDER_CABLE.fee,
-    run: (m) => useStore.getState().act(orderProviderCable, rackA, jackA, rackB, jackB, m),
+    run: (m) => useStore.getState().act(orderProviderCable, rackA, jackA, rackB, jackB, m), blocked: providerCableError(game, rackA, jackA, rackB, jackB), note: "payI.cableLater",
   };
 }
 

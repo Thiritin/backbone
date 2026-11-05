@@ -370,7 +370,7 @@ export const useStore = create<Store>((set, get) => ({
       const was = get().game.player, now = game.player;
       // A drive any action starts, from the map or a job done in person, plays as the trip in the room.
       if (now.doing === "travel" && now.until > game.hour && now.at !== was.at && ["room", "map"].includes(useTrip.getState().stage)) {
-        const trip: Trip = { from: playerAt(get().game), to: playerAt(game), start: nowHours(game), until: now.until, resume: get().speed, by: now.by };
+        const trip: Trip = { from: playerAt(get().game), to: playerAt(game), start: nowHours(game), until: now.until, resume: get().speed, by: now.by, billed: game.payables.length > get().game.payables.length };
         set({ game, speed: 0, surface: "world" });
         useTrip.setState({ stage: "leave", trip });
       } else set({ game });

@@ -210,6 +210,7 @@ function Drive({ trip, rd, roads, streets, geo }: { trip: Trip; rd: RouteData; r
       <div className="travel-clock num">
         <span>{formatClock(game.hour, game.minute)}</span>
         <strong>{t("travel.speed", { n: mult.toLocaleString(LOCALE) })}</strong>
+        {trip.billed && <span>{t("payI.travelBooked")}</span>}
       </div>
     </div>
   );
