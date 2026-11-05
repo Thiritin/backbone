@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-05
 - Letters from the trade office, tax office and other authorities are now the bill itself, with the same letterhead everywhere and a stamp once paid.
 - Invoices dated up to 2008 print in monospace on continuous-form paper like a dot-matrix printer; later ones keep the styled layout.
+- Program installers and the accounting software now show in the browser download indicator and list while they download, like operating system images do.
 - Shop admin pages use their own buttons and tabs instead of the desktop ones, the start page shows order, ticket, invoice and income widgets, and there are new Accounts, Domains, Reports and Network pages.
 - Products and payment gateways have their own pages, invoices filter by status, the setup wizard of WHMCache 7 and later and Blessta is a panel you can dismiss, and importing existing customers sits under Import.
 - The power button on a rack server now works: a press starts it or shuts it down, holding it for two seconds cuts the power, the recessed reset button reboots it hard, the router has a rocker switch on its back, the UPS a front button, and the rack floor reports what happened.
