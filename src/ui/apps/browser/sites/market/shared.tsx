@@ -4,11 +4,13 @@ import { euro } from "../../../../../sim/00-core/money";
 import { boardSpec, componentParts, genOf, isDriveKind, modelById, modelName, wattsFactorOf, type ComponentKind, type DeviceModel } from "../../../../../sim/10-catalog/hardware";
 import { cardOf } from "../../../../../sim/10-catalog/gpu";
 import { defaultVendor, skuById, VENDOR_NAME, VENDORS, type Vendor } from "../../../../../sim/10-catalog/cpus";
-import { bidHistory, currentBid, leading, onMarket, shipHours, type Channel, type Listing } from "../../../../../sim/10-catalog/used";
+import { bidHistory, channelName, currentBid, leading, onMarket, shipHours, type Channel, type Listing } from "../../../../../sim/10-catalog/used";
+import type { Method } from "../../../../../sim/46-finance/payables";
 import type { GameState } from "../../../../../sim/50-state";
 import { bidListing, buyListing, cancelListing } from "../../../../../sim/90-actions/used";
 import { useSessionState } from "../../../../session";
 import { useStore } from "../../../../store";
+import { PayStep } from "../shared/PayStep";
 import { t } from "../../../../../i18n/en";
 import { classOf, CLASS_TREE, inClass, rowLabel } from "../../../shop/filter";
 import { clockLabel, cores, day, disk, height, memoryDriveRows, portsText, ram, speed } from "../../../hw";
@@ -91,11 +93,21 @@ export function Money({ value, onChange, label, className = "used-input" }: { va
 export function BuyBox({ game, l, to, buy, bid, className }: { game: GameState; l: Listing; to: string; buy?: ReactNode; bid?: ReactNode; className?: string }) {
   const act = useStore((s) => s.act), notify = useStore((s) => s.notify);
   const city = game.locations.find((x) => x.id === to)!.city, now = currentBid(l, game.hour);
-  const [max, setMax] = useState(Math.ceil((now * 1.1) / 10) * 10);
+  const [max, setMax] = useState(Math.ceil((now * 1.1) / 10) * 10), [paying, setPaying] = useState(false);
   const name = listingName(l);
   if (l.channel !== "ebuy") {
-    const take = () => { if (act(buyListing, l.id, to).ok) notify("Shop", t("shop.bought", { name }), t("shop.arrives", { date: day(game.hour + shipHours(l, city)) })); };
-    return <span className={className}><button className="mk-btn" disabled={l.price > game.cash} onClick={take}>{buy ?? t("shop.buy")}</button></span>;
+    const take = (m: Method) => {
+      const r = act(buyListing, l.id, to, m);
+      if (r.ok) notify("Shop", t("shop.bought", { name }), t("shop.arrives", { date: day(game.hour + shipHours(l, city)) }));
+      return r;
+    };
+    return (
+      <span className={className}>
+        {paying
+          ? <PayStep game={game} buy={{ supplier: "marketplace", name: channelName(l.channel), amount: l.price, run: take }} onClose={() => setPaying(false)} />
+          : <button className="mk-btn" onClick={() => setPaying(true)}>{buy ?? t("shop.buy")}</button>}
+      </span>
+    );
   }
   const place = () => { if (act(bidListing, l.id, max, to).ok) notify("Shop", t("shop.bidOn", { name }), t("shop.maximum", { price: euro(max) })); };
   return (
