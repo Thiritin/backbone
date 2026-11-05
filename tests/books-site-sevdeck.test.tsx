@@ -14,15 +14,15 @@ const page = (month: string, path = "/") => {
 describe("EightDesk site", () => {
   it("wears a different structure in each era", () => {
     const flat = page("2013-06"), dash = page("2019-03"), v2 = page("2024-06");
-    expect(flat).toContain("sd-flat");
-    expect(flat).toContain("sd-sheet");
-    expect(flat).not.toContain("sd-window");
-    expect(dash).toContain("sd-dash");
-    expect(dash).toContain("sd-window");
-    expect(dash).not.toContain("sd-bento");
-    expect(v2).toContain("sd-v2");
-    expect(v2).toContain("sd-bento");
-    expect(v2).not.toContain("sd-sheet");
+    expect(flat).toContain("ed-flat");
+    expect(flat).toContain("ed-sheet");
+    expect(flat).not.toContain("ed-window");
+    expect(dash).toContain("ed-dash");
+    expect(dash).toContain("ed-window");
+    expect(dash).not.toContain("ed-bento");
+    expect(v2).toContain("ed-v2");
+    expect(v2).toContain("ed-bento");
+    expect(v2).not.toContain("ed-sheet");
   });
 
   it("shows the pricing table with buy buttons in every era", () => {

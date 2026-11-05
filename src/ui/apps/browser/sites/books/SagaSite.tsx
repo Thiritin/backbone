@@ -56,19 +56,17 @@ export function SagaSite({ game, path, go }: SiteProps) {
   if (look === "classic") {
     return (
       <div className="sg sg-classic">
-        <div className="sg-page">
-          <div className="sg-util">{util.map((u) => <span key={u}>{u}</span>)}</div>
-          <header className="sg-head">{logo}<span className="sg-tag">{t("books-vendors.about.saga")}</span></header>
+        <div className="sg-util">{util.map((u) => <span key={u}>{u}</span>)}</div>
+        <header className="sg-head">
+          <div className="sg-brand">{logo}<span className="sg-tag">{t("books-vendors.about.saga")}</span></div>
           <nav className="sg-nav">{home}{navClassic.map((n) => <span key={n}>{n}</span>)}</nav>
-          <div className="sg-body">
-            <main className="sg-main">{shop}</main>
-            <aside className="sg-side">
-              <div className="sg-box"><b>{t("sgs.claim")}</b></div>
-              <div className="sg-box"><b>{t("sgs.small.title")}</b><p>{t("sgs.small.text")}</p></div>
-            </aside>
-          </div>
-          {foot}
-        </div>
+        </header>
+        <section className="sg-cards">
+          {tiles.map(([title, text]) => <div key={title} className="sg-card"><h2>{title}</h2><p>{text}</p></div>)}
+        </section>
+        <main className="sg-main">{shop}</main>
+        <nav className="sg-links">{[...navClassic, ...util].map((n) => <span key={n}>{n}</span>)}</nav>
+        {foot}
       </div>
     );
   }
@@ -82,7 +80,13 @@ export function SagaSite({ game, path, go }: SiteProps) {
             <div key={title} className={`sg-tile sg-tile-${i}`}><h2>{title}</h2><p>{text}</p><a href="#download">{t("sgs.try")}</a></div>
           ))}
         </section>
-        <main className="sg-main">{shop}</main>
+        <div className="sg-cols">
+          <main className="sg-main">{shop}</main>
+          <aside className="sg-side">
+            <div className="sg-box"><h3>{t("sgs.claim")}</h3></div>
+            <div className="sg-box"><h3>{t("sgs.small.title")}</h3><p>{t("sgs.small.text")}</p></div>
+          </aside>
+        </div>
         {foot}
       </div>
     );

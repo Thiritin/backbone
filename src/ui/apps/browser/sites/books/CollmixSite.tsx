@@ -18,8 +18,8 @@ const jump = (id: string) => (e: MouseEvent) => { e.preventDefault(); document.g
 // A ruled ledger sheet with a bold K, flat shapes only.
 function Mark({ size = 30 }: { size?: number }) {
   return (
-    <svg className="cx-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect x="2" y="2" width="28" height="28" rx="3" fill="var(--cx-accent)" />
+    <svg className="kx-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="2" y="2" width="28" height="28" rx="3" fill="var(--kx-accent)" />
       <rect x="6" y="9" width="20" height="1.6" fill="#fff" opacity="0.45" />
       <rect x="6" y="14" width="20" height="1.6" fill="#fff" opacity="0.45" />
       <rect x="6" y="19" width="20" height="1.6" fill="#fff" opacity="0.45" />
@@ -30,7 +30,7 @@ function Mark({ size = 30 }: { size?: number }) {
   );
 }
 
-const Wordmark = () => <span className="cx-word"><Mark /><span><b>konto</b>mix</span></span>;
+const Wordmark = () => <span className="kx-word"><Mark /><span><b>konto</b>mix</span></span>;
 
 export function CollmixSite({ game, path, go }: SiteProps) {
   const v = booksVendor("collmix")!, one = editionIn(path), year = yearOf(game.hour);
@@ -40,7 +40,7 @@ export function CollmixSite({ game, path, go }: SiteProps) {
   const mail = `info@${booksHost(v)}`;
 
   const download = (
-    <section id="download" className="cx-dl">
+    <section id="download" className="kx-dl">
       <h2>{k("download")}</h2>
       <h3>{look === "plain" ? k("plain.trial") : k("nav.trial")}</h3>
       <p>{k(`${look}.trialText`)}</p>
@@ -50,9 +50,9 @@ export function CollmixSite({ game, path, go }: SiteProps) {
     </section>
   );
   const editions = <Editions game={game} v={v} one={one} table={look !== "plain"} />;
-  const legal = <span className="cx-legal"><span>{k("imprint")}</span><span>{k("terms")}</span><span>{k("privacy")}</span></span>;
+  const legal = <span className="kx-legal"><span>{k("imprint")}</span><span>{k("terms")}</span><span>{k("privacy")}</span></span>;
   const foot = (
-    <footer className="cx-foot" id="contact">
+    <footer className="kx-foot" id="contact">
       <span>{t("books-vendors.footer", { year, name: v.name })}</span>
       <span>{k("address")} | {mail}</span>
       {legal}
@@ -63,16 +63,16 @@ export function CollmixSite({ game, path, go }: SiteProps) {
 
   if (look === "plain") {
     return (
-      <div className="cx cx-plain">
-        <table className="cx-frame" cellSpacing={0} cellPadding={0}>
+      <div className="kx kx-plain">
+        <table className="kx-frame" cellSpacing={0} cellPadding={0}>
           <tbody>
-            <tr><td colSpan={2} className="cx-top"><Wordmark /><span className="cx-tag">{t("books-vendors.about.collmix")}</span></td></tr>
-            <tr><td colSpan={2} className="cx-menu">
+            <tr><td colSpan={2} className="kx-top"><Wordmark /><span className="kx-tag">{t("books-vendors.about.collmix")}</span></td></tr>
+            <tr><td colSpan={2} className="kx-menu">
               {homeLink} | {nav([["features", k("nav.features")], ["editions", k("prices")], ["download", k("nav.download")], ["contact", k("nav.contact")]]).flatMap((a, i) => (i ? [" | ", a] : [a]))}
             </td></tr>
             <tr>
-              <td className="cx-left"><b>{k("plain.news")}</b><p>{k("plain.n1")}</p><p>{k("plain.n2")}</p></td>
-              <td className="cx-body">
+              <td className="kx-left"><b>{k("plain.news")}</b><p>{k("plain.n1")}</p><p>{k("plain.n2")}</p></td>
+              <td className="kx-body">
                 <h1>{k("plain.h1")}</h1>
                 <p>{k("plain.intro")}</p>
                 <div id="features"><p>{k("plain.f1")}</p><p>{k("plain.f2")}</p><p>{k("plain.f3")}</p></div>
@@ -90,23 +90,23 @@ export function CollmixSite({ game, path, go }: SiteProps) {
 
   if (look === "tabs") {
     return (
-      <div className="cx cx-tabs">
-        <div className="cx-wrap">
-          <header className="cx-bar">
+      <div className="kx kx-tabs">
+        <div className="kx-wrap">
+          <header className="kx-bar">
             <Wordmark />
             <nav>{homeLink}{nav([["editions", k("nav.products")], ["features", k("nav.features")], ["refs", k("nav.refs")], ["download", k("nav.trial")], ["contact", k("nav.contact")]])}</nav>
           </header>
-          <section className="cx-hero">
+          <section className="kx-hero">
             <h1>{k("tabs.h1")}</h1>
             <p>{k("tabs.sub")}</p>
-            <a className="cx-cta" href="#download" onClick={jump("download")}>{k("nav.trial")}</a>
+            <a className="kx-cta" href="#download" onClick={jump("download")}>{k("nav.trial")}</a>
           </section>
-          <div className="cx-boxes" id="features">
-            {(["b1", "b2", "b3"] as const).map((b) => <div key={b} className="cx-box"><h2>{k(`tabs.${b}h`)}</h2><p>{k(`tabs.${b}p`)}</p></div>)}
+          <div className="kx-boxes" id="features">
+            {(["b1", "b2", "b3"] as const).map((b) => <div key={b} className="kx-box"><h2>{k(`tabs.${b}h`)}</h2><p>{k(`tabs.${b}p`)}</p></div>)}
           </div>
-          <section id="editions" className="cx-card"><h2>{k("prices")}</h2>{editions}</section>
-          <section id="refs" className="cx-ref"><blockquote>{k("tabs.quote")}</blockquote><cite>{k("tabs.by")}</cite></section>
-          <div className="cx-card">{download}</div>
+          <section id="editions" className="kx-card"><h2>{k("prices")}</h2>{editions}</section>
+          <section id="refs" className="kx-ref"><blockquote>{k("tabs.quote")}</blockquote><cite>{k("tabs.by")}</cite></section>
+          <div className="kx-card">{download}</div>
           {foot}
         </div>
       </div>
@@ -115,31 +115,31 @@ export function CollmixSite({ game, path, go }: SiteProps) {
 
   const checks = ["c1", "c2", "c3"] as const, steps = ["s1", "s2", "s3"] as const;
   return (
-    <div className="cx cx-side">
-      <header className="cx-top">
+    <div className="kx kx-side">
+      <header className="kx-top">
         <Wordmark />
         <nav>{homeLink}{nav([["editions", k("nav.products")], ["download", k("nav.download")], ["contact", k("nav.contact")]])}</nav>
       </header>
-      <div className="cx-cols">
-        <aside className="cx-aside">
+      <div className="kx-cols">
+        <aside className="kx-aside">
           <h3>{k("nav.products")}</h3>
           <ul>
             {v.editions.map((e) => <li key={e.id}><a href={`#${e.id}`} aria-current={one === e.id ? "page" : undefined} onClick={to(booksUrl(v, e.id))}>{v.program} {e.name}</a></li>)}
             <li><a href="#download" onClick={jump("download")}>{k("nav.download")}</a></li>
           </ul>
         </aside>
-        <main className="cx-main">
-          <section className="cx-hero">
+        <main className="kx-main">
+          <section className="kx-hero">
             <h1>{k("side.h1")}</h1>
             <p>{k("side.sub")}</p>
-            <ul className="cx-checks">{checks.map((c) => <li key={c}>{k(`side.${c}`)}</li>)}</ul>
+            <ul className="kx-checks">{checks.map((c) => <li key={c}>{k(`side.${c}`)}</li>)}</ul>
           </section>
-          <section className="cx-steps">
+          <section className="kx-steps">
             <h2>{k("side.steps")}</h2>
             <ol>{steps.map((s) => <li key={s}>{k(`side.${s}`)}</li>)}</ol>
           </section>
-          <section id="editions" className="cx-card">{editions}</section>
-          <div className="cx-card">{download}</div>
+          <section id="editions" className="kx-card">{editions}</section>
+          <div className="kx-card">{download}</div>
         </main>
       </div>
       {foot}

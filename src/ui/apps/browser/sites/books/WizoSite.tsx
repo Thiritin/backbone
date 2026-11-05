@@ -21,7 +21,7 @@ const jump = (id: string) => (e: MouseEvent) => { e.preventDefault(); document.g
 // A blue tile with a yellow question mark.
 function Mark({ size }: { size: number }) {
   return (
-    <svg className="wz-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+    <svg className="wrm-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
       <rect width="32" height="32" rx="7" fill="#1f5fa8" />
       <path d="M11 12.5a5 5 0 1 1 7 4.6c-1.3.6-2 1.4-2 2.9" fill="none" stroke="#ffc928" strokeWidth="3" strokeLinecap="round" />
       <circle cx="16" cy="25" r="1.9" fill="#ffc928" />
@@ -30,16 +30,16 @@ function Mark({ size }: { size: number }) {
 }
 
 const Brand = ({ size, v }: { size: number; v: BooksVendor }) => (
-  <span className="wz-logo"><Mark size={size} /><b>{v.name}</b><i>{v.program.slice(v.name.length + 1)}</i></span>
+  <span className="wrm-logo"><Mark size={size} /><b>{v.name}</b><i>{v.program.slice(v.name.length + 1)}</i></span>
 );
 
 function Req({ look, v }: { look: keyof typeof REQ; v: BooksVendor }) {
   const [ghz, ram, res] = REQ[look];
   return (
-    <div id="wz-download" className="wz-download">
+    <div id="wrm-download" className="wrm-download">
       <h2>{t("books-wizo.download.title")}</h2>
       <h3>{t("books-wizo.req.title")}</h3>
-      <div className="wz-req">
+      <div className="wrm-req">
         <p>{t("books-wizo.req.cpu", { n: ghz })}</p>
         <p>{t("books-wizo.req.ram", { n: num(ram) })}</p>
         <p>{t("books-wizo.req.disk", { n: num(v.setupMb ?? 0) })}</p>
@@ -50,13 +50,22 @@ function Req({ look, v }: { look: keyof typeof REQ; v: BooksVendor }) {
 }
 
 const Guide = ({ go }: { go: (url: string) => void }) => (
-  <a className="wz-guide" href={BOOKS_GUIDE_ROUTE} onClick={(e) => { e.preventDefault(); go(BOOKS_GUIDE_ROUTE); }}>{t("books-wizo.guide")}</a>
+  <a className="wrm-guide" href={BOOKS_GUIDE_ROUTE} onClick={(e) => { e.preventDefault(); go(BOOKS_GUIDE_ROUTE); }}>{t("books-wizo.guide")}</a>
 );
 
+// Flat 32px icons in the era's accent colour: invoice sheet, bank building, percent sign.
+const ICONS = [
+  <><path d="M8 3h12l5 5v21H8z" /><path d="M20 3v5h5M12 14h9M12 18h9M12 22h6" /></>,
+  <><path d="M3 12 16 4l13 8zM6 14v10M12 14v10M20 14v10M26 14v10M4 27h24" /></>,
+  <><circle cx="10" cy="10" r="3.5" /><circle cx="22" cy="22" r="3.5" /><path d="M25 5 7 27" /></>,
+];
+const Ico = ({ n }: { n: 1 | 2 | 3 }) => (
+  <svg className="wrm-ico" viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[n - 1]}</svg>
+);
 const FEATS = [1, 2, 3] as const;
 const Feats = () => (
-  <div className="wz-feats">
-    {FEATS.map((n) => <section key={n}><span className={`wz-ico wz-ico${n}`} aria-hidden="true" /><h3>{t(`books-wizo.feat.${n}.t`)}</h3><p>{t(`books-wizo.feat.${n}.d`)}</p></section>)}
+  <div className="wrm-feats">
+    {FEATS.map((n) => <section key={n}><Ico n={n} /><h3>{t(`books-wizo.feat.${n}.t`)}</h3><p>{t(`books-wizo.feat.${n}.d`)}</p></section>)}
   </div>
 );
 
@@ -73,42 +82,44 @@ export function WizoSite({ game, path, go }: SiteProps) {
 
   if (look === "portal") {
     return (
-      <div className="wz wz-portal">
-        <table className="wz-layout" cellSpacing={0} cellPadding={0}>
+      <div className="wrm wrm-portal">
+        <table className="wrm-layout" cellSpacing={0} cellPadding={0}>
           <tbody>
-            <tr><td colSpan={3} className="wz-linkbar">{nav(["home", "products", "guarantee", "press", "contact", "support"])}</td></tr>
+            <tr><td colSpan={2} className="wrm-linkbar">{nav(["home", "products", "guarantee", "press", "contact", "support"])}</td></tr>
             <tr>
-              <td colSpan={3} className="wz-top">
+              <td colSpan={2} className="wrm-top">
                 <Brand size={36} v={v} />
-                <span className="wz-util">
-                  <span className="wz-search"><input readOnly aria-label={t("books-wizo.search")} value={t("books-wizo.search")} /><button type="button" onClick={stay}>OK</button></span>
+                <span className="wrm-util">
+                  <span className="wrm-search"><input readOnly aria-label={t("books-wizo.search")} value={t("books-wizo.search")} /><button type="button" onClick={stay}>OK</button></span>
                   <a href="#" onClick={stay}>{t("books-wizo.account")}</a> | <a href="#" onClick={stay}>{t("books-wizo.newsletter")}</a> | <b>{t("books-wizo.cart", { n: 0 })}</b>
                 </span>
               </td>
             </tr>
             <tr>
-              <td className="wz-left">
+              <td colSpan={2} className="wrm-worlds">
                 {["tax", "finance", "office", "free"].map((k) => <a key={k} href="#" className={k === "office" ? "on" : undefined} onClick={stay}>{t(`books-wizo.world.${k}`)}</a>)}
               </td>
-              <td className="wz-mid">
-                <div className="wz-tabs">{["description", "more", "prices", "voices"].map((k, i) => <a key={k} href="#" className={i === 0 ? "on" : undefined} onClick={stay}>{t(`books-wizo.tab.${k}`)}</a>)}</div>
-                <div className="wz-intro">
-                  <div className="wz-boxshot" aria-hidden="true"><b>{v.name}</b><span>{v.program.slice(v.name.length + 1)}</span></div>
+            </tr>
+            <tr>
+              <td className="wrm-shelf">
+                <div className="wrm-boxshot" aria-hidden="true"><b>{v.name}</b><span>{v.program.slice(v.name.length + 1)}</span></div>
+                <div className="wrm-yellow"><a href="#wrm-download" onClick={jump("wrm-download")}>{t("books-wizo.trial")}</a></div>
+                <div className="wrm-note"><b>{t("books-wizo.guarantee.title")}</b><p>{t("books-wizo.guarantee.text")}</p></div>
+                <div className="wrm-note"><p>{t("books-wizo.shipping")}</p></div>
+              </td>
+              <td className="wrm-mid">
+                <div className="wrm-tabs">{["description", "more", "prices", "voices"].map((k, i) => <a key={k} href="#" className={i === 0 ? "on" : undefined} onClick={stay}>{t(`books-wizo.tab.${k}`)}</a>)}</div>
+                <div className="wrm-intro">
                   <h1>{v.program}</h1>
-                  <p className="wz-claim">{t("books-wizo.claim")}</p>
+                  <p className="wrm-claim">{t("books-wizo.claim")}</p>
                   <p>{t("books-wizo.lead")}</p>
                 </div>
                 {editions}
                 <Req look="portal" v={v} />
                 <p><Guide go={go} /></p>
               </td>
-              <td className="wz-right">
-                <div className="wz-yellow"><a href="#wz-download" onClick={jump("wz-download")}>{t("books-wizo.trial")}</a></div>
-                <div className="wz-note"><b>{t("books-wizo.guarantee.title")}</b><p>{t("books-wizo.guarantee.text")}</p></div>
-                <div className="wz-note"><p>{t("books-wizo.shipping")}</p></div>
-              </td>
             </tr>
-            <tr><td colSpan={3} className="wz-foot">{legal}<span>{t("books-wizo.legal.vat")}</span><span>{foot}</span></td></tr>
+            <tr><td colSpan={2} className="wrm-foot">{legal}<span>{t("books-wizo.legal.vat")}</span><span>{foot}</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -117,23 +128,23 @@ export function WizoSite({ game, path, go }: SiteProps) {
 
   if (look === "shop") {
     return (
-      <div className="wz wz-shop">
-        <header className="wz-head">
+      <div className="wrm wrm-shop">
+        <header className="wrm-head">
           <Brand size={44} v={v} />
           <nav>{nav(["home", "products", "guarantee", "support"])}</nav>
-          <a className="wz-cart" href="#" onClick={stay}>{t("books-wizo.cart", { n: 0 })}</a>
+          <a className="wrm-cart" href="#" onClick={stay}>{t("books-wizo.cart", { n: 0 })}</a>
         </header>
-        <section className="wz-hero">
-          <div className="wz-boxshot" aria-hidden="true"><b>{v.name}</b><span>{v.program.slice(v.name.length + 1)}</span></div>
-          <div className="wz-herotext">
+        <section className="wrm-hero">
+          <div className="wrm-boxshot" aria-hidden="true"><b>{v.name}</b><span>{v.program.slice(v.name.length + 1)}</span></div>
+          <div className="wrm-herotext">
             <h1>{v.program}</h1>
-            <p className="wz-claim">{t("books-wizo.claim")}</p>
+            <p className="wrm-claim">{t("books-wizo.claim")}</p>
             <p>{t("books-wizo.lead")}</p>
-            <a className="wz-cta" href="#wz-download" onClick={jump("wz-download")}>{t("books-wizo.trial")}</a>
+            <a className="wrm-cta" href="#wrm-download" onClick={jump("wrm-download")}>{t("books-wizo.trial")}</a>
           </div>
-          <span className="wz-burst">{t("books-wizo.badge.new", { year })}</span>
+          <span className="wrm-burst">{t("books-wizo.badge.new", { year })}</span>
         </section>
-        <div className="wz-cols">
+        <div className="wrm-cols">
           <main>
             <Feats />
             <h2>{t("books-wizo.shop.title")}</h2>
@@ -143,11 +154,11 @@ export function WizoSite({ game, path, go }: SiteProps) {
           </main>
           <aside>
             <blockquote>{t("books-wizo.voice.text")}<cite>{t("books-wizo.voice.who")}</cite></blockquote>
-            <div className="wz-side"><b>{t("books-wizo.guarantee.title")}</b><p>{t("books-wizo.guarantee.text")}</p></div>
-            <div className="wz-side"><b>{t("books-wizo.newsletter")}</b><p>{t("books-wizo.shipping")}</p></div>
+            <div className="wrm-side"><b>{t("books-wizo.guarantee.title")}</b><p>{t("books-wizo.guarantee.text")}</p></div>
+            <div className="wrm-side"><b>{t("books-wizo.newsletter")}</b><p>{t("books-wizo.shipping")}</p></div>
           </aside>
         </div>
-        <footer className="wz-foot">
+        <footer className="wrm-foot">
           {(["products", "service", "company"] as const).map((c) => (
             <div key={c}><b>{t(`books-wizo.col.${c}`)}</b>{c === "products" ? ["tax", "finance", "office", "free"].map((k) => <a key={k} href="#" onClick={stay}>{t(`books-wizo.world.${k}`)}</a>) : c === "service" ? nav(["support", "guarantee", "contact"]) : legal}</div>
           ))}
@@ -159,28 +170,28 @@ export function WizoSite({ game, path, go }: SiteProps) {
 
   if (look === "flat") {
     return (
-      <div className="wz wz-flat">
-        <header className="wz-head">
+      <div className="wrm wrm-flat">
+        <header className="wrm-head">
           <Brand size={30} v={v} />
           <nav>{nav(["home", "products", "guarantee", "support"])}</nav>
-          <a className="wz-cta" href="#wz-download" onClick={jump("wz-download")}>{t("books-wizo.trial")}</a>
+          <a className="wrm-cta" href="#wrm-download" onClick={jump("wrm-download")}>{t("books-wizo.trial")}</a>
         </header>
-        <section className="wz-hero">
+        <section className="wrm-hero">
           <h1>{v.program}</h1>
-          <p className="wz-claim">{t("books-wizo.claim")}</p>
+          <p className="wrm-claim">{t("books-wizo.claim")}</p>
           <p>{t("books-wizo.lead")}</p>
           <small>{t("books-wizo.trust.users")}</small>
         </section>
-        <section className="wz-band"><Feats /></section>
-        <section className="wz-band wz-grey">
+        <section className="wrm-band"><Feats /></section>
+        <section className="wrm-band wrm-grey">
           <h2>{t("books-wizo.shop.title")}</h2>
           {editions}
         </section>
-        <section className="wz-band wz-split">
+        <section className="wrm-band wrm-split">
           <Req look="flat" v={v} />
           <div><h2>{t("books-wizo.guarantee.title")}</h2><p>{t("books-wizo.guarantee.text")}</p><Guide go={go} /></div>
         </section>
-        <footer className="wz-foot">
+        <footer className="wrm-foot">
           <div><b>{t("books-wizo.col.service")}</b>{nav(["support", "contact", "press"])}</div>
           <div><b>{t("books-wizo.col.company")}</b>{legal}</div>
           <p>{foot}</p>
@@ -190,33 +201,33 @@ export function WizoSite({ game, path, go }: SiteProps) {
   }
 
   return (
-    <div className="wz wz-modern">
-      <header className="wz-head">
+    <div className="wrm wrm-modern">
+      <header className="wrm-head">
         <Brand size={28} v={v} />
         <nav>{nav(["home", "products", "guarantee", "support"])}</nav>
       </header>
-      <section className="wz-hero">
-        <span className="wz-pill">{t("books-wizo.trust.test")}</span>
+      <section className="wrm-hero">
+        <span className="wrm-pill">{t("books-wizo.trust.test")}</span>
         <h1>{v.program}</h1>
-        <p className="wz-claim">{t("books-wizo.claim")}</p>
+        <p className="wrm-claim">{t("books-wizo.claim")}</p>
         <p>{t("books-wizo.lead")}</p>
-        <a className="wz-cta" href="#wz-download" onClick={jump("wz-download")}>{t("books-wizo.trial")}</a>
+        <a className="wrm-cta" href="#wrm-download" onClick={jump("wrm-download")}>{t("books-wizo.trial")}</a>
         <small>{t("books-wizo.trust.users")}</small>
       </section>
-      <section className="wz-sheet"><Feats /></section>
-      <section className="wz-sheet wz-pricing">
+      <section className="wrm-sheet"><Feats /></section>
+      <section className="wrm-sheet wrm-pricing">
         <h2>{t("books-wizo.shop.title")}</h2>
-        <div className="wz-card">{editions}</div>
+        <div className="wrm-card">{editions}</div>
       </section>
-      <section className="wz-sheet wz-split">
-        <div className="wz-card"><Req look="modern" v={v} /><Guide go={go} /></div>
+      <section className="wrm-sheet wrm-split">
+        <div className="wrm-card"><Req look="modern" v={v} /><Guide go={go} /></div>
         <div>
           <h2>{t("books-wizo.faq.title")}</h2>
           {[1, 2].map((n) => <details key={n}><summary>{t(`books-wizo.faq.q${n}`)}</summary><p>{t(`books-wizo.faq.a${n}`)}</p></details>)}
         </div>
       </section>
-      <footer className="wz-foot">{legal}<span>{foot}</span></footer>
-      <div className="wz-cookies"><span>{t("books-wizo.cookies.text")}</span><button type="button" onClick={stay}>{t("books-wizo.cookies.accept")}</button></div>
+      <footer className="wrm-foot">{legal}<span>{foot}</span></footer>
+      <div className="wrm-cookies"><span>{t("books-wizo.cookies.text")}</span><button type="button" onClick={stay}>{t("books-wizo.cookies.accept")}</button></div>
     </div>
   );
 }

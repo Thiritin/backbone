@@ -1,104 +1,107 @@
 /* Taxware: a table-laid red portal (2005), a glossy two-column page (2009), a flat white page with a mega menu (2015). */
-.lx { min-height: 100%; color: #222; }
-.lx a { color: inherit; }
-.lx p { margin: 0 0 8px; }
-.lx-logo { display: inline-flex; align-items: center; gap: 8px; font: 26px/1 Arial, Helvetica, sans-serif; letter-spacing: -1px; }
-.lx-logo b { font-weight: 900; }
-.lx-mark-bg { fill: #cc0000; }
-.lx-mark-t, .lx-mark-l { fill: #fff; }
-.lx-search { display: inline-flex; gap: 4px; margin: 0; }
-.lx-box { --lx-hue: 0; flex: none; width: 56px; height: 72px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px;
-  background: linear-gradient(#fff 0 45%, oklch(0.55 0.15 var(--lx-hue)) 45%); border: 1px solid #999; border-left: 6px solid #cc0000;
+.tw { min-height: 100%; color: #222; }
+.tw a { color: inherit; }
+.tw p { margin: 0 0 8px; }
+.tw-logo { display: inline-flex; align-items: center; gap: 8px; font: 26px/1 Arial, Helvetica, sans-serif; letter-spacing: -1px; }
+.tw-logo b { font-weight: 900; }
+.tw-mark-bg { fill: #cc0000; }
+.tw-mark-t, .tw-mark-l { fill: #fff; }
+.tw-search { display: inline-flex; gap: 4px; margin: 0; }
+.tw-box { --tw-hue: 0; flex: none; width: 56px; height: 72px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px;
+  background: linear-gradient(#fff 0 45%, oklch(0.55 0.15 var(--tw-hue)) 45%); border: 1px solid #999; border-left: 6px solid #cc0000;
   box-shadow: 2px 2px 0 #bbb; font: bold 7px/1.1 Arial, sans-serif; color: #cc0000; overflow: hidden; }
-.lx-box-name { color: #fff; overflow-wrap: anywhere; hyphens: auto; }
-.lx-boxes { display: flex; gap: 12px; align-items: flex-end; }
-.lx-try { display: inline-block; text-decoration: none; }
-.lx-guide { font-weight: bold; }
-.lx ul { margin: 0; padding: 0; list-style: none; }
+.tw-box-name { color: #fff; overflow-wrap: anywhere; hyphens: auto; }
+.tw-boxes { display: flex; gap: 12px; align-items: flex-end; }
+.tw-try { display: inline-block; text-decoration: none; }
+.tw-guide { font-weight: bold; }
+.tw ul { margin: 0; padding: 0; list-style: none; }
 
 /* Web 1.0: one fixed table with grey borders, Verdana, red tabs, three columns. */
-.lx-classic { --bv-brand: #cc0000; --bv-ink: #fff; --bv-font: Verdana, Arial, sans-serif; background: #bebebe; font: 11px/1.45 Verdana, Arial, sans-serif; padding: 8px 0; }
-.lx-classic .lx-frame { width: 780px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #666; border-collapse: collapse; }
-.lx-classic td { vertical-align: top; }
-.lx-classic .lx-util { background: #f1f1f1; border-bottom: 1px solid #bebebe; padding: 3px 10px; font-size: 10px; text-align: right; }
-.lx-classic .lx-util span + span::before { content: "|"; margin: 0 6px; color: #999; }
-.lx-classic .lx-top { padding: 10px 12px; border-bottom: 3px solid #cc0000; }
-.lx-classic .lx-tag { margin-left: 14px; color: #666; }
-.lx-classic .lx-search { float: right; margin-top: 4px; }
-.lx-classic .lx-search input { width: 150px; font: 10px Verdana; border: 1px solid #666; }
-.lx-classic .lx-search button { font: 10px Verdana; border: 1px solid #666; background: #f1f1f1; }
-.lx-classic .lx-nav { background: #cc0000; padding: 0; border-bottom: 1px solid #800; }
-.lx-classic .lx-nav a, .lx-classic .lx-nav span { display: inline-block; padding: 4px 11px; color: #fff; font-weight: bold; text-decoration: none; border-right: 1px solid #e06060; }
-.lx-classic .lx-nav a[aria-current] { background: #fff; color: #cc0000; }
-.lx-classic .lx-left { width: 150px; background: #f1f1f1; border-right: 1px solid #bebebe; padding: 8px; }
-.lx-classic .lx-left li { padding: 4px 0; border-bottom: 1px dotted #999; color: #333; }
-.lx-classic .lx-main { padding: 10px 14px; }
-.lx-classic .lx-right { width: 160px; padding: 8px; border-left: 1px solid #bebebe; }
-.lx-classic h1 { font: bold 16px Verdana; color: #cc0000; margin: 0 0 6px; }
-.lx-classic h2 { font: bold 12px Verdana; color: #cc0000; margin: 14px 0 4px; border-bottom: 1px solid #bebebe; }
-.lx-classic h3 { font: bold 11px Verdana; margin: 0 0 4px; background: #f1f1f1; padding: 2px 4px; }
-.lx-classic .lx-hero { display: flex; gap: 10px; justify-content: space-between; }
-.lx-classic .lx-try { margin: 4px 0; padding: 2px 8px; background: #cc0000; color: #fff; font-weight: bold; }
-.lx-classic .lx-news li { padding: 3px 0; border-bottom: 1px solid #ddd; }
-.lx-classic .bv-edition { padding-top: 8px; border-top: 1px dotted #bbb; }
-.lx-classic .lx-foot { padding: 6px 10px; background: #f1f1f1; border-top: 1px solid #bebebe; color: #666; font-size: 10px; }
-.lx-classic .lx-foot span { margin-left: 10px; }
+.tw-classic { --bv-brand: #cc0000; --bv-ink: #fff; --bv-font: Verdana, Arial, sans-serif; background: #bebebe; font: 11px/1.45 Verdana, Arial, sans-serif; padding: 8px 0; }
+.tw-classic .tw-frame { width: 780px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #666; border-collapse: collapse; }
+.tw-classic td { vertical-align: top; }
+.tw-classic .tw-util { background: #f1f1f1; border-bottom: 1px solid #bebebe; padding: 3px 10px; font-size: 10px; text-align: right; }
+.tw-classic .tw-util span + span::before { content: "|"; margin: 0 6px; color: #999; }
+.tw-classic .tw-top { padding: 10px 12px; border-bottom: 3px solid #cc0000; }
+.tw-classic .tw-tag { margin-left: 14px; color: #666; }
+.tw-classic .tw-search { float: right; margin-top: 4px; }
+.tw-classic .tw-search input { width: 150px; font: 10px Verdana; border: 1px solid #666; }
+.tw-classic .tw-search button { font: 10px Verdana; border: 1px solid #666; background: #f1f1f1; }
+.tw-classic .tw-nav { background: #cc0000; padding: 0; border-bottom: 1px solid #800; }
+.tw-classic .tw-nav a, .tw-classic .tw-nav span { display: inline-block; padding: 4px 11px; color: #fff; font-weight: bold; text-decoration: none; border-right: 1px solid #e06060; }
+.tw-classic .tw-nav a[aria-current] { background: #fff; color: #cc0000; }
+.tw-classic .tw-left { width: 150px; background: #f1f1f1; border-right: 1px solid #bebebe; padding: 8px; }
+.tw-classic .tw-left li { padding: 4px 0; border-bottom: 1px dotted #999; color: #333; }
+.tw-classic .tw-main { padding: 10px 14px; }
+.tw-classic .tw-strip { padding: 8px 14px; border-top: 1px solid #bebebe; background: #fafafa; }
+.tw-classic .tw-news { display: flex; align-items: baseline; gap: 14px; }
+.tw-classic .tw-news h3 { flex: none; margin: 0; }
+.tw-classic .tw-news ul { display: flex; gap: 14px; flex: 1; }
+.tw-classic .tw-news li { flex: 1; padding: 0 0 0 10px; border: 0; border-left: 1px solid #bebebe; }
+.tw-classic h1 { font: bold 16px Verdana; color: #cc0000; margin: 0 0 6px; }
+.tw-classic h2 { font: bold 12px Verdana; color: #cc0000; margin: 14px 0 4px; border-bottom: 1px solid #bebebe; }
+.tw-classic h3 { font: bold 11px Verdana; margin: 0 0 4px; background: #f1f1f1; padding: 2px 4px; }
+.tw-classic .tw-hero { display: flex; gap: 10px; justify-content: space-between; }
+.tw-classic .tw-try { margin: 4px 0; padding: 2px 8px; background: #cc0000; color: #fff; font-weight: bold; }
+.tw-classic .bv-edition { padding-top: 8px; border-top: 1px dotted #bbb; }
+.tw-classic .tw-foot { padding: 6px 10px; background: #f1f1f1; border-top: 1px solid #bebebe; color: #666; font-size: 10px; }
+.tw-classic .tw-foot span { margin-left: 10px; }
 
 /* 2009 to 2014: Trebuchet, glossy red bar with a product dropdown, rounded boxes, sidebar. */
-.lx-modern { --bv-brand: #cc0000; --bv-ink: #fff; --bv-font: "Trebuchet MS", Tahoma, sans-serif; background: linear-gradient(#e9e9e9, #fff 220px) #fff; font: 13px/1.5 "Trebuchet MS", Tahoma, sans-serif; }
-.lx-modern .lx-page { width: 960px; max-width: 100%; margin: 0 auto; }
-.lx-modern .lx-util { text-align: right; padding: 6px 10px; font-size: 11px; color: #666; }
-.lx-modern .lx-util span + span { margin-left: 14px; }
-.lx-modern .lx-top { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 14px; }
-.lx-modern .lx-search input { padding: 5px 10px; border: 1px solid #bbb; border-radius: 14px; font: 12px "Trebuchet MS"; width: 200px; }
-.lx-modern .lx-search button { border: 0; border-radius: 14px; padding: 5px 12px; color: #fff; background: #888; font: bold 12px "Trebuchet MS"; }
-.lx-modern .lx-nav { position: relative; display: flex; background: linear-gradient(#e8272a, #b30000 55%, #9d0000); border-radius: 6px; box-shadow: 0 2px 4px rgb(0 0 0 / 0.3); }
-.lx-modern .lx-nav a, .lx-modern .lx-nav > span { padding: 9px 16px; color: #fff; font-weight: bold; text-decoration: none; text-shadow: 0 -1px #700; }
-.lx-modern .lx-nav a[aria-current] { background: rgb(0 0 0 / 0.22); }
-.lx-modern .lx-pick { margin-left: auto; background: rgb(0 0 0 / 0.25); border-radius: 0 6px 6px 0; cursor: default; }
-.lx-modern .lx-pick ul { display: none; position: absolute; right: 0; top: 100%; z-index: 2; background: #fff; color: #222; text-shadow: none; font-weight: normal; border: 1px solid #aaa; box-shadow: 0 4px 8px rgb(0 0 0 / 0.25); min-width: 270px; }
-.lx-modern .lx-pick:hover ul, .lx-modern .lx-pick:focus ul { display: block; }
-.lx-modern .lx-pick li { padding: 6px 12px; border-bottom: 1px solid #eee; }
-.lx-modern .lx-cols { display: flex; gap: 20px; padding: 16px 10px; }
-.lx-modern .lx-main { flex: 1; min-width: 0; }
-.lx-modern .lx-side { width: 230px; display: flex; flex-direction: column; gap: 14px; }
-.lx-modern .lx-hero { display: flex; justify-content: space-between; gap: 16px; padding: 16px 20px; background: linear-gradient(#fff, #f0f0f0); border: 1px solid #ccc; border-radius: 8px; box-shadow: inset 0 1px #fff; }
-.lx-modern h1 { font-size: 24px; color: #b30000; margin: 0 0 6px; }
-.lx-modern h2 { font-size: 17px; color: #b30000; margin: 18px 0 8px; }
-.lx-modern h3 { font-size: 14px; margin: 0 0 6px; }
-.lx-modern .lx-try { margin-top: 4px; padding: 7px 20px; border-radius: 16px; color: #fff; font-weight: bold; background: linear-gradient(#ff8a1a, #d95f00); box-shadow: 0 1px 3px rgb(0 0 0 / 0.4); }
-.lx-modern .lx-acct, .lx-modern .lx-news { padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; background: #f7f7f7; }
-.lx-modern .lx-news li { padding: 5px 0; border-top: 1px solid #ddd; }
-.lx-modern .bv-table { border: 1px solid #ccc; border-radius: 6px; }
-.lx-modern .bv-table thead th { background: linear-gradient(#e8272a, #a80000); color: #fff; }
-.lx-modern .bv-buy { border-radius: 14px; background: linear-gradient(#e8272a, #a80000); }
-.lx-modern .lx-foot { padding: 12px 10px; border-top: 4px solid #cc0000; color: #666; font-size: 11px; }
-.lx-modern .lx-foot span { margin-left: 12px; }
+.tw-modern { --bv-brand: #cc0000; --bv-ink: #fff; --bv-font: "Trebuchet MS", Tahoma, sans-serif; background: linear-gradient(#e9e9e9, #fff 220px) #fff; font: 13px/1.5 "Trebuchet MS", Tahoma, sans-serif; }
+.tw-modern .tw-page { width: 960px; max-width: 100%; margin: 0 auto; }
+.tw-modern .tw-util { text-align: right; padding: 6px 10px; font-size: 11px; color: #666; }
+.tw-modern .tw-util span + span { margin-left: 14px; }
+.tw-modern .tw-top { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 14px; }
+.tw-modern .tw-search input { padding: 5px 10px; border: 1px solid #bbb; border-radius: 14px; font: 12px "Trebuchet MS"; width: 200px; }
+.tw-modern .tw-search button { border: 0; border-radius: 14px; padding: 5px 12px; color: #fff; background: #888; font: bold 12px "Trebuchet MS"; }
+.tw-modern .tw-nav { position: relative; display: flex; background: linear-gradient(#e8272a, #b30000 55%, #9d0000); border-radius: 6px; box-shadow: 0 2px 4px rgb(0 0 0 / 0.3); }
+.tw-modern .tw-nav a, .tw-modern .tw-nav > span { padding: 9px 16px; color: #fff; font-weight: bold; text-decoration: none; text-shadow: 0 -1px #700; }
+.tw-modern .tw-nav a[aria-current] { background: rgb(0 0 0 / 0.22); }
+.tw-modern .tw-pick { margin-left: auto; background: rgb(0 0 0 / 0.25); border-radius: 0 6px 6px 0; cursor: default; }
+.tw-modern .tw-pick ul { display: none; position: absolute; right: 0; top: 100%; z-index: 2; background: #fff; color: #222; text-shadow: none; font-weight: normal; border: 1px solid #aaa; box-shadow: 0 4px 8px rgb(0 0 0 / 0.25); min-width: 270px; }
+.tw-modern .tw-pick:hover ul, .tw-modern .tw-pick:focus ul { display: block; }
+.tw-modern .tw-pick li { padding: 6px 12px; border-bottom: 1px solid #eee; }
+.tw-modern .tw-cols { display: flex; gap: 20px; padding: 16px 10px; }
+.tw-modern .tw-main { flex: 1; min-width: 0; }
+.tw-modern .tw-side { width: 230px; display: flex; flex-direction: column; gap: 14px; }
+.tw-modern .tw-hero { display: flex; justify-content: space-between; gap: 16px; padding: 16px 20px; background: linear-gradient(#fff, #f0f0f0); border: 1px solid #ccc; border-radius: 8px; box-shadow: inset 0 1px #fff; }
+.tw-modern h1 { font-size: 24px; color: #b30000; margin: 0 0 6px; }
+.tw-modern h2 { font-size: 17px; color: #b30000; margin: 18px 0 8px; }
+.tw-modern h3 { font-size: 14px; margin: 0 0 6px; }
+.tw-modern .tw-try { margin-top: 4px; padding: 7px 20px; border-radius: 16px; color: #fff; font-weight: bold; background: linear-gradient(#ff8a1a, #d95f00); box-shadow: 0 1px 3px rgb(0 0 0 / 0.4); }
+.tw-modern .tw-acct, .tw-modern .tw-news { padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; background: #f7f7f7; }
+.tw-modern .tw-news li { padding: 5px 0; border-top: 1px solid #ddd; }
+.tw-modern .bv-table { border: 1px solid #ccc; border-radius: 6px; }
+.tw-modern .bv-table thead th { background: linear-gradient(#e8272a, #a80000); color: #fff; }
+.tw-modern .bv-buy { border-radius: 14px; background: linear-gradient(#e8272a, #a80000); }
+.tw-modern .tw-foot { padding: 12px 10px; border-top: 4px solid #cc0000; color: #666; font-size: 11px; }
+.tw-modern .tw-foot span { margin-left: 12px; }
 
 /* 2015 on: white, wide, a mega menu strip, large type, red pills, dark footer. */
-.lx-flat { --bv-brand: #db4c4c; --bv-ink: #fff; --bv-font: Arial, Helvetica, sans-serif; background: #fff; font: 15px/1.6 Arial, Helvetica, sans-serif; }
-.lx-flat .lx-mark-bg { fill: #db4c4c; }
-.lx-flat .lx-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 40px; border-bottom: 1px solid #e5e5e5; }
-.lx-flat .lx-logo { font-size: 28px; letter-spacing: 0; color: #333; }
-.lx-flat .lx-nav { display: flex; gap: 28px; font-weight: bold; color: #444; }
-.lx-flat .lx-nav a { text-decoration: none; }
-.lx-flat .lx-nav a[aria-current] { color: #db4c4c; border-bottom: 3px solid #db4c4c; }
-.lx-flat .lx-mega { display: flex; flex-wrap: wrap; gap: 8px 30px; padding: 14px 40px; background: #f5f5f5; color: #555; font-size: 13px; }
-.lx-flat .lx-mega b { color: #eb6005; }
-.lx-flat .lx-main { padding: 36px 40px; max-width: 1080px; margin: 0 auto; }
-.lx-flat .lx-hero { display: flex; justify-content: space-between; align-items: center; gap: 30px; padding-bottom: 28px; }
-.lx-flat h1 { font-size: 36px; line-height: 1.15; margin: 0 0 12px; color: #333; font-weight: 300; }
-.lx-flat h2 { font-size: 24px; margin: 30px 0 12px; font-weight: 300; color: #333; }
-.lx-flat h3 { font-size: 15px; margin: 0 0 6px; }
-.lx-flat .lx-try { padding: 12px 28px; border-radius: 3px; background: #db4c4c; color: #fff; font-weight: bold; }
-.lx-flat .lx-box { box-shadow: 0 6px 14px rgb(0 0 0 / 0.18); border-color: #ddd; border-left-color: #db4c4c; transform: scale(1.5); margin: 0 18px; }
-.lx-flat .bv-table { background: #fff; border-top: 3px solid #db4c4c; }
-.lx-flat .bv-buy { border-radius: 3px; padding: 8px 18px; background: #99b019; font-size: 13px; }
-.lx-flat .lx-dl { background: #f5f5f5; padding: 20px 24px; border-left: 4px solid #eb6005; }
-.lx-flat .lx-claim { padding: 22px 40px; background: #db4c4c; color: #fff; text-align: center; font-size: 20px; font-weight: 300; }
-.lx-flat .lx-cols { display: flex; gap: 40px; padding: 28px 40px; max-width: 1080px; margin: 0 auto; }
-.lx-flat .lx-news { flex: 1; } .lx-flat .lx-news li { padding: 6px 0; border-bottom: 1px solid #e5e5e5; }
-.lx-flat .lx-links { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; color: #db4c4c; font-weight: bold; font-size: 13px; }
-.lx-flat .lx-foot { padding: 20px 40px; background: #333; color: #bbb; font-size: 12px; }
-.lx-flat .lx-foot span { margin-left: 18px; }
-@media (max-width: 640px) { .lx-flat .lx-hero, .lx-flat .lx-cols, .lx-modern .lx-cols { flex-direction: column; } }
+.tw-flat { --bv-brand: #db4c4c; --bv-ink: #fff; --bv-font: Arial, Helvetica, sans-serif; background: #fff; font: 15px/1.6 Arial, Helvetica, sans-serif; }
+.tw-flat .tw-mark-bg { fill: #db4c4c; }
+.tw-flat .tw-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 40px; border-bottom: 1px solid #e5e5e5; }
+.tw-flat .tw-logo { font-size: 28px; letter-spacing: 0; color: #333; }
+.tw-flat .tw-nav { display: flex; gap: 28px; font-weight: bold; color: #444; }
+.tw-flat .tw-nav a { text-decoration: none; }
+.tw-flat .tw-nav a[aria-current] { color: #db4c4c; border-bottom: 3px solid #db4c4c; }
+.tw-flat .tw-mega { display: flex; flex-wrap: wrap; gap: 8px 30px; padding: 14px 40px; background: #f5f5f5; color: #555; font-size: 13px; }
+.tw-flat .tw-mega b { color: #eb6005; }
+.tw-flat .tw-main { padding: 36px 40px; max-width: 1080px; margin: 0 auto; }
+.tw-flat .tw-hero { display: flex; justify-content: space-between; align-items: center; gap: 30px; padding-bottom: 28px; }
+.tw-flat h1 { font-size: 36px; line-height: 1.15; margin: 0 0 12px; color: #333; font-weight: 300; }
+.tw-flat h2 { font-size: 24px; margin: 30px 0 12px; font-weight: 300; color: #333; }
+.tw-flat h3 { font-size: 15px; margin: 0 0 6px; }
+.tw-flat .tw-try { padding: 12px 28px; border-radius: 3px; background: #db4c4c; color: #fff; font-weight: bold; }
+.tw-flat .tw-box { box-shadow: 0 6px 14px rgb(0 0 0 / 0.18); border-color: #ddd; border-left-color: #db4c4c; transform: scale(1.5); margin: 0 18px; }
+.tw-flat .bv-table { background: #fff; border-top: 3px solid #db4c4c; }
+.tw-flat .bv-buy { border-radius: 3px; padding: 8px 18px; background: #99b019; font-size: 13px; }
+.tw-flat .tw-dl { background: #f5f5f5; padding: 20px 24px; border-left: 4px solid #eb6005; }
+.tw-flat .tw-claim { padding: 22px 40px; background: #db4c4c; color: #fff; text-align: center; font-size: 20px; font-weight: 300; }
+.tw-flat .tw-cols { display: flex; gap: 40px; padding: 28px 40px; max-width: 1080px; margin: 0 auto; }
+.tw-flat .tw-news { flex: 1; } .tw-flat .tw-news li { padding: 6px 0; border-bottom: 1px solid #e5e5e5; }
+.tw-flat .tw-links { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; color: #db4c4c; font-weight: bold; font-size: 13px; }
+.tw-flat .tw-foot { padding: 20px 40px; background: #333; color: #bbb; font-size: 12px; }
+.tw-flat .tw-foot span { margin-left: 18px; }
+@media (max-width: 640px) { .tw-flat .tw-hero, .tw-flat .tw-cols, .tw-modern .tw-cols { flex-direction: column; } }

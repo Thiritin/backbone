@@ -20,21 +20,28 @@ const num = (n: number) => n.toLocaleString(LOCALE);
 const stay = (e: MouseEvent) => e.preventDefault();
 const jump = (id: string) => (e: MouseEvent) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView?.({ block: "start" }); };
 
-// An orange tile with a stack of white document lines.
-function Mark({ size }: { size: number }) {
+// A stack of white document lines on an orange badge: bevelled and square in 2005, a rounded tile later.
+function Mark({ size, home }: { size: number; home?: boolean }) {
   return (
     <svg className="om-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="#e8731c" />
+      {home ? (
+        <>
+          <defs><linearGradient id="om-bevel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f7a763" /><stop offset="1" stopColor="#c25a0c" /></linearGradient></defs>
+          <rect x="0.5" y="0.5" width="31" height="31" fill="url(#om-bevel)" stroke="#8a3d00" />
+          <path d="M1.5 30.5V1.5h29" fill="none" stroke="#fde2c4" strokeWidth="1.2" />
+          <path d="M30.5 1.5v29h-29" fill="none" stroke="#8a3d00" strokeWidth="1.2" />
+        </>
+      ) : <rect width="32" height="32" rx="8" fill="#e8731c" />}
       <circle cx="9" cy="9.5" r="2.6" fill="#3a2a1c" />
-      <rect x="15" y="7.5" width="11" height="4" rx="2" fill="#fff" />
-      <rect x="6" y="15" width="20" height="4" rx="2" fill="#fff" />
-      <rect x="6" y="22" width="13" height="4" rx="2" fill="#fff" />
+      <rect x="15" y="7.5" width="11" height="4" rx={home ? 0 : 2} fill="#fff" />
+      <rect x="6" y="15" width="20" height="4" rx={home ? 0 : 2} fill="#fff" />
+      <rect x="6" y="22" width="13" height="4" rx={home ? 0 : 2} fill="#fff" />
     </svg>
   );
 }
 
-const Brand = ({ size, v }: { size: number; v: BooksVendor }) => (
-  <span className="om-logo"><Mark size={size} />orga<b>{v.program.slice(4)}</b></span>
+const Brand = ({ size, v, home }: { size: number; v: BooksVendor; home?: boolean }) => (
+  <span className="om-logo"><Mark size={size} home={home} />orga<b>{v.program.slice(4)}</b></span>
 );
 
 function Req({ look, v }: { look: keyof typeof REQ; v: BooksVendor }) {
@@ -58,9 +65,15 @@ const Guide = ({ go }: { go: (url: string) => void }) => (
 );
 
 const FEATS = [1, 2, 3] as const;
+// Flat line icons: people, a document with lines, a calendar.
+const ICONS = [
+  <><circle cx="12" cy="9" r="4" /><path d="M4 26c0-6 4-9 8-9s8 3 8 9" /><circle cx="24" cy="11" r="3" /><path d="M22 18c4 0 6 3 6 8" /></>,
+  <><path d="M7 3h13l5 5v21H7z" /><path d="M20 3v5h5M11 15h10M11 20h10M11 25h6" /></>,
+  <><rect x="4" y="6" width="24" height="22" rx="2" /><path d="M4 13h24M10 3v6M22 3v6M10 18h4M18 18h4M10 23h4" /></>,
+];
 const Feats = () => (
   <div className="om-feats">
-    {FEATS.map((n) => <section key={n}><span className={`om-ico om-ico${n}`} aria-hidden="true" /><h3>{t(`books-orgamin.feat.${n}.t`)}</h3><p>{t(`books-orgamin.feat.${n}.d`)}</p></section>)}
+    {FEATS.map((n) => <section key={n}><svg className="om-ico" viewBox="0 0 32 32" width="34" height="34" aria-hidden="true">{ICONS[n - 1]}</svg><h3>{t(`books-orgamin.feat.${n}.t`)}</h3><p>{t(`books-orgamin.feat.${n}.d`)}</p></section>)}
   </div>
 );
 
@@ -80,7 +93,7 @@ export function OrgaminSite({ game, path, go }: SiteProps) {
   if (look === "home") {
     return (
       <div className="om om-home">
-        <header className="om-head"><Brand size={34} v={v} /><span>{t("books-vendors.about.orgamin")}</span></header>
+        <header className="om-head"><Brand size={34} v={v} home /><span>{t("books-vendors.about.orgamin")}</span></header>
         <div className="om-body">
           <nav className="om-menu">{nav(MENU)}</nav>
           <main>

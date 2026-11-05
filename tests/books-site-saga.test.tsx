@@ -30,10 +30,13 @@ describe("Thyme site", () => {
   });
 
   it("gives each era its own structure", () => {
-    expect(page("2007-01")).toContain("sg-side");
+    const classic = page("2007-01");
+    expect(classic).toContain("sg-cards");
+    expect(classic).toContain("sg-links");
+    expect(classic).not.toContain("sg-side");
     const modern = page("2012-01");
     expect(modern).toContain("sg-tiles");
-    expect(modern).not.toContain("sg-side");
+    expect(modern).toContain("sg-side");
     const flat = page("2018-01");
     expect(flat).toContain("sg-hero");
     expect(flat).not.toContain("sg-tiles");
@@ -42,6 +45,7 @@ describe("Thyme site", () => {
   it.each(["2007-01", "2012-01", "2018-01"])("offers the download button, requirements and install guide in %s", (ym) => {
     const html = page(ym);
     expect(html).toContain("bv-buy");
+    expect(html).toContain("Windoors");
     expect(html).toContain("System requirements");
     expect(html).toContain("Installation guide");
     expect(html).toContain("href=\"?s=guide\"");

@@ -14,8 +14,8 @@ const page = (ym: string, path = "/") => {
 describe("Kontomix site", () => {
   it("lays out a 2005 page in tables with the editions as a list", () => {
     const html = page("2008-05");
-    expect(html).toContain("cx-plain");
-    expect(html).toContain("cx-frame");
+    expect(html).toContain("kx-plain");
+    expect(html).toContain("kx-frame");
     expect(html).toContain("<li>");
     expect(html).not.toContain("bv-table");
     expect(html).toContain("bv-buy");
@@ -23,18 +23,18 @@ describe("Kontomix site", () => {
 
   it("shows tabs and a price table around 2010", () => {
     const html = page("2011-06");
-    expect(html).toContain("cx-tabs");
-    expect(html).toContain("cx-bar");
+    expect(html).toContain("kx-tabs");
+    expect(html).toContain("kx-bar");
     expect(html).toContain("bv-table");
-    expect(html).not.toContain("cx-frame");
+    expect(html).not.toContain("kx-frame");
   });
 
   it("adds the product sidebar from 2015", () => {
     const html = page("2016-03");
-    expect(html).toContain("cx-side");
-    expect(html).toContain("cx-aside");
+    expect(html).toContain("kx-side");
+    expect(html).toContain("kx-aside");
     expect(html).toContain("bv-table");
-    expect(html).not.toContain("cx-bar");
+    expect(html).not.toContain("kx-bar");
   });
 
   it("links the install guide and lists the system requirements in every look", () => {

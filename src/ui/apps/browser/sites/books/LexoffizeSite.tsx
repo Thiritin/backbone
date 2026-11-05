@@ -54,6 +54,34 @@ function Shot() {
   );
 }
 
+// The launch hero: a wide app window with a sidebar and the invoice list.
+function Window() {
+  const rows = [[1190, "paid"], [480, "open"], [2350, "paid"], [760, "open"]] as const;
+  return (
+    <div className="lo-shot lo-win" aria-hidden="true">
+      <div className="lo-shot-bar"><i /><i /><i /></div>
+      <div className="lo-win-body">
+        <ul className="lo-win-side">{["invoices", "receipts", "bank"].map((k, i) => <li key={k} className={i === 0 ? "on" : undefined}>{L(`mock.side.${k}`)}</li>)}</ul>
+        <div className="lo-win-main">
+          <div className="lo-win-head"><h4>{L("mock.side.invoices")}</h4><span className="lo-chip new">{L("mock.new")}</span></div>
+          {rows.map(([n, st], i) => <div key={i} className="lo-win-row"><span className="who" style={{ width: `${34 + i * 9}%` }} /><span className={`lo-chip ${st}`}>{L(`mock.${st}`)}</span><strong className="num">{euro(n)}</strong></div>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Incoming payments matched to invoices, the second window of the launch page.
+function Match() {
+  return (
+    <div className="lo-shot lo-match" aria-hidden="true">
+      <div className="lo-shot-bar"><i /><i /><i /></div>
+      <h4>{L("mock.side.bank")}</h4>
+      {[1190, 2350, 480].map((n, i) => <div key={n} className="lo-win-row"><strong className="num">{euro(n)}</strong><span className="who" style={{ width: `${30 + i * 12}%` }} /><span className={`lo-chip ${i < 2 ? "paid" : "open"}`}>{L(i < 2 ? "mock.paid" : "mock.open")}</span></div>)}
+    </div>
+  );
+}
+
 function Dash() {
   const bars = [38, 52, 44, 66, 58, 80, 72];
   return (
@@ -72,7 +100,7 @@ function Download({ era, guide }: { era: string; guide: ReactNode }) {
       <div className="lo-dl-copy">
         <h2>{L("download.title")}</h2>
         <p>{L("download.text")}</p>
-        <div className="lo-stores"><span>{L("download.android")}</span><span>{L("download.ios")}</span></div>
+        <div className="lo-stores"><span>{L("download.phone")}</span><span>{L("download.tablet")}</span></div>
         {guide}
       </div>
       <div className="lo-req">
@@ -105,10 +133,13 @@ export function LexoffizeSite({ game, path, go }: SiteProps) {
         <header className="lo-top">{word}{nav(["features", "service"])}<a className="lo-login" href="#" onClick={stay}>{L("login")}</a><a className="lo-cta small" href="#" onClick={stay}>{L("trial")}</a></header>
         <section className="lo-hero">
           <div className="lo-copy"><h1>{L("hero.launch")}</h1><p>{L("hero.launch.sub")}</p><a className="lo-cta" href="#" onClick={stay}>{L("trial")}</a></div>
-          <Shot />
+          <Window />
         </section>
-        <section className="lo-feats">
-          {FEATS.map((f, i) => <div key={f}><Icon n={i} /><h3>{L(`feat.${f}`)}</h3><p>{L(`feat.${f}.text`)}</p></div>)}
+        <section className="lo-tour">
+          <div className="lo-tour-list">
+            {FEATS.map((f, i) => <div key={f}><Icon n={i} /><div><h3>{L(`feat.${f}`)}</h3><p>{L(`feat.${f}.text`)}</p></div></div>)}
+          </div>
+          <Match />
         </section>
         <section className="lo-prices"><h2>{L("prices.title")}</h2>{shop}</section>
         <Download era={era} guide={guide} />
