@@ -133,10 +133,10 @@ export function HandsButtons({ ways, className = "btn", disabled, onRun, childre
   return <>{ways.map((w) => <button key={w.how} className={className} disabled={disabled} onClick={() => onRun(w.how)}>{children}{w.label && <span className="hands-mode">{w.label}</span>}</button>)}</>;
 }
 
-// The badge of a queued job on the unit: its due time, or that it waits for the player.
+// The badge of a queued job on the unit: its due time.
 export const jobBadge = (game: GameState, deviceId: string): string | undefined => {
   const j = handsJobs(game).find((x) => x.deviceId === deviceId);
-  return j && (j.self ? tr("locations-2.selfOnArrival") : slotTime(game.hour, j.dueAt));
+  return j && slotTime(game.hour, j.dueAt);
 };
 
 // The hands-on jobs queued at a location, own and remote, each with a Cancel.
@@ -153,7 +153,7 @@ export function HandsJobs({ game, locationId }: { game: GameState; locationId: s
             <span className="loc-k">{tr(`locations-2.job.${j.action}`)}</span>
             <span>{d?.label ?? d?.name}</span>
             <span className="grow" />
-            {j.self ? <span>{tr("locations-2.selfOnArrival")}</span> : <><span>{tr("locations-2.handsJobs")}</span><span className="num">{slotTime(game.hour, j.dueAt)}</span><span className="num">{euroPrice(j.fee)}</span></>}
+            {j.self ? <span className="num">{slotTime(game.hour, j.dueAt)}</span> : <><span>{tr("locations-2.handsJobs")}</span><span className="num">{slotTime(game.hour, j.dueAt)}</span><span className="num">{euroPrice(j.fee)}</span></>}
             <button className="btn" onClick={() => act(cancelHandsJob, j.id)}>{tr("locations-2.cancel")}</button>
           </div>
         );

@@ -3,9 +3,7 @@ import { billDue } from "../46-finance/payables";
 import { rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { COUNTRY, datacenterById } from "../20-world/datacenters";
-import { ORDERS } from "../20-world/properties";
 import type { GameState, Location } from "../50-state";
-import { opensOf, orderWork } from "../90-actions/work-orders";
 
 // "job" is a queued remote hands job running: at once, already paid.
 export type How = "hands" | "self" | "friend" | "tech" | "job";
@@ -37,8 +35,6 @@ export const playerAt = (s: GameState): Location => s.locations.find((l) => l.id
 // Whether the player stands in the location, not still on the way there.
 export const present = (s: GameState, locationId: string): boolean =>
   playerAt(s).id === locationId && !(s.player.doing === "travel" && s.player.until > s.hour);
-// Claims the player's time for hand work on site: a visit order without an action, queued behind the player's other orders.
-const workOnSite = (s: GameState, locationId: string, hours: number) => { if (hours > 0) orderWork(s, "player", locationId, {}, null, { kind: "op", workMin: Math.round(hours * 60) }); };
 
 export const favoursLeft = (s: GameState): number =>
   FAVOURS_PER_YEAR - (s.friendFavours.year === yearOf(s.hour) ? s.friendFavours.used : 0);
@@ -64,6 +60,8 @@ export function handJob(s: GameState, device: string, loc: Location | undefined,
   const h: How = how === true ? "tech" : how === false ? "hands" : how;
   if (h === "job") return { cost: 0, wait: 0, commit: () => 0 };
   const w = h === "tech" || !loc ? null : handWork(s, loc.id);
+  // Standing at the device (the basement, or "self" at a datacenter) the player's own hands take no time.
+  if (loc && (h === "self" || (h === "hands" && !w)) && present(s, loc.id)) return { cost: 0, wait: 0, commit: () => 0 };
   if (!w) return { cost: 0, wait: work, commit: () => work };
   const book = (key: string, amount: number, params: Record<string, string | number>) => {
     billDue(s, "contractor", loc!.dc ?? loc!.name, [{ hour: s.hour, category: "maintenance", key, params, amount: -amount }]);
@@ -74,9 +72,7 @@ export function handJob(s: GameState, device: string, loc: Location | undefined,
     return { cost: bill, wait, commit: () => { book("ledger.remoteHands", bill, { device, hours: billHours, dc: loc!.dc!, done: s.hour + wait }); return wait; } };
   }
   if (h === "self") {
-    if (!present(s, loc!.id)) return { error: "error.notThere" };
-    if (opensOf(s, "player").length >= ORDERS.max) return { error: "error.queueFull" };
-    return { cost: 0, wait: work, commit: () => { workOnSite(s, loc!.id, work); return work; } };
+    return { error: "error.notThere" };
   }
   const o = w.friend;
   if (!o) return { error: "error.tooFar" };
