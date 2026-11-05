@@ -38,6 +38,7 @@ export function refundUnused(s: GameState, c: Customer): void {
   }
   amount = cents(amount);
   if (amount <= 0) return;
+  // A credit to a customer is a refund, not a vendor purchase.
   s.cash = cents(s.cash - amount);
   s.ledger = [...s.ledger, { hour: s.hour, category: "credit", key: "ledger.refundUnused", params: { customer: c.name, months }, amount: -amount }];
 }

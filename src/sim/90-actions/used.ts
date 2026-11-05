@@ -3,19 +3,21 @@ import { hashRng, rand } from "../00-core/rng";
 import { REFUND_HOURS, REFUND_SHARE } from "../10-catalog/burnin";
 import { isOfficeRouter, modelById } from "../10-catalog/hardware";
 import {
-  currentBid, onMarket, rivalNow, SELL_ASK, SELL_CAP, SELL_DAYS, SELL_FINAL, SELL_LISTED_DAYS, SELL_START, shipHours, type BidStep, type Listing,
+  channelName, currentBid, onMarket, rivalNow, SELL_ASK, SELL_CAP, SELL_DAYS, SELL_FINAL, SELL_LISTED_DAYS, SELL_START, shipHours, type BidStep, type Listing,
 } from "../10-catalog/used";
 import type { GameState } from "../50-state";
 import { deviceValue, HOURS_PER_YEAR } from "../60-infra/status";
 import { serverTaken } from "../60-infra/cluster";
 import { stock, type ActionResult } from "./hardware";
+import { spend } from "./purchase";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const cents = (v: number) => Math.round(v * 100) / 100;
 const pay = (s: GameState, l: Listing, amount: number) => {
-  s.cash = cents(s.cash - amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.usedBuy", params: { model: modelById(l.model).name, qty: l.qty, channel: l.channel }, amount: -amount }];
+  spend(s, { supplier: "marketplace", name: channelName(l.channel), lines: [{ hour: s.hour, category: "hardware", key: "ledger.usedBuy", params: { model: modelById(l.model).name, qty: l.qty, channel: l.channel }, amount: -amount }] });
 };
+// A company without a bank account pays from the till; with one, the order is an open payable.
+const short = (s: GameState, amount: number) => !s.bank && s.cash < amount;
 
 function placeError(s: GameState, l: Listing, locationId: string): string | null {
   const loc = s.locations.find((x) => x.id === locationId), m = modelById(l.model);
@@ -51,7 +53,7 @@ export function buyListing(s: GameState, listingId: string, locationId: string):
   if (l.channel === "ebuy") return fail("error.auctionOnly");
   const error = placeError(s, l, locationId);
   if (error) return fail(error);
-  if (s.cash < l.price) return fail("error.noCash");
+  if (short(s, l.price)) return fail("error.noCash");
   if (l.scam) {
     pay(s, l, l.price);
     s.used = s.used.map((x) => (x.id === l.id ? { ...x, dueAt: s.hour + shipHours(l, s.locations.find((y) => y.id === locationId)!.city) } : x));
@@ -71,7 +73,7 @@ export function bidListing(s: GameState, listingId: string, max: number, locatio
   const error = placeError(s, l, locationId);
   if (error) return fail(error);
   if (!Number.isFinite(max) || max < l.price || max <= (l.bid ?? 0) || (l.bid !== undefined && max <= currentBid(l, s.hour)) || max <= rivalNow(l, s.hour)) return fail("error.bidTooLow");
-  if (s.cash < max) return fail("error.noCash");
+  if (short(s, max)) return fail("error.noCash");
   // The history keeps what the player stands at when they bid; the other bidder answers later (rivalBids).
   const next = { ...l, bid: Math.round(max), to: locationId }, step: BidStep = { hour: s.hour, amount: currentBid(next, s.hour), max: next.bid, by: "you" };
   s.used = s.used.map((x) => (x.id === l.id ? { ...next, bids: [...(l.bids ?? []).filter((b) => b.by === "you"), step] } : x));

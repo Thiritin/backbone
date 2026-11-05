@@ -129,6 +129,7 @@ export function writeTitleConfig(s: GameState, panel: string, titleId: string): 
   if (!known(panel, titleId) || offered(s, panel, titleId) || s.gameTitles[panel]?.[titleId] || yearOf(s.hour) < g!.from) return fail("error.titleImport");
   const cost = WRITE_COST[panel];
   if (s.cash < cost) return fail("error.noCash");
+  // In-house work by the company's own staff, not a vendor purchase.
   s.cash -= cost;
   s.ledger = [...s.ledger, { hour: s.hour, category: "other", key: "ledger.titleConfig", params: { title: t(`games.title.${titleId}`) }, amount: -cost }];
   s.gameTitles = { ...s.gameTitles, [panel]: { ...s.gameTitles[panel], [titleId]: { since: s.hour, readyAt: s.hour + WRITE_DAYS[panel] * 24 } } };

@@ -90,6 +90,7 @@ export function fraudTick(s: GameState): SimEvent[] {
   if (!isMonthStart(s.hour)) return events;
   if (s.screenChecks > 0) {
     const fee = cents(s.screenChecks * screenFee(yearOf(s.hour)));
+    // The payment provider deducts its fees from the settlement; no vendor document exists.
     s.cash = cents(s.cash - fee);
     s.ledger = [...s.ledger, { hour: s.hour, category: "bankfees", key: "ledger.screening", params: { count: s.screenChecks }, amount: -fee }];
     s.screenChecks = 0;
@@ -109,6 +110,7 @@ export function fraudTick(s: GameState): SimEvent[] {
   if (s.chargebackStrikes === 1) {
     events.push({ app: "Books", key: "event.chargebackWarning", params: { count: backs } });
   } else {
+    // The payment provider deducts its fees from the settlement; no vendor document exists.
     s.cash = cents(s.cash - PROVIDER.monthlyFee);
     s.ledger = [...s.ledger, { hour: s.hour, category: "bankfees", key: "ledger.chargebackProgram", params: {}, amount: -PROVIDER.monthlyFee }];
     events.push({ app: "Books", key: "event.chargebackFees", params: { fee: PROVIDER.monthlyFee, chargeback: WATCHED_FEE } });

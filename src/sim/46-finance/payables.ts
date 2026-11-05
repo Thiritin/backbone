@@ -9,7 +9,7 @@ import type { GameState, LedgerEntry } from "../50-state";
 import { ALL_DATACENTERS as DATACENTERS, COUNTRY, datacenterById } from "../20-world/datacenters";
 import { cardReady, cardSpent, groupIban, iban, ibanEra } from "./bank";
 
-export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software" | "landlord" | "shopVendor" | "network" | "services";
+export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software" | "landlord" | "shopVendor" | "network" | "services" | "contractor" | "marketplace";
 // throttle slows the home line, cut takes it off the internet, dark switches the locations' power off, licence stops the Pear
 // subscriptions, domains lets the domains lapse, noShip stops hardware orders, card blocks the credit card.
 export type Effect = "throttle" | "cut" | "dark" | "licence" | "domains" | "noShip" | "card";
@@ -28,7 +28,7 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   books: [],
   // An unpaid licence order just never sends its keys.
   software: [],
-  landlord: [], shopVendor: [], network: [], services: [],
+  landlord: [], shopVendor: [], network: [], services: [], contractor: [], marketplace: [],
 };
 // The pun name each new supplier trades under unless the order names another.
 export const SUPPLIER_NAMES: Partial<Record<SupplierId, string>> = { landlord: "Dwell Immobilien", shopVendor: "Taxware", network: "DE-KICKS", services: "Pear" };
@@ -145,6 +145,14 @@ export function bill(s: GameState, b: Bill): Payable {
   return p;
 }
 
+// Whether a vendor charge can be placed: a company with a bank account owes it as a payable, otherwise the till must hold it.
+export const canPay = (s: GameState, amount: number): boolean => !!s.bank || s.cash >= amount;
+
+// A charge that falls due inside the simulation (a fee at an incident, a monthly bill): cash before the company banks, else an open transfer.
+export function billDue(s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[]): void {
+  if (lines.some((l) => l.amount !== 0)) bill(s, { supplier, name, lines, method: s.bank ? "transfer" : "cash" });
+}
+
 // A supplier's invoice by email with the invoice attached, or on paper when a letter brings it; a supplier with a mandate
 // debits it at once, one paid by card charges the card when it is ready and has the room.
 export const invoice = (s: GameState, supplier: SupplierId, name: string, lines: LedgerEntry[], days = PAY_DAYS, paper = false): Payable => {
@@ -158,6 +166,8 @@ const SUPPLIER_OF: Record<string, SupplierId> = {
   "ledger.homeLine": "upstream", "ledger.subscription": "pear", "ledger.subscriptionSeats": "pear",
 };
 export const UTILITY = "E.OFF";
+// The pun name of the builders, movers and technicians the company hires.
+export const CONTRACTOR = "Baukraft";
 export const HARDWARE_SHOP = "Alternatte";
 
 // The month's lines no supplier invoices (leases, addresses, properties, modules): one document per payee, debited from the
