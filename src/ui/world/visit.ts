@@ -1,5 +1,6 @@
 // The player's walks in the room (docs/design/gdd/the-world.md, Work orders and figures): opening a close-up or the desktop first walks the
 // figure to it. Visits are UI only; they change nothing in the sim and run in real time, also while the game is paused.
+import { useEffect, useRef } from "react";
 import { create } from "zustand";
 import type { Pt } from "../../sim/20-world/layout";
 import { present } from "../../sim/60-infra/handwork";
@@ -50,4 +51,16 @@ export function goHome(locationId: string, seat: Pt, path: Pt[]): void {
   const { set } = useVisit.getState(), seconds = walkSeconds(path);
   if (seconds === 0) return set({ at: null });
   set({ walk: { locationId, to: seat, label: "", run: () => useVisit.getState().set({ at: null }), path, seconds } });
+}
+
+// Runs `home` once HOME_MS of real time passed with the player standing at a visit in this location and nothing blocking.
+// The callback is read through a ref, so re-renders from game ticks never restart the wait.
+export function useHomeTimer(locationId: string, blocked: boolean, home: () => void): void {
+  const at = useVisit((v) => v.at), walk = useVisit((v) => v.walk), pending = useVisit((v) => v.pending), cb = useRef(home);
+  cb.current = home;
+  useEffect(() => {
+    if (!at || at.locationId !== locationId || walk || pending || blocked) return;
+    const id = setTimeout(() => cb.current(), HOME_MS);
+    return () => clearTimeout(id);
+  }, [at, walk, pending, blocked, locationId]);
 }

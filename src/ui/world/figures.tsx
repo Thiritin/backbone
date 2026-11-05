@@ -12,7 +12,7 @@ import { nowMin, seatOf } from "../../sim/90-actions/work-orders";
 import { brandColor } from "../art/logos";
 import { at3, rackHeight } from "./draw";
 import { iso, type Pt } from "./grid";
-import { goHome, HOME_MS, useVisit, walkSeconds } from "./visit";
+import { goHome, useHomeTimer, useVisit, walkSeconds } from "./visit";
 // A rounded figure in flat colours, head a little large.
 const SKIN = ["oklch(0.82 0.06 60)", "oklch(0.72 0.08 55)", "oklch(0.58 0.08 50)", "oklch(0.45 0.06 45)"];
 const HAIR = ["oklch(0.3 0.03 50)", "oklch(0.5 0.08 60)", "oklch(0.75 0.1 85)", "oklch(0.25 0.01 260)", "oklch(0.55 0.12 40)"];
@@ -140,7 +140,7 @@ const sitAt = (p: Pt, facing: Facing | undefined, office: boolean): Pt => office
 // The people in this room as depth-sorted things: seated at their seat, walking to a rack, working there and back. Every position comes from the saved
 // work orders at the game minute; the next minute's position sets where the browser glides to, so no frame state is kept.
 
-export function useFigures(game: GameState, loc: Location, plan: OfficePlan | undefined, tiles: Record<string, Tile>, speed: number): { depth: number; node: ReactNode; front?: boolean }[] {
+export function useFigures(game: GameState, loc: Location, plan: OfficePlan | undefined, tiles: Record<string, Tile>, speed: number, open = false): { depth: number; node: ReactNode; front?: boolean }[] {
   const [hover, setHover] = useState<string | null>(null);
   const walk = useVisit((v) => v.walk), at = useVisit((v) => v.at), set = useVisit((v) => v.set);
   const floor = plan?.floor ?? 1, office = loc.space === "office", m = nowMin(game), out: { depth: number; node: ReactNode; front?: boolean }[] = [], lobbyY = loc.space === "hall" ? roomSize(loc).h : Infinity;
@@ -161,15 +161,11 @@ export function useFigures(game: GameState, loc: Location, plan: OfficePlan | un
     else set({ walk: { ...pending, path, seconds } });
   }, [busy, pending, walk, at, loc, game, set]);
 
-  // After a visit the figure lingers, then walks back to its seat.
-  useEffect(() => {
-    if (!at || at.locationId !== loc.id || walk || pending || busy) return;
-    const id = setTimeout(() => {
-      const seat = seatOf(game, loc.id, "player");
-      if (seat) goHome(loc.id, seat, pathOf(game, loc, at.pt, seat)); else set({ at: null });
-    }, HOME_MS);
-    return () => clearTimeout(id);
-  }, [at, walk, pending, busy, loc, game, set]);
+  // After a visit the figure lingers once nothing is open, then walks back to its seat.
+  useHomeTimer(loc.id, busy || open, () => {
+    const seat = seatOf(game, loc.id, "player");
+    if (seat && at) goHome(loc.id, seat, pathOf(game, loc, at.pt, seat)); else set({ at: null });
+  });
 
   const now = figuresIn(game, loc.id, m), next = msPerMin ? figuresIn(game, loc.id, m + 1) : [];
   const list: Figure[] = now.slice();

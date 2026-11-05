@@ -263,7 +263,7 @@ export const World = memo(function World() {
   };
   const seat = (): Pt | null => seatOf(useStore.getState().game, loc.id, "player");
 
-  const staff = useFigures(game, loc, plan, tiles, speed);
+  const staff = useFigures(game, loc, plan, tiles, speed, !!(panel || rackOpen || pair));
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const waiting = boxAt(game, loc.id).length;
   // A letterbox notification clicks the box for the player.
