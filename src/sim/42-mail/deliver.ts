@@ -147,6 +147,7 @@ export function deliver(s: GameState, inb: Inbound, o: { junkChecked?: boolean }
   if (hops > MAIL_HOPS) return bounce(s, m, "loop");
   const r = resolve(s, m.to);
   if ("why" in r) {
+    if (r.why !== "closed" && mailHooks.panelInbox(s, m)) { trace(s, m, "accepted", "ok", null); return { result: "accepted", why: "ok", account: null, id: m.id }; }
     if (r.why !== "external") return bounce(s, m, r.why);
     trace(s, m, "accepted", "ok", null);
     if (m.to === hostedDeskAddress(s)) mailHooks.deskInbound(s, m);

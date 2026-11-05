@@ -1,15 +1,16 @@
 // docs/design/plans/webmail-server.md: the webmail front ends of the own mail server, what each install is set up with,
 // and the hooks mail-core reads to learn what the own server offers.
 import { t } from "../../i18n/en";
-import { companyDomain, fqdn } from "../30-customers/domains";
+import { companyDomain } from "../30-customers/domains";
 import { WEBMAIL, type WebmailId } from "../10-catalog/webmail";
 import { mailHooks, type SelfHostCaps } from "../42-mail/caps";
 import type { MailRule } from "../42-mail/types";
 import type { GameState } from "../50-state";
-import { machineAddress } from "../60-infra/addresses";
-import { controlPlaneUp, machineOf, type Cluster } from "../60-infra/cluster";
+import { controlPlaneUp, type Cluster } from "../60-infra/cluster";
 import { panelMachine as machineIdOf } from "../60-infra/licence";
 import { familyOf } from "../60-infra/vulns";
+import { mailClusterAtHost, namesOf } from "../60-infra/mail-host";
+import { panelDeliver } from "../60-infra/panel-mail";
 import { MAIL_SOFTWARE, spamOn, type MailOption } from "./mail-software";
 
 // What the configuration of a front end holds (section 3.5); conf keeps SquirrelMeal's other config.php values by variable
@@ -38,25 +39,14 @@ export const PREF_DEFAULTS = { theme: "default", perPage: 15, trash: "trash" } s
 export const WEBMAIL_PLUGINS = ["filters", "changepass", "havelsieve", "squirrelspelt"] as const;
 const BUNDLED = ["filters", "squirrelspelt"];
 const IMAP_PORTS = [143, 993];
-const LOCAL = ["localhost", "127.0.0.1"];
 
 // The front end a cluster runs, also while it installs.
 export const frontOf = (c: Cluster): string | null => familyOf(c) ?? c.switching?.to ?? null;
 
-// Every name a machine answers to: its hostname, its fqdn once the company has a domain, and its address.
-function namesOf(s: GameState, id: string): string[] {
-  const host = machineOf(s, id)?.hostname, ip = machineAddress(s, id);
-  return [...(host ? [host, ...(s.company.domain ? [fqdn(s, host)] : [])] : []), ...(ip ? [ip] : [])];
-}
+mailHooks.panelInbox = (s, m) => panelDeliver(s, { from: m.from, to: m.to, subject: m.own?.subject ?? m.topic, body: m.own?.text ?? "" });
 
 // The own mail server a front end reaches at a host name: its own machine's at localhost.
-export function mailClusterAt(s: GameState, front: Cluster, host: string): Cluster | null {
-  const name = host.trim().toLowerCase(), self = machineIdOf(front);
-  return s.clusters.find((c) => {
-    const id = c.kind === "mail" ? machineIdOf(c) : null;
-    return !!id && (LOCAL.includes(name) ? id === self : namesOf(s, id).includes(name));
-  }) ?? null;
-}
+export const mailClusterAt = (s: GameState, front: Cluster, host: string): Cluster | null => mailClusterAtHost(s, host, machineIdOf(front));
 
 // A fresh install points at the mail server on its machine, else at the company's mail server by name.
 export function webmailDefaults(s: GameState, front: Cluster): WebmailInstall {
