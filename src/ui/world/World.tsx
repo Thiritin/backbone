@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { FullscreenButton } from "../FullscreenButton";
 import { floodedDevice } from "../../sim/60-infra/network";
 import { t } from "../../i18n/en";
@@ -71,7 +71,7 @@ const looked: Record<string, { zoom: number | null; org: Pt | null; lights: bool
 export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
 
-export function World() {
+export const World = memo(function World() {
   const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface);
   const speed = useStore((s) => s.speed), setSpeed = useStore((s) => s.setSpeed);
   const loc = roomOf(game), home = loc.space === "basement", office = loc.space === "office";
@@ -473,7 +473,7 @@ export function World() {
       {pair && <PairPanel key={`${pair.a} ${pair.b}`} a={pair.a} b={pair.b} from={pair.from} onClose={() => setPair(null)} />}
     </div>
   );
-}
+});
 
 // Parcels drawn per stack before the count takes over.
 const PARCEL_STACK = 3;
