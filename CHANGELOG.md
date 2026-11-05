@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Program installers and the accounting software now show in the browser download indicator and list while they download, like operating system images do.
 - The power button on a rack server now works: a press starts it or shuts it down, holding it for two seconds cuts the power, the recessed reset button reboots it hard, the router has a rocker switch on its back, the UPS a front button, and the rack floor reports what happened.
 - Shutting down or resetting a server that hosts customers asks first and names how many are affected.
 - A crash cart with a monitor and keyboard stands beside the rack, plugs into a server through its VGA port on the back, and restarts it with Ctrl+Alt+Del.

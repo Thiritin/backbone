@@ -17,8 +17,8 @@ import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { companyFolder, type IndexRow } from "../../../sim/80-business/index";
 import { nowHours } from "../../../sim/00-core/time";
 import { isoFile } from "./sites/software/SoftwareSite";
-import { useDownloads } from "../../downloads";
-import type { OsImage } from "../../../sim/10-catalog/server-os";
+import { softwareDownloads, useDownloads } from "../../downloads";
+import { imageExists, type OsImage } from "../../../sim/10-catalog/server-os";
 import { readSession, useSessionState, writeSession } from "../../session";
 import { homeUrl } from "./home";
 import { t } from "../../../i18n/en";
@@ -236,20 +236,25 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
 
 const showDownloads = () => useStore.getState().openApp("Applications", { kind: "folder", id: "downloads" });
 
-function DownloadsButton({ game }: { game: GameState }) {
-  const running = useDownloads();
-  const ids = (Object.keys(running) as OsImage[]).filter((id) => running[id]), first = ids[0] && running[ids[0]]!;
-  const done = (d: { start: number; hours: number }) => Math.floor(Math.min(1, (nowHours(game) - d.start) / d.hours) * 100);
+export function DownloadsButton({ game }: { game: GameState }) {
+  const running = useDownloads(), now = nowHours(game);
+  const name = (id: string) => (imageExists(id) ? isoFile(id as OsImage) : id);
+  const live = [
+    ...Object.entries(running).filter(([, d]) => d).map(([id, d]) => ({ file: name(id), ...d! })),
+    ...softwareDownloads(game).map((d) => ({ file: d.file, start: d.start, hours: d.hours })),
+  ].filter((d) => now - d.start < d.hours), first = live[0];
+  const done = (d: { start: number; hours: number }) => Math.floor(Math.min(1, (now - d.start) / d.hours) * 100);
+  const finished = [...game.media.images.map(isoFile), ...game.media.files, ...softwareDownloads(game).filter((d) => now - d.start >= d.hours).map((d) => d.file)];
   return (
     <button className="btn icon ghost br-dl" aria-label={t("misc1.browser.downloads")} onClick={menuOn(() => [
-      ...ids.map((id) => ({ label: `${isoFile(id)}, ${done(running[id]!)}%`, disabled: true })),
-      ...game.media.images.map((id) => ({ label: isoFile(id), run: showDownloads })),
-      !game.media.images.length && !ids.length && { label: t("misc1.browser.noDownloads"), disabled: true },
+      ...live.map((d) => ({ label: `${d.file}, ${done(d)}%`, disabled: true })),
+      ...finished.map((file) => ({ label: file, run: showDownloads })),
+      !finished.length && !live.length && { label: t("misc1.browser.noDownloads"), disabled: true },
       null,
       { label: t("misc1.browser.showInFinder"), run: showDownloads },
     ])}>
       <CircleArrowDown aria-hidden />
-      {first && <span className="br-dl-bar"><i key={ids[0]} style={{ width: `${done(first)}%` }} /></span>}
+      {first && <span className="br-dl-bar"><i key={first.file} style={{ width: `${done(first)}%` }} /></span>}
     </button>
   );
 }
