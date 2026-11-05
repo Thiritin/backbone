@@ -19,6 +19,8 @@ import { monthYear } from "../../../../support/labels";
 import { useFieldAct, usePageAct } from "../../../pageAct";
 import { ownAddress } from "../../../../../../sim/30-customers/addresses";
 import { PayMethodPanel } from "../../shared/SupplierAccount";
+import { PayButton } from "../../shared/PayButton";
+import { useStore } from "../../../../../store";
 import { A, SignIn, spaceText, type ProviderProps, type Route } from "../ProviderSite";
 import "../../../../books/books.css";
 import "./portal.css";
@@ -179,9 +181,8 @@ function CancelSheet({ game, c, onClose }: { game: GameState; c: Contract; onClo
 
 // The order step: the target, the setup fee and the monthly price before the player confirms.
 function CrossConnectSheet({ game, c, onClose }: { game: GameState; c: Contract; onClose: () => void }) {
-  const [act, error] = useFieldAct(), dc = datacenterById(c.dc), targets = crossConnectTargets(dc);
+  const act = useStore((s) => s.act), dc = datacenterById(c.dc), targets = crossConnectTargets(dc);
   const [to, setTo] = useState(targets[0]?.id ?? "");
-  const confirm = () => { if (act(orderCrossConnect, c.id, to).ok) onClose(); };
   return (
     <div className="ps-sheet-veil">
       <div className="ps-sheet" role="dialog" aria-label={t("portal.orderCrossConnect")}>
@@ -192,11 +193,10 @@ function CrossConnectSheet({ game, c, onClose }: { game: GameState; c: Contract;
             [t("portal.partner"), <select value={to} onChange={(e) => setTo(e.target.value)}>{targets.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>],
             [t("portal.setupFee"), euro(crossConnectSetup(dc))], [t("providers.perMonth"), euro(dc.crossConnect)], [t("portal.billedFrom"), monthYear(noticeEnd(game.hour, 0))],
           ]} />
-          {error && <p className="ps-error">{t(error)}</p>}
         </div>
         <div className="ps-sheet-f ps-actions">
           <button className="ps-btn" onClick={onClose}>{t("providers.back")}</button>
-          <button className="ps-btn pri" onClick={confirm}>{t("portal.order")}</button>
+          <PayButton className="ps-btn pri" supplier="datacenter" name={dc.name} amount={crossConnectSetup(dc)} run={(m) => act(orderCrossConnect, c.id, to, undefined, m)}>{t("portal.order")}</PayButton>
         </div>
       </div>
     </div>

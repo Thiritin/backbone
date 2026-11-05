@@ -71,6 +71,10 @@ export interface ShopState {
   mailOff: MailTemplate[];
   // False from install until the setup wizard is finished or closed; saves from before the wizard skip it.
   setupDone?: boolean;
+  // Install guide steps seen done; a step stays ticked.
+  ticked?: string[];
+  // The hour the shop's cron job was last seen set; billing stops a month after it was removed.
+  cronRanAt?: number;
 }
 // ws, folder and db name where the installer put the shop (web-hosting.md 5); a hosted shop has none.
 export interface ShopInstall { clusterId: string; version: string; at: number; ws?: string; folder?: string; db?: string }

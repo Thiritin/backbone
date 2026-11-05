@@ -1,5 +1,5 @@
 import { MonitorCog } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { BMC_NAME, modelById, oobPorts } from "../../../sim/10-catalog/hardware";
@@ -11,6 +11,8 @@ import {
 import { fitAtx, recoverGear, setUplink, updateFirmware } from "../../../sim/90-actions/remote";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { HARDWARE_SHOP } from "../../../sim/46-finance/payables";
+import { PayStep } from "../browser/sites/shared/PayStep";
 import { useHandWork } from "./HandSheet";
 import { Facts } from "./ui";
 
@@ -19,6 +21,7 @@ const nameOf = (d: Device) => d.label ?? d.name;
 // Console, management port and firmware of a server, a switch or router, or a management device.
 export function RemoteCard({ game, device }: { game: GameState; device: Device }) {
   const act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
+  const [atxFor, setAtx] = useState<string | null>(null), atx = atxFor === device.id;
   const hand = useHandWork();
   const m = modelById(device.model), server = m.kind === "server", gear = isGear(device), mgmt = isMgmtDevice(device);
   if (!device.rackId || (!server && !gear && !mgmt) || (gear && !oobPorts(m).length)) return null;
@@ -54,11 +57,12 @@ export function RemoteCard({ game, device }: { game: GameState; device: Device }
       )}
       {(kvm || (gear && (device.hung || device.locked)) || device.fw) && (
         <div className="loc-row insp-power-row">
-          {kvm && <button className="btn" onClick={() => act(fitAtx, device.id)}>{t("locations-2.fitAtx", { price: euro(ATX_PRICE) })}</button>}
+          {kvm && <button className="btn" disabled={atx} onClick={() => setAtx(device.id)}>{t("locations-2.fitAtx", { price: euro(ATX_PRICE) })}</button>}
           {gear && (device.hung || device.locked) && <button className="btn primary" disabled={!!device.hands} onClick={recover}>{fix ? t("locations-2.recoverConsole") : t("locations-2.recover")}</button>}
           {device.fw && <button className="btn" disabled={!firmwareDue(game, device)} onClick={() => act(updateFirmware, device.id)}>{t("locations-2.updateFirmware")}</button>}
         </div>
       )}
+      {atx && <div className="loc-row"><PayStep game={game} buy={{ supplier: "hardware", name: HARDWARE_SHOP, amount: ATX_PRICE, run: (m) => act(fitAtx, device.id, m) }} onClose={() => setAtx(null)} /></div>}
       {hand.dialog}
     </div>
   );

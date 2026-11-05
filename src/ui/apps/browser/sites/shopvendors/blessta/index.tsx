@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
 import { euro, euroPrice } from "../../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../../sim/00-core/time";
@@ -11,9 +12,10 @@ import { releasedAt } from "../../../../../../sim/10-catalog/software-versions";
 import type { GameState, Licence } from "../../../../../../sim/50-state";
 import { keyExpired, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
 import { displayHost } from "../../../../../../sim/80-business/browser";
-import { bought } from "../../../../../../sim/80-business/licences";
+import { bought, moduleOrder, ordered } from "../../../../../../sim/80-business/licences";
+import { DocButton } from "../../shared/OrderDone";
 import { shopUpdatesFee } from "../../../../../../sim/80-business/shop";
-import { keysOf, upgradeOffers } from "../../../../../../sim/80-business/vendor-shop";
+import { keysOf, upgradeOffers, vendorName } from "../../../../../../sim/80-business/vendor-shop";
 import { companyDomain } from "../../../../../../sim/30-customers/domains";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
 import { renewShopUpdates } from "../../../../../../sim/90-actions/shop";
@@ -130,8 +132,8 @@ function Extensions({ game }: { game: GameState }) {
           <p>{t(`vendor-sites.pitch.${m.id}`)}</p>
           <p className="num"><strong>{euro(m.price)}</strong> {t("vendor-sites.licence")}{m.id !== "shop-link" && <> · {t("payment-methods.fee")} {feeText(methodById(m.id as MethodId))}</>}</p>
           {hasModule(game, m.id) && game.shop.variant === ID ? <span className="bv-state">{t("vendor-sites.registered")}</span>
-            : bought(game, m.id, ID) ? <span className="bv-state">{t("vendor-sites.bought")}</span>
-            : <button type="button" className="bv-btn" onClick={() => act(buyShopLink, ID, m.id)}>{t("vendor-sites.buy")}</button>}
+            : bought(game, m.id, ID) ? <span className="bv-state">{t("vendor-sites.bought")} <DocButton payable={moduleOrder(game, m.id, ID)} /></span> : ordered(game, m.id, ID) ? <span className="bv-state">{t("vendor-sites.ordered")} <DocButton payable={moduleOrder(game, m.id, ID)} /></span>
+            : <PayButton className="bv-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>}
         </li>
       ))}
     </ul>
@@ -174,7 +176,7 @@ function Account({ game, to }: { game: GameState; to: (p: Page) => void }) {
     const c = k.covers, up = c.kind === "version" ? ups.find((o) => o.from === c.major) : undefined;
     return (
       <>
-        {fee !== undefined && <button type="button" className="bv-btn bv-small" onClick={() => act(renewShopUpdates)}>{t("blessta.v.renew", { fee: euroPrice(fee) })}</button>}
+        {fee !== undefined && <PayButton className="bv-btn bv-small" supplier="shopVendor" name={vendorName(ID)} amount={fee ?? 0} run={(m) => act(renewShopUpdates, m)}>{t("blessta.v.renew", { fee: euroPrice(fee) })}</PayButton>}
         {up && <button type="button" className="bv-btn bv-small" onClick={() => { if (act(addToCart, ID, null, up.from).ok) to("cart"); }}>{t("blessta.v.upgrade", { major: up.to, fee: euroPrice(up.fee) })}</button>}
         {k.covers.kind === "term" && k.renewsAt !== null && !keyExpired(game, k) && <button type="button" className="bv-btn bv-ghost bv-small" onClick={() => act(cancelLicence, k.id)}>{t("vendor-shop.cancel")}</button>}
       </>

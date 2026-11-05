@@ -1,7 +1,6 @@
 import type { Dict } from "../lang";
 
 export default {
-  "books.tab.accounts": () => "Conti",
   "books.tab.booking": () => "Registra",
   "books.tab.chart": () => "Piano dei conti",
   "books-screens.balance": () => "Saldo",
@@ -28,7 +27,6 @@ export default {
   "books-screens.col.total": () => "Totale",
   "books-screens.col.no": () => "Conto",
   "books-screens.col.name": () => "Denominazione",
-  "books-screens.open": () => "Apri",
   "books-screens.openItems": () => "Partite aperte",
   "books-screens.fiscalYear": () => "Esercizio",
   "books-screens.search": () => "Cerca",

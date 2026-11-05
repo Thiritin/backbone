@@ -7,6 +7,7 @@ import type { MethodId } from "../10-catalog/payments";
 import type { GameState } from "../50-state";
 import { buyLicence } from "./licences";
 import type { ActionResult } from "./hardware";
+import type { Method } from "../46-finance/payables";
 
 export function importFromShop(s: GameState): ActionResult {
   if (!unsynced(s) && !s.transfers.some((x) => x.covers && x.invoiceId === null)) return { ok: false, error: "error.nothingToImport" };
@@ -15,9 +16,9 @@ export function importFromShop(s: GameState): ActionResult {
 }
 
 // Shop link or a payment method on a shop vendor's site; it works only in that vendor's shop system.
-export function buyShopLink(s: GameState, shop: ShopId, id = "shop-link"): ActionResult {
+export function buyShopLink(s: GameState, shop: ShopId, id = "shop-link", method?: Method): ActionResult {
   if (s.shop.variant !== shop) return { ok: false, error: "error.noShopSystem" };
-  return buyLicence(s, id);
+  return buyLicence(s, id, method);
 }
 
 // Switches a registered payment method on or off in the shop's checkout.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LEASE_FACTOR, leaseOffers, LESSORS } from "../src/sim/10-catalog/leasing";
+import { LEASE_FACTOR, leaseOffers, lessorName, LESSORS } from "../src/sim/10-catalog/leasing";
 import { nextMonthStart } from "../src/sim/00-core/time";
 import { type GameState } from "../src/sim/50-state";
 import { connectError, storageStacks } from "../src/sim/60-infra/status";
@@ -123,6 +123,7 @@ describe("lease payments", () => {
     ok(buyOutLease(s, l.id));
     expect(s.cash).toBeCloseTo(cash - (offer.months - 1) * offer.monthly, 2);
     expect(s.ledger.at(-1)).toMatchObject({ category: "leasing", key: "ledger.leaseBuyout" });
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "hardware", name: lessorName(offer.lessor) });
     expect(s.leases).toEqual([]);
     expect(err(buyOutLease(s, l.id))).toBe("error.unknownLease");
     ok(sellDevice(s, "dev11"));

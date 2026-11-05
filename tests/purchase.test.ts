@@ -20,7 +20,7 @@ const withCard = (s: GameState, limit = 1000) => { s.bank!.card = { limit, ready
 describe("placeOrder", () => {
   it("pays cash at once while the company has no bank account and sends a receipt", () => {
     const s = newGame(1), cash = s.cash;
-    const r = placeOrder(s, { supplier: "landlord", name: "Dwell Immobilien", lines: [line(-100)], method: "cash" });
+    const r = placeOrder(s, { supplier: "landlord", name: "Engel & Vogel", lines: [line(-100)], method: "cash" });
     expect(r.ok).toBe(true);
     expect(s.payables[0]).toMatchObject({ method: "cash", doc: "receipt", amount: 100, paidAt: s.hour });
     expect(s.cash).toBe(cash - 100);
@@ -68,7 +68,7 @@ describe("placeOrder", () => {
 
   it("raises cash with a credit note", () => {
     const s = banked();
-    const r = placeOrder(s, { supplier: "landlord", name: "Dwell Immobilien", lines: [line(300)], method: "transfer" });
+    const r = placeOrder(s, { supplier: "landlord", name: "Engel & Vogel", lines: [line(300)], method: "transfer" });
     expect(r.ok).toBe(true);
     expect(s.payables[0]).toMatchObject({ doc: "credit", amount: -300, paidAt: s.hour });
     expect(s.cash).toBe(20_300);
@@ -77,7 +77,7 @@ describe("placeOrder", () => {
 
   it("confirms a contract without a charge", () => {
     const s = banked();
-    placeOrder(s, { supplier: "datacenter", name: "Dwell Immobilien", lines: [], method: "onAccount", doc: "contract" });
+    placeOrder(s, { supplier: "datacenter", name: "Engel & Vogel", lines: [], method: "onAccount", doc: "contract" });
     expect(s.payables[0]).toMatchObject({ doc: "contract", amount: 0, paidAt: s.hour });
     expect(mailsAbout(s, "contract")).toHaveLength(1);
   });

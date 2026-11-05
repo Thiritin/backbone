@@ -286,16 +286,22 @@ export const World = memo(function World() {
   });
   // The next-step card walks the player to a rack and opens its close-up: "rack:shelf" for the shelf, "rack:rack" for the first full rack.
   useEffect(() => {
+    // The figure stands still behind an open panel, so a card on the open rack changes its view in place and anywhere else closes the panel first.
+    const goRack = (r: (typeof racks)[number], next: NonNullable<typeof rackOpen>) => {
+      if (rackOpen?.id === r.id) { setRackOpen(next); return; }
+      setRackOpen(null); setPanel(null);
+      use(r.id, () => setRackOpen(next), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+    };
     if (seek?.startsWith("dev:") || seek?.startsWith("cable:") || seek?.startsWith("vga:") || seek?.startsWith("usb:") || seek?.startsWith("link:")) {
       useStore.getState().setSeek(null);
       const kind = seek.split(":")[0], d = game.devices.find((x) => x.id === seek.slice(kind.length + 1)), r = racks.find((x) => x.id === d?.rackId);
-      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(kind === "cable" || kind === "vga" || kind === "usb" || kind === "link" ? { guide: kind } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+      if (d && r) goRack(r, { id: r.id, device: d.id, ...(kind === "cable" || kind === "vga" || kind === "usb" || kind === "link" ? { guide: kind } : {}) });
       return;
     }
     if (!seek?.startsWith("rack:")) return;
     useStore.getState().setSeek(null);
     const shelf = seek === "rack:shelf", r = racks.find((x) => (x.model === "shelf") === shelf) ?? racks[0];
-    if (r) use(r.id, () => setRackOpen({ id: r.id, guide: "mount" }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+    if (r) goRack(r, { id: r.id, guide: "mount" });
   });
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   // A unit that landed in storage within the last day stands by the door as a parcel until it is mounted.

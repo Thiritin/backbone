@@ -4,7 +4,8 @@ import { yearOf } from "../00-core/time";
 import { booksVendor, editionById, type BooksVendor, type Edition, type Feature } from "../10-catalog/bookkeeping";
 import { MS_PER_HOUR } from "../00-core/time";
 import { downloadMbps } from "./media";
-import { bill as billVendor, invoicing } from "../46-finance/payables";
+import { bill as billVendor, invoicing, type Method } from "../46-finance/payables";
+import { placeOrder } from "./purchase";
 import type { GameState } from "../50-state";
 import { bill, currentEdition, currentVendor, hasFeature, HBCI_KEY, LICENCE_KEY, licencePrice, matchByReference, monthlyFee, monthlyRun, MONTHLY_KEY, SEAT_KEY, updateOpen, works } from "../80-business/bookkeeping";
 import type { ActionResult } from "./hardware";
@@ -15,17 +16,19 @@ import { bankReady, booksKey, needsActivation, needsKey, newSetup, setupOf, sync
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
-// A licence and a desktop seat are paid at once, off the account.
-function pay(s: GameState, v: BooksVendor, key: string, amount: number, e: Edition): void {
-  if (!amount) return;
-  billVendor(s, { supplier: "books", name: v.name, method: s.bank ? "debit" : "cash", lines: [{ hour: s.hour, category: "licenses", key, params: { program: v.program, edition: e.name }, amount: -amount }] });
+// A licence and a desktop seat are paid at once, off the account unless the player picked another method.
+function pay(s: GameState, v: BooksVendor, key: string, amount: number, e: Edition, method?: Method): ActionResult {
+  if (!amount) return { ok: true };
+  const o = { supplier: "books" as const, name: v.name, lines: [{ hour: s.hour, category: "licenses", key, params: { program: v.program, edition: e.name }, amount: -amount }] };
+  if (method) return placeOrder(s, { ...o, method });
+  billVendor(s, { ...o, method: s.bank ? "debit" : "cash" });
+  return { ok: true };
 }
 
-function take(s: GameState, v: BooksVendor, e: Edition, seats: number): ActionResult {
+function take(s: GameState, v: BooksVendor, e: Edition, seats: number, method?: Method): ActionResult {
   const price = licencePrice(s, v, e), fee = monthlyFee(v, e, seats);
   if (s.cash < price + (invoicing(s) ? 0 : fee)) return fail("error.noCash");
-  pay(s, v, LICENCE_KEY, price, e);
-  return { ok: true };
+  return pay(s, v, LICENCE_KEY, price, e, method);
 }
 
 // The data stays where it is; the old program's edition, seats and fee go. A program bought before costs only what its
@@ -52,19 +55,19 @@ export function setupHours(s: GameState, v: BooksVendor): number | null {
 }
 
 // Buying on the vendor's site: a browser program starts at once, a desktop program is paid and starts to download.
-export function buyBooks(s: GameState, id: string, editionId?: string): ActionResult {
+export function buyBooks(s: GameState, id: string, editionId?: string, method?: Method): ActionResult {
   const v = booksVendor(id), e = v && (editionId ? editionById(v, editionId) : v.editions[0]);
   if (!v || !e || v.from > yearOf(s.hour)) return fail("error.unknownStoreItem");
   if (s.books.vendor === v.id) return fail("error.installed");
   if (v.deployment === "browser") {
-    const r = take(s, v, e, 0);
+    const r = take(s, v, e, 0, method);
     if (r.ok) { setUp(s, v, e); mailAccess(s, v); }
     return r;
   }
   if (s.books.download?.vendor === v.id) return fail("error.booksDownloading");
   const hours = setupHours(s, v);
   if (hours === null) return fail("error.booksOffline");
-  const r = take(s, v, e, 0);
+  const r = take(s, v, e, 0, method);
   if (!r.ok) return r;
   s.books = { ...s.books, download: { vendor: v.id, edition: e.id, startedAt: s.hour, readyAt: s.hour + hours } };
   mailAccess(s, v);
@@ -84,13 +87,13 @@ export function installBooks(s: GameState, id: string): ActionResult {
 }
 
 // A desktop licence pays the difference to the larger edition; a browser plan switches its fee from the next month.
-export function upgradeBooks(s: GameState, editionId: string): ActionResult {
+export function upgradeBooks(s: GameState, editionId: string, method?: Method): ActionResult {
   const v = currentVendor(s), now = currentEdition(s), e = v && editionById(v, editionId);
   if (!v || !now || !e) return fail("error.unknownEdition");
   if (e.id === now.id) return fail("error.installed");
   if (v.deployment === "desktop" && e.price < now.price) return fail("error.unknownEdition");
   if (updateOpen(s)) return fail("error.updateOpen");
-  const r = take(s, v, e, s.books.seats);
+  const r = take(s, v, e, s.books.seats, method);
   if (!r.ok) return r;
   const d = s.books.download;
   s.books = { ...s.books, edition: e.id, seats: e.seat ? s.books.seats : 0, download: d?.vendor === v.id ? { ...d, edition: e.id } : d };
@@ -98,27 +101,29 @@ export function upgradeBooks(s: GameState, editionId: string): ActionResult {
 }
 
 // Seats on sale with the edition: a desktop seat is paid once and kept, a browser seat adds to the monthly fee.
-export function setSeats(s: GameState, seats: number): ActionResult {
+export function setSeats(s: GameState, seats: number, method?: Method): ActionResult {
   const v = currentVendor(s), e = currentEdition(s);
   if (!v || !e || !e.seat || !Number.isInteger(seats) || seats < 0) return fail("error.unknownEdition");
   if (v.deployment === "desktop") {
     if (seats < s.books.seats) return fail("error.unknownEdition");
     const price = (seats - s.books.seats) * e.seat;
     if (s.cash < price) return fail("error.noCash");
-    pay(s, v, SEAT_KEY, price, e);
+    const paid = pay(s, v, SEAT_KEY, price, e, method);
+    if (!paid.ok) return paid;
   }
   s.books = { ...s.books, seats };
   return { ok: true };
 }
 
 // An add-on the installed program's vendor sells for every edition: a desktop add-on is paid once, a browser one each month.
-export function buyAddon(s: GameState, id: Feature): ActionResult {
+export function buyAddon(s: GameState, id: Feature, method?: Method): ActionResult {
   const v = currentVendor(s), e = currentEdition(s), price = v?.addons?.[id];
   if (!v || !e || price === undefined) return fail("error.unknownEdition");
   if (hasFeature(s, id)) return fail("error.installed");
   if (v.deployment === "desktop") {
     if (s.cash < price) return fail("error.noCash");
-    pay(s, v, HBCI_KEY, price, e);
+    const paid = pay(s, v, HBCI_KEY, price, e, method);
+    if (!paid.ok) return paid;
   }
   s.books = { ...s.books, addons: [...s.books.addons, id] };
   return { ok: true };

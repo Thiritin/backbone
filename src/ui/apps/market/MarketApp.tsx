@@ -9,7 +9,9 @@ import { BUDGET_RANGE } from "../../../sim/30-market/sales";
 import { demand, lostReasons, segmentsOf, studied, studyCost } from "../../../sim/30-market/research";
 import { profileStats } from "../../../sim/40-support/tickets";
 import { PROFILE_IDS } from "../../../sim/80-business/marketing";
-import { buyStudy } from "../../../sim/90-actions/market";
+import { buyStudy, STUDY_VENDOR } from "../../../sim/90-actions/market";
+import { PayButton } from "../browser/sites/shared/PayButton";
+import { OrderDone } from "../browser/sites/shared/OrderDone";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { AUDIENCE } from "../marketing/MarketingApp";
@@ -91,7 +93,7 @@ function Demand() {
       </div>
       <div className="shop-grid mkt-flat">
         {rows.map((r) => (
-          <div key={r.product} className="shop-card mk-card">
+          <div key={r.product} className="shop-card mkt-card">
             <div className="mkt-head"><strong>{PRODUCT[r.product]}</strong></div>
             <dl className="shop-specs mkt-specs">
               <div><dt>{t("misc1.market.buyersMonth")}</dt><dd className="num">{perMonth(r.buyers)}</dd></div>
@@ -110,16 +112,18 @@ function Demand() {
 }
 
 function Profiles() {
-  return <div className="shop-grid mk-top">{PROFILE_IDS.map((p) => <ProfileCard key={p} profile={p} />)}</div>;
+  return <div className="shop-grid mkt-grid">{PROFILE_IDS.map((p) => <ProfileCard key={p} profile={p} />)}</div>;
 }
 
 function ProfileCard({ profile }: { profile: Profile }) {
   const game = useStore((s) => s.game);
   const act = useStore((s) => s.act);
+  // The study's payable, kept here so its outcome stays once the card shows the study.
+  const [done, setDone] = useState<string>();
   const st = profileStats(profile), cost = studyCost(profile), sla = SLA_ASKED[profile];
   if (!studied(game, profile)) {
     return (
-      <div className="shop-card mk-card mk-hidden">
+      <div className="shop-card mkt-card mk-hidden">
         <div className="mkt-head"><strong>{st.name}</strong><Lock className="mk-lock" /></div>
         <dl className="shop-specs">
           <div><dt>{t("misc1.market.shareBuyers")}</dt><dd className="num">{pct(st.mix)}</dd></div>
@@ -127,7 +131,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
         </dl>
         <div className="shop-buy">
           <span className="grow" />
-          <button className="btn primary" disabled={game.cash < cost} onClick={() => act(buyStudy, profile)}>{t("misc1.market.buyStudy")}</button>
+          <PayButton className="btn primary" supplier="services" name={STUDY_VENDOR} amount={cost} run={(m) => act(buyStudy, profile, m)} onDone={setDone}>{t("misc1.market.buyStudy")}</PayButton>
         </div>
       </div>
     );
@@ -138,8 +142,8 @@ function ProfileCard({ profile }: { profile: Profile }) {
   if (sla === "premium") needs.push(t("misc1.market.needAge"));
   if (st.budget === "high") needs.push(t("misc1.market.needReview"));
   return (
-    <div className="shop-card mk-card">
-      <div className="mkt-head"><strong>{st.name}</strong></div>
+    <div className="shop-card mkt-card">
+      <div className="mkt-head"><strong>{st.name}</strong>{done && <OrderDone payable={done} />}</div>
       <dl className="shop-specs">
         <div className="mk-wide"><dt>{t("misc1.market.pays")}</dt><dd className="num">{t("misc1.market.paysRange", { from: pct(offer * BUDGET_RANGE[0]), to: pct(offer * BUDGET_RANGE[1]) })}</dd></div>
         <div><dt>{t("misc1.market.shareBuyers")}</dt><dd className="num">{pct(st.mix)}</dd></div>
@@ -264,7 +268,7 @@ function Competitors() {
           {openRivals(game, city).map((c) => {
             return (
               <Fragment key={c.id}>
-              <tr className="mk-main">
+              <tr className="mkt-main">
                 <td><strong>{c.name}</strong> <span className="pill">{tierName(c.tier)}</span>{c.outage && <span className="pill bad">{t("misc1.market.outage")}</span>}</td>
                 <td className="num">{Math.round(c.P)}</td>
                 <td className="num">{Math.round(c.R)}</td>

@@ -16,7 +16,8 @@ export function next(s: Stage, e: TripEvent): Stage {
   return s === "leave" ? "road" : s === "road" ? "arrive" : s === "arrive" ? "room" : s;
 }
 
-export interface Trip { from: Location; to: Location; start: number; until: number; resume: Speed; by: "drive" | "fly" }
+// billed: the action that started the trip issued a document, such as a travel ticket.
+export interface Trip { from: Location; to: Location; start: number; until: number; resume: Speed; by: "drive" | "fly"; billed?: boolean }
 interface TripStore { stage: Stage; trip: Trip | null; send: (e: TripEvent, trip?: Trip) => void }
 export const useTrip = create<TripStore>((set) => ({
   stage: "room", trip: null,

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
 import { euro } from "../../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../../sim/00-core/time";
@@ -11,11 +12,12 @@ import type { GameState } from "../../../../../../sim/50-state";
 import { supportOn } from "../../../../../../sim/60-infra/lifecycle";
 import { SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
 import { displayHost } from "../../../../../../sim/80-business/browser";
-import { bought } from "../../../../../../sim/80-business/licences";
+import { bought, moduleOrder, ordered } from "../../../../../../sim/80-business/licences";
+import { DocButton } from "../../shared/OrderDone";
 import { portalPath } from "../../../../../../sim/80-business/portal";
 import { shopUpdate } from "../../../../../../sim/80-business/shop";
-import { hostOf } from "../../../../../../sim/80-business/vendor-shop";
-import { updateShop, upgradeShop } from "../../../../../../sim/90-actions/shop";
+import { hostOf, vendorName } from "../../../../../../sim/80-business/vendor-shop";
+import { updateShop, upgradeFee, upgradeShop } from "../../../../../../sim/90-actions/shop";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
 import { formatDay } from "../../../../billing/format";
 import { feeText } from "../../../../marketing/payments";
@@ -159,8 +161,8 @@ function Extensions({ game }: { game: GameState }) {
             {m.id !== "shop-link" && <><dt>{t("payment-methods.fee")}</dt><dd className="num">{feeText(methodById(m.id as MethodId))}</dd></>}
           </dl>
           {hasModule(game, m.id) && game.shop.variant === ID ? <span className="bxs-state">{t("vendor-sites.registered")}</span>
-            : bought(game, m.id, ID) ? <span className="bxs-state">{t("vendor-sites.bought")}</span>
-            : <button type="button" className="bxs-btn" onClick={() => act(buyShopLink, ID, m.id)}>{t("vendor-sites.buy")}</button>}
+            : bought(game, m.id, ID) ? <span className="bxs-state">{t("vendor-sites.bought")} <DocButton payable={moduleOrder(game, m.id, ID)} /></span> : ordered(game, m.id, ID) ? <span className="bxs-state">{t("vendor-sites.ordered")} <DocButton payable={moduleOrder(game, m.id, ID)} /></span>
+            : <PayButton className="bxs-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>}
         </article>
       ))}
     </div>
@@ -186,7 +188,7 @@ function Account({ game }: { game: GameState }) {
       </table>
       <div className="bxs-cta">
         <button type="button" className="bxs-btn" disabled={!update} onClick={() => act(updateShop)}>{t("shop-admin.installUpdate")}</button>
-        {next && <button type="button" className="bxs-btn" onClick={() => act(upgradeShop)}>{t("shop-boxBillin.site.upgradeTo", { version: next.version })}</button>}
+        {next && <PayButton className="bxs-btn" supplier="shopVendor" name={vendorName(ID)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("shop-boxBillin.site.upgradeTo", { version: next.version })}</PayButton>}
       </div>
     </div>
   );

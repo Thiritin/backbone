@@ -69,6 +69,8 @@ export function ShopApp() {
   const shown = sortItems(scoped.filter((it) => matchesFilter(it.model, filter, it.part)), sort, yearOf(hour));
   const [cartOpen, setCartOpen] = useState(false);
   const inCart = useStore((st) => st.cart.reduce((n, l) => n + l.qty, 0));
+  // An open cart shows its leasing offers without scrolling.
+  useEffect(() => { if (cartOpen && inCart) document.querySelector(".shop-pay-h")?.scrollIntoView?.({ block: "nearest" }); }, [cartOpen, inCart]);
   useEffect(() => setDetail(null), [maker, cls]);
   const opened_ = detail ? all.find((it) => itemKey(it) === detail) : undefined;
   const [view, setView] = useSessionState<"grid" | "list">("shop.view", "grid");

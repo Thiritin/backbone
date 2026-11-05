@@ -37,6 +37,8 @@ export const PAPERWORK_EN: Record<string, (p: Params) => string> = {
   "letter.officeChange.body": (p) => `We confirm that ${p.name} is registered as a ${FORM[p.form] ?? p.form} from today. ${pay(p)}`,
   "letter.notaryInvoice.subject": (p) => `Invoice ${p.number}`,
   "letter.notaryInvoice.body": (p) => `For notarising the articles of association of ${p.name} and filing them with the commercial register we charge ${euroCents(Number(p.amount))}. ${pay(p)}`,
+  "letter.landlordDoc.subject": (p) => `Your tenancy, document ${p.number}`,
+  "letter.landlordDoc.body": (p) => `Please find enclosed our document ${p.number} for ${euroCents(Number(p.amount))}.`,
   "letter.registerEntry.subject": () => "Entry in the commercial register",
   "letter.registerEntry.body": (p) => `${p.name} has been entered in the commercial register as a ${FORM[p.form] ?? p.form}. The entry takes effect today. Our invoice for the entry follows separately.`,
   "letter.registerInvoice.subject": (p) => `Invoice ${p.number}`,

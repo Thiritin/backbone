@@ -6,6 +6,7 @@ import { dropDesk, openDesk } from "../40-support/desk";
 import { deskRecords } from "../40-support/desk-records";
 import { deliver } from "../42-mail/deliver";
 import { deliverMail } from "../42-mail/sources";
+import type { Method } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
 import { spend } from "./purchase";
@@ -15,7 +16,7 @@ const TENANT = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 // Signs up on the vendor's site: the first month for every seat is paid at once and the tick bills each later one.
 // Another desk in use is replaced, with its configuration; tickets stay.
-export function subscribeDesk(s: GameState, tenant: string, id: DeskId): ActionResult {
+export function subscribeDesk(s: GameState, tenant: string, id: DeskId, method?: Method): ActionResult {
   const d = deskById(id);
   if (d?.hosting !== "hosted") return fail("error.unknownDesk");
   if (!deskReady(s, id)) return fail("error.deskNotYet");
@@ -23,7 +24,7 @@ export function subscribeDesk(s: GameState, tenant: string, id: DeskId): ActionR
   if (!TENANT.test(name)) return fail("error.deskTenant");
   if (s.desk?.id === id) return fail("error.deskInUse");
   const item = deskItem(d);
-  const placed = spend(s, { supplier: "services", name: d.name, lines: [subscriptionEntry(s, item)] });
+  const placed = spend(s, { supplier: "services", name: d.name, lines: [subscriptionEntry(s, item)], method });
   if (!placed.ok) return placed;
   dropDesk(s);
   openDesk(s, id, { kind: "hosted" }, name);

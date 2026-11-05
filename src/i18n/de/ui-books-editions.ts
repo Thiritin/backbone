@@ -43,5 +43,4 @@ export default {
   "books-editions.group.sales": () => `Verkauf`,
   "books-editions.group.payments": () => `Zahlungen`,
   "books-editions.group.reports": () => `Auswertungen`,
-  "books-editions.accounts": () => `Konten`,
 } satisfies Dict;

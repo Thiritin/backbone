@@ -18,7 +18,7 @@ afterEach(() => { vi.restoreAllMocks(); });
 
 const rich = (cash = 1_000_000): GameState => ({ ...withServer(newGame(1)), cash });
 // The rest of the first month, which each rented location pays when it is ordered.
-const rentPaid = (s: GameState) => s.payables.filter((p) => p.doc === "contract").reduce((n, p) => n + p.amount, 0);
+const rentPaid = (s: GameState) => s.payables.filter((p) => p.supplier === "datacenter").reduce((n, p) => n + p.amount, 0);
 const ok = (r: ReturnType<typeof addLocation>) => {
   if (!r.ok) throw new Error(r.error);
   return r.id!;

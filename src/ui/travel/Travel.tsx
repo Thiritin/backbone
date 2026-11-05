@@ -6,7 +6,9 @@ import { euro } from "../../sim/00-core/money";
 import { formatClock, MS_PER_HOUR, nowHours } from "../../sim/00-core/time";
 import { COUNTRY, datacenterById, listed } from "../../sim/20-world/datacenters";
 import { playerAt } from "../../sim/60-infra/handwork";
-import { drive, travelTo } from "../../sim/90-actions/travel";
+import { drive, TRAVEL_VENDOR, travelTo } from "../../sim/90-actions/travel";
+import { PayStep } from "../apps/browser/sites/shared/PayStep";
+import type { Method } from "../../sim/46-finance/payables";
 import { GeoLayer, geoPaths } from "../map/GeoLayer";
 import { cityNamed, LAND, WorldGeo, WorldMap, X, XF, Y, type Marker } from "../map/WorldMap";
 import { useStore } from "../store";
@@ -61,6 +63,7 @@ function TravelMap() {
   const inFocus = spots.filter((x) => focus ? x.l.city === focus : true), lons = inFocus.map((x) => x.lon), lats = inFocus.map((x) => x.lat);
   const spread = new Set(inFocus.map((x) => COUNTRY[x.l.city])).size > 1;
   const padX = focus ? 0.03 : (Math.max(...lons) - Math.min(...lons)) * 0.1 + 0.03, padY = focus ? 0.02 : (Math.max(...lats) - Math.min(...lats)) * 0.1 + 0.02;
+  const [ticket, setTicket] = useState<{ id: string; fee: number } | null>(null);
   const initial = !inFocus.length || (!focus && spread) ? undefined : { west: Math.min(...lons) - padX, east: Math.max(...lons) + padX, south: Math.min(...lats) - padY, north: Math.max(...lats) + padY };
 
   useEffect(() => {
@@ -74,13 +77,19 @@ function TravelMap() {
     if (raw.startsWith("city:")) return setFocus(raw.slice(5));
     const id = raw.replace(/^region:/, "");
     if (id === here.id) return;
+    const fee = spots.find((x) => x.l.id === id)?.d?.fee ?? 0;
+    if (fee > 0) return setTicket({ id, fee });
+    go(id);
+  };
+  const go = (id: string, m?: Method) => {
     const s = useStore.getState(), from = playerAt(s.game);
-    const r = s.act(travelTo, id);
-    if (!r.ok) return setError(t(r.error, r.params));
+    const r = s.act(travelTo, id, m);
+    if (!r.ok) { setError(t(r.error, r.params)); return r; }
     void loadRoutes();
     void loadRoads();
     void loadStreets(from.city);
     void loadStreets(playerAt(useStore.getState().game).city);
+    return r;
   };
 
   return (
@@ -88,6 +97,7 @@ function TravelMap() {
       <WorldMap key={focus ?? ""} className="wm-geo" initial={initial} markers={markers} onMarkerClick={pick} minW={0.04} layer={streets && <GeoLayer geo={geo} streets={streets} />} />
       {streets && <div className="travel-osm">{t("travel.osm")}</div>}
       <button className="travel-close" onClick={() => send("close")}>{t("travel.close")}</button>
+      {ticket && <div className="travel-pay"><PayStep key={ticket.id} game={game} buy={{ supplier: "services", name: TRAVEL_VENDOR, amount: ticket.fee, run: (m) => go(ticket.id, m) }} onClose={() => setTicket(null)} /></div>}
       {error && <div className="travel-error" role="alert">{error}</div>}
     </div>
   );
@@ -200,6 +210,7 @@ function Drive({ trip, rd, roads, streets, geo }: { trip: Trip; rd: RouteData; r
       <div className="travel-clock num">
         <span>{formatClock(game.hour, game.minute)}</span>
         <strong>{t("travel.speed", { n: mult.toLocaleString(LOCALE) })}</strong>
+        {trip.billed && <span>{t("payI.travelBooked")}</span>}
       </div>
     </div>
   );

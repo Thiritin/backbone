@@ -18,6 +18,11 @@ import { useFieldAct, usePageAct } from "../../pageAct";
 
 type Go = (url: string) => void;
 const day = (hour: number) => dateOf(hour).toLocaleDateString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+// A prefilled amount from the link, written the way the player types it.
+export const amountField = (raw: string | null) => {
+  const n = Number((raw ?? "").replace(",", "."));
+  return raw && Number.isFinite(n) ? n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false }) : raw ?? "";
+};
 const pct = (r: number) => `${(r * 100).toLocaleString(LOCALE, { maximumFractionDigits: 2 })} %`;
 const VIEWS = ["statement", "transfer", "orders", "payees", "card", "overdraft", "loans", "service"] as const;
 type View = (typeof VIEWS)[number];
@@ -199,7 +204,7 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
   const [name, setName] = useState(prefill.get("name") ?? "");
   const [account, setAccount] = useState(prefill.get("account") ?? "");
   const [code, setCode] = useState(prefill.get("code") ?? "");
-  const [amount, setAmount] = useState(prefill.get("amount") ?? "");
+  const [amount, setAmount] = useState(amountField(prefill.get("amount")));
   const [reference, setReference] = useState(prefill.get("reference") ?? "");
   const [tan, setTan] = useState("");
   const [orderDay, setOrderDay] = useState("1");

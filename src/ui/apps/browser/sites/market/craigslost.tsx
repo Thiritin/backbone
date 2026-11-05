@@ -5,7 +5,7 @@ import type { Listing } from "../../../../../sim/10-catalog/used";
 import { t } from "../../../../../i18n/en";
 import { Isometric } from "../../../../art/Isometric";
 import { classLabel } from "../../../shop/filter";
-import { BuyBox, cpuName, facets, Facts, filtered, listingName, listingRows, onChannel, postedOn, priceNow, queryOf, useShipTo, withQuery, type MarketProps } from "./shared";
+import { Bought, BuyBox, cpuName, facets, Facts, filtered, listingName, listingRows, onChannel, postedOn, priceNow, queryOf, useShipTo, withQuery, type MarketProps } from "./shared";
 import "./craigslost.css";
 
 const field = (e: FormEvent<HTMLFormElement>, name: string) => String(new FormData(e.currentTarget).get(name) ?? "").trim();
@@ -53,7 +53,7 @@ export function Craigslost({ game, path, go }: MarketProps) {
                 </div>
               </div>
             </>
-          ) : <p>{t("cl.notFound")}</p>}
+          ) : <p><Bought is={(x) => x === decodeURIComponent(id)}>{t("cl.notFound")}</Bought></p>}
         </main>
       ) : (
         <div className="cl-cols">

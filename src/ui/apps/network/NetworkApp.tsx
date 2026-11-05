@@ -35,7 +35,7 @@ export function NetworkApp() {
       <nav className="sidebar fin-side" aria-label={t("misc.sections")}>
         {item("map", <MapIcon />, t("misc.map"))}
         {item("ddos", <ShieldAlert />, t("misc.ddosProtection"))}
-        {item("ripe", <Landmark />, "RIPE")}
+        {item("ripe", <Landmark />, "RIPE-ish")}
       </nav>
       <div className="fin-main">
         <dl className="fin-totals">

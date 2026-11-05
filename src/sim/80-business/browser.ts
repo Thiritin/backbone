@@ -1,6 +1,6 @@
 // GDD, The desktop (Browser): what an address in the in-game browser leads to. Pure; the UI draws the page.
 import { PROGRAMS } from "../10-catalog/programs";
-import { filesIn, installDirIn, shopBroken, shopFolderAt } from "../60-infra/shop-files";
+import { filesIn, installerIn, shopBroken, shopFolderAt } from "../60-infra/shop-files";
 import { deskBroken, deskFilesIn, setupDirIn } from "../60-infra/desk-files";
 import type { SelfDeskId } from "../10-catalog/archives";
 import { DESKS, type DeskId } from "../10-catalog/desks";
@@ -252,7 +252,7 @@ export function resolve(s: GameState, raw: string): Resolved {
   if (own && files) {
     const i = s.shop.install, setup = (screen: "installer" | "notInstalled" | "maintenance" | "dbError") =>
       out({ kind: "shopSetup", ws: own.ws.workloadId, folder: own.folder, base: own.base, id: files.id, version: files.version, screen });
-    if (/^\/install(\/|$)/.test(own.rest) && installDirIn(own.ws, own.folder)) return setup("installer");
+    if (/^\/install(\/|$)/.test(own.rest) && installerIn(own.ws, own.folder)) return setup("installer");
     if (i?.ws !== own.ws.workloadId || i.folder !== own.folder) return setup("notInstalled");
     if (files.version !== i.version) return setup("maintenance");
     return shopBroken(s) ? setup("dbError") : out({ kind: "shop", ...(own.base && { base: own.base }) }, shopLoad());

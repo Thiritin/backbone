@@ -6,13 +6,16 @@ import { DATACENTERS, LEAD_DAYS, NOTICE_MONTHS, SPACE_SIZES, spacePrice, type Da
 import { ownAddress } from "../../../../../sim/30-customers/addresses";
 import type { GameState, SpaceKind } from "../../../../../sim/50-state";
 import { debitAllowed } from "../../../../../sim/46-finance/payables";
+import { defaultMethod } from "../../../../../sim/90-actions/purchase";
+import { orderLines } from "../shared/PayStep";
+import { payOptions } from "../shared/PayMethods";
 import { fits } from "../../../../../sim/60-infra/status";
-import { addLocation, joinWaitlist, type ActionResult } from "../../../../../sim/90-actions/hardware";
+import { addLocation, coloFirstCharge, joinWaitlist, type ActionResult } from "../../../../../sim/90-actions/hardware";
 import { formatDay } from "../../../billing/format";
 import { backupLabel, exchangeLabel, feedsLabel, shareUnits, spaceSize } from "../../../locations/ui";
 import { useStore } from "../../../../store";
 import { usePageAct } from "../../pageAct";
-import { Checkout, type CheckoutDetails } from "../shared/Checkout";
+import { Checkout, type CheckoutDetails, type PaymentKind } from "../shared/Checkout";
 import { contractNo, Portal } from "./portal/Portal";
 import "./providers.css";
 
@@ -32,6 +35,16 @@ export const dcsOf = (id: string): Datacenter[] => DATACENTERS.filter((d) => d.p
 export const citiesOf = (id: string): string[] => [...new Set(dcsOf(id).map((d) => d.city))];
 // The cheapest space the provider rents, for a "from" price.
 export const fromPrice = (id: string): number => Math.min(...dcsOf(id).map((d) => spacePrice(d, "share", 8)));
+
+// The methods of every purchase for what the order charges now; the form gives the direct debit mandate itself. The sim's
+// default goes first.
+function coloMethods(s: GameState, dc: Datacenter, monthly: number): { kind: PaymentKind; label: string; off: string | null }[] {
+  const lines = orderLines(s, s.bank ? coloFirstCharge(s, monthly) : monthly), first = defaultMethod(s, dc.name, lines);
+  return payOptions(s, { supplier: "datacenter", lines, name: dc.name })
+    .map((o) => o.method === "debit" ? { ...o, off: s.bank && debitAllowed(dc.name) ? null : o.off } : o)
+    .map((o) => ({ kind: o.method, off: o.off ?? null, label: o.method === "debit" ? t("bank.supplier.mandate") : o.method === "onAccount" ? t("providers.byInvoice") : o.label }))
+    .sort((a, b) => Number(b.kind === first) - Number(a.kind === first));
+}
 
 export function routeOf(id: string, path: string): Route {
   const [base, query = ""] = path.split("?"), [top, sub] = base.split("/").filter(Boolean);
@@ -146,9 +159,10 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
   const k: Rented = kinds(dc).includes(kind) ? kind : "share";
   const n = SPACE_SIZES[k].includes(size) ? size : SPACE_SIZES[k][0];
   const open = fits(game, dc.id, k, n) || game.waitlist.some((w) => w.dc === dc.id && w.space === k && w.size === n && w.heldUntil !== null);
+  const monthly = spacePrice(dc, k, n, game.providerPrices);
   const summary: [string, string][] = [
     [t("providers.site"), dc.name], [t("providers.space"), spaceText(k, n)], [t("providers.power"), `${kwOf(dc, k, n)} kW`],
-    [t("providers.perMonth"), euro(spacePrice(dc, k, n, game.providerPrices))], [t("providers.term"), t("providers.termValue")], [t("providers.notice"), t("providers.noticeValue", { n: NOTICE_MONTHS[k] })],
+    [t("providers.perMonth"), euro(monthly)], [t("providers.term"), t("providers.termValue")], [t("providers.notice"), t("providers.noticeValue", { n: NOTICE_MONTHS[k] })],
   ];
   const Kv = ({ rows }: { rows: [string, ReactNode][] }) => <dl className="ps-kv">{rows.map(([a, b]) => <div key={a}><dt>{a}</dt><dd>{b}</dd></div>)}</dl>;
   const wrap = (body: ReactNode) => <div className={`ps-order ${className ?? ""}`}>{body}</div>;
@@ -157,13 +171,13 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
   if (step === "checkout") {
     const ready = formatDay(game.hour + 24 * LEAD_DAYS[k]);
     const place = (d: CheckoutDetails): ActionResult => {
-      const r = attempt(addLocation, dc.id, k, n, { company: d.company, name: d.name, address: d.address, payment: d.payment.kind === "debit" ? d.payment : { kind: "transfer" } });
+      const r = attempt(addLocation, dc.id, k, n, { company: d.company, name: d.name, address: d.address, payment: d.payment.kind === "debit" ? d.payment : { kind: d.payment.kind } });
       const c = r.ok && useStore.getState().game.contracts.find((x) => x.locationId === r.id);
       return c ? { ok: true, id: contractNo(c) } : r;
     };
     return wrap(
       <Checkout game={game} btn="ps-btn pri" facts={[...summary, [t("providers.ready"), ready]]} onBack={() => setStep("space")}
-        methods={[...(game.bank && debitAllowed(dc.name) ? [{ kind: "debit" as const, label: t("bank.supplier.mandate") }] : []), { kind: "transfer", label: t("providers.byInvoice") }]}
+        methods={coloMethods(game, dc, monthly)} total={euro(coloFirstCharge(game, monthly))}
         place={place} confirm={() => ({ bank: null, next: t("providers.orderNext", { day: ready }) })} />,
     );
   }

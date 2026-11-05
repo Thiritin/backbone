@@ -4,7 +4,7 @@ import { cents } from "../45-billing/billing";
 import type { GameState, PostalAddress } from "../50-state";
 import { cardDetails, cardReady, cardSpent } from "../46-finance/bank";
 import { orderError } from "./company";
-import { payMethod } from "../46-finance/payables";
+import { payMethod, type Method } from "../46-finance/payables";
 import { placeOrder } from "./purchase";
 import { updateKey } from "../60-infra/licence";
 import { ownAddresses } from "../42-mail/sources";
@@ -55,16 +55,16 @@ function cardMatches(s: GameState, p: { number: string; expiry: string; cvc: str
   return digits(p.number) === digits(c.number) && p.cvc.trim() === c.cvc && (exp === mm + yy || exp === `${mm}20${yy}`);
 }
 
-// Places the site's cart lines as one order. A card pays at once and the keys come with the order email; a transfer gets an
+// Places the site's cart lines as one order. A card, or cash before the company banks, pays at once and the keys come with the order email; a transfer gets an
 // invoice, and the keys come once the money arrives. A one-time licence costs its price; a term licence pays its first term
 // for one unit; an upgrade is a key for the next major.
-export function checkout(s: GameState, host: string, details: OrderDetails): ActionResult {
+export function checkout(s: GameState, host: string, details: OrderDetails, chosen?: Method): ActionResult {
   const lines = cartOf(s, host);
   if (!lines.length) return fail("error.cartEmpty");
   const fees = lines.map((l) => lineOffer(s, l)?.fee);
   if (fees.some((f) => f === undefined)) return fail("error.notForSale");
   const total = cents(lines.reduce((n, l, i) => n + fees[i]! * l.qty, 0)), payment = details.payment;
-  if (!s.bank && total > 0) return fail("error.noBank");
+  if (!s.bank && total > 0 && chosen !== "cash") return fail("error.noBank");
   const bad = orderError(details);
   if (bad) return fail(bad);
   const mailTo = details.email.trim().toLowerCase();
@@ -77,15 +77,16 @@ export function checkout(s: GameState, host: string, details: OrderDetails): Act
   const order = `ORD-${s.nextId++}`, vendor = vendorName(lines[0].product);
   const keys: KeyLine[] = lines.map((l) => { const to = lineMajor(s, l); return { product: l.product, edition: l.edition, qty: l.qty, ...(to && { to }), ...(l.replaces && { replaces: l.replaces }) }; });
   const entry = { hour: s.hour, category: "licenses", key: "ledger.order", params: { vendor, order }, amount: -total };
-  s.cart = s.cart.filter((l) => !lines.includes(l));
   // A free order, such as an edition change on a term key, needs no payment.
-  if (total === 0) { sendKeys(s, vendor, order, keys, total, false, mailTo); return { ok: true, id: order }; }
-  const method = payment.kind === "card" ? "card" : payMethod(s, vendor) === "debit" ? "debit" : "transfer";
+  if (total === 0) { s.cart = s.cart.filter((l) => !lines.includes(l)); sendKeys(s, vendor, order, keys, total, false, mailTo); return { ok: true, id: order }; }
+  const method: Method = payment.kind === "card" ? "card" : chosen && chosen !== "card" ? chosen : payMethod(s, vendor) === "debit" ? "debit" : "transfer";
   const placed = placeOrder(s, { supplier: "software", name: vendor, lines: [entry], method, order });
   if (!placed.ok) return placed;
+  s.cart = s.cart.filter((l) => !lines.includes(l));
   const p = s.payables.find((x) => x.id === placed.payable)!;
-  // A card or a direct debit pays as the order is placed; a transfer sends the keys once the money arrives.
-  if (p.paidAt !== null) sendKeys(s, vendor, order, keys, total, method === "card", mailTo);
+  // A card or a direct debit pays as the order is placed and an order on account ships at once; a transfer sends the keys
+  // once the money arrives.
+  if (p.paidAt !== null || method === "onAccount") sendKeys(s, vendor, order, keys, total, method === "card", mailTo);
   else s.payables = s.payables.map((x) => (x.id === p.id ? { ...x, keys: { order, lines: keys, mailTo } } : x));
   return { ok: true, id: order };
 }

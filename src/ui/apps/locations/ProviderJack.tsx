@@ -4,11 +4,13 @@ import { useState } from "react";
 import { euro } from "../../../sim/00-core/money";
 import { carrierById, exchangeById } from "../../../sim/10-catalog/network";
 import { PROVIDER_CABLE } from "../../../sim/10-catalog/uplinks";
+import { datacenterById } from "../../../sim/20-world/datacenters";
 import type { Device, GameState } from "../../../sim/50-state";
 import { jackRoles, panelOf, type JackRole } from "../../../sim/60-infra/panels";
-import { cancelProviderCable, orderProviderCable } from "../../../sim/90-actions/connectivity";
+import { cancelProviderCable, orderProviderCable, providerCableError } from "../../../sim/90-actions/connectivity";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { PayStep, type Purchase } from "../browser/sites/shared/PayStep";
 import { formatDay } from "../billing/format";
 import { speed } from "./NetworkTab";
 
@@ -25,6 +27,15 @@ export function reachable(game: GameState, rackId: string) {
   });
 }
 
+// The provider cable order between two jacks, paid to the datacenter when it is installed.
+export function cableOrder(game: GameState, rackA: string, jackA: number, rackB: string, jackB: number): Purchase & { key: string } {
+  const dc = game.locations.find((l) => l.id === game.racks.find((r) => r.id === rackA)?.locationId)?.dc;
+  return {
+    key: `${rackA}-${jackA}-${rackB}-${jackB}`, supplier: "network", name: dc ? datacenterById(dc).name : "DE-KICKS", amount: PROVIDER_CABLE.fee,
+    run: (m) => useStore.getState().act(orderProviderCable, rackA, jackA, rackB, jackB, m), blocked: providerCableError(game, rackA, jackA, rackB, jackB), note: "payI.cableLater",
+  };
+}
+
 export function ProviderJack({ game, device, port }: { game: GameState; device: Device; port: number }) {
   const act = useStore((s) => s.act);
   const role = jackRoles(game, device.id)[port];
@@ -36,6 +47,7 @@ export function ProviderJack({ game, device, port }: { game: GameState; device: 
   const other = panelOf(game, rack);
   const free = other ? jackRoles(game, other.id).flatMap((r, i) => (r === "free" ? [i] : [])) : [];
   const [jack, setJack] = useState<number | null>(null);
+  const [buy, setBuy] = useState<Purchase & { key: string } | null>(null);
   const to = jack !== null && free.includes(jack) ? jack : free[0];
   const queued = game.providerCables.filter((o) => o.a.device === device.id || o.b.device === device.id);
   const name = (e: { device: string; port: number }) => `${game.devices.find((d) => d.id === e.device)?.name ?? ""} ${e.port + 1}`;
@@ -57,12 +69,13 @@ export function ProviderJack({ game, device, port }: { game: GameState; device: 
               {free.map((i) => <button key={i} className="num" aria-pressed={i === to} onClick={() => setJack(i)}>{i + 1}</button>)}
             </div>
             <span className="grow" />
-            <button className="btn primary" disabled={to === undefined || game.cash < PROVIDER_CABLE.fee} onClick={() => act(orderProviderCable, device.rackId!, port, rack, to!)}>
+            <button className="btn primary" disabled={to === undefined} onClick={() => setBuy(cableOrder(game, device.rackId!, port, rack, to!))}>
             {t("locations-1.orderProviderCable", { fee: euro(PROVIDER_CABLE.fee), days: PROVIDER_CABLE.leadHours / 24 })}
             </button>
           </div>
         </div>
       )}
+      {buy && <PayStep key={buy.key} game={game} buy={buy} onClose={() => setBuy(null)} />}
       {queued.length > 0 && (
         <ul className="net-links">
           {queued.map((o) => (
