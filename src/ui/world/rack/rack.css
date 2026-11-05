@@ -296,3 +296,6 @@
 .wk-power[data-guide], .wk-port[data-guide], .wk-ic[data-guide] { outline: 3px solid oklch(0.75 0.19 60); outline-offset: 2px; }
 .wk-power[data-guide]::after, .wk-port[data-guide]::after, .wk-ic[data-guide]::after { content: ""; position: absolute; left: -2px; top: -2px; width: 8px; height: 8px; background: oklch(0.75 0.19 60); }
 .wr-out { position: absolute; right: 24px; bottom: 14px; font-size: 13px; color: oklch(0.88 0.01 255); }
+.wr-slip-pin { position: absolute; z-index: 8; left: 50%; top: 40%; width: 260px; transform: translateX(-50%) rotate(-1.5deg); box-shadow: 0 2px 0 oklch(0.2 0.01 255 / 0.4); }
+.wr-slip-pin .wk-slip { margin-top: 0; }
+.wr-slip-pin .wr-model { color: oklch(0.3 0.03 60); font-size: 13px; }

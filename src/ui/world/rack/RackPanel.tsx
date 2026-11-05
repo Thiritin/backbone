@@ -3,7 +3,7 @@ import { t } from "../../../i18n/en";
 import { modelById, modelName, wanPort } from "../../../sim/10-catalog/hardware";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { connectError, deviceHealth, heightIn, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
+import { booting, connectError, deviceHealth, halting, heightIn, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
 import { present } from "../../../sim/60-infra/handwork";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
@@ -15,7 +15,7 @@ import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
 import { devName, portLamps } from "../../apps/hw";
-import { panelPress } from "./panelPress";
+import { affected, panelPress } from "./panelPress";
 import { handsWays, useHandWork, wayLabel, type HandTask } from "../../apps/locations/HandSheet";
 import { PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
@@ -30,7 +30,7 @@ import { panelOf } from "../../../sim/60-infra/panels";
 import "../panel/panel.css";
 import "./rack.css";
 import { WorkTag } from "../figures";
-import { UnitTag } from "./UnitTag";
+import { Slip, UnitTag } from "./UnitTag";
 import { clampZoom, stepZoom, tagLeft, wheelZoom } from "./zoom";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
@@ -73,9 +73,16 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }], true);
   const work = useHandWork();
   const loc = game.locations.find((l) => l.id === rack?.locationId), offSite = !!loc?.dc && !present(game, loc.id);
+  const [ask, setAsk] = useState<{ id: string; op: PanelOp; count: number } | null>(null);
+  const run = (id: string, op: PanelOp) => {
+    const d = game.devices.find((x) => x.id === id), k = d && panelPress(game, act, d, op);
+    if (k) setOut(k);
+  };
+  // A press that takes customers offline waits for the slip.
   const press = (id: string, op: PanelOp) => {
-    const d = game.devices.find((x) => x.id === id), k = d && panelPress(act, d, op);
-    if (d && k) setOut(t(k, { name: devName(d) }));
+    const d = game.devices.find((x) => x.id === id), count = d ? affected(game, d, op) : 0;
+    if (d && count > 0 && !booting(game, d) && !halting(d)) setAsk({ id, op, count });
+    else run(id, op);
   };
   useEffect(() => { if (out) { const h = setTimeout(() => setOut(null), 4000); return () => clearTimeout(h); } }, [out]);
   const turn = (to: boolean) => {
@@ -289,6 +296,10 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
               {back && pp && <ProviderPanel game={game} panel={pp} picked={jack} hand={hand} onJack={(e) => (hand ? plug(e) : (pick(null), setJack(e.port)))} onConnect={(a, b) => { act(connect, a, b); }} />}
               <WorkTag game={game} rackId={rack.id} />
               <div className="wr-plate" data-plate=""><b>{rack.name}</b><span>{shelf ? `${used} / ${units}` : `${used} / ${units} U`}</span></div>
+              {ask && (() => { const d = game.devices.find((x) => x.id === ask.id); return d && (
+                <div className="wr-slip-pin"><Slip slip="customers" name={devName(d)} text={t("world.affected", { count: ask.count })} action={t(ask.op === "reset" ? "art.reset" : "art.shutDown")}
+                  onCancel={() => setAsk(null)} onStamp={() => { setAsk(null); run(ask.id, ask.op); }} /></div>
+              ); })()}
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
               <div className={`wr-face${turning !== null ? " in" : ""}`}>{face(back)}</div>
               <button className="wr-flank" aria-hidden="true" onClick={() => turn(!back)} tabIndex={-1} />

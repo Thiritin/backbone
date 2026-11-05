@@ -43,7 +43,7 @@ function iconFor(d: Device, game: Parameters<typeof handsLabel>[0], label: strin
 }
 
 // A paper slip with a stamp: what is being confirmed, a small cancel key bottom left and the stamp bottom right.
-function Slip({ name, text, action, onStamp, onCancel, slip }: { name: string; text?: string; action: string; onStamp: () => void; onCancel: () => void; slip: string }) {
+export function Slip({ name, text, action, onStamp, onCancel, slip }: { name: string; text?: string; action: string; onStamp: () => void; onCancel: () => void; slip: string }) {
   return (
     <div className="wk-slip" data-slip={slip}>
       <div className="wk-slip-name">{name}</div>

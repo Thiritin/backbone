@@ -56,4 +56,10 @@ export default {
   "world.out.starting": (p) => `${p.name} si avvia`,
   "world.out.off": (p) => `${p.name} spento`,
   "world.out.reboot": (p) => `${p.name} riavviato`,
+  "world.affected": (p) => `${p.count} ${p.count === 1 ? 'cliente coinvolto' : 'clienti coinvolti'}.`,
+  "world.out.customers": (p) => `${p.line}, ${p.count} ${p.count === 1 ? 'cliente coinvolto' : 'clienti coinvolti'}`,
+  "world.out.holdOff": () => `Tieni premuto per spegnere`,
+  "world.out.holdOn": () => `Tieni premuto per accendere`,
+  "world.out.stillStarting": (p) => `${p.name} si sta ancora avviando`,
+  "world.out.stillHalting": (p) => `${p.name} si sta ancora spegnendo`,
 } satisfies Dict;

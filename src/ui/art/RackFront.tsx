@@ -35,7 +35,7 @@ interface Props {
   onPlug?: (device: string, psu: number) => void;
   // A click on a server's console end on the back, where the monitor plugs in.
   onConsole?: (device: string) => void;
-  // A press on a control of the selected device's face; away is whether the player is not on site, which leaves them inert.
+  // A press on a control of a device's face; away is whether the player is not on site, which leaves them inert.
   onPanel?: (device: string, op: PanelOp) => void;
   away?: boolean;
   // A click on a server's front USB port, where the stick plugs in.
@@ -108,7 +108,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       setSlide({ id: it.id, from: it.slot, y0: e.clientY, to: it.slot, px: pitch * (e.currentTarget.ownerSVGElement?.getScreenCTM()?.d ?? 1) });
     },
   });
-  const panel = (it: RackItem) => ({ armed: it.id === selected, away, onPanel: onPanel && ((op: PanelOp) => onPanel(it.id, op)) });
+  const panel = (it: RackItem) => ({ away, onPanel: onPanel && ((op: PanelOp) => onPanel(it.id, op)) });
   const placed = new Map<string, { it: RackItem; y: number; h: number }>();
   const out: ReactNode[] = [];
   let y = 0;

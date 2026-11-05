@@ -282,7 +282,7 @@ export function Back(p: FrontProps) {
         ))}
         {(model.kind === "gateway" || model.kind === "jack") && <rect x={w - 20} y={h / 2 - 3} width="8" height="6" rx="1" fill="oklch(0.1 0.004 255)" />}
         {model.kind === "gateway" && (
-          <PanelButton x={w - 31} y={h / 2} r={Math.min(5, h * 0.3)} armed={p.armed} away={p.away} label={t("art.rocker")} onTap={p.onPanel && (() => p.onPanel!("switch"))}>
+          <PanelButton x={w - 31} y={h / 2} r={4} box={[w - 40, 0, 18, h]} away={p.away} label={t("art.rocker")} onTap={p.onPanel && (() => p.onPanel!("switch"))}>
             {(down) => <Rocker x={w - 34.5 + (down ? 0.5 : 0)} y={h / 2 - 3.5 + (down ? 0.5 : 0)} on={state !== "off"} down={down} />}
           </PanelButton>
         )}

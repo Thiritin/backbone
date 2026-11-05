@@ -5,7 +5,8 @@ import { t } from "../src/i18n/en";
 import { modelById } from "../src/sim/10-catalog/hardware";
 import { RackPanel } from "../src/ui/world/rack/RackPanel";
 import { useStore } from "../src/ui/store";
-import { newGame, withServer } from "./fixtures";
+import { customersOnDevice } from "../src/sim/60-infra/incidents";
+import { newGame, readyGame, withServer } from "./fixtures";
 
 const dev = () => useStore.getState().game.devices.find((d) => modelById(d.model).kind === "server")!;
 const router = () => useStore.getState().game.devices.find((d) => modelById(d.model).kind === "gateway")!;
@@ -13,44 +14,44 @@ const mount = (side?: "back") => {
   const r = render(<RackPanel rackId={dev().rackId!} onClose={() => {}} {...(side ? { port: { device: dev().id, port: 0 } } : {})} />);
   return r.container;
 };
-const front = (c: HTMLElement, id: string) => c.querySelector(`.wr-face:not(.out) .rack-dev[aria-label="${useStore.getState().game.devices.find((d) => d.id === id)!.name}"]`) as SVGGElement;
 const btn = (c: HTMLElement, label: string) => c.querySelector(`.wr-face:not(.out) [role=button][aria-label="${label}"]`) as SVGElement;
 const down = (el: Element) => fireEvent.pointerDown(el, { button: 0 });
 const up = (el: Element) => fireEvent.pointerUp(el, { button: 0 });
 const tap = (el: Element) => { down(el); up(el); fireEvent.click(el); };
-const select = (c: HTMLElement, id: string) => fireEvent.click(front(c, id));
 
 beforeEach(() => { vi.useFakeTimers(); useStore.setState({ game: withServer(newGame(1)) }); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe("rack front buttons", () => {
-  it("does nothing on a server that is not selected, the first click selects it", () => {
-    const c = mount(), d = dev(), on = d.on;
-    tap(btn(c, on ? t("art.shutDown") : t("art.powerOn")));
-    expect(dev().on).toBe(on);
-    expect(c.querySelector(".rack-dev[aria-pressed=true]")).not.toBeNull();
+  it("presses at once without selecting the device or opening its tag", () => {
+    const d = dev();
+    d.on = true; d.bootUntil = undefined; d.setup = false; useStore.setState({ game: { ...useStore.getState().game } });
+    const c = mount();
+    tap(btn(c, t("art.shutDown")));
+    expect(dev().haltUntil).toBeDefined();
+    expect(c.querySelector(".rack-dev[aria-pressed=true]")).toBeNull();
+    expect(c.querySelector(".wr-tag")).toBeNull();
   });
 
-  it("boots a selected server that is off and shuts it down cleanly when on", () => {
+  it("boots a server that is off and shuts it down cleanly when on", () => {
     const g = useStore.getState().game, d = dev();
     d.on = false; d.bootUntil = undefined; useStore.setState({ game: { ...g } });
     const c = mount();
-    select(c, d.id);
     tap(btn(c, t("art.powerOn")));
     expect(dev().on).toBe(true);
     expect(dev().bootUntil).toBeGreaterThan(0);
     expect(c.querySelector(".wr-out")?.textContent).toBe(t("world.out.starting", { name: dev().label ?? dev().name }));
-    // a second press while it boots is ignored by the unresponsive OS
+    // a second press while it boots only reports that it is still starting
     const before = dev().haltUntil;
     tap(btn(c, t("art.shutDown")));
     expect(dev().haltUntil).toBe(before);
+    expect(c.querySelector(".wr-out")?.textContent).toBe(t("world.out.stillStarting", { name: dev().label ?? dev().name }));
   });
 
   it("shuts a running server down on a press and cuts the power on a 2 s hold", () => {
     const g = useStore.getState().game, d = dev();
     d.on = true; d.bootUntil = undefined; d.setup = false; useStore.setState({ game: { ...g } });
     const c = mount();
-    select(c, d.id);
     tap(btn(c, t("art.shutDown")));
     expect(dev().haltUntil).toBeDefined();
     expect(c.querySelector(".wr-out")?.textContent).toBe(t("world.out.halting", { name: dev().label ?? dev().name }));
@@ -69,7 +70,6 @@ describe("rack front buttons", () => {
     const g = useStore.getState().game, d = dev();
     d.on = true; d.bootUntil = undefined; d.setup = false; useStore.setState({ game: { ...g } });
     const c = mount();
-    select(c, d.id);
     tap(btn(c, t("art.reset")));
     expect(dev().on).toBe(true);
     expect(dev().bootUntil).toBeGreaterThan(g.hour);
@@ -82,7 +82,6 @@ describe("rack front buttons", () => {
     g.player.doing = "travel"; g.player.until = g.hour + 5;
     useStore.setState({ game: { ...g } });
     const c = mount();
-    select(c, d.id);
     const b = btn(c, t("art.shutDown"));
     expect(b.querySelector("title")?.textContent).toBe(t("art.away"));
     tap(b);
@@ -94,8 +93,48 @@ describe("rack front buttons", () => {
     const g = useStore.getState().game, r = router();
     r.on = true; useStore.setState({ game: { ...g } });
     const c = mount("back");
-    select(c, r.id);
     tap(btn(c, t("art.rocker")));
     expect(router().on).toBe(false);
+  });
+
+  it("draws a filling ring while the power button is held", () => {
+    const d = dev();
+    d.on = true; d.bootUntil = undefined; d.setup = false; useStore.setState({ game: { ...useStore.getState().game } });
+    const c = mount(), b = btn(c, t("art.shutDown"));
+    down(b);
+    expect(c.querySelector(".wr-face:not(.out) animate")).not.toBeNull();
+    up(b);
+    expect(c.querySelector(".wr-face:not(.out) animate")).toBeNull();
+  });
+
+  describe("with customers on the server", () => {
+    const host = () => {
+      const g = readyGame(1), d = g.devices.find((x) => modelById(x.model).kind === "server")!;
+      d.on = true; d.bootUntil = undefined; d.setup = false;
+      useStore.setState({ game: g });
+      return mount();
+    };
+    const count = () => customersOnDevice(useStore.getState().game, dev().id).length;
+
+    it("asks first, stops nothing on cancel and names the customers after the stamp", () => {
+      const c = host(), n = count();
+      expect(n).toBeGreaterThan(0);
+      tap(btn(c, t("art.shutDown")));
+      expect(c.querySelector("[data-slip=customers]")?.textContent).toContain(t("world.affected", { count: count() }));
+      expect(dev().haltUntil).toBeUndefined();
+      fireEvent.click(c.querySelector("[data-slip-cancel]")!);
+      expect(c.querySelector("[data-slip=customers]")).toBeNull();
+      expect(dev().haltUntil).toBeUndefined();
+      tap(btn(c, t("art.shutDown")));
+      fireEvent.click(c.querySelector("[data-slip-stamp]")!);
+      expect(dev().haltUntil).toBeDefined();
+      expect(c.querySelector(".wr-out")?.textContent).toBe(t("world.out.customers", { line: t("world.out.halting", { name: dev().label ?? dev().name }), count: n }));
+    });
+
+    it("asks before a reset too", () => {
+      const c = host();
+      tap(btn(c, t("art.reset")));
+      expect(c.querySelector("[data-slip=customers]")).not.toBeNull();
+    });
   });
 });

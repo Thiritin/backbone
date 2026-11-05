@@ -69,6 +69,9 @@ function customersOf(s: GameState, workloads: Workload[]): Customer[] {
   return s.customers.filter((c) => ids.has(c.id) && c.churnedAt === null);
 }
 
+// The active customers whose services run on this device, directly or in a virtual machine.
+export const customersOnDevice = (s: GameState, deviceId: string): Customer[] => customersOf(s, s.workloads.filter((w) => onDevices(s, w, new Set([deviceId]))));
+
 function record(s: GameState, inc: Omit<Incident, "id">): Incident {
   const full = { id: `inc${s.nextId++}`, ...inc };
   s.ops = { ...s.ops, incidents: [...s.ops.incidents, full] };

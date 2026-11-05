@@ -56,4 +56,10 @@ export default {
   "world.out.starting": (p) => `${p.name} arranca`,
   "world.out.off": (p) => `${p.name} apagado`,
   "world.out.reboot": (p) => `${p.name} reiniciado`,
+  "world.affected": (p) => `${p.count} ${p.count === 1 ? 'cliente afectado' : 'clientes afectados'}.`,
+  "world.out.customers": (p) => `${p.line}, ${p.count} ${p.count === 1 ? 'cliente afectado' : 'clientes afectados'}`,
+  "world.out.holdOff": () => `Mantener para apagar`,
+  "world.out.holdOn": () => `Mantener para encender`,
+  "world.out.stillStarting": (p) => `${p.name} sigue arrancando`,
+  "world.out.stillHalting": (p) => `${p.name} sigue apagándose`,
 } satisfies Dict;

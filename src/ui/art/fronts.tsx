@@ -95,32 +95,36 @@ const bayLed = (p: FrontProps, i: number, idle: string) =>
   p.state === "off" || (p.parts && i >= p.parts.drives.length) ? { fill: LED.off } : partLed(p.parts?.drives[i], idle);
 
 // A failed part holds the fault light steady red.
-export type PanelOp = "power" | "hold" | "reset" | "switch";
+export type PanelOp = "power" | "hold" | "reset" | "switch" | "hint";
 
-// A control on a device face. The first click selects the device and the next ones press: a tap fires onTap, holding for
-// `hold` ms fires onHold. The children draw the button and get true while it is pressed.
-export function PanelButton({ x, y, r, armed, away, label, hold, onTap, onHold, children }: {
-  x: number; y: number; r: number; armed?: boolean; away?: boolean; label: string; hold?: number;
+// A control on a device face, pressed directly when the player is on site: a tap fires onTap, holding for `hold` ms
+// fires onHold behind a filling ring. The children draw the button and get true while it is pressed; box is the hit area.
+export function PanelButton({ x, y, r, box, away, label, hold, onTap, onHold, children }: {
+  x: number; y: number; r: number; box: [number, number, number, number]; away?: boolean; label: string; hold?: number;
   onTap?: () => void; onHold?: () => void; children: (down: boolean) => ReactNode;
 }) {
   const [down, setDown] = useState(false), timer = useRef<ReturnType<typeof setTimeout>>(undefined), live = useRef(false);
   const cancel = () => { clearTimeout(timer.current); live.current = false; setDown(false); };
-  const title = away ? t("art.away") : label;
+  const ring = r + 2.2, len = 2 * Math.PI * ring;
   return (
     <g>
       {children(down)}
-      <circle className="svg-hit" cx={x} cy={y} r={r} fill="transparent" role="button" tabIndex={0} aria-label={label} aria-disabled={away || undefined}
+      {down && hold && onHold && (
+        <circle cx={x} cy={y} r={ring} fill="none" stroke={LED.warn} strokeWidth="0.9" strokeDasharray={len} strokeDashoffset={len} transform={`rotate(-90 ${x} ${y})`} pointerEvents="none">
+          <animate attributeName="stroke-dashoffset" from={len} to="0" dur={`${hold}ms`} fill="freeze" />
+        </circle>
+      )}
+      <rect className="svg-hit" x={box[0]} y={box[1]} width={box[2]} height={box[3]} fill="transparent" role="button" tabIndex={0} aria-label={label} aria-disabled={away || undefined}
         onPointerDown={(e) => {
-          if (!armed) return;
-          e.stopPropagation();
           if (away) return;
+          e.stopPropagation();
           live.current = true; setDown(true);
           if (hold && onHold) timer.current = setTimeout(() => { cancel(); onHold(); }, hold);
         }}
         onPointerUp={() => { if (!live.current) return; cancel(); onTap?.(); }}
         onPointerLeave={cancel} onPointerCancel={cancel}
-        onClick={(e) => { if (armed) e.stopPropagation(); }}
-        onKeyDown={(e) => { if (armed && !away && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); (onTap ?? onHold)?.(); } }}><title>{title}</title></circle>
+        onClick={(e) => { if (!away) e.stopPropagation(); }}
+        onKeyDown={(e) => { if (!away && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); (onTap ?? onHold)?.(); } }}><title>{away ? t("art.away") : label}</title></rect>
     </g>
   );
 }
@@ -165,9 +169,8 @@ export interface FrontProps {
   fault?: boolean;
   // Booting or halting: the power light blinks amber.
   trans?: boolean;
-  // The face's controls. They only react while the device is selected (armed) and the player is on site.
+  // The face's controls, pressed directly; they are inert while the player is away.
   onPanel?: (op: PanelOp) => void;
-  armed?: boolean;
   away?: boolean;
   // The password printed on the sticker of a small-office router.
   note?: string;
@@ -193,7 +196,7 @@ const EAR: Record<string, string> = Object.fromEntries(Object.entries(STYLE).map
 function ServerFace(p: FrontProps) {
   const { w, h, state, name, model, brand, blink } = p, st = STYLE[brand] ?? STYLE.SuperMacro;
   const rows = Math.max(1, Math.min(2, model.height)), n = Math.max(2, Math.min(12, model.server ? bayCount(model.server) : 4)), per = Math.ceil(n / rows);
-  const panel = Math.max(44, h * 1.8), x0 = 14, x1 = w * 0.62, bw = Math.min((x1 - x0) / per, h / rows * 3.2), bh = (h - 4) / rows;
+  const panel = Math.max(70, h * 1.8), x0 = 14, x1 = w * 0.62, bw = Math.min((x1 - x0) / per, h / rows * 3.2), bh = (h - 4) / rows;
   const cx = w - 12 - panel;
   return (
     <>
@@ -213,14 +216,14 @@ function ServerFace(p: FrontProps) {
       <rect x={x0 + per * bw + 3} y="2.5" width={Math.max(0, cx - x0 - per * bw - 6)} height={h - 5} rx="1" fill={st.vent} opacity="0.8" />
       <rect x={cx} y="2" width={panel} height={h - 4} rx="1" fill="oklch(0.14 0.004 255)" />
       <AssetTag x={cx + 3} y={Math.min(h / 2, 7)} text={name} h={h} />
-      <PanelButton x={cx + panel - 8} y={h - 6} r={Math.min(5, h * 0.22)} armed={p.armed} away={p.away} label={state === "off" ? t("art.powerOn") : t("art.shutDown")} hold={2000}
+      <PanelButton x={cx + panel - 10} y={h - 6} r={Math.min(3, h * 0.14)} box={[cx + panel - 20, 0, 20, h]} away={p.away} label={state === "off" ? t("art.powerOn") : t("art.shutDown")} hold={2000}
         onTap={p.onPanel && (() => p.onPanel!("power"))} onHold={p.onPanel && (() => p.onPanel!("hold"))}>
-        {(down) => <circle cx={cx + panel - 8 + (down ? 0.5 : 0)} cy={h - 6 + (down ? 0.5 : 0)} r={Math.min(3, h * 0.14)} fill={down ? "oklch(0.12 0.004 255)" : "oklch(0.2 0.004 255)"} stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.9" />}
+        {(down) => <circle cx={cx + panel - 10 + (down ? 0.5 : 0)} cy={h - 6 + (down ? 0.5 : 0)} r={Math.min(3, h * 0.14)} fill={down ? "oklch(0.12 0.004 255)" : "oklch(0.2 0.004 255)"} stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.9" />}
       </PanelButton>
-      <PanelButton x={cx + panel - 14.5} y={h - 6} r={2.5} armed={p.armed} away={p.away} label={t("art.reset")} onTap={p.onPanel && (() => p.onPanel!("reset"))}>
-        {(down) => <circle cx={cx + panel - 14.5 + (down ? 0.5 : 0)} cy={h - 6 + (down ? 0.5 : 0)} r="1" fill={down ? "oklch(0.3 0.004 255)" : "oklch(0.05 0.004 255)"} stroke="oklch(0.34 0.005 255)" strokeWidth="0.5" />}
+      <PanelButton x={cx + panel - 32} y={h - 6} r={1} box={[cx + panel - 42, 0, 20, h]} away={p.away} label={t("art.reset")} onTap={p.onPanel && (() => p.onPanel!("reset"))}>
+        {(down) => <circle cx={cx + panel - 32 + (down ? 0.5 : 0)} cy={h - 6 + (down ? 0.5 : 0)} r="1" fill={down ? "oklch(0.3 0.004 255)" : "oklch(0.05 0.004 255)"} stroke="oklch(0.34 0.005 255)" strokeWidth="0.5" />}
       </PanelButton>
-      <StatusLeds x={cx + panel - 29} y={h - 6} state={state} blink={blink} fault={p.fault} trans={p.trans} />
+      <StatusLeds x={cx + panel - 52} y={h - 6} state={state} blink={blink} fault={p.fault} trans={p.trans} />
       {h >= 18 && <BrandMark brand={brand} x={cx + 4} y={h - 11} size={8} />}
       <UsbPort cx={cx - (h >= 28 ? 13 : 10)} cy={h - 6} h={h} stick={p.stick} onUsb={p.onUsb} />
     </>
@@ -489,7 +492,7 @@ function Patch({ w, h, name }: FrontProps) {
 }
 
 // A UPS: the name, a battery gauge and a green mains light.
-function Ups({ w, h, name, state, armed, away, onPanel }: FrontProps) {
+function Ups({ w, h, name, state, away, onPanel }: FrontProps) {
   const fs = fsz(Math.min(h, 24)) * 0.9;
   return (
     <>
@@ -497,7 +500,7 @@ function Ups({ w, h, name, state, armed, away, onPanel }: FrontProps) {
       <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} />
       {[0, 1, 2, 3].map((i) => <rect key={i} x={w * 0.62 + i * 7} y={h * 0.32} width={5} height={h * 0.36} rx={1} fill="oklch(0.72 0.17 145)" />)}
       <circle cx={w - 22} cy={h / 2} r={Math.min(3, h * 0.18)} fill={state === "off" ? LED.off : "oklch(0.78 0.18 145)"} />
-      <PanelButton x={w - 34} y={h / 2} r={Math.min(5, h * 0.25)} armed={armed} away={away} label={t("art.upsButton")} hold={1000} onHold={onPanel && (() => onPanel("switch"))}>
+      <PanelButton x={w - 34} y={h / 2} r={Math.min(3, h * 0.14)} box={[w - 44, 0, 20, h]} away={away} label={t("art.upsButton")} hold={1000} onTap={onPanel && (() => onPanel("hint"))} onHold={onPanel && (() => onPanel("switch"))}>
         {(down) => <circle cx={w - 34 + (down ? 0.5 : 0)} cy={h / 2 + (down ? 0.5 : 0)} r={Math.min(3, h * 0.14)} fill={down ? "oklch(0.12 0.004 255)" : "oklch(0.2 0.004 255)"} stroke="oklch(0.5 0.01 255)" strokeWidth="0.9" />}
       </PanelButton>
     </>

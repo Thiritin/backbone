@@ -57,4 +57,10 @@ export default {
   "world.out.starting": (p) => `${p.name} starts`,
   "world.out.off": (p) => `${p.name} is switched off`,
   "world.out.reboot": (p) => `${p.name} restarts`,
+  "world.affected": (p) => `${p.count} ${p.count === 1 ? 'customer is' : 'customers are'} affected.`,
+  "world.out.customers": (p) => `${p.line}, ${p.count} ${p.count === 1 ? 'customer' : 'customers'} affected`,
+  "world.out.holdOff": () => `Hold to switch off`,
+  "world.out.holdOn": () => `Hold to switch on`,
+  "world.out.stillStarting": (p) => `${p.name} is still starting`,
+  "world.out.stillHalting": (p) => `${p.name} is still shutting down`,
 } satisfies Dict;
