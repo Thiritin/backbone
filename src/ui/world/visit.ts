@@ -41,3 +41,13 @@ export function visitThen(locationId: string, to: Pt | null, label: string, run:
   if (!to || !present(useStore.getState().game, locationId)) return run();
   useVisit.getState().set({ pending: { locationId, to, label, run } });
 }
+
+// Real milliseconds the figure lingers at a visited object before it walks back to its seat.
+export const HOME_MS = 5000;
+
+// Sends the figure back to its seat along `path`; without a walk to make it just sits again.
+export function goHome(locationId: string, seat: Pt, path: Pt[]): void {
+  const { set } = useVisit.getState(), seconds = walkSeconds(path);
+  if (seconds === 0) return set({ at: null });
+  set({ walk: { locationId, to: seat, label: "", run: () => useVisit.getState().set({ at: null }), path, seconds } });
+}
