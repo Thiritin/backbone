@@ -5,6 +5,7 @@ import { invoice, supplierAccount, supplierCode, supplierIban, type SupplierId }
 import { groupIban, ibanEra } from "../46-finance/bank";
 import type { GameState, LedgerEntry } from "../50-state";
 import { officeOf } from "../60-infra/properties";
+import type { SimEvent } from "../88-tick/tick";
 import { t } from "../../i18n/en";
 
 export interface Letter {
@@ -79,11 +80,14 @@ export const postLocation = (s: GameState, l?: Letter): string => {
 export const boxAt = (s: GameState, locationId: string): Letter[] => inLetterbox(s).filter((l) => l.box === locationId);
 
 // Delivers the letters due this hour; the first one puts the Post app on the dock.
-export function lettersTick(s: GameState): void {
+// One event per letterbox that received post this hour.
+export function lettersTick(s: GameState): SimEvent[] {
+  const got = new Map<string, number>();
   for (const l of s.letters) {
     if (l.arrived || l.at > s.hour) continue;
     l.arrived = true;
     l.box = postLocation(s, l);
+    got.set(l.box, (got.get(l.box) ?? 0) + 1);
     if (l.bill) {
       const p = invoice(s, l.bill.supplier, l.from, l.bill.lines, l.bill.days, true);
       l.payable = p.id;
@@ -92,4 +96,5 @@ export function lettersTick(s: GameState): void {
     if (l.form && s.registration) s.registration = { ...s.registration, form: l.form };
     if (!s.installed.includes(POST_APP)) s.installed = [...s.installed, POST_APP];
   }
+  return [...got].map(([id, n]) => ({ app: POST_APP, key: "event.post", params: { n, location: s.locations.find((x) => x.id === id)?.name ?? "", locationId: id } }));
 }

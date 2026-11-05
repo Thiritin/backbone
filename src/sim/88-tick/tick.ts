@@ -475,7 +475,7 @@ export function tick(state: GameState): SimEvent[] {
   deliverPaidOrders(state);
   paperworkTick(state);
   taxTick(state);
-  lettersTick(state);
+  events.push(...lettersTick(state));
   events.push(...payablesTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));
