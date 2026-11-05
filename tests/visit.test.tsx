@@ -40,4 +40,18 @@ describe("figure returns home while the clock ticks", () => {
     expect(home).toHaveBeenCalledTimes(1);
     view.unmount();
   });
+  it("holds while a work order runs and walks home once it completes", () => {
+    const home = vi.fn(), view = render(<Room tick={0} blocked home={home} />);
+    act(() => { vi.advanceTimersByTime(HOME_MS * 3); });
+    expect(home).not.toHaveBeenCalled();
+    view.rerender(<Room tick={1} blocked={false} home={home} />);
+    act(() => { vi.advanceTimersByTime(HOME_MS + 1); });
+    expect(home).toHaveBeenCalledTimes(1);
+  });
+  it("stands up where it is when the room has no seat", () => {
+    const view = render(<Room tick={0} blocked={false} home={() => useVisit.getState().set({ at: null })} />);
+    act(() => { vi.advanceTimersByTime(HOME_MS + 1); });
+    expect(useVisit.getState().at).toBeNull();
+    view.unmount();
+  });
 });
