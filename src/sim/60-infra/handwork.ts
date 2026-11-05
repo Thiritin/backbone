@@ -1,4 +1,5 @@
 // Who does the hand work at a datacenter: the provider's remote hands, the player, a friend, or a technician (docs/design/economy/hardware-power-and-failures.md, Hardware, power and failures).
+import { billDue } from "../46-finance/payables";
 import { rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { COUNTRY, datacenterById } from "../20-world/datacenters";
@@ -65,8 +66,7 @@ export function handJob(s: GameState, device: string, loc: Location | undefined,
   const w = h === "tech" || !loc ? null : handWork(s, loc.id);
   if (!w) return { cost: 0, wait: work, commit: () => work };
   const book = (key: string, amount: number, params: Record<string, string | number>) => {
-    s.cash = Math.round((s.cash - amount) * 100) / 100;
-    s.ledger.push({ hour: s.hour, category: "maintenance", key, params, amount: -amount });
+    billDue(s, "contractor", loc!.dc ?? loc!.name, [{ hour: s.hour, category: "maintenance", key, params, amount: -amount }]);
   };
   if (h === "hands") {
     const bill = billHours * w.hands.perHour, wait = w.hands.wait + work;
@@ -81,11 +81,14 @@ export function handJob(s: GameState, device: string, loc: Location | undefined,
   const o = w.friend;
   if (!o) return { error: "error.tooFar" };
   if (o.left < 1) return { error: "error.noFavours" };
+  if (s.cash < o.fee) return { error: "error.noCash" };
   const wait = o.wait + work;
   return { cost: o.fee, wait, commit: () => {
     const year = yearOf(s.hour);
     s.friendFavours = { year, used: (s.friendFavours.year === year ? s.friendFavours.used : 0) + 1 };
-    book("ledger.friend", o.fee, { device });
+    // A friend takes the fee in cash and sends no document.
+    s.cash = Math.round((s.cash - o.fee) * 100) / 100;
+    s.ledger.push({ hour: s.hour, category: "maintenance", key: "ledger.friend", params: { device }, amount: -o.fee });
     return wait + (rand(s.rng) < MISHAP_CHANCE ? work : 0);
   } };
 }

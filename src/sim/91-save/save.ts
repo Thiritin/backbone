@@ -5,6 +5,7 @@ import { fillShopWebspace } from "../90-actions/shop-setup";
 import { fillDeskWebspace } from "../90-actions/desk-setup";
 import { fillMail } from "./mail";
 import { fillPearMail } from "./pear-mail";
+import { provisionStarterMail } from "../43-pear-mail/setup";
 import { migrateBooks } from "./books";
 import { fillShop, installSavedShop, ownShopWebspace } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
@@ -323,6 +324,7 @@ export function deserialize(raw: string): GameState {
   if (!data.ownWebspaces) ownShopWebspace(s);
   if (data.shop?.install && !data.shop.install.ws) fillShopWebspace(s);
   fillPearMail(s, data.pearMail);
+  if (s.registration) provisionStarterMail(s);
   fillDesk(s, data.desk !== undefined);
   fillDeskWebspace(s);
   s.webmail = { ...base.webmail, ...data.webmail };

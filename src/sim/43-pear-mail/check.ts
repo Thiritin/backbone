@@ -47,6 +47,7 @@ export function clientError(s: GameState, c: ClientAccount, gapMin?: number): st
   const a = s.mail.accounts.find((x) => x.id === c.accountId);
   if (!a || (owner && tenantOf(s, a)?.host !== owner)) return "error.mailNoBox";
   const st = serverStatus(s, a.id, c.protocol, c.password, gapMin);
+  if (st === "external" && capsOf(s, a)[c.protocol] && tenantOf(s, a)?.host === "gmix") return "error.mailExternalOff";
   return st === "external" && !capsOf(s, a)[c.protocol] ? "error.mailProtocol" : ERRORS[st];
 }
 
