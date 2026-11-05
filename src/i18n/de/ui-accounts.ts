@@ -8,7 +8,7 @@ export default {
   "ledger.dcPower": (p) => `Strom nach Verbrauch ${p.location}: ${kwh(p)} kWh zu ${ct(p)} ct/kWh`,
   "ticket.mail.cardPaid.subject": (p) => `Rechnung ${p.number}`,
   "ticket.mail.cardPaid.text": (p) => `Anbei erhalten Sie unsere Rechnung ${p.number} über ${euroCents(Number(p.amount))}. Wir haben den Betrag Ihrer Kreditkarte belastet.`,
-  "error.payMethod": () => 'Wählen Sie Überweisung, Kreditkarte oder Lastschrift.',
+  "error.payMethod": () => 'Wähle Überweisung, Kreditkarte oder Lastschrift.',
   "error.debitAbroad": () => 'Lastschrift ist nur bei deutschen Lieferanten möglich.',
   "error.payNoCard": () => 'Das Konto hat keine Kreditkarte.',
   "accounts.myAccount": () => 'Mein Konto',

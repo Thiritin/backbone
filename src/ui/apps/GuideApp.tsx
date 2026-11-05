@@ -44,7 +44,7 @@ export function GuideApp() {
   const parts = shown.goals.filter((g) => checkDone(game, g)).length;
   return (
     <article className="guide next">
-      <div className="next-head"><h2>{title}</h2><span className="next-count">{finished}/{cards.length}</span></div>
+      <div className="next-head"><h2>{title}</h2><span className="next-count">{t("guide.next.step", { n: cards.indexOf(shown) + 1, total: cards.length })}</span></div>
       <div className="next-bar" role="progressbar" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={finished}><i style={{ width: `${(finished / cards.length) * 100}%` }} /></div>
       <p>{text}</p>
       <div className="next-actions">

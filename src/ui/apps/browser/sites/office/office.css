@@ -38,6 +38,7 @@
 .to input:not([type]), .to select {
   font: 11px Verdana, Geneva, sans-serif; width: 240px; padding: 1px 2px; border: 2px inset #d4d0c8; background: #fff; color: #000; border-radius: 0;
 }
+.to select { width: auto; min-width: 240px; max-width: 100%; }
 .to-check { display: block; margin: 4px 0; }
 .to-req { font-size: 10px; }
 .to-error { color: #d40000; font-weight: bold; margin-left: 6px; }
