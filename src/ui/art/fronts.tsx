@@ -1,6 +1,6 @@
 // Code-drawn device fronts, ported from docs/design/mockups/shell.js. Sizes are px; u is one rack unit.
 import { t } from "../../i18n/en";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { bayCount, isOobPort, jacksOf, modelById as nodeModel, oobPortOf, type DeviceModel, type PortSpec } from "../../sim/10-catalog/hardware";
 import { isMgmtModel, MgmtFront, oobLabel } from "./mgmt";
 import { Back, Cord, portSpots, psuInlets, SwitchRear } from "./backs";
@@ -95,11 +95,42 @@ const bayLed = (p: FrontProps, i: number, idle: string) =>
   p.state === "off" || (p.parts && i >= p.parts.drives.length) ? { fill: LED.off } : partLed(p.parts?.drives[i], idle);
 
 // A failed part holds the fault light steady red.
-function StatusLeds({ x, y, state, blink, fault }: { x: number; y: number; state: Lamp; blink?: boolean; fault?: boolean }) {
+export type PanelOp = "power" | "hold" | "reset" | "switch";
+
+// A control on a device face. The first click selects the device and the next ones press: a tap fires onTap, holding for
+// `hold` ms fires onHold. The children draw the button and get true while it is pressed.
+export function PanelButton({ x, y, r, armed, away, label, hold, onTap, onHold, children }: {
+  x: number; y: number; r: number; armed?: boolean; away?: boolean; label: string; hold?: number;
+  onTap?: () => void; onHold?: () => void; children: (down: boolean) => ReactNode;
+}) {
+  const [down, setDown] = useState(false), timer = useRef<ReturnType<typeof setTimeout>>(undefined), live = useRef(false);
+  const cancel = () => { clearTimeout(timer.current); live.current = false; setDown(false); };
+  const title = away ? t("art.away") : label;
+  return (
+    <g>
+      {children(down)}
+      <circle className="svg-hit" cx={x} cy={y} r={r} fill="transparent" role="button" tabIndex={0} aria-label={label} aria-disabled={away || undefined}
+        onPointerDown={(e) => {
+          if (!armed) return;
+          e.stopPropagation();
+          if (away) return;
+          live.current = true; setDown(true);
+          if (hold && onHold) timer.current = setTimeout(() => { cancel(); onHold(); }, hold);
+        }}
+        onPointerUp={() => { if (!live.current) return; cancel(); onTap?.(); }}
+        onPointerLeave={cancel} onPointerCancel={cancel}
+        onClick={(e) => { if (armed) e.stopPropagation(); }}
+        onKeyDown={(e) => { if (armed && !away && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); (onTap ?? onHold)?.(); } }}><title>{title}</title></circle>
+    </g>
+  );
+}
+
+// The first light is the fault light, the second the power light: green when on, amber and blinking while booting or halting.
+function StatusLeds({ x, y, state, blink, fault, trans }: { x: number; y: number; state: Lamp; blink?: boolean; fault?: boolean; trans?: boolean }) {
   return (
     <>
       <circle cx={x} cy={y} r="1.8" fill={LED[fault ? "bad" : state]} className={blink && !fault ? "led-blink" : undefined} data-fault={fault ? "" : undefined} />
-      <circle cx={x + 7} cy={y} r="1.8" fill={state === "off" ? LED.off : LED.ok} />
+      <circle cx={x + 7} cy={y} r="1.8" fill={state === "off" ? LED.off : trans ? LED.warn : LED.ok} className={trans ? "led-blink" : undefined} data-power={state === "off" ? "off" : trans ? "trans" : "on"} />
     </>
   );
 }
@@ -132,7 +163,12 @@ export interface FrontProps {
   blink?: boolean;
   // A part has failed: the fault light is red.
   fault?: boolean;
-  onPower?: () => void;
+  // Booting or halting: the power light blinks amber.
+  trans?: boolean;
+  // The face's controls. They only react while the device is selected (armed) and the player is on site.
+  onPanel?: (op: PanelOp) => void;
+  armed?: boolean;
+  away?: boolean;
   // The password printed on the sticker of a small-office router.
   note?: string;
   // The USB stick is in this server; onUsb plugs it in or pulls it.
@@ -177,12 +213,14 @@ function ServerFace(p: FrontProps) {
       <rect x={x0 + per * bw + 3} y="2.5" width={Math.max(0, cx - x0 - per * bw - 6)} height={h - 5} rx="1" fill={st.vent} opacity="0.8" />
       <rect x={cx} y="2" width={panel} height={h - 4} rx="1" fill="oklch(0.14 0.004 255)" />
       <AssetTag x={cx + 3} y={Math.min(h / 2, 7)} text={name} h={h} />
-      <circle cx={cx + panel - 8} cy={h - 6} r={Math.min(3, h * 0.14)} fill="oklch(0.2 0.004 255)" stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.9" aria-label={t("art.powerButton")} />
-      {p.onPower && (
-        <circle className="svg-hit" cx={cx + panel - 8} cy={h - 6} r={Math.min(8, h * 0.3)} fill="transparent" role="button" tabIndex={0} aria-label={state === "off" ? t("art.powerOn") : t("art.shutDown")}
-          onClick={p.onPower} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); p.onPower!(); } }}><title>{state === "off" ? t("art.powerOn") : t("art.shutDown")}</title></circle>
-      )}
-      <StatusLeds x={cx + panel - 26} y={h - 6} state={state} blink={blink} fault={p.fault} />
+      <PanelButton x={cx + panel - 8} y={h - 6} r={Math.min(5, h * 0.22)} armed={p.armed} away={p.away} label={state === "off" ? t("art.powerOn") : t("art.shutDown")} hold={2000}
+        onTap={p.onPanel && (() => p.onPanel!("power"))} onHold={p.onPanel && (() => p.onPanel!("hold"))}>
+        {(down) => <circle cx={cx + panel - 8 + (down ? 0.5 : 0)} cy={h - 6 + (down ? 0.5 : 0)} r={Math.min(3, h * 0.14)} fill={down ? "oklch(0.12 0.004 255)" : "oklch(0.2 0.004 255)"} stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.9" />}
+      </PanelButton>
+      <PanelButton x={cx + panel - 14.5} y={h - 6} r={2.5} armed={p.armed} away={p.away} label={t("art.reset")} onTap={p.onPanel && (() => p.onPanel!("reset"))}>
+        {(down) => <circle cx={cx + panel - 14.5 + (down ? 0.5 : 0)} cy={h - 6 + (down ? 0.5 : 0)} r="1" fill={down ? "oklch(0.3 0.004 255)" : "oklch(0.05 0.004 255)"} stroke="oklch(0.34 0.005 255)" strokeWidth="0.5" />}
+      </PanelButton>
+      <StatusLeds x={cx + panel - 29} y={h - 6} state={state} blink={blink} fault={p.fault} trans={p.trans} />
       {h >= 18 && <BrandMark brand={brand} x={cx + 4} y={h - 11} size={8} />}
       <UsbPort cx={cx - (h >= 28 ? 13 : 10)} cy={h - 6} h={h} stick={p.stick} onUsb={p.onUsb} />
     </>
@@ -451,14 +489,17 @@ function Patch({ w, h, name }: FrontProps) {
 }
 
 // A UPS: the name, a battery gauge and a green mains light.
-function Ups({ w, h, name }: FrontProps) {
+function Ups({ w, h, name, state, armed, away, onPanel }: FrontProps) {
   const fs = fsz(Math.min(h, 24)) * 0.9;
   return (
     <>
       <Ears w={w} h={h} fill="oklch(0.24 0.005 255)" />
       <Label x={10} y={h / 2 + fs * 0.35} text={name} size={fs} />
       {[0, 1, 2, 3].map((i) => <rect key={i} x={w * 0.62 + i * 7} y={h * 0.32} width={5} height={h * 0.36} rx={1} fill="oklch(0.72 0.17 145)" />)}
-      <circle cx={w - 22} cy={h / 2} r={Math.min(3, h * 0.18)} fill="oklch(0.78 0.18 145)" />
+      <circle cx={w - 22} cy={h / 2} r={Math.min(3, h * 0.18)} fill={state === "off" ? LED.off : "oklch(0.78 0.18 145)"} />
+      <PanelButton x={w - 34} y={h / 2} r={Math.min(5, h * 0.25)} armed={armed} away={away} label={t("art.upsButton")} hold={1000} onHold={onPanel && (() => onPanel("switch"))}>
+        {(down) => <circle cx={w - 34 + (down ? 0.5 : 0)} cy={h / 2 + (down ? 0.5 : 0)} r={Math.min(3, h * 0.14)} fill={down ? "oklch(0.12 0.004 255)" : "oklch(0.2 0.004 255)"} stroke="oklch(0.5 0.01 255)" strokeWidth="0.9" />}
+      </PanelButton>
     </>
   );
 }

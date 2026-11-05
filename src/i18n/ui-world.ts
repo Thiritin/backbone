@@ -53,4 +53,8 @@ export default {
   "world.obj.board": () => "Corkboard",
   "world.board.walk": (p) => `Walk to: ${p.place}`,
   "world.board.sit": (p) => `At the computer: ${p.app}`,
+  "world.out.halting": (p) => `${p.name} shuts down`,
+  "world.out.starting": (p) => `${p.name} starts`,
+  "world.out.off": (p) => `${p.name} is switched off`,
+  "world.out.reboot": (p) => `${p.name} restarts`,
 } satisfies Dict;

@@ -52,4 +52,8 @@ export default {
   "world.obj.board": () => "Tableau en liège",
   "world.board.walk": (p) => `Aller à : ${p.place}`,
   "world.board.sit": (p) => `À l'ordinateur : ${p.app}`,
+  "world.out.halting": (p) => `${p.name} s'éteint`,
+  "world.out.starting": (p) => `${p.name} démarre`,
+  "world.out.off": (p) => `${p.name} éteint`,
+  "world.out.reboot": (p) => `${p.name} redémarré`,
 } satisfies Dict;

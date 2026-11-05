@@ -52,4 +52,8 @@ export default {
   "world.obj.board": () => "Quadro de cortiça",
   "world.board.walk": (p) => `Ir a: ${p.place}`,
   "world.board.sit": (p) => `No computador: ${p.app}`,
+  "world.out.halting": (p) => `${p.name} desliga`,
+  "world.out.starting": (p) => `${p.name} inicia`,
+  "world.out.off": (p) => `${p.name} desligado`,
+  "world.out.reboot": (p) => `${p.name} reiniciado`,
 } satisfies Dict;

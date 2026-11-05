@@ -52,4 +52,8 @@ export default {
   "world.obj.board": () => "Bacheca",
   "world.board.walk": (p) => `Vai a: ${p.place}`,
   "world.board.sit": (p) => `Al computer: ${p.app}`,
+  "world.out.halting": (p) => `${p.name} si spegne`,
+  "world.out.starting": (p) => `${p.name} si avvia`,
+  "world.out.off": (p) => `${p.name} spento`,
+  "world.out.reboot": (p) => `${p.name} riavviato`,
 } satisfies Dict;

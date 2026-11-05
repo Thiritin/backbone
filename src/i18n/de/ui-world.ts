@@ -52,4 +52,8 @@ export default {
   "world.obj.board": () => "Pinnwand",
   "world.board.walk": (p) => `Hingehen: ${p.place}`,
   "world.board.sit": (p) => `Am Computer: ${p.app}`,
+  "world.out.halting": (p) => `${p.name} fährt herunter`,
+  "world.out.starting": (p) => `${p.name} startet`,
+  "world.out.off": (p) => `${p.name} ausgeschaltet`,
+  "world.out.reboot": (p) => `${p.name} neu gestartet`,
 } satisfies Dict;

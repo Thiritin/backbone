@@ -57,8 +57,10 @@ function Slip({ name, text, action, onStamp, onCancel, slip }: { name: string; t
 }
 
 // A server's unit tag: a small paper tag with its name and model, a drawn power key with console and port connectors, and a grid of pictogram keys for the other actions.
-export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, onCart, onSold }: {
+export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, onCart, onSold, onPanel }: {
   deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; menus: Menus; back: boolean; onPorts?: () => void; onCart?: () => void; onSold: () => void;
+  // The same hardware press as the buttons on the front; given when the player is on site.
+  onPanel?: (op: "power") => void;
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const d = game.devices.find((x) => x.id === deviceId)!;
@@ -97,6 +99,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
   ];
 
   const onKey = () => {
+    if (rackServer && onPanel) { if (!d.on || armed) { setArmed(false); onPanel("power"); } else setArmed(true); return; }
     if (!d.on) { if (!rackServer) menus.power(d, true); else if (options.some((o) => o.op === "on")) menus.op(d, "on"); else menus.front(d, "power"); return; }
     if (!armed) { setArmed(true); return; }
     setArmed(false);

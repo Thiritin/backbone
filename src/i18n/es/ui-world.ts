@@ -52,4 +52,8 @@ export default {
   "world.obj.board": () => "Tablón de corcho",
   "world.board.walk": (p) => `Ir a: ${p.place}`,
   "world.board.sit": (p) => `En el ordenador: ${p.app}`,
+  "world.out.halting": (p) => `${p.name} se apaga`,
+  "world.out.starting": (p) => `${p.name} arranca`,
+  "world.out.off": (p) => `${p.name} apagado`,
+  "world.out.reboot": (p) => `${p.name} reiniciado`,
 } satisfies Dict;
