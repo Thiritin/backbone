@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Every purchase screen now asks how you want to pay, starts on a method you can use, and links to the invoice or receipt once the order is placed.
 - The registrar page now shows which name servers a domain uses, the registrar's or your own, with a status that reads Active, Propagating or Not responding; your own name servers only answer while you run a DNS server.
 - Used hardware, hall fittings, remote hands, training, market studies, certificates and monthly network charges now come with a receipt or an invoice, and a company with a bank account no longer needs cash on hand to order them.
 - Your GMix mailbox is set up for you when you register your company, so Pear Mail fetches your mail right away and the GMix site opens your inbox without a password reset.
