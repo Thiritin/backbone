@@ -233,6 +233,8 @@ function loadWallpaper(): WallpaperPref {
 // Fraction of the current game hour that has run; outside the store so the clock can read it every frame without re-renders.
 export const clockCarry = { current: 0 };
 
+// The game object the last clock tick produced; views that only need a coarse clock skip updates that are just this.
+export let tickGame: object | null = null;
 export const useStore = create<Store>((set, get) => ({
   game: initial.game,
   speed: restoredSpeed,
@@ -305,6 +307,7 @@ export const useStore = create<Store>((set, get) => ({
       }
       if (game.gameOver !== null || alert || (skip && happened)) break;
     }
+    tickGame = game;
     if (game.gameOver !== null) set({ game, speed: 0 });
     else if (alert) set(({ speed, alert: open, resume, alertQueue }) => ({ game, alert: open ?? alert, alertQueue: open ? [...alertQueue, alert!] : alertQueue, speed: 0, resume: open ? resume : speed === SKIP ? 1 : speed }));
     else if (skip && happened) set({ game, speed: 1 });
