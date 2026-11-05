@@ -46,23 +46,29 @@ const items = (year: number, month: number): Item[] => [
 ];
 const itemKey = (it: Item) => `${it.model.id}|${it.brand}|${it.part?.size ?? ""}|${it.part?.ff ?? ""}|${it.part?.vendor ?? ""}|${it.part?.gen ?? ""}|${it.part?.sku ?? ""}`;
 
+// Class ids the guide passes as focus, mapped to the sidebar class.
+const CLASS_FOCUS: Record<string, string> = { server: "Servers" };
+
 export function ShopApp() {
   const game = useStore((s) => s.game), hour = game.hour, openApp = useStore((s) => s.openApp);
   const [maker, setMaker] = useSessionState<string | null>("shop.maker", null);
   const [cls, setCls] = useSessionState<string | null>("shop.cls", null);
-  useFocus("Shop", (f) => { if (f.kind === "software") { setMaker(null); setCls("Software"); } });
+  const [sort, setSort] = useSessionState<Sort>("shop.sort", "default");
+  const [filter, setFilter, clearFilter] = useFilter();
+  const [detail, setDetail] = useSessionState<string | null>("shop.detail", null);
+  useFocus("Shop", (f) => {
+    if (f.kind === "software") { setMaker(null); setCls("Software"); }
+    if (f.kind === "class") { setMaker(null); setCls(CLASS_FOCUS[f.id] ?? null); setSort("priceLow"); clearFilter(); setDetail(null); setView("list"); }
+  });
   const all = items(yearOf(hour), monthIndexOf(hour));
   const software = cls === "Software";
   const rows = all;
   const keep = (r: { make: string | null; cls: string }) => (!maker || r.make === maker) && inClass(cls, r.cls);
   const count = (f: (r: { make: string | null; cls: string }) => boolean) => rows.filter(f).length;
-  const [filter, setFilter, clearFilter] = useFilter();
-  const [sort, setSort] = useSessionState<Sort>("shop.sort", "default");
   const scoped = all.filter(keep);
   const shown = sortItems(scoped.filter((it) => matchesFilter(it.model, filter, it.part)), sort, yearOf(hour));
   const [cartOpen, setCartOpen] = useState(false);
   const inCart = useStore((st) => st.cart.reduce((n, l) => n + l.qty, 0));
-  const [detail, setDetail] = useSessionState<string | null>("shop.detail", null);
   useEffect(() => setDetail(null), [maker, cls]);
   const opened_ = detail ? all.find((it) => itemKey(it) === detail) : undefined;
   const [view, setView] = useSessionState<"grid" | "list">("shop.view", "grid");
@@ -121,6 +127,7 @@ export function ShopApp() {
           <button className="btn ghost" aria-pressed={cartOpen} onClick={() => setCartOpen(!cartOpen)}><ShoppingCart />{t("shop.cart")}<span key={inCart} className="num shop-count" data-full={inCart > 0 || undefined}>{inCart}</span></button>
         </div>
         {!software && !opened_ && <ShopFilter items={scoped} filter={filter} set={setFilter} clear={clearFilter} sort={sort} setSort={setSort} />}
+        {cls && !software && !opened_ && <h2 className="shop-class-h">{classLabel(cls)}</h2>}
         <div className="shop-body">
           {software ? <Software /> : opened_ ? <Details {...opened_} maker={filter.vendor} onBack={() => setDetail(null)} /> : view === "list" ? (
             <div className="shop-list">

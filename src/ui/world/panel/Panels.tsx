@@ -11,6 +11,7 @@ import { Isometric } from "../../art/Isometric";
 import { devName } from "../../apps/hw";
 import { locationPower } from "../../apps/locations/ui";
 import { Letter } from "../../apps/PostApp";
+import { payUrl } from "../../apps/books/PayablesTab";
 import { useStore } from "../../store";
 import { cartTarget, usePlug } from "../rack/cartPlug";
 import { CrashCart } from "../rack/CrashCart";
@@ -54,11 +55,12 @@ export function StoragePanel({ loc, onClose }: Props) {
 
 // Fetched letters as paper: the current sheet in the middle, the sheets still to read stacked right, the ones gone through stacked left.
 export function PostPanel({ title, onClose }: { title: string; onClose: () => void }) {
-  const game = useStore((s) => s.game), act = useStore((s) => s.act);
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   // The post just fetched, oldest first so the first letter lies on top; letters read on an earlier visit are gone.
   const [mine] = useState(() => new Set(atDesk(game).filter((x) => !x.read).map((x) => x.id)));
   const letters = atDesk(game).filter((x) => mine.has(x.id));
-  const [i, setI] = useState(0);
+  // The stack opens at the first unpaid bill, so a card that sent the player here lands on it.
+  const [i, setI] = useState(() => Math.max(0, letters.findIndex((x) => game.payables.some((p) => p.id === x.payable && p.paidAt === null))));
   const at = Math.min(i, letters.length - 1), l = letters[at];
   const go = (to: number) => setI(Math.max(0, Math.min(letters.length - 1, to)));
   useEffect(() => { if (l && !l.read) act(readLetter, l.id); }, [l?.id]);
@@ -68,6 +70,8 @@ export function PostPanel({ title, onClose }: { title: string; onClose: () => vo
     return () => window.removeEventListener("keydown", key);
   }, [letters.length]);
   const open = letters.filter((x) => !x.scanned);
+  // A bill's Bezahlen opens the prefilled transfer at once.
+  const bill = l?.payable ? game.payables.find((p) => p.id === l.payable) : undefined, payable = !!bill && bill.paidAt === null && !!game.bank;
   const stack = (n: number, side: "prev" | "next") => n > 0 && (
     <button className={`wp-stack ${side}`} aria-label={t(side === "next" ? "world.nextLetter" : "world.prevLetter")} onClick={() => go(at + (side === "next" ? 1 : -1))}>
       {Array.from({ length: Math.min(n, STACK_MAX) }, (_, k) => <i key={k} style={{ ["--k" as string]: k }} />)}
@@ -84,6 +88,7 @@ export function PostPanel({ title, onClose }: { title: string; onClose: () => vo
               {l.scanned
                 ? <span className="wp-stamp">{t("paperwork.post.scanned")}</span>
                 : <button className="wp-corner" onClick={() => act(scanLetter, l.id)}>{t("paperwork.post.scan")}</button>}
+              {payable && <button className="wp-corner wp-pay" onClick={() => { onClose(); openApp("Browser", { kind: "url", id: payUrl(game, bill!) }); }}>{t("bank.pay.pay")}</button>}
             </div>
           )}
           <div className="wp-side">{stack(letters.length - at - 1, "next")}</div>

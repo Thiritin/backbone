@@ -27,7 +27,7 @@ import { LOOKOUT_SITE } from "../10-catalog/mail-hosted";
 import { MAIL_HOSTS } from "../10-catalog/mail-providers";
 import { FLYER_HOST, FLYER_NAME } from "../10-catalog/flyers";
 
-export interface IndexRow { title: string; url: string; desc: string; down: boolean }
+export interface IndexRow { title: string; url: string; desc: string; down: boolean; pick?: boolean }
 export interface Category { title: string; rows: IndexRow[] }
 
 const SOFTWARE_CATEGORIES: [string, string[]][] = [
@@ -58,6 +58,8 @@ function consoleRows(s: GameState): [string, IndexRow][] {
 
 export function siteIndex(s: GameState): Category[] {
   const year = yearOf(s.hour);
+  // The directory recommends the vendor with the lowest entry price, the one the guide card sends the player to.
+  const cheapest = [...vendorsIn(year)].sort((a, b) => Math.min(...a.editions.map((e) => e.price)) - Math.min(...b.editions.map((e) => e.price)))[0]?.id;
   const software = SOFTWARE_CATEGORIES.map(([title, ids]): Category => ({
     title: t(`sim.index.cat.${title}`),
     rows: ids.flatMap((id) => SOFTWARE.filter((x) => x.id === id && x.from <= year)).map((x) => row(x.name, `${displayHost(x.site.host)}/`, x.site.tagline)),
@@ -71,7 +73,7 @@ export function siteIndex(s: GameState): Category[] {
     { title: t("sim.index.cat.shops"), rows: SHOPS.filter((v) => v.from <= year).map((v) => row(v.name, shopVendorUrl(v.id), t("sim.index.shop"))) },
     { title: t("sim.index.cat.resellers"), rows: REGISTRARS.filter((r) => r.from <= year).map((r) => row(r.name, `${displayHost(registrarHost(r))}/`, t("sim.index.resellers"))) },
     { title: t("sim.index.cat.government"), rows: [row(t("browser-sites-1.of.title"), `www.${OFFICE_HOST}/`, t("sim.index.office")), row("DOHLE", DOHLE_URL, t("sim.index.dohle"))] },
-    { title: t("sim.index.cat.bookkeeping"), rows: vendorsIn(year).map((v) => row(v.program, `${displayHost(booksHost(v))}/`, t(`books-vendors.about.${v.id}`))) },
+    { title: t("sim.index.cat.bookkeeping"), rows: vendorsIn(year).map((v) => ({ ...row(v.program, `${displayHost(booksHost(v))}/`, t(`books-vendors.about.${v.id}`)), pick: v.id === cheapest }))},
     { title: t("sim.index.cat.marketing"), rows: [row(FLYER_NAME, `${displayHost(FLYER_HOST)}/`, t("sim.index.flyers")), row(AGENCY_TITLE, AGENCY_URL, t("sim.index.agency"))] },
     { title: t("sim.index.cat.community"), rows: [row(BOARD_TITLE, BOARD_URL, t("sim.index.board")), row(HOSTTOAST, `www.${HOSTTOAST_HOST}/`, t("sim.index.hosttoast"))] },
     { title: t("sim.index.cat.hardware"), rows: VENDORS.filter((m) => vendorLive(m, monthIndexOf(s.hour))).map((m) => row(m.name, `${displayHost(vendorHost(m.id))}/`, m.kinds.map((k) => t(`sim.index.kind.${k}`)).join(", "))) },

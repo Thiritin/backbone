@@ -4,7 +4,7 @@ import { atDesk, inLetterbox, type Letter as Post } from "../../sim/40-support/l
 import { readLetter } from "../../sim/90-actions/paperwork";
 import { scanLetter } from "../../sim/90-actions/post";
 import { playerAt } from "../../sim/60-infra/handwork";
-import { useStore } from "../store";
+import { useFocus, useStore } from "../store";
 import { officeAddress } from "../../sim/60-infra/properties";
 import { paperDay } from "./FormDoc";
 import { payUrl } from "./books/PayablesTab";
@@ -20,6 +20,11 @@ export function PostApp() {
   const bill = l?.payable ? game.payables.find((p) => p.id === l.payable) : undefined;
   const here = playerAt(game).id;
   const open = (id: string, read: boolean) => { setSel(id); if (!read) act(readLetter, id); };
+  // The next-step card selects the first unpaid bill.
+  useFocus("Post", (f) => {
+    const bill = f.kind === "bill" && letters.find((x) => game.payables.some((p) => p.id === x.payable && p.paidAt === null));
+    if (bill) open(bill.id, bill.read);
+  });
   return (
     <div className="post">
       <div className="post-list" role="list">
@@ -46,15 +51,15 @@ export function PostApp() {
       </div>
       {l && (
         <div className="paper-scroll">
-          <div className="letter-fit">
-            <Letter letter={l} company={game.company.name} owner={game.registration?.owner} />
-          </div>
           <div className="letter-actions">
             {l.scanned ? <span>{t("paperwork.post.scanned")}</span> : <button className="btn" onClick={() => act(scanLetter, l.id)}>{t("paperwork.post.scan")}</button>}
             {l.link && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: l.link! })}>{t("paperwork.post.open")}</button>}
             {bill && <button className="btn" onClick={() => openApp("Preview", { kind: "payable", id: bill.id })}>{t(`purchase.doc.${bill.doc ?? "invoice"}`)}</button>}
             {bill && (bill.paidAt !== null ? <span>{t("bank.pay.paid")}</span>
               : game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, bill) })}>{t("bank.pay.pay")}</button>)}
+          </div>
+          <div className="letter-fit">
+            <Letter letter={l} company={game.company.name} owner={game.registration?.owner} />
           </div>
         </div>
       )}

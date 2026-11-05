@@ -133,7 +133,7 @@ function Shell() {
           <Dock />
         </>
       )}
-      {desk && <EarlyAccess />}
+      <EarlyAccess />
       {desk && news && <WhatsNew changes={news} />}
       <AlertGate />
       {gameOver !== null && <GameOver hour={gameOver} />}

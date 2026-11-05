@@ -9,6 +9,8 @@
 .mkt-specs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .mkt-row { display: flex; align-items: flex-start; gap: 12px; padding: 8px 14px; border-top: var(--ar-bw) solid var(--line); }
 .mkt-row .seg { flex-wrap: wrap; }
+.mkt-campaign .mkt-row { flex-wrap: wrap; }
+.mkt-campaign .mkt-row > .mkt-grow { flex: 1 1 160px; }
 .mkt-label { width: 72px; flex: none; line-height: 24px; font-size: 11.5px; font-weight: 550; color: var(--text-3); }
 .mkt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .mkt-chip { height: 24px; padding: 0 10px; border-radius: var(--ar-chip); border: var(--ar-bw) solid var(--line-strong); background: var(--field); color: var(--text-2); font: inherit; font-size: 12px; font-weight: 500; }

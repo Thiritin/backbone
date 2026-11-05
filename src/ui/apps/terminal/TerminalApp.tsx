@@ -35,9 +35,20 @@ export function TerminalApp() {
 
   useEffect(() => { if (screen.current) screen.current.scrollTop = screen.current.scrollHeight; }, [lines]);
 
+  // Skips the scripted intro; a real keystroke or a login from a card ends it and leaves a clean prompt.
+  const skip = useRef<() => void>(() => {});
   useEffect(() => {
     if (ready) return;
     let live = true;
+    skip.current = () => {
+      live = false;
+      try { localStorage.setItem(SETUP_KEY, "1"); } catch { /* Plays again next time. */ }
+      setLines([]);
+      setDraft("");
+      setReady(true);
+    };
+    const onKey = () => skip.current();
+    window.addEventListener("keydown", onKey);
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
     void (async () => {
       const shown: Line[] = [];
@@ -65,17 +76,18 @@ export function TerminalApp() {
       try { localStorage.setItem(SETUP_KEY, "1"); } catch { /* Plays again next time. */ }
       setReady(true);
     })();
-    return () => { live = false; };
+    return () => { live = false; skip.current = () => {}; window.removeEventListener("keydown", onKey); };
   }, [ready, setLines, setDraft]);
 
-  // Terminal on a server drops any open session and connects to it.
+  // Terminal on a server drops any open session and types the login, which Enter sends.
   const [target, setTarget] = useState<string | null>(null);
-  useFocus("Terminal", (f) => { if (f.kind === "ssh") setTarget(f.id); });
+  useFocus("Terminal", (f) => { if (f.kind === "ssh") { skip.current(); setTarget(f.id); } });
   useEffect(() => {
     if (!ready || !target) return;
     setTarget(null);
     shell.setSession(null);
-    shell.submit(`ssh ${target}`, null);
+    setDraft(`ssh root@${target}`);
+    input.current?.focus();
   }, [ready, target]);
 
   if (open) return <Editor file={open} onChange={setOpen} onClose={() => { setOpen(null); setTimeout(() => input.current?.focus()); }} />;

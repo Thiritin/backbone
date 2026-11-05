@@ -76,3 +76,4 @@
 .wp-pin { fill: oklch(0.45 0.01 255); }
 .wp-oled { fill: oklch(0.4 0.01 255); }
 .wp-oled.on { fill: var(--ok); }
+.wp-corner.wp-pay { top: auto; bottom: 118px; right: 14px; width: auto; height: auto; padding: 6px 16px; clip-path: none; border-radius: 6px; align-items: center; background: var(--accent); color: white; white-space: nowrap; }
