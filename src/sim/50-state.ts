@@ -48,7 +48,7 @@ import type { Listing } from "./10-catalog/used";
 import { firstHostNo } from "./30-customers/hostnames";
 import { newShop, type ShopState } from "./80-business/shop";
 import type { BankAccount } from "./46-finance/bank";
-import type { Payable } from "./46-finance/payables";
+import type { Method, Payable } from "./46-finance/payables";
 import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 import { newTax, type TaxState } from "./80-business/tax-state";
@@ -217,7 +217,8 @@ export interface Billing { company: string; name: string; address: PostalAddress
 // jack is the provider panel jack the line lands on; saves from before panels have none.
 export interface CrossConnect { id: string; contractId: string; to: string; monthly: number; since: number; jack?: End }
 // A cable the provider runs between two provider panel jacks; it is billed and installed at dueAt.
-export interface ProviderCableOrder { id: string; a: End; b: End; fee: number; dueAt: number }
+// method: how the fee is paid when the cable is installed; old orders pay by transfer, or cash before a bank account.
+export interface ProviderCableOrder { id: string; a: End; b: End; fee: number; dueAt: number; method?: Method }
 export interface WaitlistEntry { id: string; dc: string; space: "share" | "cage" | "suite"; size: number; since: number; heldUntil: number | null }
 export interface End { device: string; port: number }
 export interface Cable { id: string; a: End; b: End; kind: CableKind; color: string | null }

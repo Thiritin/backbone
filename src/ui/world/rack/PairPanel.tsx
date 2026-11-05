@@ -7,11 +7,11 @@ import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { End } from "../../../sim/50-state";
 import { isProviderPanel, panelOf } from "../../../sim/60-infra/panels";
 import { portPeers } from "../../../sim/60-infra/status";
-import { orderProviderCable } from "../../../sim/90-actions/connectivity";
 import { connect } from "../../../sim/90-actions/hardware";
 import { RackFront } from "../../art/RackFront";
 import { formatDay } from "../../apps/billing/format";
-import { roleName } from "../../apps/locations/ProviderJack";
+import { cableOrder, roleName } from "../../apps/locations/ProviderJack";
+import { PayStep } from "../../apps/browser/sites/shared/PayStep";
 import { rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
 import { useStore } from "../../store";
 import { Slab } from "../panel/Slab";
@@ -50,10 +50,6 @@ export function PairPanel({ a, b, from = null, onClose }: { a: string; b: string
     else join(hand, e);
   };
   const title = (e: End) => { const p = peerOf(e); return `${endName(game, e)} ↔ ${p ? endName(game, p) : t("locations-1.free")}`; };
-  const sign = () => {
-    const s = slip!, ra = jackRack(s.a)!, rb = jackRack(s.b)!;
-    if (act(orderProviderCable, ra, s.a.port, rb, s.b.port).ok) setSlip(null);
-  };
 
   return (
     <Slab title={racks.map((r) => r.name).join(" ↔ ")} onClose={onClose} onBack={() => (hand ? (setHand(null), true) : slip ? (setSlip(null), true) : false)} data={{ "pair-panel": `${a} ${b}` }}>
@@ -82,10 +78,9 @@ export function PairPanel({ a, b, from = null, onClose }: { a: string; b: string
                 <div className="wr-tag-h"><strong>{roleName("provider-cable")}</strong></div>
                 <div className="wr-model">{endName(game, slip.a)} ↔ {endName(game, slip.b)}</div>
                 <div className="wr-model">{t("locations-1.dueOn", { day: formatDay(game.hour + PROVIDER_CABLE.leadHours) })}</div>
-                <div className="wr-lines">
-                  <button className="wr-line" onClick={sign}>{t("locations-1.orderProviderCable", { fee: euro(PROVIDER_CABLE.fee), days: PROVIDER_CABLE.leadHours / 24 })}</button>
-                  <button className="wr-line" onClick={() => setSlip(null)}>{t("locations-2.cancel")}</button>
-                </div>
+                <div className="wr-model num">{euro(PROVIDER_CABLE.fee)}</div>
+                <PayStep key={`${slip.a.device}:${slip.a.port}-${slip.b.device}:${slip.b.port}`} game={game}
+                  buy={cableOrder(game, jackRack(slip.a)!, slip.a.port, jackRack(slip.b)!, slip.b.port)} onClose={() => setSlip(null)} />
               </div>
             </div>
           )}

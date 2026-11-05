@@ -1,6 +1,6 @@
 // docs/design/gdd/connectivity.md: the provider panel on rented racks and provider cables between them.
 import { datacenterById, rackUnits } from "../20-world/datacenters";
-import { bill } from "../46-finance/payables";
+import { bill, type Method } from "../46-finance/payables";
 import { PANEL_JACKS, PROVIDER_CABLE, PROVIDER_PANEL } from "../10-catalog/uplinks";
 import { device, type End, type GameState } from "../50-state";
 import { freeJack, isProviderPanel, jackRoles, panelOf, rentedFloor } from "../60-infra/panels";
@@ -56,7 +56,7 @@ export function syncProviderPanels(s: GameState): string[] {
 }
 
 // Orders a cable from a jack on one rented rack's panel to a jack on another's in the same building. It is billed on completion.
-export function orderProviderCable(s: GameState, rackA: string, jackA: number, rackB: string, jackB: number): ActionResult {
+export function orderProviderCable(s: GameState, rackA: string, jackA: number, rackB: string, jackB: number, method?: Method): ActionResult {
   const ra = s.racks.find((r) => r.id === rackA), rb = s.racks.find((r) => r.id === rackB);
   if (!ra || !rb) return fail("error.unknownRack");
   if (ra.id === rb.id) return fail("error.providerCableSameRack");
@@ -69,7 +69,7 @@ export function orderProviderCable(s: GameState, rackA: string, jackA: number, r
   if (!ok(jackA) || !ok(jackB)) return fail("error.unknownPort");
   if (jackRoles(s, pa.id)[jackA] !== "free" || jackRoles(s, pb.id)[jackB] !== "free") return fail("error.jackTaken");
   const id = `pc${s.nextId++}`;
-  s.providerCables = [...s.providerCables, { id, a: { device: pa.id, port: jackA }, b: { device: pb.id, port: jackB }, fee: PROVIDER_CABLE.fee, dueAt: s.hour + PROVIDER_CABLE.leadHours }];
+  s.providerCables = [...s.providerCables, { id, a: { device: pa.id, port: jackA }, b: { device: pb.id, port: jackB }, fee: PROVIDER_CABLE.fee, dueAt: s.hour + PROVIDER_CABLE.leadHours, method }];
   return { ok: true, id };
 }
 
@@ -89,7 +89,7 @@ export function providerCableTick(s: GameState): SimEvent[] {
     s.cables = [...s.cables, { id: `cab${s.nextId++}`, a: o.a, b: o.b, kind: "provider", color: null }];
     const loc = s.locations.find((l) => l.id === s.racks.find((r) => r.id === s.devices.find((d) => d.id === o.a.device)?.rackId)?.locationId);
     const line = { hour: s.hour, category: "rent", key: "ledger.providerCable", params: { a: name(o.a), b: name(o.b) }, amount: -o.fee };
-    bill(s, { supplier: "network", name: loc?.dc ? datacenterById(loc.dc).name : "DE-KICKS", lines: [line], method: s.bank ? "transfer" : "cash" });
+    bill(s, { supplier: "network", name: loc?.dc ? datacenterById(loc.dc).name : "DE-KICKS", lines: [line], method: o.method ?? (s.bank ? "transfer" : "cash") });
   }
   return due.map((o) => ({ app: "Locations", key: "event.providerCable", params: { a: name(o.a), b: name(o.b) } }));
 }

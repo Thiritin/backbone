@@ -3,7 +3,7 @@ import { t } from "../../../../../i18n/en";
 import { euroCents } from "../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { deskById, featuresAt, seats, tenantHost, type DeskFeature, type DeskId } from "../../../../../sim/10-catalog/desks";
-import { deskItem, monthlyCharge, subscriptionPrice } from "../../../../../sim/10-catalog/store";
+import { deskItem, monthlyCharge, subscriptionEntry, subscriptionPrice } from "../../../../../sim/10-catalog/store";
 import { defaultTenant } from "../../../../../sim/40-support/desk";
 import type { GameState } from "../../../../../sim/50-state";
 import { displayHost } from "../../../../../sim/80-business/browser";
@@ -12,6 +12,7 @@ import { removeDesk, subscribeDesk } from "../../../../../sim/90-actions/desk-in
 import { Confirm } from "../../../../desktop/Confirm";
 import { DESK } from "../../../support/desk";
 import { usePageAct } from "../../pageAct";
+import { OrderDone, useOrder } from "../shared/OrderDone";
 import { eraOf } from "../era";
 import { DomainRecords } from "./DomainRecords";
 import "./hosted.css";
@@ -72,12 +73,14 @@ function SignUp({ game, id, to }: Props) {
   const act = usePageAct(), d = deskById(id)!;
   const [company, setCompany] = useState(game.company.name), [email, setEmail] = useState(salesAddress(game)), [tenant, setTenant] = useState(defaultTenant(game));
   const suffix = tenantHost(d, "");
+  const o = useOrder(game, "services", d.name, -subscriptionEntry(game, deskItem(d)).amount);
   return (
-    <form className="dv-form" onSubmit={(e) => { e.preventDefault(); if (act(subscribeDesk, tenant, id).ok) to("account"); }}>
+    <form className="dv-form" onSubmit={(e) => { e.preventDefault(); if (o.place(() => act(subscribeDesk, tenant, id, o.method)).ok) to("account"); }}>
       <h1>{t("desk-sites.nav.signup")}</h1>
       <label>{t("desk-sites.company")}<input value={company} onChange={(e) => setCompany(e.target.value)} /></label>
       <label>{t("desk-sites.email")}<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
       <label>{t("desk-sites.address")}<span className="dv-host"><input value={tenant} autoComplete="off" onChange={(e) => setTenant(e.target.value)} /><span>{suffix}</span></span></label>
+      {o.picker}
       <button type="submit" className="dv-btn">{t("desk-sites.create")}</button>
     </form>
   );
@@ -86,6 +89,7 @@ function SignUp({ game, id, to }: Props) {
 function Account({ game, id, to, go }: Props & { go: (url: string) => void }) {
   const act = usePageAct(), d = deskById(id)!, [cancelling, setCancelling] = useState(false);
   const mine = game.desk?.id === id && game.desk.tenant ? game.desk.tenant : null;
+  const bill = game.payables.filter((p) => p.name === d.name).at(-1);
   if (!mine) return <><h1>{t("desk-sites.nav.account")}</h1><p>{t("desk-sites.noAccount")}</p><button type="button" className="dv-btn" onClick={() => to("signup")}>{t("desk-sites.nav.signup")}</button></>;
   return (
     <>
@@ -95,6 +99,7 @@ function Account({ game, id, to, go }: Props & { go: (url: string) => void }) {
           <tr><th>{t("desk-sites.address")}</th><td>{tenantHost(d, mine)}</td></tr>
           <tr><th>{t("desk-sites.agents")}</th><td className="num">{seats(game)}</td></tr>
           <tr><th>{t("desk-sites.monthly")}</th><td className="num">{euroCents(monthlyCharge(game, deskItem(d)))}</td></tr>
+          {bill && <tr><th>{t("payB.billing")}</th><td><OrderDone game={game} payable={bill.id} /></td></tr>}
         </tbody>
       </table>
       <DomainRecords game={game} go={go} />
