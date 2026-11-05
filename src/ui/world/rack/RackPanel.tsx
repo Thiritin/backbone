@@ -255,7 +255,11 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   }
   const away = (e: End) => { if (!peerOf(e)) { onHand(e); onClose(); } };
 
-  const entries = (d: Device) => [...menus.entries(d), ...(onConnectFrom ? [null, { label: t("world.newConnection"), run: () => onConnectFrom(d.id) }] : [])];
+  const entries = (d: Device) => menus.entries(d, false, {
+    cart: () => { setPlug(d.id); setCart(d.id); },
+    ports: () => { pick(d.id); turn(true); },
+    connect: onConnectFrom && (() => onConnectFrom(d.id)),
+  });
   let tag: ReactNode = null, unit = false;
   if (back && pp && jack !== null && !hand) tag = <JackTag game={game} panel={pp} jack={jack} />;
   else if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;

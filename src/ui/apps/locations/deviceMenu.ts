@@ -16,6 +16,8 @@ import { techItem } from "./TechButton";
 import { handsWays, wayLabel, type HandsHow } from "./HandSheet";
 import { frontOptions, handsLabel, powerOptions, type PowerOp } from "./power";
 import type { FrontOp } from "../../../sim/60-infra/power";
+import { present } from "../../../sim/60-infra/handwork";
+import { busyReason } from "../../../sim/90-actions/busy";
 
 // What the menu hands back to its view: steps that need a sheet, a field or the offline check.
 export interface DeviceUi {
@@ -67,8 +69,50 @@ function moveEntries(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
   return targets.length ? [{ label: t("locations-1.moveTo"), items: targets.map((l) => ({ label: `${l.name}, ${euro(travelCost(game, here, l.id).price)}`, run: () => ui.move?.(l.id) })) }] : [];
 }
 
+// The world's own hooks: the crash cart and the back view. Power and maintenance stay on the physical front and the desktop.
+export interface WorldUi {
+  cart?: () => void;
+  ports?: () => void;
+  connect?: () => void;
+}
+
+// A disabled entry says why after a comma.
+const why = (label: string, reason: string | null): { label: string; disabled?: boolean } => reason ? { label: `${label}, ${reason}`, disabled: true } : { label };
+
+// The right-click menu on a device in the world.
+function worldMenu(game: GameState, d: Device, ui: DeviceUi, w: WorldUi): MenuEntry[] {
+  const { act } = useStore.getState();
+  const m = modelById(d.model), server = m.kind === "server", mounted = !!d.rackId;
+  const cluster = server ? clusterOf(game, d.id) : undefined;
+  const loads = server ? workloadsOn(game, d.id) : [];
+  const psuPrice = mounted ? secondPsuPrice(d) : null;
+  const loc = locationOf(game, d);
+  const busy = busyReason(game, { deviceId: d.id }) ? t("world.busy") : null;
+  const item = (label: string, run: () => void, reason: string | null = busy): MenuEntry => ({ ...why(label, reason), run });
+  const burn = !d.on ? t("world.serverOff") : burning(game, d) || loads.length > 0 ? t("world.busy") : busy;
+  return [
+    server && mounted && w.cart && item(t("world.console"), w.cart, loc && !present(game, loc.id) ? t("world.notOnSite") : null),
+    w.ports && { label: t("world.ports"), run: w.ports },
+    null,
+    server && mounted && ui.lid && item(t("locations-1.changeParts"), ui.lid),
+    server && mounted && !cluster && { ...why(t("locations-1.burnIn"), burn), items: [
+      { label: t("locations-1.burnQuick"), run: () => act(startBurnin, d.id, false) },
+      { label: t("locations-1.burnFull"), run: () => act(startBurnin, d.id, true) },
+    ] },
+    psuPrice !== null && item(t("locations-1.addSecondPsu", { price: euro(psuPrice) }), () => act(addSecondPsu, d.id)),
+    null,
+    { label: t("locations-1.rename"), run: ui.rename },
+    null,
+    ...(mounted ? handsWays(game, loc?.id, "unmountDevice").map((x) => ({ ...why(wayLabel(t("locations-1.unmount"), x), busy), run: () => ui.unmount(x.how) })) : []),
+    m.kind !== "gateway" && item(t("locations-1.sell"), ui.sell),
+    w.connect && null,
+    w.connect && { label: t("world.newConnection"), run: w.connect },
+  ];
+}
+
 // A rack device's actions, in the order of a Pear context menu: open, power, role, upgrades, then removal.
-export function deviceMenu(game: GameState, d: Device, ui: DeviceUi): MenuEntry[] {
+export function deviceMenu(game: GameState, d: Device, ui: DeviceUi, world?: WorldUi): MenuEntry[] {
+  if (world) return worldMenu(game, d, ui, world);
   const { act } = useStore.getState();
   const m = modelById(d.model), server = m.kind === "server";
   const cluster = server ? clusterOf(game, d.id) : undefined, node = cluster?.nodes.find((n) => n.deviceId === d.id);
