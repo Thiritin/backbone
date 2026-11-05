@@ -30,6 +30,7 @@ export default {
   "paperwork.post.empty": () => "Keine Briefe",
   "paperwork.post.box": () => "Im Briefkasten",
   "paperwork.post.scan": () => "Einscannen",
+  "paperwork.post.toBox": () => "Zum Briefkasten",
   "paperwork.post.scanned": () => "Eingescannt",
   "paperwork.letter.office": () => "Gewerbeamt",
   "paperwork.letter.register": () => "Registergericht",

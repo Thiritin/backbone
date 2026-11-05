@@ -25,7 +25,7 @@ describe("checklist", () => {
   it("starts with nothing done", () => {
     const s = newGame(1);
     expect(s.checklist).toEqual([]);
-    expect(done(s)).toEqual(["internet"]);
+    expect(done(s)).toEqual([]);
   });
 
   it("detects a bought and mounted server, the line, a loan, the first and second online server and datacenter space", () => {

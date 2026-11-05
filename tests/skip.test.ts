@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { SKIP } from "../src/sim/00-core/time";
 import { tick } from "../src/sim/88-tick/tick";
+import { useDownloads } from "../src/ui/downloads";
 import { useStore } from "../src/ui/store";
 import { readyGame } from "./fixtures";
 
@@ -26,5 +27,16 @@ describe("skip", () => {
     useStore.getState().advance(first + 1);
     expect(useStore.getState().game.hour).toBe(game.hour + first + 1);
     expect(useStore.getState().speed).toBe(60);
+  });
+
+  it("stops where a running download finishes", () => {
+    const game = readyGame(1);
+    expect(first).toBeGreaterThanOrEqual(2);
+    useDownloads.setState({ iso: { start: game.hour, hours: 2 } });
+    useStore.setState({ game, speed: SKIP, alert: null });
+    useStore.getState().advance(first + 50);
+    useDownloads.setState({ iso: undefined });
+    expect(useStore.getState().game.hour).toBe(game.hour + 2);
+    expect(useStore.getState().speed).toBe(1);
   });
 });

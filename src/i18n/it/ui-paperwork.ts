@@ -30,6 +30,7 @@ export default {
   "paperwork.post.empty": () => "Nessuna lettera",
   "paperwork.post.box": () => "Nella cassetta",
   "paperwork.post.scan": () => "Scansiona",
+  "paperwork.post.toBox": () => "Alla cassetta delle lettere",
   "paperwork.post.scanned": () => "Scansionata",
   "paperwork.letter.office": () => "Ufficio attività commerciali",
   "paperwork.letter.register": () => "Tribunale, registro delle imprese",

@@ -57,6 +57,12 @@ export function startUpload(workloadId: string, folder: string, file: string, ov
   return r;
 }
 
+// The game hour the first running download or upload ends, or null with none running.
+export function nextTransferEnd(): number | null {
+  const ends = [...Object.values(useDownloads.getState()), ...Object.values(useUploads.getState())].filter((x): x is Transfer => !!x).map((x) => x.start + x.hours);
+  return ends.length ? Math.min(...ends) : null;
+}
+
 const share = (d: Transfer | undefined, now: number): number | null => (d ? Math.min(1, (now - d.start) / d.hours) : null);
 
 // The share of the download done, from 0 to 1, moving with game time.
