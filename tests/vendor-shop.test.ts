@@ -209,7 +209,7 @@ describe("edition change", () => {
     expect(mailsAbout(s, "licenceEditionSwitched")[0]).toMatchObject({ topic: "licenceEditionSwitched", p: { key: was.key, to: "Admin" } });
     s.hour = was.renewsAt!;
     productsTick(s);
-    expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.licenceRenewal", amount: -4 });
+    expect(s.payables.at(-1)!.lines[0]).toMatchObject({ key: "ledger.licenceRenewal", amount: -4 });
     expect(key().renewsAt).toBe(monthAfter(was.renewsAt!));
   });
 

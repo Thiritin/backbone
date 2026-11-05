@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Rent deposits, buildings, provider cables, network and domain fees, marketing, the website agency and other purchases now come with a receipt or an invoice, and refunds come with a credit note.
 - Importing a save no longer shows installer progress left over from the previous game.
 - Operating system installers, the webmail installer and the new virtual machine forms keep their progress when you switch to another window or tab.
 - Idle people and passing cars animate more smoothly with less load on the game.

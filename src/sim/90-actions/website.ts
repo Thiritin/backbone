@@ -4,7 +4,10 @@ import type { GameState } from "../50-state";
 import { owns, type SiteHost } from "../80-business/marketing";
 import { shopActive } from "../80-business/shop";
 import { DESIGN_DAYS, designQuote, generationOf, lineBlocker, SITE_BUILD_HOURS, SITE_LINES, siteBuilt, siteRoom } from "../80-business/website";
+import type { Method } from "../46-finance/payables";
+import { AGENCY_TITLE } from "../80-business/browser";
 import type { ActionResult } from "./hardware";
+import { methodsFor, placeOrder } from "./purchase";
 
 // Lists or removes a product line on the website; removing one stops new requests and keeps existing customers.
 export function setLine(s: GameState, p: Product, on: boolean): ActionResult {
@@ -69,13 +72,13 @@ export function setSiteHost(s: GameState, host: SiteHost): ActionResult {
 }
 
 // Orders a new design from the agency at its price for the year and the company level; it goes live DESIGN_DAYS later.
-export function redesign(s: GameState): ActionResult {
+export function redesign(s: GameState, method?: Method): ActionResult {
   if (!owns(s, "website")) return { ok: false, error: "error.needsWebsite" };
   if (s.marketing.designReady) return { ok: false, error: "error.designOrdered" };
   const price = designQuote(s);
-  if (s.cash < price) return { ok: false, error: "error.noCash" };
-  s.cash = Math.round((s.cash - price) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.redesign", params: {}, amount: -price }];
+  const lines = [{ hour: s.hour, category: "marketing", key: "ledger.redesign", params: {}, amount: -price }];
+  const paid = placeOrder(s, { supplier: "services", name: AGENCY_TITLE, lines, method: method ?? methodsFor(s, "services", lines, AGENCY_TITLE)[0] });
+  if (!paid.ok) return paid;
   s.marketing = { ...s.marketing, designReady: { hour: s.hour + DESIGN_DAYS * 24, year: generationOf(yearOf(s.hour)) } };
   return { ok: true };
 }

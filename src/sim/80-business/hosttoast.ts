@@ -10,6 +10,7 @@ import { locationCities, offers, openRivals, playerScores, priceIndex } from "..
 import { monthOf, reviewCount, rivalScore, withBadges, yearAwards } from "../30-market/rivals";
 import { createTicket } from "../40-support/tickets";
 import { deliverMail } from "../42-mail/sources";
+import { bill, invoice } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { REVIEW_HOURS, reviewScore } from "./marketing";
@@ -96,8 +97,9 @@ export function hosttoastTick(s: GameState): SimEvent[] {
 
   const fee = TIERS[now].fee;
   if (fee > 0) {
-    s.cash = Math.round((s.cash - fee) * 100) / 100;
-    s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.hosttoast", params: { tier: tierName(now) }, amount: -fee }];
+    const lines = [{ hour: s.hour, category: "marketing" as const, key: "ledger.hosttoast", params: { tier: tierName(now) }, amount: -fee }];
+    if (s.bank) invoice(s, "services", HOSTTOAST, lines);
+    else bill(s, { supplier: "services", name: HOSTTOAST, lines, method: "cash" });
   }
   // The test ticket looks like any how-to ticket from one of your customers.
   const customers = s.customers.filter((c) => c.churnedAt === null && c.habit !== "friend");

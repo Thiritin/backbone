@@ -1,6 +1,6 @@
 // GDD, Domain registration: the registrar partner under contract bills the registry cost of every domain under management
 // monthly, at a factor that falls with the number of domains. Numbers in economy/sales-and-quotes.md, Sales and quotes (Domains).
-import { effectOf, invoice, invoicing } from "../46-finance/payables";
+import { bill as payBill, effectOf, invoice, invoicing } from "../46-finance/payables";
 import { hashRng, rand } from "../00-core/rng";
 import { dateOf, isMonthStart } from "../00-core/time";
 import { factorFor, icannFee, registrarById, tierFor, type Registrar as Partner, type RegistrarId } from "../10-catalog/registrars";
@@ -70,14 +70,11 @@ export function registrarBill(s: GameState): LedgerEntry[] {
   return out;
 }
 
-// The partner's charges: on its next invoice once suppliers invoice, else straight from the cash.
+// The partner's charges: on its next invoice once suppliers invoice, else paid in cash with a receipt.
 function charge(s: GameState, name: string, bill: LedgerEntry[]): void {
-  if (invoicing(s)) {
-    if (bill.length) invoice(s, "registrar", name, bill);
-    return;
-  }
-  s.cash = cents(s.cash - cents(bill.reduce((n, e) => n - e.amount, 0)));
-  s.ledger = [...s.ledger, ...bill];
+  if (!bill.length) return;
+  if (invoicing(s)) invoice(s, "registrar", name, bill);
+  else payBill(s, { supplier: "registrar", name, lines: bill, method: "cash" });
 }
 
 // Hourly: a finished transfer ends and the new partner books a year of every domain on arrival, so each expires a year
