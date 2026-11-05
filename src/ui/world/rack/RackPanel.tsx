@@ -4,16 +4,18 @@ import { isOfficeRouter, modelById, modelName, wanPort } from "../../../sim/10-c
 import { uplinkPort } from "../../../sim/60-infra/routers";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { cabledOut, connectError, deviceHealth, heightIn, mountFrom, jacked, locationOf, pluggedIn, portPeers } from "../../../sim/60-infra/status";
+import { booting, cabledOut, connectError, deviceHealth, halting, heightIn, jacked, locationOf, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
 import { present } from "../../../sim/60-infra/handwork";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
 import { Isometric } from "../../art/Isometric";
+import type { PanelOp } from "../../art/fronts";
 import { RackFront, shelfPitch, type RackItem } from "../../art/RackFront";
 import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
-import { portLamps } from "../../apps/hw";
+import { devName, portLamps } from "../../apps/hw";
+import { affected, frontGuide, panelPress } from "./panelPress";
 import { handsWays, useHandWork, wayLabel, type HandTask } from "../../apps/locations/HandSheet";
 import { PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
@@ -30,7 +32,7 @@ import { panelOf } from "../../../sim/60-infra/panels";
 import "../panel/panel.css";
 import "./rack.css";
 import { WorkTag } from "../figures";
-import { UnitTag } from "./UnitTag";
+import { Slip, UnitTag } from "./UnitTag";
 import { clampZoom, stepZoom, tagLeft, wheelZoom } from "./zoom";
 
 // The rack frame's border in pixels: a cap above the units, sides and a foot.
@@ -63,6 +65,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const [lid, setLid] = useState<string | null>(null);
   const [cart, setCart] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
+  const [out, setOut] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pin, setPin] = useState<{ x: number; y: number; top: number; left: number } | null>(null);
   // The provider jack whose tag hangs open.
@@ -72,6 +75,19 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const pick = (id: string | null) => { noteSelected(id); setSel(id); setFree(null); setLid(null); setRenaming(false); setPort(null); setJack(null); };
   const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }], true);
   const work = useHandWork();
+  const loc = game.locations.find((l) => l.id === rack?.locationId), offSite = !!loc?.dc && !present(game, loc.id);
+  const [ask, setAsk] = useState<{ id: string; op: PanelOp; count: number } | null>(null);
+  const run = (id: string, op: PanelOp) => {
+    const d = game.devices.find((x) => x.id === id), k = d && panelPress(game, act, d, op);
+    if (k) setOut(k);
+  };
+  // A press that takes customers offline waits for the slip.
+  const press = (id: string, op: PanelOp) => {
+    const d = game.devices.find((x) => x.id === id), count = d ? affected(game, d, op) : 0;
+    if (d && count > 0 && !booting(game, d) && !halting(d)) setAsk({ id, op, count });
+    else run(id, op);
+  };
+  useEffect(() => { if (out) { const h = setTimeout(() => setOut(null), 4000); return () => clearTimeout(h); } }, [out]);
   const turn = (to: boolean) => {
     if (to === back) return;
     if (!to) { setPort(null); setJack(null); }
@@ -281,21 +297,21 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   if (back && pp && jack !== null && !hand) tag = <JackTag game={game} panel={pp} jack={jack} />;
   else if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
-  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} back={back} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => turn(!back) : undefined}
+  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} onPanel={offSite ? undefined : (op) => press(dev.id, op)} back={back} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => turn(!back) : undefined}
     onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => { setPlug(dev.id); setCart(dev.id); } : undefined} />; }
   // A picked free unit sets what fits there on the floor beside the rack.
   const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} /> : null;
 
   const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
   const face = (side: boolean) => side ? (
-    <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" w={BACK_U * 19} u={BACK_U} duct
+    <RackFront units={units} shelf={shelf} items={items} links={rackLinks(game, rack.id)} remotes={rackRemotes(game, rack)} side="back" away={offSite} guide={frontGuide(game)} onPanel={press} w={BACK_U * 19} u={BACK_U} duct
       selected={dev?.id ?? null} hot={cableAt?.id ?? null} onDevice={(id) => pick(id === sel ? null : id)} onFree={() => {}} onPort={plug} onConsole={present(game, rack.locationId) ? (id) => { setPlug(id); pick(id); } : undefined} consoleOn={plugged} hand={hand} portTitle={title} needs={needs} canLink={(a, b) => !connectError(game, a, b)}
       onPlug={(id, k) => { const d = game.devices.find((x) => x.id === id), psu = d?.components.filter((c) => c.kind === "psu")[k]; if (d && psu) menus.plug(d, psu.id); }}
       onConnect={(a, b) => { act(connect, a, b); }} onAway={away} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }} />
   ) : (
     <RackFrame units={tall} bare={shelf}>
       {(w, u) => (
-        <RackFront units={units} shelf={shelf} items={items} w={w} u={u} selected={dev?.id ?? null}
+        <RackFront units={units} shelf={shelf} items={items} w={w} u={u} selected={dev?.id ?? null} away={offSite} guide={frontGuide(game)} onPanel={press}
           onDevice={(id) => pick(id === sel ? null : id)} onFree={(unit) => { pick(null); setFree(unit); }} onDeviceMenu={(id, e) => { const d = game.devices.find((x) => x.id === id); if (d) { pick(id); menuOn(() => entries(d))(e); } }}
           onUsb={(id) => (game.media.stick.in === id ? act(unplugStick) : act(plugStick, id))} />
       )}
@@ -319,6 +335,10 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
               {back && pp && <ProviderPanel game={game} panel={pp} picked={jack} hand={hand} onJack={(e) => (hand ? plug(e) : (pick(null), setJack(e.port)))} onConnect={(a, b) => { act(connect, a, b); }} />}
               <WorkTag game={game} rackId={rack.id} />
               <div className="wr-plate" data-plate=""><b>{rack.name}</b><span>{shelf ? `${used} / ${units}` : `${used} / ${units} U`}</span></div>
+              {ask && (() => { const d = game.devices.find((x) => x.id === ask.id); return d && (
+                <div className="wr-slip-pin"><Slip slip="customers" name={devName(d)} text={t("world.affected", { count: ask.count })} action={t(ask.op === "reset" ? "art.reset" : "art.shutDown")}
+                  onCancel={() => setAsk(null)} onStamp={() => { setAsk(null); run(ask.id, ask.op); }} /></div>
+              ); })()}
               {turning !== null && <div className="wr-face out" aria-hidden="true">{face(turning)}</div>}
               <div className={`wr-face${turning !== null ? " in" : ""}`}>{face(back)}</div>
               <button className="wr-flank" aria-hidden="true" onClick={() => turn(!back)} tabIndex={-1} />
@@ -333,6 +353,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
             )}
           </div>
           <div className="wr-floor">
+            {out && <div className="wr-out" role="status">{out}</div>}
             {back && <div className="wr-away" data-away="" role="button" tabIndex={0} aria-label={t("world.toRack")} onClick={() => hand && onClose()}><span className="wr-k" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" /><path d="M11 9h3q3 0 3 3t3 3M17 15l3 0M20 15l-2-2M20 15l-2 2" /></svg></span><span>{t("world.toRack")}</span></div>}
           </div>
         </div>

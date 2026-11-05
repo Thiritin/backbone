@@ -133,7 +133,7 @@ export function deviceLamps(g: GameState, id: string, m: DeviceModel) {
   const link: Lamp = isMgmtDevice(d) ? (oobUp(g, id) ? "ok" : "bad") : lampOf(linkStatus(g, id));
   const state: Lamp = h === "off" || h === "nopower" ? "off" : WORSE[Math.max(WORSE.indexOf(HEALTH_LAMP[h]), WORSE.indexOf(link))];
   const flood = floodedDevice(g, d);
-  return { state, blink: flood || h === "rebuilding" || h === "booting" || h === "halting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m).map((l) => (flood && l ? { ...l, load: 1 } : l)), parts: partLamps(g, d) };
+  return { state, blink: flood || h === "rebuilding" || h === "booting" || h === "halting", trans: h === "booting" || h === "halting", ports: d.on && h !== "nopower" ? portLamps(m, portPeers(g, id)) : portLamps(m, []), lights: portLights(g, id, m).map((l) => (flood && l ? { ...l, load: 1 } : l)), parts: partLamps(g, d) };
 }
 
 // Every change to the game replaces the state object, so the links are worked out once per state for all devices.

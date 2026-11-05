@@ -6,7 +6,7 @@ import { t } from "../../i18n/en";
 import type { DeviceModel } from "../../sim/10-catalog/hardware";
 import { BrandMark } from "./logos";
 import { isMgmtModel, MgmtBack, OobJacks, oobSpots } from "./mgmt";
-import { AssetTag, frontBays, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, partLed, patchLayout, Pdu, PortJack, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
+import { AssetTag, frontBays, fsz, gatewayLayout, Jacks, LED, ledProps, numBand, numSize, PanelButton, partLed, patchLayout, Pdu, PortJack, portNo, switchLayout, SwitchPorts, switchX0, tw, type FrontProps, type PartLamp } from "./fronts";
 
 const MONO = "JetBrains Mono, monospace", NUM = "oklch(0.74 0.01 255)";
 
@@ -281,11 +281,28 @@ export function Back(p: FrontProps) {
           </g>
         ))}
         {(model.kind === "gateway" || model.kind === "jack") && <rect x={w - 20} y={h / 2 - 3} width="8" height="6" rx="1" fill="oklch(0.1 0.004 255)" />}
+        {model.kind === "gateway" && (
+          <PanelButton x={w - 31} y={h / 2} r={4} box={[w - 40, 0, 18, h]} away={p.away} guide={p.guide === "power" && state === "off"} label={t("art.rocker")} onTap={p.onPanel && (() => p.onPanel!("switch"))}>
+            {(down) => <Rocker x={w - 34.5 + (down ? 0.5 : 0)} y={h / 2 - 3.5 + (down ? 0.5 : 0)} on={state !== "off"} down={down} />}
+          </PanelButton>
+        )}
       </g>
       <PortNums model={model} spots={mirror(mirroredLayout(model, name, w, h), w)} h={model.kind === "server" ? h / Math.max(1, model.height) : h} below={(i) => model.kind === "patch" && i >= model.ports.length / 2} />
       <OobJacks model={model} name={name} w={w} h={h} />
       {model.kind !== "gateway" && model.kind !== "jack" && model.kind !== "patch" && <Psus model={model} w={w} h={h} on={state !== "off"} lamps={p.parts?.psus} />}
       <AssetTag x={w - 8} y={Math.min(h / 2, fs + 2)} text={name} h={h} anchor="end" />
+    </>
+  );
+}
+
+// A rocker switch seen from the rear: the pressed half is the darker one, the upper half means on.
+function Rocker({ x, y, on, down }: { x: number; y: number; on: boolean; down: boolean }) {
+  const edge = "oklch(0.2 0.004 255)", lit = down ? "oklch(0.55 0.01 255)" : "oklch(0.72 0.01 255)", dim = down ? "oklch(0.2 0.004 255)" : "oklch(0.3 0.005 255)";
+  return (
+    <>
+      <rect x={x} y={y} width="7" height="7" rx="1" fill={edge} />
+      <rect x={x + 0.7} y={y + 0.7} width="5.6" height="2.8" fill={on ? lit : dim} />
+      <rect x={x + 0.7} y={y + 3.5} width="5.6" height="2.8" fill={on ? dim : lit} />
     </>
   );
 }
