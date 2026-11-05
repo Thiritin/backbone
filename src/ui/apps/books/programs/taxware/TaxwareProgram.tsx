@@ -77,7 +77,8 @@ const sectionOf = (id: string) => SECTIONS.find(([, ids]) => ids.includes(id));
 // The classic toolbar's pictures (null a separator) and the workflow band's groups.
 const TOOLS: (string | null)[] = ["open", "save", null, "mask", "stapel", "op", "bank", null, "susa", "tax", null, "help"];
 const BAND: [string, string[]][] = [["buchen", ["mask", "stapel", "journal"]], ["op", ["op", "reminders", "payables"]], ["zv", ["bank"]], ["auswertungen", ["susa", "bwa", "guv", "tax"]]];
-const STEP = 22;
+// Cascaded windows step down by STEP and start over after CASCADE windows, so each keeps most of the area.
+const STEP = 22, CASCADE = 5;
 
 export function TaxwareProgram() {
   const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
@@ -259,8 +260,8 @@ export function TaxwareProgram() {
         {gen === "classic" && (
           <div className={`txo-mdi txo-arr-${arrange}`}>
             {wins.map((id, i) => {
-              const n = wins.length - 1;
-              const at = arrange === "cascade" ? { top: i * STEP, left: i * STEP, width: `calc(100% - ${n * STEP}px)`, height: `calc(100% - ${n * STEP}px)` } : undefined;
+              const n = Math.min(wins.length - 1, CASCADE - 1), k = i % CASCADE;
+              const at = arrange === "cascade" ? { top: k * STEP, left: k * STEP, width: `calc(100% - ${n * STEP}px)`, height: `calc(100% - ${n * STEP}px)` } : undefined;
               return (
                 <section key={id} className={`txo-child${id === top ? " active" : ""}${faktura(id)}`} style={at} aria-label={label(id)} onMouseDown={() => id !== top && setActive(id)}>
                   <div className="txo-caption">

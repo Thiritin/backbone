@@ -64,6 +64,15 @@ describe("Taxware Office", () => {
     expect(document.querySelector(".txo-mdi.txo-arr-tile")).not.toBeNull();
   });
 
+  it("starts the cascade over after five windows", () => {
+    put(taxware(2006));
+    render(<BooksProgram />);
+    openFirma();
+    for (const n of ["Trial balance", "Dialog posting", "Posting batch", "Open items", "Payments", "Advance VAT return"]) fireEvent.click(tool(n));
+    const tops = [...document.querySelectorAll<HTMLElement>(".txo-mdi .txo-child")].map((x) => x.style.top);
+    expect(tops).toEqual(["0px", "22px", "44px", "66px", "88px", "0px"]);
+  });
+
   it("draws the workflow band, side navigation and tabs from 2009", () => {
     put(taxware(2011));
     render(<BooksProgram />);
