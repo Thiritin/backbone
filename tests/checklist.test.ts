@@ -25,7 +25,7 @@ describe("checklist", () => {
   it("starts with nothing done", () => {
     const s = newGame(1);
     expect(s.checklist).toEqual([]);
-    expect(done(s)).toEqual(["internet"]);
+    expect(done(s)).toEqual([]);
   });
 
   it("detects a bought and mounted server, the line, a loan, the first and second online server and datacenter space", () => {
@@ -42,12 +42,12 @@ describe("checklist", () => {
     settle(s);
     expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan"]);
     s.homeLine = { id: "dsl-16", next: null };
-    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "internet", "loan", "firstServer"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan", "firstServer"]);
     ok(connect(s, { device: b, port: 0 }, { device: "dev5", port: 1 }));
     settle(s);
-    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "internet", "loan", "firstServer", "secondServer"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan", "firstServer", "secondServer"]);
     ok(addLocation(s, "interaction-fra", "share", 1));
-    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "internet", "loan", "firstServer", "secondServer", "datacenter"]);
+    expect(done(s)).toEqual(["buyServer", "mountServer", "mountRouter", "loan", "firstServer", "secondServer", "datacenter"]);
   });
 
   it("detects a datacenter cluster that sells", () => {
@@ -95,8 +95,11 @@ describe("checklist", () => {
     for (const id of TUTORIAL) expect(stepOf(s, id).text).toMatch(/\.$/);
     expect(stepOf(s, "domain").text).toBe("Buy a domain for your company at NameCheep in the Browser.");
     expect(stepOf(s, "domain").focus?.id).toMatch(/\/dir\/[a-z-]+$/);
+    expect(stepOf(s, "website")).toMatchObject({ app: "Shop", focus: { kind: "software", id: "Marketing" } });
+    s.installed = [...s.installed, "Marketing"];
     expect(stepOf(s, "website")).toMatchObject({ app: "Marketing", focus: { kind: "page", id: "channels" } });
-    expect(stepOf(s, "internet")).toMatchObject({ app: "Locations", focus: { kind: "line" } });
+    expect(stepOf(s, "buyServer").focus).toEqual({ kind: "class", id: "server" });
+    expect(stepOf(s, "bank").focus?.id).toMatch(/sparklasse/);
     expect(stepOf(s, "email").focus).toEqual({ kind: "url", id: "www.ionose.com/" });
     expect(stepOf(s, "hosttoast").focus).toEqual({ kind: "url", id: "www.hosttoast.de/" });
     expect(stepOf(s, "flyers").focus?.id).toMatch(/flyerlarm\.de\/$/);
@@ -115,8 +118,8 @@ describe("checklist", () => {
 
   it("points the server steps at the basement and the first server", () => {
     const s = { ...newGame(1), cash: 100_000 };
-    const srv = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
+    ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
     expect(stepOf(s, "mountServer").focus).toEqual({ kind: "location", id: "loc1" });
-    expect(stepOf(s, "setup").focus).toEqual({ kind: "device", id: srv });
+    expect(stepOf(s, "setup")).toMatchObject({ app: "Terminal", focus: { kind: "ssh" } });
   });
 });

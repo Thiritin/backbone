@@ -30,6 +30,7 @@ export const SAVE_KEY = "raid0.save";
 
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 // inner: the focus a page opened at this url applies, as Books inside a browser program.
+// kinds: url, software, class (a shop class by id), ssh (a server address), device, location and more; an app ignores a kind it does not know.
 export interface Focus { kind: string; id: string; n: number; inner?: Omit<Focus, "n"> }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; draft?: string; focus?: Focus }
 // from names the source when it is not the app, like the room an action failed in.
@@ -50,7 +51,7 @@ export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | 
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
-  Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
+  "Getting started": { w: 420, h: 340 }, Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
   Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Marketing: WIDE, Market: WIDE, Network: WIDE,
   Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 }, "Pear Mail": { w: 1000, h: 640 }, DocuWhere: { w: 1240, h: 820 }, DohleFormular: { w: 760, h: 420 }, FileGorilla: { w: 980, h: 680 }, Preview: { w: 640, h: 860 },
 };
@@ -475,16 +476,16 @@ export const useStore = create<Store>((set, get) => ({
     set({ ...fresh(), ...wipeLocal(get().sound), game: newCompany(Date.now() >>> 0), started: true });
     uiSound("startup");
     get().openApp("Getting started");
-    // The guide waits on the desktop; the game opens in the room.
-    set({ surface: "world" });
+    // The guide waits on the desktop; the game opens in the room with the clock running.
+    set({ surface: "world", speed: 1 });
     get().save();
   },
   startChallenge: () => {
     set({ ...fresh(), ...wipeLocal(get().sound), game: newChallenge(weeklyChallenge(new Date()).id), started: true });
     uiSound("startup");
     get().openApp("Getting started");
-    // The guide waits on the desktop; the game opens in the room.
-    set({ surface: "world" });
+    // The guide waits on the desktop; the game opens in the room with the clock running.
+    set({ surface: "world", speed: 1 });
     get().save();
   },
   importSave: (raw) => {

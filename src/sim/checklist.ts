@@ -36,7 +36,6 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   buyServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server"),
   mountServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server" && d.rackId && d.on),
   mountRouter: (s) => s.devices.some((d) => !!d.rackId && isOfficeRouter(modelById(d.model)) && jacked(s, d.id)),
-  internet: (s) => lineActive(s),
   domain: (s) => !!s.registrar && !!s.company.domain,
   website: siteBuilt,
   launch: (s) => s.marketing.launched && s.marketing.lines.length > 0,
@@ -86,12 +85,59 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
 export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
-// The Getting started tutorial: each step is a checklist goal, done in this order.
-export const TUTORIAL = ["bank", "register", "mail", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "setup", "findAddress", "shareWeb", "website", "domain", "email", "launch", "hosttoast", "flyers", "firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "sendInvoice"] as const;
+// Chapter one: ten cards, each a list of the goals above. A card is done when all its goals are.
+export const CHAPTER1 = [
+  { id: "bank", goals: ["bank"] },
+  { id: "register", goals: ["register"] },
+  { id: "domain", goals: ["domain"] },
+  { id: "website", goals: ["website"] },
+  { id: "payBill", goals: ["payBill"] },
+  { id: "buyServer", goals: ["buyServer"] },
+  { id: "mountServer", goals: ["mountServer", "mountRouter"] },
+  { id: "installOs", goals: ["downloadIso", "writeStick", "plugStick", "bootUsb", "installOs"] },
+  { id: "hosting", goals: ["setup", "shareWeb", "launch"] },
+  { id: "firstOrder", goals: ["firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "books", "sendInvoice"] },
+] as const;
+export type Chapter1Id = (typeof CHAPTER1)[number]["id"];
+
+// Goals of the later chapter; each is its own card once chapter one is done.
+export const LATER = ["mail", "email", "hosttoast", "flyers", "payBills", "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
+
+export type Goal = (typeof CHAPTER1)[number]["goals"][number] | (typeof LATER)[number];
+// The Getting started tutorial: the goals of the chapter-one cards in order.
+export const TUTORIAL: readonly Goal[] = CHAPTER1.flatMap((c) => c.goals);
 
 // A step that belongs to an app shows once that app is installed.
-export const GUIDE = [...TUTORIAL, "payBills", "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
-const AFTER: Partial<Record<(typeof GUIDE)[number], string>> = {
-  website: "Marketing", launch: "Marketing", research: "Research", patch: "Security", hire: "Staff", study: "Market",
+export const GUIDE: readonly Goal[] = [...TUTORIAL, ...LATER];
+const AFTER: Partial<Record<Goal, string>> = {
+  research: "Research", patch: "Security", hire: "Staff", study: "Market",
 };
-export const guideSteps = (s: GameState) => GUIDE.filter((id) => (!AFTER[id] || s.installed.includes(AFTER[id]!)) && (id !== "payBills" || suppliersBilling(s)));
+export const guideSteps = (s: GameState): Goal[] => GUIDE.filter((id) => (!AFTER[id] || s.installed.includes(AFTER[id]!)) && (id !== "payBills" || suppliersBilling(s)));
+
+export interface Card { id: string; goals: readonly Goal[]; chapter: 1 | 2 }
+
+// Time-bound cards wait on the clock, not on the player: the bill's letter in the post, the site build, the first order.
+export function waiting(s: GameState, id: string): boolean {
+  switch (id) {
+    case "payBill": return !!s.registration && !s.payables.some((p) => (p.doc ?? "invoice") === "invoice");
+    case "website": return s.marketing.siteReady !== null && !siteBuilt(s);
+    case "firstOrder": return s.webOpenedAt !== null && !checkDone(s, "firstCustomer") && !s.sales.requests.some((r) => r.kind === "order");
+    default: return false;
+  }
+}
+
+export interface Board { cards: Card[]; done: boolean[]; wait: boolean[]; current?: Card }
+
+// The cards on show: chapter one until all ten are done, then one card per remaining later goal.
+export function cardBoard(s: GameState): Board {
+  const first: Card[] = CHAPTER1.map((c) => ({ ...c, chapter: 1 }));
+  const shown = new Set(guideSteps(s));
+  const over = first.every((c) => c.goals.every((g) => checkDone(s, g)));
+  const cards = over ? LATER.filter((g) => shown.has(g)).map((g): Card => ({ id: g, goals: [g], chapter: 2 })) : first;
+  const done = cards.map((c) => c.goals.every((g) => checkDone(s, g)));
+  const wait = cards.map((c, i) => !done[i] && waiting(s, c.id));
+  return { cards, done, wait, current: cards.find((_, i) => !done[i] && !wait[i]) };
+}
+
+// The first goal of a card that is not ticked yet; the card's button opens that goal's screen.
+export const nextGoal = (s: GameState, c: Card): Goal => c.goals.find((g) => !checkDone(s, g)) ?? c.goals[0];

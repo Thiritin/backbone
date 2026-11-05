@@ -30,7 +30,7 @@ import { serviceMail } from "../80-business/shop-mail";
 import { accessParams } from "../40-support/replies";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the first panel host going online.
-export const FIRST_ORDER_DAYS = 14;
+export const FIRST_ORDER_DAYS = 3;
 
 // A basic SLA from a profile without a big budget: a standard product off the shelf. Everything else is a sales request.
 export const isStandard = (profile: Profile, sla: SalesRequest["sla"]): boolean => sla === "basic" && profileStats(profile).budget !== "high";

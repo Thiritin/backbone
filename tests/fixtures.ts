@@ -46,7 +46,9 @@ export const racked = (s: GameState): GameState => {
   return s;
 };
 export const newGame = (seed: number): GameState => funded(racked(blankGame(seed)));
-export const startGame = (seed: number): GameState => funded(startBlank(seed));
+// The real start is Monday 08:00; the suite counts days from hour 0.
+const atEpoch = (s: GameState): GameState => ({ ...s, hour: 0 });
+export const startGame = (seed: number): GameState => funded(atEpoch(startBlank(seed)));
 import { buyCart as buyCartReal, buyDevice as buyDeviceReal, type CartLine } from "../src/sim/90-actions/hardware";
 import { addNode, createPanelVm, installHypervisor, installPanel, provisionService, workload } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";

@@ -3,6 +3,8 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Getting started is now a small card with the next step, a progress bar and one button, and the corkboard shows the same ten steps with the current one highlighted.
+- A new game starts on Monday morning at 08:00 with the clock running, and the first web hosting order arrives within three days of going online.
 - Used hardware, hall fittings, remote hands, training, market studies, certificates and monthly network charges now come with a receipt or an invoice, and a company with a bank account no longer needs cash on hand to order them.
 - Your GMix mailbox is set up for you when you register your company, so Pear Mail fetches your mail right away and the GMix site opens your inbox without a password reset.
 - Hardware, software licences, Pear apps, shop modules and new datacenter space now come with an invoice or receipt, and renting space pays the rest of the first month at once.

@@ -350,7 +350,7 @@ export const World = memo(function World() {
   // The meter disc turns once every few seconds at a kilowatt, faster as the draw grows.
   const turn = power > 0 ? Math.min(20, 4000 / power) : 0;
   const board = boardOf(game);
-  const pinned = { cards: board.cards.map((c) => c.done), current: board.cards.findIndex((c) => c.id === board.current), under: board.under.length };
+  const pinned = { cards: board.cards.map((c) => c.done), current: board.cards.findIndex((c) => c.id === board.current), under: board.under };
   const draw: Record<string, (f: Fixture) => ReactNode> = {
     // The desk runs under the scanner and the PC beside it, so the three read as one piece.
     desk: (f) => <Desk from={fx.scanner?.x ?? f.x} to={(fx.pc?.x ?? f.x) + 1} under={home && <><BeerCrate x={fx.scanner?.x ?? f.x} /><Tower x={fx.pc?.x ?? f.x} /></>} />,
