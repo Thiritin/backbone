@@ -37,6 +37,20 @@ describe("deep-link targets", () => {
     expect((screen.getByLabelText(t("misc1.terminal.command")) as HTMLInputElement).value).toBe("ssh root@192.168.1.20");
   });
 
+  it("skips the scripted Terminal intro for a login from a card and for any real keystroke", () => {
+    localStorage.removeItem("raid0.shell");
+    useStore.setState({ game: newGame(5), windows: [] });
+    render(<TerminalApp />);
+    act(() => useStore.getState().openApp("Terminal", { kind: "ssh", id: "192.168.1.20" }));
+    expect((screen.getByLabelText(t("misc1.terminal.command")) as HTMLInputElement).value).toBe("ssh root@192.168.1.20");
+    cleanup();
+    localStorage.removeItem("raid0.shell");
+    useStore.setState({ game: newGame(5), windows: [] });
+    render(<TerminalApp />);
+    act(() => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "a" })); });
+    expect((screen.getByLabelText(t("misc1.terminal.command")) as HTMLInputElement).value).toBe("");
+  });
+
   it("focuses the Server class in the Shop with the price sorted up", () => {
     const s = newGame(6);
     s.hour = hourOf(new Date(Date.UTC(2005, 2, 10, 10)));

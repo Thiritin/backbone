@@ -16,6 +16,7 @@ import { isDevice, NetFailed, OsInstalling, useInstaller, winEra, type Machine }
 import { LunixBoot, LunixHalt, LunixLogin, useLunix } from "./lunix";
 import { useWindoors, WindoorsBoot, WindoorsHalt } from "./windoors";
 import { cardBoard, nextGoal } from "../../../sim/checklist";
+import { setBootMenu, useBootMenu } from "./bootMenu";
 import "./console.css";
 
 // How the screen is reached: the controller's remote console, a KVM on the console end, or a monitor plugged in at the rack.
@@ -93,10 +94,10 @@ export function useOsScreen(game: GameState, m: Machine, active: boolean, stick:
 // The soft keys a screen takes, and the keyboard while the screen has focus; a shell's own input keeps its keys.
 export function Keys({ keys, onKey, focus }: { keys: string[]; onKey: (k: string) => void; focus: () => void }) {
   // The boot card outlines the keys that open the boot menu.
-  const guided = useStore((s) => { const c = cardBoard(s.game).current; return !!c && nextGoal(s.game, c) === "bootUsb"; });
+  const guided = useStore((s) => { const c = cardBoard(s.game).current; return !!c && nextGoal(s.game, c) === "bootUsb"; }), menu = useBootMenu();
   return (
     <div className="scr-keys" role="group" aria-label={t("console.keys")}>
-      {[...new Set(keys)].filter((k) => k !== "Backspace").map((k) => <button key={k} data-guide={guided && (k === "F11" || k === "CtrlAltDel") ? "" : undefined} onClick={() => { onKey(k); focus(); }}>{keyLabel(k)}</button>)}
+      {[...new Set(keys)].filter((k) => k !== "Backspace").map((k) => <button key={k} data-guide={guided && (menu ? k === "ArrowDown" || k === "Enter" : k === "F11" || k === "CtrlAltDel") ? "" : undefined} onClick={() => { onKey(k); focus(); }}>{keyLabel(k)}</button>)}
     </div>
   );
 }
@@ -129,8 +130,10 @@ function DeviceScreen({ game, device: d, via, active = true, onRestart }: { game
   const menu = menuFor !== null && menuFor === d.bootUntil && kind !== "setup" && kind !== "dark";
   const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
+  const guideUsb = useStore((st) => { const c = cardBoard(st.game).current; return !!c && nextGoal(st.game, c) === "bootUsb"; });
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
   // On a monitor at the rack, Ctrl+Alt+Del restarts a machine whose OS is up, except where the key is the OS's own: the Windoors lock and user prompts.
+  useEffect(() => { setBootMenu(shown === "menu"); return () => setBootMenu(false); }, [shown]);
   const restart = via === "monitor" && (kind === "desktop" || shown === "notFound" || (kind === "login" && os.look !== "win")) && !os.keys.includes("CtrlAltDel");
   const onKey = (key: string) => {
     if (key === "CtrlAltDel" && restart) { if (act(POWER_ACTION.reboot, d.id).ok) onRestart?.(); }
@@ -158,7 +161,7 @@ function DeviceScreen({ game, device: d, via, active = true, onRestart }: { game
         {shown === "menu" && (
           <div className="bootmenu">
             <div className="bootmenu-t">Please select boot device:</div>
-            {devices.map((x, i) => <div key={x} className={`inst-row${i === pick ? " on" : ""}`}>{x}</div>)}
+            {devices.map((x, i) => <div key={x} data-guide={guideUsb && x.startsWith("USB") ? "" : undefined} className={`inst-row${i === pick ? " on" : ""}`}>{x}</div>)}
             {pick === devices.length - 1 && <div className="muted">PXE-E53: No boot filename received</div>}
           </div>
         )}

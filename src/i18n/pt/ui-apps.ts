@@ -243,6 +243,7 @@ export default {
   "apps.guide.step.writeStick": () => "Faz duplo clique na ISO no Finder para a gravar na pen USB.",
   "apps.guide.step.plugStick": () => "Liga a pen USB ao servidor.",
   "apps.guide.step.bootUsb": () => "Usa o carrinho de serviço: Ctrl+Alt+Del, depois F11.",
+  "apps.guide.step.bootMenu": () => "Escolhe a pen USB com as setas e prime Enter.",
   "apps.guide.step.installOs": () => "Instala o Debiant a partir da pen.",
   "apps.guide.step.setup": () => "Instale um painel web no terminal do seu servidor: execute apt-get update e depois apt-get install -y freepanel. Outros painéis e hipervisores trazem os próprios comandos no site da Debiant.",
   "apps.guide.step.domain": (p) => `Compra um domínio para a tua empresa em ${p.partner} no navegador.`,

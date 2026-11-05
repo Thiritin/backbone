@@ -62,6 +62,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const [port, setPort] = useState<End | null>(startPort);
   // A carried unit opens the panel on the lowest free unit it fits.
   const [free, setFree] = useState<number | null>(null);
+  const autoPick = useRef(false);
   const [lid, setLid] = useState<string | null>(null);
   const [cart, setCart] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
@@ -231,8 +232,10 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   // The card's cabling step outlines the line jack and router uplink, the boot step the server VGA port (the console end is port 100).
   useEffect(() => {
     if (guide === "mount") {
+      // The card picks the first free unit at once, so the stock tile shows beside it.
+      if (free === null && !autoPick.current) { const first = document.querySelector<SVGGElement>(".wr-face .rack-free"); if (first) { autoPick.current = true; first.dispatchEvent(new MouseEvent("click", { bubbles: true })); } }
       // The free unit to click, then the stored devices that fit it.
-      const hit = free === null ? [document.querySelector(".wr-face .rack-free")] : [...document.querySelectorAll("[data-free] .wp-unit button")];
+      const hit = [document.querySelector(".wr-face .rack-free"), ...document.querySelectorAll("[data-free] .wp-unit button")];
       const els = hit.filter((el): el is Element => !!el);
       els.forEach((el) => el.setAttribute("data-guide", ""));
       return () => els.forEach((el) => el.removeAttribute("data-guide"));

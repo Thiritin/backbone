@@ -3,17 +3,19 @@ import { t } from "../../i18n/en";
 import { cardBoard, checkDone } from "../../sim/checklist";
 import { cardOf } from "../apps/guide";
 import { openStep } from "../apps/GuideApp";
+import { useBootMenu } from "../apps/console/bootMenu";
 import { useStore } from "../store";
 
 // The room's version of the next-step card: it follows the same board and shows the same text and progress.
 // Closed, it leaves a small chip that brings it back.
 export function NextStrip() {
   const game = useStore((s) => s.game), on = useStore((s) => s.guideStrip), set = useStore((s) => s.setGuideStrip);
+  const bootMenu = useBootMenu();
   const { cards, done, wait, current } = cardBoard(game);
   const shown = current ?? cards[done.indexOf(false)];
   if (!shown) return null;
   if (!on) return <button className="w-next-chip" onClick={() => set(true)}>{t("doc.guide")}</button>;
-  const { title, text, step } = cardOf(game, shown);
+  const { title, text, step } = cardOf(game, shown, bootMenu);
   const parts = shown.goals.filter((g) => checkDone(game, g)).length, waits = wait[cards.indexOf(shown)];
   return (
     <aside className="w-next" data-next={shown.id}>

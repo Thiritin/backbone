@@ -243,6 +243,7 @@ export default {
   "apps.guide.step.writeStick": () => "Double-clique sur l'ISO dans le Finder pour l'écrire sur la clé USB.",
   "apps.guide.step.plugStick": () => "Branche la clé USB sur le serveur.",
   "apps.guide.step.bootUsb": () => "Utilise le chariot de service : Ctrl+Alt+Suppr, puis F11.",
+  "apps.guide.step.bootMenu": () => "Choisis la clé USB avec les flèches et appuie sur Entrée.",
   "apps.guide.step.installOs": () => "Installe Debiant depuis la clé.",
   "apps.guide.step.setup": () => "Installe un panneau web dans le terminal de ton serveur : exécute apt-get update, puis apt-get install -y freepanel. Les autres panneaux et hyperviseurs ont leurs propres commandes sur le site web de Debiant.",
   "apps.guide.step.domain": (p) => `Achète un nom de domaine pour ton entreprise chez ${p.partner} dans le navigateur.`,

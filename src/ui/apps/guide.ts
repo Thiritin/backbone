@@ -130,8 +130,9 @@ export function stepOf(s: GameState, id: StepId): Step {
 }
 
 // A card's own title and sentence; later-chapter cards are single goals and use the goal's text.
-export function cardOf(s: GameState, c: Card): { title: string; text: string; step: Step } {
+export function cardOf(s: GameState, c: Card, bootMenu = false): { title: string; text: string; step: Step } {
   const step = stepOf(s, nextGoal(s, c));
+  if (bootMenu && nextGoal(s, c) === "bootUsb") step.text = t("apps.guide.step.bootMenu");
   // A card of several goals shows the sentence of the goal that is next.
   if (c.chapter === 1) return { title: t(`guide.card.${c.id}`), text: waiting(s, c.id) ? t(`guide.card.${c.id}.wait`) : c.goals.length > 1 ? step.text : t(`guide.card.${c.id}.text`), step };
   return { title: step.title, text: step.text, step };

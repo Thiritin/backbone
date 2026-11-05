@@ -243,6 +243,7 @@ export default {
   "apps.guide.step.writeStick": () => "Fai doppio clic sull'ISO nel Finder per scriverla sulla chiavetta USB.",
   "apps.guide.step.plugStick": () => "Inserisci la chiavetta USB nel server.",
   "apps.guide.step.bootUsb": () => "Usa il carrello di servizio: Ctrl+Alt+Canc, poi F11.",
+  "apps.guide.step.bootMenu": () => "Scegli la chiavetta USB con i tasti freccia e premi Invio.",
   "apps.guide.step.installOs": () => "Installa Debiant dalla chiavetta.",
   "apps.guide.step.setup": () => "Installa un pannello web nel terminale del tuo server: esegui apt-get update, poi apt-get install -y freepanel. Gli altri pannelli e hypervisor hanno i propri comandi sul sito web di Debiant.",
   "apps.guide.step.domain": (p) => `Compra un dominio per la tua azienda da ${p.partner} nel Browser.`,

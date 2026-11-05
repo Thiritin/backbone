@@ -243,6 +243,7 @@ export default {
   "apps.guide.step.writeStick": () => "Haz doble clic en la ISO en Finder para escribirla en la memoria USB.",
   "apps.guide.step.plugStick": () => "Conecta la memoria USB al servidor.",
   "apps.guide.step.bootUsb": () => "Usa el carro de servicio: Ctrl+Alt+Supr, luego F11.",
+  "apps.guide.step.bootMenu": () => "Elige la memoria USB con las flechas y pulsa Intro.",
   "apps.guide.step.installOs": () => "Instala Debiant desde la memoria.",
   "apps.guide.step.setup": () => "Instala un panel web en el terminal de tu servidor: ejecuta apt-get update y después apt-get install -y freepanel. Otros paneles e hipervisores traen sus propios comandos en el sitio web de Debiant.",
   "apps.guide.step.domain": (p) => `Compra un dominio para tu empresa en ${p.partner} desde el navegador.`,

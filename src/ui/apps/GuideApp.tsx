@@ -6,6 +6,7 @@ import { isOfficeRouter, modelById } from "../../sim/10-catalog/hardware";
 import { playerAt } from "../../sim/60-infra/handwork";
 import { wikiUrl } from "./browser/sites/wiki/articles";
 import type { GameState } from "../../sim/50-state";
+import { useBootMenu } from "./console/bootMenu";
 import { useStore } from "../store";
 
 const LIST_H = 470, CARD_H = 250;
@@ -33,11 +34,12 @@ export function GuideApp() {
   const game = useStore((s) => s.game);
   const openApp = useStore((s) => s.openApp), openDoc = useStore((s) => s.openDoc);
   const listOpen = useStore((s) => (s.windows.find((w) => w.app === "Getting started")?.h ?? CARD_H) > CARD_H);
+  const bootMenu = useBootMenu();
   const { cards, done, wait, current } = cardBoard(game);
   const left = done.indexOf(false), shown = current ?? cards[left];
   const finished = done.filter(Boolean).length;
   if (!shown) return <article className="guide next"><h2>{t("guide.next.done")}</h2></article>;
-  const { title, text, step } = cardOf(game, shown);
+  const { title, text, step } = cardOf(game, shown, bootMenu);
   const waits = wait[cards.indexOf(shown)];
   const parts = shown.goals.filter((g) => checkDone(game, g)).length;
   return (

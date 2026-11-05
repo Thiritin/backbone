@@ -243,6 +243,7 @@ export default {
   "apps.guide.step.writeStick": () => "Doppelklicke im Finder auf die ISO-Datei, um sie auf den USB-Stick zu schreiben.",
   "apps.guide.step.plugStick": () => "Stecke den USB-Stick in den Server.",
   "apps.guide.step.bootUsb": () => "Nutze den Servicewagen: Strg+Alt+Entf, dann F11.",
+  "apps.guide.step.bootMenu": () => "Wähle USB mit den Pfeiltasten und drücke Enter.",
   "apps.guide.step.installOs": () => "Installiere Debiant vom Stick.",
   "apps.guide.step.setup": () => "Installiere ein Webpanel im Terminal deines Servers: führe apt-get update aus, danach apt-get install -y freepanel. Andere Panels und Hypervisoren bringen ihre eigenen Befehle auf der Debiant-Website mit.",
   "apps.guide.step.domain": (p) => `Kaufe im Browser bei ${p.partner} eine Domain für deine Firma.`,
