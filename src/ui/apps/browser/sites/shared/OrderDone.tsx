@@ -17,9 +17,16 @@ export function OrderDone({ payable, btn = "btn sm" }: { payable: string; btn?: 
   return (
     <span className="order-done" role="status">
       {t(p.paidAt !== null && p.doc !== "contract" ? "purchase.done.paid" : "purchase.done.ordered")}{" "}
-      <button type="button" className={btn} onClick={() => openPayable(p.id)}>{t(`purchase.doc.${p.doc ?? "invoice"}`)}</button>
+      <DocButton payable={payable} btn={btn} />
     </span>
   );
+}
+
+// The button that opens a payable's document, named by the document's kind.
+export function DocButton({ payable, btn = "btn sm" }: { payable?: string; btn?: string }) {
+  const p = useStore((s) => s.game.payables.find((x) => x.id === payable));
+  if (!p) return null;
+  return <button type="button" className={btn} onClick={() => openPayable(p.id)}>{t(`purchase.doc.${p.doc ?? "invoice"}`)}</button>;
 }
 
 // The chosen method while methodsFor still offers it, else the supplier's default, else the first one offered.

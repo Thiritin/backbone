@@ -12,7 +12,8 @@ import type { GameState } from "../../../../../../sim/50-state";
 import { supportOn } from "../../../../../../sim/60-infra/lifecycle";
 import { SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
 import { displayHost } from "../../../../../../sim/80-business/browser";
-import { bought, ordered } from "../../../../../../sim/80-business/licences";
+import { bought, moduleOrder, ordered } from "../../../../../../sim/80-business/licences";
+import { DocButton } from "../../shared/OrderDone";
 import { portalPath } from "../../../../../../sim/80-business/portal";
 import { shopUpdate } from "../../../../../../sim/80-business/shop";
 import { hostOf, vendorName } from "../../../../../../sim/80-business/vendor-shop";
@@ -160,7 +161,7 @@ function Extensions({ game }: { game: GameState }) {
             {m.id !== "shop-link" && <><dt>{t("payment-methods.fee")}</dt><dd className="num">{feeText(methodById(m.id as MethodId))}</dd></>}
           </dl>
           {hasModule(game, m.id) && game.shop.variant === ID ? <span className="bxs-state">{t("vendor-sites.registered")}</span>
-            : bought(game, m.id, ID) ? <span className="bxs-state">{t("vendor-sites.bought")}</span> : ordered(game, m.id, ID) ? <span className="bxs-state">{t("vendor-sites.ordered")}</span>
+            : bought(game, m.id, ID) ? <span className="bxs-state">{t("vendor-sites.bought")} <DocButton payable={moduleOrder(game, m.id, ID)} /></span> : ordered(game, m.id, ID) ? <span className="bxs-state">{t("vendor-sites.ordered")} <DocButton payable={moduleOrder(game, m.id, ID)} /></span>
             : <PayButton className="bxs-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>}
         </article>
       ))}

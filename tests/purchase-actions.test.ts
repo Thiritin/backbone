@@ -8,6 +8,7 @@ import { buyLicence } from "../src/sim/90-actions/licences";
 import { install } from "../src/sim/90-actions/store";
 import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
 import { hostOf } from "../src/sim/80-business/vendor-shop";
+import { moduleOrder } from "../src/sim/80-business/licences";
 import { freeFloor, newGame, orderDetails, withCard, withServer } from "./fixtures";
 
 const CART: CartLine[] = [{ model: "g1-compute", brand: "Dwell", qty: 2 }, { model: "sw-8", brand: "Sysko", qty: 1 }];
@@ -106,6 +107,8 @@ describe("shop module", () => {
     expect(buyLicence(s, "shop-link", "transfer").ok).toBe(true);
     expect(buyLicence(s, "shop-link", "transfer")).toEqual({ ok: false, error: "error.orderOpen" });
     expect(ours(s, "shopVendor")).toHaveLength(1);
+    expect(moduleOrder(s, "shop-link")).toBe(ours(s, "shopVendor")[0].id);
+    expect(moduleOrder(s, "debit")).toBeUndefined();
   });
 });
 
