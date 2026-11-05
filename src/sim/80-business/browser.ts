@@ -268,7 +268,13 @@ export function resolve(s: GameState, raw: string): Resolved {
   }
   if (host === `support.${domain}`) return out({ kind: "notfound" });
   // The panel's own webmail answers at webmail.<domain> of a domain with panel mailboxes.
-  if (host.startsWith("webmail.") && panelMailDomain(s, host.slice(8))) return out({ kind: "panelMail", domain: host.slice(8) });
+  // It answers only while the domain itself reaches a running, active web space, and never takes the company's own webmail host.
+  const mailDomain = host.startsWith("webmail.") ? host.slice(8) : null;
+  if (mailDomain && panelMailDomain(s, mailDomain) && !(mailDomain === domain && defaultWebmail(s))) {
+    const r = resolve(s, mailDomain), b = r.page.kind === "webspace" ? r.page.body : null;
+    if ((b || r.page.kind === "customer") && !(b?.kind === "error" && b.error === "suspended")) return out({ kind: "panelMail", domain: mailDomain }, r.load);
+    return out({ kind: "notfound" }, "down");
+  }
   // The default webmail front end answers at webmail.<domain> like on its machine, also for the domains of customer sites.
   if ((s.company.domain && host === `webmail.${domain}`) || (host.startsWith("webmail.") && siteAt(s, host.slice(8)))) {
     const c = defaultWebmail(s), h = c && consoleHost(s, c), m = h && machineOf(s, h, false);

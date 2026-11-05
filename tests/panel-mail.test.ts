@@ -5,7 +5,7 @@ import { clientError } from "../src/sim/43-pear-mail/check";
 import { clientAccount } from "../src/sim/43-pear-mail/state";
 import { mailAddress } from "../src/sim/60-infra/addresses";
 import { mailClusterAtHost, namesOf } from "../src/sim/60-infra/mail-host";
-import { panelLogin, panelMessages } from "../src/sim/60-infra/panel-mail";
+import { BOX_CAP, panelBody, panelLogin, panelMessages, panelSubject } from "../src/sim/60-infra/panel-mail";
 import { panelMachine } from "../src/sim/60-infra/licence";
 import { resolve } from "../src/sim/80-business/browser";
 import { mailClusterAt } from "../src/sim/80-business/webmail";
@@ -14,6 +14,7 @@ import { provisionService } from "../src/sim/90-actions/clusters";
 import { addCustomer } from "../src/sim/90-actions/customers";
 import { readPanelMail, sendPanelMail } from "../src/sim/90-actions/panel-mail";
 import { createMailbox } from "../src/sim/90-actions/webspace";
+import { tick } from "../src/sim/88-tick/tick";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import { selfHosted } from "./company-mail.helpers";
 import { BASEMENT_SERVER, newGame, panelServer, readyGame, skipTo, withServer } from "./fixtures";
@@ -38,7 +39,9 @@ describe("panel mailboxes", () => {
     expect(panelLogin(s, "anna@sockenshop.de", "wrong")).toBeNull();
     expect(panelLogin(s, "nobody@sockenshop.de", "secret1")).toBeNull();
     const [welcome] = panelMessages(s, "anna@sockenshop.de");
-    expect(welcome).toMatchObject({ folder: "inbox", read: false });
+    expect(welcome).toMatchObject({ folder: "inbox", read: false, tkey: "welcome" });
+    expect(panelSubject(welcome)).not.toBe("");
+    expect(panelBody(welcome)).toContain("anna@sockenshop.de");
     expect(readPanelMail(s, "anna@sockenshop.de", "wrong", welcome.id).ok).toBe(false);
     expect(readPanelMail(s, "anna@sockenshop.de", "secret1", welcome.id).ok).toBe(true);
     expect(panelMessages(s, "anna@sockenshop.de")[0].read).toBe(true);
@@ -55,6 +58,43 @@ describe("panel mailboxes", () => {
     expect(panelMessages(s, "anna@sockenshop.de").some((m) => m.folder === "sent" && m.to === "bob@sockenshop.de")).toBe(true);
     expect(sendPanelMail(s, "anna@sockenshop.de", "secret1", "nonsense", "x", "y").ok).toBe(false);
     expect(sendPanelMail(s, "anna@sockenshop.de", "bad", "bob@sockenshop.de", "x", "y").ok).toBe(false);
+  });
+
+  it("bounces mail to a domain that does not exist", () => {
+    const { s, id } = account();
+    createMailbox(s, id, "anna", "sockenshop.de", "secret1", 100);
+    expect(sendPanelMail(s, "anna@sockenshop.de", "secret1", "x@no-such-domain-zz.example", "Hi", "Yo")).toMatchObject({ ok: false, error: "panelmail.error.undeliverable" });
+    expect(panelMessages(s, "anna@sockenshop.de").some((m) => m.folder === "sent")).toBe(false);
+  });
+
+  it("caps a box, dropping read mail first, and purges the mail of removed mailboxes", () => {
+    const { s, id } = account();
+    createMailbox(s, id, "anna", "sockenshop.de", "secret1", 100);
+    for (let day = 0; day < 90; day++) {
+      for (let n = 0; n < 4; n++) deliver(s, { to: "anna@sockenshop.de", from: "n:Dwell", kind: "order", own: { subject: `Day ${day} mail ${n}`, text: "x" } });
+      for (const m of panelMessages(s, "anna@sockenshop.de").slice(0, 2)) readPanelMail(s, "anna@sockenshop.de", "secret1", m.id);
+    }
+    const box = panelMessages(s, "anna@sockenshop.de");
+    expect(box.length).toBe(BOX_CAP);
+    expect(box.at(-1)!.subject).toBe("Day 89 mail 3");
+    s.panelMail["ghost@gone.de"] = [{ id: "pmx", folder: "inbox", from: "a", to: "ghost@gone.de", subject: "s", body: "b", at: 0, read: false }];
+    do tick(s); while (s.hour % 24 !== 0);
+    expect(s.panelMail["ghost@gone.de"]).toBeUndefined();
+    expect(panelMessages(s, "anna@sockenshop.de").length).toBe(BOX_CAP);
+  });
+
+  it("answers webmail only for a reachable web space and leaves the company's own webmail host alone", () => {
+    const { s, id } = account();
+    createMailbox(s, id, "anna", "sockenshop.de", "secret1", 100);
+    expect(resolve(s, "webmail.sockenshop.de/").page.kind).toBe("panelMail");
+    const svc = s.services.find((v) => v.domain === "sockenshop.de")!;
+    svc.endedAt = s.hour;
+    expect(resolve(s, "webmail.sockenshop.de/").page.kind).toBe("notfound");
+    svc.endedAt = null;
+    const cl = s.clusters.find((c) => c.kind === "panel")!;
+    s.company.domain = "sockenshop.de";
+    s.clusters.push({ ...cl, id: "clu99", kind: "mailweb" } as never);
+    expect(resolve(s, "webmail.sockenshop.de/").page.kind).not.toBe("panelMail");
   });
 
   it("opens the panel webmail at webmail.<domain> and the panel's port 2096, and loads old saves", () => {

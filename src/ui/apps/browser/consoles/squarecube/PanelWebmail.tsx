@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { GameState } from "../../../../../sim/50-state";
-import { panelLogin, panelMessages, type PanelMessage } from "../../../../../sim/60-infra/panel-mail";
+import { panelBody, panelLogin, panelMessages, panelSubject, type PanelMessage } from "../../../../../sim/60-infra/panel-mail";
 import { readPanelMail, sendPanelMail } from "../../../../../sim/90-actions/panel-mail";
 import { t } from "../../../../../i18n/en";
 import { useSessionState } from "../../../../session";
@@ -78,16 +78,16 @@ function Shell({ game, login, out }: { game: GameState; login: [string, string];
         ) : open ? (
           <div className="scw-reader">
             <p><button onClick={() => setOpen(null)}>{t("panelmail.back")}</button></p>
-            <h3>{open.subject}</h3>
+            <h3>{panelSubject(open)}</h3>
             <p>{t("panelmail.from")}: {open.from}<br />{t("panelmail.to")}: {open.to}<br />{t("panelmail.date")}: {mailDate(open.at)}</p>
-            <pre style={{ whiteSpace: "pre-wrap" }}>{open.body}</pre>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{panelBody(open)}</pre>
           </div>
         ) : rows.length ? (
           <table className="scw-list">
             <thead><tr><th>{t("panelmail.subject")}</th><th>{t(view === "sent" ? "panelmail.to" : "panelmail.from")}</th><th>{t("panelmail.date")}</th></tr></thead>
             <tbody>{[...rows].reverse().map((m) => (
               <tr key={m.id} className={m.read ? "" : "unread"} onClick={() => show(m)} style={{ cursor: "pointer" }}>
-                <td>{m.read ? m.subject : <b>{m.subject}</b>}</td><td>{view === "sent" ? m.to : m.from}</td><td>{mailDate(m.at)}</td>
+                <td><button type="button" className="pw-open" onClick={(e) => { e.stopPropagation(); show(m); }}>{m.read ? panelSubject(m) : <b>{panelSubject(m)}</b>}</button></td><td>{view === "sent" ? m.to : m.from}</td><td>{mailDate(m.at)}</td>
               </tr>
             ))}</tbody>
           </table>

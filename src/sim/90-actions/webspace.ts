@@ -1,5 +1,4 @@
 // docs/design/web-hosting.md, The web space: the player's changes to a web space, stored in its overlay.
-import { t } from "../../i18n/en";
 import { yearOf } from "../00-core/time";
 import { PHP } from "../10-catalog/platforms";
 import { companyDomain } from "../30-customers/domains";
@@ -95,7 +94,7 @@ export function createMailbox(s: GameState, workloadId: string, local: string, d
   const over = full(ws, "mailboxes", ws.usage.mailboxes);
   if (over) return over;
   put(s, workloadId, "mailboxes", address, { address, password: pass, quotaMb, usedMb: 0 });
-  panelDeliver(s, { from: `${WELCOME_FROM}@${domain}`, to: address, subject: t("panelmail.welcome.subject"), body: t("panelmail.welcome.body", { address }) });
+  panelDeliver(s, { from: `${WELCOME_FROM}@${domain}`, to: address, subject: "", body: "", tkey: "welcome" });
   return { ok: true, id: address };
 }
 

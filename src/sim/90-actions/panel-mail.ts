@@ -11,8 +11,8 @@ export function sendPanelMail(s: GameState, address: string, password: string, t
   if (!panelLogin(s, address, password)) return fail("panelmail.error.login");
   const dest = to.trim().toLowerCase();
   if (!ADDRESS.test(dest)) return fail("panelmail.error.address");
+  if (!panelDeliver(s, { from: address, to: dest, subject, body }) && deliver(s, { to: dest, from: address, kind: "staff", own: { subject, text: body } }).result === "bounced") return fail("panelmail.error.undeliverable");
   panelStore(s, address, { from: address, to: dest, subject, body }, "sent");
-  if (!panelDeliver(s, { from: address, to: dest, subject, body })) deliver(s, { to: dest, from: address, kind: "staff", own: { subject, text: body } });
   return { ok: true, id: dest };
 }
 

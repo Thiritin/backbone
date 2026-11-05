@@ -131,6 +131,7 @@ export default {
   "panelmail.welcome.subject": () => "Benvenuto nella tua casella",
   "panelmail.welcome.body": (p) => `La tua casella ${p.address} è pronta. Puoi leggere e inviare posta nel webmail.`,
   "panelmail.error.login": () => "Accesso non riuscito",
+  "panelmail.error.undeliverable": () => "Consegna non riuscita",
   "panelmail.error.address": () => "Indirizzo non valido",
   "panelmail.address": () => "Indirizzo e-mail",
   "panelmail.password": () => "Password",
