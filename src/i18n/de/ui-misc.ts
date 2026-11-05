@@ -259,7 +259,7 @@ export default {
   "misc.refuseRaise": () => "Gehaltserhöhung ablehnen",
   "misc.rightOnBilling": () => "Richtig bei der Abrechnung",
   "misc.rightOnHowTo": () => "Richtig bei Anleitungen",
-  "misc.ripeMembership": () => "RIPE-NCC-Mitgliedschaft",
+  "misc.ripeMembership": () => "RIPE-ish-NCC-Mitgliedschaft",
   "misc.ripeText": () => "Mitglieder erhalten eine AS-Nummer und eigene Adressblöcke, die sie aus einem Rechenzentrum ankündigen können.",
   "misc.role": () => "Rolle",
   "misc.roleAccountantMany": () => "Buchhalter",

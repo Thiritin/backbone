@@ -83,7 +83,7 @@ describe("network and addresses", () => {
   it("pays the AS number and the exchange join by method", () => {
     const s = net();
     ok(registerAsn(s));
-    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE NCC", method: "cash", doc: "receipt" });
+    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE-ish NCC", method: "cash", doc: "receipt" });
     ok(joinExchange(s, "dekicks"));
     expect(keys(s)).toEqual(["ledger.exchangeJoin"]);
     expect(s.payables).toHaveLength(2);
@@ -98,7 +98,7 @@ describe("network and addresses", () => {
   it("bills the yearly LIR fee from the registry", () => {
     const s = net();
     billDirect(s, [{ hour: s.hour, category: "rent", key: "ledger.lirYearly", params: {}, amount: -1400 }]);
-    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE NCC" });
+    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE-ish NCC" });
   });
 
   it("pays the LIR signup, a block and the provider routing", () => {
@@ -106,10 +106,10 @@ describe("network and addresses", () => {
     const loc = ok(addLocation(s, "equinox-fr5", "cage", 4));
     ok(joinLir(s));
     expect(keys(s)).toEqual(["ledger.lirSignup"]);
-    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE NCC" });
+    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE-ish NCC" });
     ok(buyBlock(s));
     expect(keys(s)).toEqual(["ledger.blockBought"]);
-    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE NCC" });
+    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE-ish NCC" });
     s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
     ok(announceBlock(s, s.ips.blocks[0].id, loc, true));
     expect(keys(s)).toEqual(["ledger.providerRouting"]);

@@ -259,7 +259,7 @@ export default {
   "misc.refuseRaise": () => "Refuser l'augmentation",
   "misc.rightOnBilling": () => "Juste sur la facturation",
   "misc.rightOnHowTo": () => "Juste sur les questions pratiques",
-  "misc.ripeMembership": () => "Adhésion RIPE NCC",
+  "misc.ripeMembership": () => "Adhésion RIPE-ish NCC",
   "misc.ripeText": () => "Les membres obtiennent un numéro AS et leurs propres blocs d'adresses à annoncer depuis un centre de données.",
   "misc.role": () => "Poste",
   "misc.roleAccountantMany": () => "Comptables",
