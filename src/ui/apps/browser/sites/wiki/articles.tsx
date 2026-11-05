@@ -74,6 +74,21 @@ function SoftwareTable({ kind, year, go }: { kind: Software["kind"]; year: numbe
 
 export const ARTICLES: Article[] = [
   {
+    slug: "Help:Playing_the_game",
+    title: t("guide.help"),
+    category: "Help",
+    body: (go) => <>
+      <h2>{R(go, "apps.guide.time")}</h2>
+      <p>{R(go, "apps.guide.timeText")}</p>
+      <h2>{R(go, "apps.guide.windows")}</h2>
+      <p>{R(go, "apps.guide.windowsText")}</p>
+      <h2>{R(go, "apps.guide.notifications")}</h2>
+      <p>{R(go, "apps.guide.notificationsText")}</p>
+      <h2>{R(go, "apps.guide.saving")}</h2>
+      <p>{R(go, "apps.guide.savingText")}</p>
+    </>,
+  },
+  {
     slug: "Help:Starting_a_hosting_company",
     title: t("browser-sites-2.wikiHelpStartingAHostingCompanyTitle"),
     category: "Help",

@@ -110,6 +110,8 @@ export function AppWindow({ win, front }: { win: Win; front: boolean }) {
   const box: CSSProperties = win.zoomed
     ? { left: 0, top: MENUBAR, right: 0, bottom: DOCK, zIndex: win.z }
     : { left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z };
+  // The guide card stays above app windows and below dialogs.
+  if (win.app === "Getting started" && !win.zoomed) box.zIndex = 99;
 
   return (
     <WinContext.Provider value={{ id: win.id, close: closeWin }}>

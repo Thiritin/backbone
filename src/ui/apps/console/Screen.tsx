@@ -114,14 +114,19 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   // F11 during POST opens the boot menu at once, so it works with the clock stopped; it holds for that boot only.
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [pick, setPick] = useState(0);
+  // F11 pressed before POST waits for the next boot and then opens the menu.
+  const [queued, setQueued] = useState(false);
   const os = useOsScreen(game, d, active, usb), kind = os.screen.kind;
   useEffect(() => { if (active) focusIn(box.current); }, [active, kind]);
+  useEffect(() => { if (queued && kind === "post") { setMenuFor(d.bootUntil ?? 0); setPick(0); setQueued(false); } }, [queued, kind, d.bootUntil]);
+  useEffect(() => { if (!queued) return; const id = setTimeout(() => setQueued(false), 8000); return () => clearTimeout(id); }, [queued]);
   const menu = menuFor !== null && menuFor === d.bootUntil && kind !== "setup" && kind !== "dark";
   const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
   const onKey = (key: string) => {
     if (shown === "post" || shown === "notFound") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
+    else if (key === "F11" && shown !== "menu" && shown !== "bios" && shown !== "dark") setQueued(true);
     else if (shown === "stuck") { if (key === "F1") act(continueBoot, d.id); else if (key === "Delete" || key === "F2") act(enterSetup, d.id); }
     else if (shown === "bios") bios.onKey(key);
     else if (shown === "menu") {
@@ -149,6 +154,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
           </div>
         )}
         {!["dark", "post", "stuck", "bios", "menu"].includes(shown) && os.view}
+        {queued && <span className="scr-osd">{t("console.bootMenuQueued")}</span>}
       </div>
       <Keys keys={keys} onKey={onKey} focus={() => focusIn(box.current)} />
     </div>

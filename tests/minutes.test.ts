@@ -7,6 +7,7 @@ import { BOOT_MINUTES, booting, working } from "../src/sim/60-infra/status";
 import { tick, tickMinute } from "../src/sim/88-tick/tick";
 import { runAction } from "../src/sim/90-actions/index";
 import { replay, runFile } from "../src/sim/92-run/run";
+import { OPEN_HOUR, startGame as realStart } from "../src/sim/90-actions/start";
 import { readyGame, withServer, newGame, startGame, quoteOrder } from "./fixtures";
 
 const minutes = (s: Parameters<typeof tickMinute>[0], n: number) => { for (let i = 0; i < n; i++) tickMinute(s); };
@@ -61,14 +62,14 @@ describe("game minutes", () => {
   });
 
   it("logs the minute of an action and replays it there", () => {
-    const s = startGame(3);
+    const s = realStart(3);
     minutes(s, 30);
     const r = runAction(s, "setCompany", [{ name: "Minute Hosting", color: "oklch(0.65 0.17 50)" }]);
     expect(r.ok).toBe(true);
-    expect(s.log.at(-1)).toMatchObject({ hour: 0, minute: 30, name: "setCompany" });
+    expect(s.log.at(-1)).toMatchObject({ hour: OPEN_HOUR, minute: 30, name: "setCompany" });
     const seen: number[] = [];
-    const back = replay(runFile(s, "test"), 2, (x) => seen.push(nowMinutes(x)));
+    const back = replay(runFile(s, "test"), OPEN_HOUR + 2, (x) => seen.push(nowMinutes(x)));
     expect(back.company.name).toBe("Minute Hosting");
-    expect(seen).toEqual([60, 120]);
+    expect(seen).toEqual([OPEN_HOUR * 60 + 60, OPEN_HOUR * 60 + 120]);
   });
 });

@@ -30,7 +30,7 @@ import { serviceMail } from "../80-business/shop-mail";
 import { accessParams } from "../40-support/replies";
 
 // Without an order, the first one comes from a friend's recommendation within this many days of the first panel host going online.
-export const FIRST_ORDER_DAYS = 14;
+export const FIRST_ORDER_DAYS = 3;
 
 // A basic SLA from a profile without a big budget: a standard product off the shelf. Everything else is a sales request.
 export const isStandard = (profile: Profile, sla: SalesRequest["sla"]): boolean => sla === "basic" && profileStats(profile).budget !== "high";
@@ -177,9 +177,11 @@ function formInvoice(s: GameState, id: string): void {
 
 export function firstOrder(s: GameState, events: SimEvent[]): void {
   if (s.webOpenedAt === null) return;
-  const day = Math.floor((s.hour - s.webOpenedAt) / 24);
-  // The customer writes by email, so the order waits while the domain's MX is wrong.
-  if (day >= FIRST_ORDER_DAYS || s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
+  // The three days start once hosting is listed and the panel host is reachable; the customer writes by email, so
+  // the order waits while the domain's MX is wrong and then comes at once if the days are used up.
+  s.firstOrderFrom ??= s.hour;
+  if (s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
+  const day = Math.min(Math.floor((s.hour - s.firstOrderFrom) / 24), FIRST_ORDER_DAYS - 1);
   if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
 }
 

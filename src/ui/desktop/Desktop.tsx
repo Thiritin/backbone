@@ -39,7 +39,7 @@ const dark = matchMedia("(prefers-color-scheme: dark)");
 export const KEYS_OWN = "input, textarea, select, button, a, summary, [role=button], [role=menuitem], [role=radio], [role=checkbox], [role=alertdialog], [role=dialog], [role=menu]";
 
 export function Desktop() {
-  const { started, theme: pref, setTheme } = useStore();
+  const { started, theme: pref } = useStore();
   const [system, setSystem] = useState(dark.matches ? "dark" : "light");
   const theme = pref === "auto" ? system : pref;
 
@@ -65,20 +65,21 @@ export function Desktop() {
       {photo
         ? <div className="wallpaper-host photo" style={{ backgroundImage: `url(${photo})` }} />
         : <div className="wallpaper-host" dangerouslySetInnerHTML={{ __html: wallpaperSvg() }} />}
-      {started ? <Shell theme={theme} onTheme={() => setTheme(theme === "dark" ? "light" : "dark")} /> : <StartScreen />}
+      {started ? <Shell /> : <StartScreen />}
     </div>
   );
 }
 
-function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
+function Shell() {
   const { windows, speed, setSpeed, advance, save, clearUnseen, news, explain, setExplain } = useStore();
   const gameOver = useStore((s) => s.game.gameOver), surface = useStore((s) => s.surface), desk = surface === "desktop";
   const [update, setUpdate] = useState<{ changes: ChangelogDay[]; install?: () => Promise<void> } | null>(null);
   const dismissed = useRef<number | null>(null);
 
   useEffect(() => watchUpdates((changes, install) => setUpdate({ changes, install }), () => dismissed.current), []);
-  const [center, setCenter] = useState(false);
+  const center = useStore((s) => s.bell), setCenter = useStore((s) => s.setBell);
   const carry = clockCarry;
+  useEffect(() => { if (!desk) setCenter(false); }, [desk, setCenter]);
 
   // Clock: whole game minutes from real time × speed; leftovers carry into the next frame.
   useEffect(() => {
@@ -123,7 +124,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
       <PauseMenu />
       {surface === "world" ? <><World /><Banners /></> : (
         <>
-          <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />
+          <MenuBar onBell={toggleCenter} />
           <ConfirmHost />
           <DesktopIcons />
           <Widgets />

@@ -31,6 +31,7 @@ export const SAVE_KEY = "raid0.save";
 
 // What another app asked a window to show; n changes on every request so repeating one still applies.
 // inner: the focus a page opened at this url applies, as Books inside a browser program.
+// kinds: url, software, class (a shop class by id), ssh (a server address), device, location and more; an app ignores a kind it does not know.
 export interface Focus { kind: string; id: string; n: number; inner?: Omit<Focus, "n"> }
 export interface Win { id: string; app: string; x: number; y: number; w: number; h: number; z: number; minimized: boolean; zoomed: boolean; doc?: string; console?: string; draft?: string; focus?: Focus }
 // from names the source when it is not the app, like the room an action failed in.
@@ -50,8 +51,9 @@ export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | 
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
 const WIDE = { w: 1240, h: 680 };
+export const GUIDE_W = 440;
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
-  Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
+  "Getting started": { w: GUIDE_W, h: 250 }, Security: { w: 900, h: 560 }, Browser: { w: 1000, h: 640 }, News: { w: 520, h: 640 },
   Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Marketing: WIDE, Market: WIDE, Network: WIDE,
   Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 }, "Pear Mail": { w: 1000, h: 640 }, DocuWhere: { w: 1240, h: 820 }, DohleFormular: { w: 760, h: 420 }, FileGorilla: { w: 980, h: 680 }, Preview: { w: 640, h: 860 },
 };
@@ -145,6 +147,10 @@ export interface Store {
   pause: boolean;
   pauseResume: Speed;
   setPause: (open: boolean) => void;
+  // The notification panel; the game is paused while it is open, unless the player had paused already.
+  bell: boolean;
+  bellResume: Speed | null;
+  setBell: (open: boolean) => void;
   surface: Surface;
   setSurface: (surface: Surface) => void;
   // The location whose letterbox the world walks to next.
@@ -297,6 +303,9 @@ export const useStore = create<Store>((set, get) => ({
   setOpenLoc: (openLoc) => set({ openLoc }),
   pause: false,
   pauseResume: 0 as Speed,
+  bell: false,
+  bellResume: null,
+  setBell: (open) => set(({ bell, speed, bellResume, alert, pause, resume }) => open ? (bell ? {} : { bell: true, bellResume: speed || null, speed: 0 as Speed }) : !bell ? {} : { bell: false, bellResume: null, ...(speed !== 0 || !bellResume || pause ? {} : alert ? { resume: resume || bellResume } : { speed: bellResume }) }),
   setPause: (open) => set(({ pause, speed, pauseResume }) => open ? (pause ? {} : { pause: true, pauseResume: speed, speed: 0 as Speed }) : pause ? { pause: false, speed: pauseResume } : {}),
   surface: "world",
   setSurface: (surface) => set({ surface }),
@@ -381,17 +390,20 @@ export const useStore = create<Store>((set, get) => ({
     const open = fresh ? undefined : ws.filter((w) => w.app === app && !w.draft).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
-    const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
-    const x = 136 + n * 32, y = 64 + n * 28;
+    const n = ws.length % 5, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
+    const sw = globalThis.innerWidth ?? Infinity, sh = globalThis.innerHeight ?? Infinity;
+    // The guide card docks at the right edge below the exit icon; other windows keep clear of it while it is open.
+    const guide = app === "Getting started", card = ws.some((x) => x.app === "Getting started" && !x.minimized) ? GUIDE_W + 32 : 16;
+    const x = guide ? Math.max(136, sw - size.w - 16) : 136 + n * 32, y = guide ? 128 : 64 + n * 28;
     // Leaves room for the dock on small screens.
-    const w = Math.min(size.w, (globalThis.innerWidth ?? Infinity) - x - 16), h = Math.min(size.h, (globalThis.innerHeight ?? Infinity) - y - 110);
+    const w = Math.min(size.w, sw - x - (guide ? 16 : card)), h = Math.min(size.h, sh - y - 110);
     uiSound("open");
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: Math.max(w, 480), h: Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 320), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openConsole: (deviceId) => {
     const ws = get().windows, open = ws.find((w) => w.console === deviceId);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
-    const n = ws.length % 8, x = 140 + n * 32, y = 80 + n * 28;
+    const n = ws.length % 5, x = 140 + n * 32, y = 80 + n * 28;
     uiSound("open");
     set({ windows: [...ws, { id: `console-${deviceId}-${Date.now()}`, app: "Console", console: deviceId, x, y, w: 720, h: 620, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
@@ -479,16 +491,16 @@ export const useStore = create<Store>((set, get) => ({
     set({ ...fresh(), ...wipeLocal(get().sound), game: newCompany(Date.now() >>> 0), started: true });
     uiSound("startup");
     get().openApp("Getting started");
-    // The guide waits on the desktop; the game opens in the room.
-    set({ surface: "world" });
+    // The guide waits on the desktop; the game opens in the room with the clock running.
+    set({ surface: "world", speed: 1 });
     get().save();
   },
   startChallenge: () => {
     set({ ...fresh(), ...wipeLocal(get().sound), game: newChallenge(weeklyChallenge(new Date()).id), started: true });
     uiSound("startup");
     get().openApp("Getting started");
-    // The guide waits on the desktop; the game opens in the room.
-    set({ surface: "world" });
+    // The guide waits on the desktop; the game opens in the room with the clock running.
+    set({ surface: "world", speed: 1 });
     get().save();
   },
   importSave: (raw) => {

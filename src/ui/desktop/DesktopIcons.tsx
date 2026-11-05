@@ -89,7 +89,7 @@ export function DesktopIcons() {
     <div className="desktop-icons">
       {/* The room the player is in, pinned to the top right; it has no doc, so it cannot be moved or trashed. */}
       <div role="button" tabIndex={0} className="desktop-icon" style={{ right: 16, top: MENUBAR + 16 }}
-        onDoubleClick={() => setSurface("world")} onKeyDown={(e) => e.key === "Enter" && setSurface("world")}>
+        onClick={() => setSurface("world")} onKeyDown={(e) => e.key === "Enter" && setSurface("world")}>
         <span className="dock-tile" style={{ "--tile": "var(--accent)" } as CSSProperties}><RoomIcon /></span>
         <span className="di-label">{t("desktop.icon.exit")}</span>
       </div>

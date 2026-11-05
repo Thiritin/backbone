@@ -6,6 +6,7 @@ export default {
   "console.vmTitle": (p) => `Console: ${p.name}`,
   "console.noWayIn": () => "No way in",
   "console.noSignal": () => "No signal",
+  "console.bootMenuQueued": () => "Boot menu...",
   "console.virtualConsole": () => "Virtual console",
   "console.media": () => "Media",
   "console.eject": () => "Eject",

@@ -6,6 +6,7 @@ import { isOfficeRouter, modelById, modelName } from "../../../sim/10-catalog/ha
 import { routerPassword } from "../../../sim/60-infra/lan";
 import type { Device } from "../../../sim/50-state";
 import { deviceHealth, deviceValue, pluggedIn } from "../../../sim/60-infra/status";
+import { cardBoard, nextGoal } from "../../../sim/checklist";
 import { busyReason } from "../../../sim/90-actions/busy";
 import { sellDevice } from "../../../sim/90-actions/hardware";
 import { deviceLamps, devName, partLabel } from "../../apps/hw";
@@ -16,6 +17,8 @@ import type { MenuEntry, MenuItem } from "../../desktop/menu";
 import { useStore } from "../../store";
 
 export const ARM_MS = 3000;
+// The key on the tag that the current guide card needs.
+const GUIDE_KEY: Partial<Record<string, "power" | "console" | "reboot">> = { mountServer: "power", mountRouter: "power", plugStick: "console", bootUsb: "reboot", installOs: "console" };
 type Menus = ReturnType<typeof useDeviceMenu>;
 const real = (e: MenuEntry | undefined): e is MenuItem => !!e;
 const bare = (s: string) => s.replace(/(\.\.\.|…)$/, "");
@@ -81,6 +84,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
     ...options.map((o, i) => ({ o: o.op, e: powerEntries[i] })).filter(({ o, e }) => e && o !== "on" && o !== "shutdown"),
     ...(options.some((o) => o.op === "reboot") ? [] : [{ o: "reboot" as const, e: { label: POWER_LABEL.reboot, disabled: true } as MenuItem }]),
   ] : [];
+  const cur = cardBoard(game).current, guide = cur ? GUIDE_KEY[nextGoal(game, cur)] : undefined;
   const busy = !!busyReason(game, { deviceId: d.id });
   const keys = [
     ...extra.map(({ o, e }) => ({ e, icon: POWER_ICON[o], label: bare(POWER_LABEL[o]), badge: "", why: state })),
@@ -110,12 +114,12 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
       <div className="wr-model">{m.kind === "server" ? `${d.brand} ${modelName(m, d.brand)}` : m.name}</div>
       {m.kind !== "patch" && (
         <div className="wk-plate">
-          <button className={`wk-power ${lampOn}${armed ? " armed" : ""}`} data-power={lampOn} aria-pressed={armed} aria-label={armed ? POWER_LABEL.shutdown : d.on ? t("locations-1.powerOff") : t("locations-1.powerOn")} onClick={onKey}>
+          <button className={`wk-power ${lampOn}${armed ? " armed" : ""}`} data-power={lampOn} data-guide={guide === "power" && !d.on ? "" : undefined} aria-pressed={armed} aria-label={armed ? POWER_LABEL.shutdown : d.on ? t("locations-1.powerOff") : t("locations-1.powerOn")} title={armed ? POWER_LABEL.shutdown : d.on ? t("locations-1.powerOff") : t("locations-1.powerOn")} onClick={onKey}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9M6.6 6.8a8 8 0 1 0 10.8 0" /></svg>
             <i />
           </button>
           <span className="wk-gap" />
-          {m.kind === "server" && <button className="wk-port" data-cart="" disabled={!onCart} aria-label={t("world.console")} title={t("world.console")} onClick={onCart}>
+          {m.kind === "server" && <button className="wk-port" data-cart="" data-guide={guide === "console" ? "" : undefined} disabled={!onCart} aria-label={t("world.console")} title={t("world.console")} onClick={onCart}>
             <svg viewBox="0 0 24 16" aria-hidden="true"><rect x="1.5" y="1.5" width="21" height="11" /><path d="M8 15h8" /></svg>
           </button>}
           {onPorts && <button className={`wk-port${back ? " on" : ""}`} data-ports="" aria-pressed={back} aria-label={t("locations-1.ports")} title={t("locations-1.ports")} onClick={onPorts}>
@@ -133,7 +137,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
         <>
           <div className="wk-grid">
             {keys.map(({ e, icon: Icon, label, badge, why }, i) => (
-              <button key={i} className={`wk-ic${flip === i ? " on" : ""}`} aria-label={label} title={e.disabled && why ? `${label}: ${why}` : label} aria-disabled={e.disabled || undefined} data-key={label}
+              <button key={i} className={`wk-ic${flip === i ? " on" : ""}`} aria-label={label} title={e.disabled && why ? `${label}: ${why}` : label} aria-disabled={e.disabled || undefined} data-key={label} data-guide={guide === "reboot" && label === bare(POWER_LABEL.reboot) ? "" : undefined}
                 disabled={e.disabled} aria-expanded={e.items ? flip === i : undefined} onClick={e.items ? () => setFlip(flip === i ? null : i) : e.run} >
                 <Icon size={18} aria-hidden="true" />{badge && <span className="wk-badge">{badge}</span>}<span className="wk-tip" aria-hidden="true">{label}</span>
               </button>

@@ -113,7 +113,7 @@ describe("bookkeeping vendors", () => {
     expect(STARTER_APPS).not.toContain("Books");
     expect(s.books).toEqual({ vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] });
     expect(TUTORIAL.indexOf("books")).toBeGreaterThan(TUTORIAL.indexOf("register"));
-    expect(TUTORIAL.indexOf("books")).toBeLessThan(TUTORIAL.indexOf("firstCustomer"));
+    expect(TUTORIAL.indexOf("books")).toBeLessThan(TUTORIAL.indexOf("sendInvoice"));
     expect(checkDone(s, "books")).toBe(false);
     own(s, "orgamin");
     expect(checkDone(s, "books")).toBe(true);

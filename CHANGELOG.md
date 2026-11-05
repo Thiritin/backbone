@@ -5,6 +5,12 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-05
 - Every purchase now opens the same payment step: pick a method, check the total and confirm, then open the invoice, receipt or order confirmation.
 - Flyers, trade fairs, review platforms, shop software, lease buyouts and cross connects now bill from their own vendor, domains are billed when you register them, and a provider cable sends its order confirmation at once.
+- The Exit icon leaves the desktop with one click, the dark mode button is gone from the menu bar, the Browser opens smaller, new apps join the end of the dock, windows no longer cascade off screen, and the notification panel pauses the clock while it is open.
+- The menu bar shows a dash instead of 0 € until you have a bank account.
+- The rack tag marks the key your current step needs, a first restart with no customers needs one click, and pressing F11 early opens the boot menu on the next start.
+- Mail that arrives on the full hour, such as the first order, now reaches Pear Mail at the next check.
+- Getting started is now a small card with the next step, a progress bar and one button, and the corkboard shows the same ten steps with the current one highlighted.
+- A new game starts on Monday morning at 08:00 with the clock running, and the first web hosting order arrives within three days of going online.
 - Saving a DNS record with a missing or invalid field now names that field, a new domain shows the same status everywhere, the Browser address bar replaces the old address when you click it and type, and Ionose can enter its three mail records at your NameCheep account with one button.
 - Your own mail server now works with its IP address or mail.<your domain> in Pear Mail, and the Mailboxes page of the web panel opens a working webmail with a welcome mail in every new mailbox.
 - Your figure walks back to its seat a few seconds after visiting the letterbox, a shelf or a rack, once nothing is open.

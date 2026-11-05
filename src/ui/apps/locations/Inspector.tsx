@@ -73,6 +73,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
     op: (op: PowerOp) => { if (op === "on") { if (!lid) act(POWER_ACTION.on, d.id); } else { const label = powerOptions(game, d).options.find((o) => o.op === op)?.label ?? POWER_LABEL[op];
       if (op === "bmc" && atDatacenter(game, d.id)) hand.start(game, { title: t("locations-1.labelDevice", { label, name: devName(d) }), deviceId: d.id, action: resetBmc, args: [d.id] });
       else if (op === "continue" && !remoteFix(game, d)) hand.start(game, { title: t("locations-1.labelDevice", { label, name: devName(d) }), deviceId: d.id, action: continueBoot, args: [d.id], tech: { kind: "boot" } });
+      else if (op === "reboot" && !game.customers.length) act(POWER_ACTION.reboot, d.id);
       else guarded(t("locations-1.labelDeviceQ", { label, name: devName(d) }), label, POWER_ACTION[op], d.id); } },
     front: (op) => {
       if (op === "power" && !d.on && lid) return;
