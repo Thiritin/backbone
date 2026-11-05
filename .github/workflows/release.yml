@@ -84,3 +84,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
+
+  # Unversioned copies of the installers so the README can link to releases/latest/download/<name>.
+  stable-names:
+    needs: [gate, desktop]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: write
+    steps:
+      - name: Copy installers under stable names
+        run: |
+          mkdir dl && cd dl
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*-setup.exe' --pattern '*_amd64.AppImage' --pattern '*_aarch64.AppImage' --pattern '*_aarch64.dmg'
+          cp *-setup.exe raid0-windows-x64-setup.exe
+          cp *_amd64.AppImage raid0-linux-x64.AppImage
+          cp *_aarch64.AppImage raid0-linux-arm64.AppImage
+          cp *_aarch64.dmg raid0-macos-aarch64.dmg
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber raid0-*
+        env:
+          GH_TOKEN: ${{ github.token }}

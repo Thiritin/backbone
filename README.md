@@ -10,9 +10,9 @@ The desktop app is available for these systems. Download it from the [latest rel
 
 | Platform | Architecture | Installer |
 | --- | --- | --- |
-| Windows | x86_64 | Setup exe |
-| Linux | x86_64 and arm64 | AppImage |
-| macOS | Apple silicon | dmg |
+| Windows | x86_64 | [Setup exe](https://github.com/Thiritin/raid0/releases/latest/download/raid0-windows-x64-setup.exe) |
+| Linux | x86_64 and arm64 | [AppImage x86_64](https://github.com/Thiritin/raid0/releases/latest/download/raid0-linux-x64.AppImage), [AppImage arm64](https://github.com/Thiritin/raid0/releases/latest/download/raid0-linux-arm64.AppImage) |
+| macOS | Apple silicon | [dmg](https://github.com/Thiritin/raid0/releases/latest/download/raid0-macos-aarch64.dmg) |
 
 The app updates itself when a new release is out.
 
