@@ -42,6 +42,7 @@ export default {
   "paperwork.letter.greeting": () => "Madame, Monsieur,",
   "paperwork.letter.closing": () => "Veuillez agréer nos salutations distinguées.",
   "paperwork.letter.machine": () => "Ce courrier a été établi automatiquement et est valable sans signature.",
+  "paperwork.letter.paid": () => "Paiement reçu",
   "paperwork.letter.bank": () => "Coordonnées bancaires",
   "paperwork.letter.account": () => "Compte",
   "paperwork.letter.code": () => "Code banque",

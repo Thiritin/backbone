@@ -42,6 +42,7 @@ export default {
   "paperwork.letter.greeting": () => "Sehr geehrte Damen und Herren,",
   "paperwork.letter.closing": () => "Mit freundlichen Grüßen",
   "paperwork.letter.machine": () => "Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig.",
+  "paperwork.letter.paid": () => "Zahlungseingang bestätigt",
   "paperwork.letter.bank": () => "Bankverbindung",
   "paperwork.letter.account": () => "Konto",
   "paperwork.letter.code": () => "BLZ",

@@ -3,6 +3,9 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- The letterbox panel now lays the first letter on top with the later ones stacked beside it, letters you have read no longer come back when you open the box again, and the scan corner sits at the bottom of the page.
+- Letters from the trade office, tax office and other authorities are now the bill itself, with the same letterhead everywhere and a stamp once paid.
+- Invoices dated up to 2008 print in monospace on continuous-form paper like a dot-matrix printer; later ones keep the styled layout.
 - Racking a server, plugging cables and power cords, swapping parts and plugging in the stick happen at once when you stand at the device, with no waiting and no timer, even if you book Remote Hands for the job.
 - Release posts show only the version number and the list of changes, without a date or the game name in the title.
 - The Terminal opened from a card skips its scripted intro at once, the boot menu step outlines the USB entry and its keys, and the shop cart keeps its pay button in view.

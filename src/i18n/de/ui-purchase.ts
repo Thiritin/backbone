@@ -20,6 +20,7 @@ export default {
   "purchase.pay": () => "Zahlungsart",
   "purchase.net": () => "Netto",
   "purchase.gross": () => "Brutto",
+  "purchase.vatFree": () => "Umsatzsteuerfrei",
   "purchase.vat": (p) => `MwSt. ${p.rate}`,
   "purchase.off.noCard": () => "Keine Karte",
   "purchase.off.cardLimit": () => "Kartenlimit erreicht",

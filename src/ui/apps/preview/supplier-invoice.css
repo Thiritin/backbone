@@ -40,3 +40,15 @@
 .inv-letterhead h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
 .inv-letterhead th { font-weight: 600; border-bottom: 1px solid var(--brand); }
 .inv-letterhead .inv-foot { justify-content: center; border-top-color: var(--brand); }
+
+/* Continuous-form dot-matrix print: monospace black on off-white with tractor-feed strips. */
+.inv-dot { --page: min(100cqw, 100cqh * 240 / 305); aspect-ratio: 240 / 305; background: #f4f1e6; padding: calc(var(--page) * 0.06) calc(var(--page) * 0.08); font-family: "Courier New", Courier, monospace; color: #1b1b1b; position: relative; overflow: hidden; }
+.inv-dot .dot-text { font-size: calc(var(--page) * 0.023); line-height: 1.55; letter-spacing: 0.02em; text-shadow: 0.4px 0 0 #1b1b1b; }
+.inv-dot h2 { margin: 0; font: inherit; font-weight: 400; text-transform: uppercase; }
+.inv-dot hr { border: 0; border-top: 2px dashed #1b1b1b; margin: 0.2em 0; }
+.inv-dot hr.dbl { border-top-style: double; border-top-width: 4px; }
+.inv-dot .dot-row { display: flex; justify-content: space-between; gap: 1ch; white-space: pre; }
+.inv-dot .dot-row span:first-child { white-space: pre-wrap; }
+.inv-dot .dot-strip { position: absolute; top: 0; bottom: 0; width: calc(var(--page) * 0.05); background: #ebe7d8 radial-gradient(circle at 50% 50%, #8a8575 0 22%, transparent 24%) 0 0 / 100% calc(var(--page) * 0.038); }
+.inv-dot .dot-strip.l { left: 0; border-right: 1px dashed #b9b4a0; }
+.inv-dot .dot-strip.r { right: 0; border-left: 1px dashed #b9b4a0; }
