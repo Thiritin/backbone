@@ -25,12 +25,12 @@
 
 /* ---------- classic: Blessta 1 and 2, 2008 to 2013 ---------- */
 .bl-classic { font: 11px/1.45 Tahoma, Verdana, Geneva, sans-serif; color: #1b2430; background: #e3e8ee; }
-.bl-classic .bl-top { display: flex; flex-wrap: wrap; align-items: flex-end; padding: 10px 14px 0; background: linear-gradient(#335f96, #16325c 70%); border-bottom: 1px solid #0b1d38; }
-.bl-classic .bl-word { font: italic bold 25px/1 "Trebuchet MS", Tahoma, sans-serif; letter-spacing: -1px; color: #fff; text-shadow: 0 1px 0 #0b1d38; padding-bottom: 8px; }
-.bl-classic .bl-tabs { flex-basis: 100%; display: flex; gap: 3px; }
-.bl-classic .bl-tabs a { padding: 5px 16px 4px; font-weight: bold; color: #16325c; text-decoration: none; background: linear-gradient(#f1f4f8, #b8c5d6); border: 1px solid #0b1d38; border-bottom: 0; border-radius: 6px 6px 0 0; }
-.bl-classic .bl-tabs a:hover { background: linear-gradient(#fff, #cfd9e6); }
-.bl-classic .bl-tabs a.on { background: #f6f8fb; position: relative; top: 1px; }
+.bl-classic .bl-top { display: flex; flex-wrap: wrap; align-items: flex-end; padding: 10px 14px 0; background: #2a2e35; border-bottom: 1px solid #14171b; }
+.bl-classic .bl-word { font: italic bold 25px/1 "Trebuchet MS", Tahoma, sans-serif; letter-spacing: -1px; color: #fff; padding-bottom: 8px; }
+.bl-classic .bl-tabs { flex-basis: 100%; display: flex; gap: 2px; }
+.bl-classic .bl-tabs a { padding: 5px 16px 4px; font-weight: bold; color: #b9c0ca; text-decoration: none; background: #3a3f48; border: 1px solid #14171b; border-bottom: 0; }
+.bl-classic .bl-tabs a:hover { color: #fff; background: #454b55; }
+.bl-classic .bl-tabs a.on { color: #16325c; background: #f6f8fb; position: relative; top: 1px; }
 .bl-classic .bl-sub { display: flex; padding: 6px 16px; background: #f6f8fb; border-bottom: 1px solid #a9b7c8; }
 .bl-classic .bl-sub a { color: #1d4f91; }
 .bl-classic .bl-sub a + a::before { content: "|"; color: #a9b7c8; margin: 0 9px; }
@@ -95,7 +95,7 @@
 .bl-widgets .bl-main { padding: 20px; }
 .bl-widgets .bl-box { background: #fff; border: 1px solid #d6dbe1; border-radius: 3px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.05); }
 .bl-widgets .bl-boxhead { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; padding: 10px 14px; background: #f7f8fa; border-bottom: 1px solid #e3e6ea; border-radius: 3px 3px 0 0; }
-.bl-widgets .bl-admin .bl-boxhead::before, .bl-widgets.bl-admin .bl-boxhead::before { content: ""; width: 8px; height: 14px; background: radial-gradient(circle, #aab2bd 1.1px, transparent 1.4px) 0 0 / 4px 4px; }
+.bl .pt-box-h::before { content: ""; width: 8px; height: 14px; background: radial-gradient(circle, #aab2bd 1.1px, transparent 1.4px) 0 0 / 4px 4px; }
 .bl-widgets .bl-boxbody { padding: 14px; }
 .bl-widgets h2, .bl-widgets h3 { font-weight: 500; }
 .bl-widgets .pt-table { border-collapse: collapse; }
@@ -151,15 +151,15 @@
 .bl-paradigm { --bg: #f4f5f8; --panel: #fff; --side: #fff; --line: #e4e7ee; --ink: #151a24; --mute: #6b7383; --hover: #f0f2f6; --bl-accent: #ff6b2c;
   font: 14px/1.5 Inter, system-ui, sans-serif; color: var(--ink); background: var(--bg); }
 .bl-dark { --bg: #0d1016; --panel: #151a23; --side: #0a0c11; --line: #262d39; --ink: #e6eaf1; --mute: #8b94a5; --hover: #1c222d; --bl-accent: #ff7c45; color-scheme: dark; }
-.bl-paradigm.bl-admin { display: grid; grid-template-columns: 228px minmax(0, 1fr); }
-.bl-paradigm .bl-side { background: var(--side); border-right: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; }
-.bl-paradigm .bl-side > .bl-word { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; padding: 0 10px 14px; }
-.bl-paradigm .bl-side h2 { margin: 14px 10px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mute); }
-.bl-paradigm .bl-side a { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
-.bl-paradigm .bl-side a:hover { background: var(--hover); }
-.bl-paradigm .bl-side a.on { background: color-mix(in srgb, var(--bl-accent) 14%, transparent); color: var(--bl-accent); font-weight: 600; }
-.bl-paradigm .bl-icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.bl-paradigm .bl-col { display: flex; flex-direction: column; min-width: 0; }
+.bl-paradigm .bl-top { display: flex; align-items: center; gap: 28px; padding: 0 28px; height: 56px; background: var(--side); border-bottom: 1px solid var(--line); }
+.bl-paradigm .bl-word { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.bl-paradigm .bl-tabs { display: flex; align-self: stretch; }
+.bl-paradigm .bl-tabs a { display: flex; align-items: center; padding: 0 14px; color: var(--mute); text-decoration: none; font-weight: 500; border-bottom: 2px solid transparent; }
+.bl-paradigm .bl-tabs a:hover { color: var(--ink); }
+.bl-paradigm .bl-tabs a.on { color: var(--ink); border-bottom-color: var(--bl-accent); }
+.bl-paradigm .bl-sub { display: flex; padding: 0 28px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.bl-paradigm .bl-sub a { padding: 0 14px; line-height: 40px; color: var(--mute); text-decoration: none; }
+.bl-paradigm .bl-sub a.on { color: var(--ink); box-shadow: inset 0 -2px var(--bl-accent); }
 .bl-paradigm .bl-main { padding: 22px 28px; }
 .bl-paradigm .bl-crumb { margin: 0 0 2px; font-size: 12px; color: var(--mute); }
 .bl-paradigm .bl-main .bl-boxhead { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; }
@@ -213,3 +213,33 @@
 .bl-paradigm .bl-loginhead .bl-word { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
 .bl-paradigm .bl-bare { align-self: center; justify-self: center; width: min(460px, 90%); }
 .bl-paradigm .bl-bare .bl-boxhead { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+
+/* ---------- kit parts: dashboard widgets, square tabs and badges, select arrow, empty rows ---------- */
+.bl .pt-box-h { display: flex; align-items: center; gap: 8px; cursor: grab; }
+.bl .pt-box-h::before { content: ""; width: 8px; height: 14px; flex: none; background: radial-gradient(circle, #aab2bd 1.1px, transparent 1.4px) 0 0 / 4px 4px; }
+.bl .pt-badge { border-radius: 0; font-weight: 600; }
+.bl .pt-select { appearance: none; -webkit-appearance: none; padding-right: 24px; background-repeat: no-repeat; background-position: right 8px center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0h9L4.5 5z' fill='%238b94a5'/%3E%3C/svg%3E"); }
+.bl .pt-empty td { font-style: normal; padding: 14px; }
+.bl .pt-dash { gap: 14px; }
+.bl-classic .pt-box { border: 1px solid #8fa2ba; }
+.bl-classic .pt-box-h { font-size: 12px; color: #fff; background: linear-gradient(#6b90c0, #3b6296); border-bottom: 1px solid #2b4c7a; }
+.bl-classic .pt-box-h::before { background-image: radial-gradient(circle, #dbe5f2 1.1px, transparent 1.4px); }
+.bl-classic .pt-badge { background: #e3e8ee; color: #1b2430; }
+.bl-classic .pt-badge.ok { background: #dcefd2; color: #2a6a16; }
+.bl-widgets .pt-box { border: 1px solid #d6dbe1; border-radius: 3px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.05); }
+.bl-widgets .pt-box-h { font-size: 13px; font-weight: 600; background: #f7f8fa; border-bottom: 1px solid #e3e6ea; }
+.bl-widgets .pt-badge.ok { background: #dff0d8; color: #3c763d; }
+.bl-paradigm .pt-box { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.bl-paradigm .pt-box-h { font-size: 14px; font-weight: 650; background: none; border-bottom: 1px solid var(--line); }
+.bl-paradigm .pt-tabs { display: flex; gap: 2px; padding: 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.bl-paradigm .pt-tabs button { border-radius: 0; padding: 7px 14px; }
+.bl-paradigm .pt-tabs button.on { background: none; color: var(--ink); box-shadow: inset 0 -2px var(--bl-accent); }
+.bl-paradigm .pt-badge { background: var(--hover); color: var(--mute); }
+.bl-paradigm .pt-badge.ok { background: color-mix(in srgb, #2fa866 18%, transparent); color: #2fa866; }
+.bl-paradigm .pt-badge.warn { background: color-mix(in srgb, #d99a1e 18%, transparent); color: #d99a1e; }
+.bl-paradigm .pt-badge.bad { background: color-mix(in srgb, #e04b3e 18%, transparent); color: #e04b3e; }
+/* home: the widgets are the page, so the box around them stays unframed */
+.bl .bl-home .bl-box { background: none; border: 0; box-shadow: none; }
+.bl .bl-home .bl-boxhead { padding: 0 0 10px; font-size: 18px; font-weight: 600; color: inherit; background: none; border: 0; text-shadow: none; }
+.bl .bl-home .bl-boxbody { padding: 0; background: none; border: 0; }

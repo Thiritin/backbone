@@ -31,7 +31,7 @@ describe("Ubersmyth portal", () => {
     const s = game(2016);
     const admin = page(s, "admin", major, { s: "servers" });
     expect(admin).toContain(`ubs-${major}`);
-    const labels = major === "5" ? ["Overview", "Billing", "Catalogue", "Infrastructure", "System"] : ["Dashboard", "Client Manager", "Device Manager", "Licence", "Updates"];
+    const labels = ["Dashboard", "Clients", "Billing", "Support", "Devices", "Setup"];
     for (const label of labels) expect(admin).toContain(label);
     expect(page(s, "store", major, undefined, "Store")).toContain("Forge One");
     expect(page(s, "client", major, undefined, "Client")).toContain("Ada Lovelace");

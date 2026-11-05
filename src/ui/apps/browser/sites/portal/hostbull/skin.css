@@ -1,15 +1,21 @@
-/* HostBill: navy sidebar and blue accents from the 2012 admin; flat white from 2020 */
+/* HostBill: light admin with a blue header until 2018, icon sidebar in dark navy from 2019 */
 .sk-bull { font: 13px/1.5 "Open Sans", "Helvetica Neue", Arial, sans-serif; color: #2d3748; background: #eef1f6; }
 .sk-bull a { color: #2b6cb0; }
-.sk-bull .shop-head { display: flex; align-items: center; height: 52px; padding: 0 20px; background: linear-gradient(#25385f, #1b2a4a); color: #fff; }
+.sk-bull .shop-head { display: flex; align-items: center; height: 52px; padding: 0 20px; background: linear-gradient(#3d92dc, #2a6fb5); color: #fff; }
 .sk-bull .shop-logo { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
-.sk-bull .shop-nav { width: 210px; flex: none; padding: 8px 0; gap: 0; background: #1b2a4a; }
-.sk-bull .shop-nav a { padding: 9px 20px; color: #b8c4dc; border-left: 3px solid transparent; }
-.sk-bull .shop-nav a:hover { background: #22345a; color: #fff; }
-.sk-bull .shop-nav a.on { font-weight: 600; background: #25375f; color: #fff; border-left-color: #3b9ae1; }
-.sk-bull .ps-main { padding: 20px 24px; }
-.sk-bull .pt-btn { font: 600 12px "Open Sans", Arial, sans-serif; padding: 6px 14px; color: #2d3748; background: linear-gradient(#fff, #eceff4); border: 1px solid #c5cddb; border-radius: 3px; }
-.sk-bull .pt-btn.primary { color: #fff; background: linear-gradient(#4aa3ea, #2f84cf); border-color: #2a77bb; }
+.sk-bull .shop-nav { width: 210px; flex: none; padding: 8px 0; gap: 0; background: #f7f9fc; border-right: 1px solid #d9dfea; }
+.sk-bull .shop-nav a { display: flex; align-items: center; gap: 10px; padding: 9px 20px; color: #4a5568; border-left: 3px solid transparent; }
+.sk-bull .shop-nav a:hover { background: #eaf1fa; color: #1b2a4a; }
+.sk-bull .shop-nav a.on { font-weight: 600; background: #e1edfa; color: #1f5f9f; border-left-color: #3b9ae1; }
+.sk-bull .hb-ico { flex: none; }
+.sk-bull .ps-main { padding: 20px 24px; min-width: 0; flex: 1; }
+.sk-bull .ps-title { margin: 0 0 14px; font-size: 20px; font-weight: 600; color: #1b2a4a; }
+.sk-bull .pt-btn { font: 600 12px "Open Sans", Arial, sans-serif; padding: 6px 14px; color: #2d3748; background: #fff; border: 1px solid #c5cddb; border-radius: 3px; }
+.sk-bull .pt-btn:hover:not(:disabled) { background: #f1f5fa; }
+.sk-bull .pt-btn.primary, .sk-bull .pt-toolbar .pt-btn { color: #fff; background: #3b9ae1; border-color: #3b9ae1; }
+.sk-bull .pt-btn.primary:hover:not(:disabled), .sk-bull .pt-toolbar .pt-btn:hover:not(:disabled) { background: #2f84cf; border-color: #2f84cf; }
+.sk-bull .pt-table td .pt-btn:not(.primary) { padding: 0; color: #2b6cb0; background: none; border: 0; font-weight: 400; }
+.sk-bull .pt-table td .pt-btn:not(.primary):hover:not(:disabled) { background: none; text-decoration: underline; }
 .sk-bull .pt-select, .sk-bull .pt-input, .sk-bull input, .sk-bull select { padding: 5px 8px; border: 1px solid #c5cddb; border-radius: 3px; font: inherit; }
 .sk-bull .pt-table { background: #fff; border: 1px solid #d9dfea; }
 .sk-bull .pt-table th { background: #f6f8fb; color: #5b6578; font-size: 12px; border-bottom: 1px solid #d9dfea; }
@@ -21,7 +27,10 @@
 .sk-bull .pt-tabs button.on { background: #fff; color: #1b2a4a; }
 .sk-bull .pt-wizard { background: #fff; border-color: #c5cddb; border-left: 4px solid #3b9ae1; }
 .sk-bull .pt-group-h { color: #1b2a4a; }
-.sk-bull .pt-version { color: #8a94a8; }
+.sk-bull .pt-version { padding: 10px 24px; color: #8a94a8; font-size: 12px; background: #fff; border-top: 1px solid #d9dfea; }
 .sk-bull-late .shop-head { background: #fff; color: #1b2430; border-bottom: 1px solid #e2e6ea; }
-.sk-bull-late .pt-btn { background: #fff; border-radius: 6px; }
-.sk-bull-late .pt-btn.primary { background: #2f84cf; }
+.sk-bull-late .shop-nav { background: #1b2a4a; border-right: 0; }
+.sk-bull-late .shop-nav a { color: #b8c4dc; }
+.sk-bull-late .shop-nav a:hover { background: #22345a; color: #fff; }
+.sk-bull-late .shop-nav a.on { background: #25375f; color: #fff; border-left-color: #3b9ae1; }
+.sk-bull-late .pt-btn { border-radius: 6px; }

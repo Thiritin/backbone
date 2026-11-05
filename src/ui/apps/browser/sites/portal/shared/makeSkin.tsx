@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { yearOf } from "../../../../../../sim/00-core/time";
 import { shopById } from "../../../../../../sim/10-catalog/shops";
-import { AdminScreen, SCREEN_LABEL } from "./AdminScreen";
+import { AdminScreen, SCREEN_LABEL, titleOf } from "./AdminScreen";
+import type { DashKind } from "./Dashboard";
 import { ClientArea } from "./ClientArea";
 import { navOf, screenArgs, screenOf, type ScreenName } from "./nav";
 import { StoreFront } from "./StoreFront";
@@ -20,6 +21,11 @@ export interface Look {
   // Admin screens in menu order, and the names this system gives them.
   screens?: ScreenName[];
   labels?: Partial<Record<ScreenName, string>>;
+  // Start page widgets of the real product, and a small mark in front of each menu entry.
+  dash?: DashKind;
+  icon?: (n: ScreenName) => ReactNode;
+  // Which era class applies to a game hour, where the system's looks change in other years than the default ones.
+  era?: (hour: number) => string;
 }
 
 const ALL: ScreenName[] = ["home", "clients", "orders", "invoices", "quotes", "products", "servers", "settings", "emails", "marketplace", "licence", "updates"];
@@ -27,7 +33,7 @@ const ALL: ScreenName[] = ["home", "clients", "orders", "invoices", "quotes", "p
 // One shop system's admin, store front and client area: the shared screens inside the system's own frame.
 export function makeSkin(look: Look): Skin {
   const Frame = ({ game, variant, children, nav }: SkinProps & { children: ReactNode; nav?: ReactNode }) => (
-    <div className={`portal pshop ${look.cls} ${look.cls}-${eraOf(game.hour)} nav-${look.nav}`}>
+    <div className={`portal pshop ${look.cls} ${look.cls}-${(look.era ?? eraOf)(game.hour)} nav-${look.nav}`}>
       <header className="shop-head"><span className="shop-logo">{shopById(variant).name}</span></header>
       <div className="ps-body">{nav}<main className="ps-main">{children}</main></div>
       <VersionFooter game={game} variant={variant} />
@@ -39,10 +45,11 @@ export function makeSkin(look: Look): Skin {
     const current = navOf(screen.name);
     const nav = (
       <nav className="shop-nav">
-        {(look.screens ?? ALL).map((n) => <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: n }); }}>{look.labels?.[n] ?? SCREEN_LABEL[n]}</a>)}
+        {(look.screens ?? ALL).map((n) => <a key={n} href="#" className={current === n ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: n }); }}>{look.icon?.(n)}{look.labels?.[n] ?? SCREEN_LABEL[n]}</a>)}
       </nav>
     );
-    return <Frame {...props} nav={nav}><AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={props.browse} /></Frame>;
+    const title = titleOf(screen);
+    return <Frame {...props} nav={nav}>{title && <h1 className="ps-title">{title}</h1>}<AdminScreen game={game} screen={screen} dash={look.dash} label={(n) => look.labels?.[n] ?? SCREEN_LABEL[n] ?? n} go={go} toClient={(c) => open("client", {}, { c })} browse={props.browse} /></Frame>;
   };
   const Store = (props: SkinProps) => <Frame {...props}><StoreFront {...props} flat={look.flat} steps={look.stepsFrom !== undefined && yearOf(props.game.hour) >= look.stepsFrom} /></Frame>;
   const Client = (props: SkinProps) => <Frame {...props}><ClientArea game={props.game} customerId={props.route.query.get("c")} /></Frame>;

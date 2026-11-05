@@ -10,6 +10,8 @@
 .sk-modem .shop-nav a.on { color: #a00; }
 .sk-modem .pt-btn { font: 11px Verdana, Arial, sans-serif; padding: 2px 10px; color: #000; background: #d4d0c8; border: 2px solid; border-color: #fff #404040 #404040 #fff; border-radius: 0; }
 .sk-modem .pt-btn.primary { font-weight: bold; }
+.sk-modem .pt-btn:disabled { opacity: 1; color: #808080; text-shadow: 1px 1px 0 #fff; cursor: default; }
+.sk-modem .ps-title { margin: 0 0 10px; font-size: 16px; }
 .sk-modem .pt-btn:active:not(:disabled) { border-color: #404040 #fff #fff #404040; }
 .sk-modem .pt-select, .sk-modem .pt-input, .sk-modem input, .sk-modem select { font: 11px Verdana, Arial, sans-serif; border: 1px solid #000; border-radius: 0; padding: 2px; }
 .sk-modem .pt-box, .sk-modem .pt-wizard { border: 1px solid #000; background: #fff; }

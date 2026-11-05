@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { FileText, Inbox, KeyRound, LayoutDashboard, LayoutGrid, Mail, Package, Receipt, RefreshCw, Server, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 import { t } from "../../../../../../i18n/en";
-import { AdminScreen } from "../shared/AdminScreen";
+import { AdminScreen, titleOf } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
 import { navOf, screenArgs, screenOf, type ScreenName } from "../shared/nav";
@@ -15,15 +15,16 @@ import "./skin.css";
 type Era = "2" | "3" | "4" | "5";
 const eraOf = (major: string): Era => (["3", "4", "5"].includes(major) ? major : "2") as Era;
 
+// The licence and updates screens stay reachable by address but sit in no tab.
 const GROUPS: [string, ScreenName[]][] = [
-  ["overview", ["home"]], ["billing", ["clients", "orders", "invoices", "quotes"]], ["catalogue", ["products"]],
-  ["infra", ["servers"]], ["system", ["settings", "emails", "marketplace", "licence", "updates"]],
+  ["overview", ["home"]], ["clients", ["clients", "orders"]], ["billing", ["invoices", "quotes"]], ["support", ["emails"]],
+  ["devices", ["servers"]], ["setup", ["settings", "products", "marketplace"]],
 ];
 const ICON: Partial<Record<ScreenName, LucideIcon>> = {
   home: LayoutDashboard, clients: Users, orders: Inbox, invoices: Receipt, quotes: FileText, products: Package,
   settings: SlidersHorizontal, emails: Mail, marketplace: LayoutGrid, servers: Server, licence: KeyRound, updates: RefreshCw,
 };
-const label = (n: ScreenName) => t(`ubersmyth.nav.${n}`);
+const label = (n: ScreenName) => t(n === "emails" ? "ubersmyth.nav.support" : `ubersmyth.nav.${n}`);
 
 const Anvil = () => (
   <svg className="ubs-anvil" viewBox="0 0 24 16" aria-hidden="true">
@@ -39,14 +40,16 @@ const A = ({ l, className }: { l: Link; className?: string }) => (
   </a>
 );
 
-// The admin frame: tabs in 2, pills and a portlet in 3, a grouped sidebar in 4, group switcher and tabs in 5.
+// The admin frame: dark tabs and a sub strip in 2, pills and a portlet in 3, a grouped sidebar in 4, group switcher and tabs in 5.
 function AdminFrame({ props, title, at, children }: { props: SkinProps; title?: string; at?: ScreenName; children: ReactNode }) {
   const { game, variant, open, major } = props, era = eraOf(major);
   const link = (n: ScreenName): Link => ({ id: n, label: label(n), on: at === n, go: () => open("admin", {}, screenArgs({ name: n })), icon: era === "4" ? ICON[n] : undefined });
   const groups = at ? GROUPS.map(([g, screens]) => ({ g, links: screens.map(link) })) : [];
-  const flat = groups.flatMap((x) => x.links), group = groups.find((x) => x.links.some((l) => l.on));
+  const group = groups.find((x) => x.links.some((l) => l.on));
   const foot = <VersionFooter game={game} variant={variant} />;
   const head = title && <h1 className="ubs-title">{title}</h1>;
+  const tabs = groups.map(({ g, links }) => <A key={g} l={{ id: g, label: t(`ubersmyth.group.${g}`), on: group?.g === g, go: links[0].go }} />);
+  const sub = group && group.links.length > 1 && <nav className="ubs-sub">{group.links.map((l) => <A key={l.id} l={l} />)}</nav>;
   if (era === "4") {
     return (
       <div className={`portal ubs ubs-admin ubs-4 ubs-on-${at ?? "bare"}`}>
@@ -63,9 +66,9 @@ function AdminFrame({ props, title, at, children }: { props: SkinProps; title?: 
       <div className={`portal ubs ubs-admin ubs-5 ubs-on-${at ?? "bare"}`}>
         <header className="ubs-bar">
           <Mark />
-          {groups.length > 0 && <nav className="ubs-seg">{groups.map(({ g, links }) => <A key={g} l={{ id: g, label: t(`ubersmyth.group.${g}`), on: group?.g === g, go: links[0].go }} />)}</nav>}
+          {groups.length > 0 && <nav className="ubs-seg">{tabs}</nav>}
         </header>
-        {group && group.links.length > 1 && <nav className="ubs-sub">{group.links.map((l) => <A key={l.id} l={l} />)}</nav>}
+        {sub}
         <div className="ubs-col">{head}<main className="ubs-main">{children}</main></div>
         {foot}
       </div>
@@ -75,7 +78,8 @@ function AdminFrame({ props, title, at, children }: { props: SkinProps; title?: 
     return (
       <div className={`portal ubs ubs-admin ubs-3 ubs-on-${at ?? "bare"}`}>
         <header className="ubs-head"><Mark /></header>
-        <nav className="ubs-pills">{flat.map((l) => <A key={l.id} l={l} />)}</nav>
+        <nav className="ubs-pills">{tabs}</nav>
+        {sub}
         <div className="ubs-col"><section className="ubs-portlet">{title && <h2 className="ubs-portlet-head">{title}</h2>}<main className="ubs-main">{children}</main></section></div>
         {foot}
       </div>
@@ -84,7 +88,8 @@ function AdminFrame({ props, title, at, children }: { props: SkinProps; title?: 
   return (
     <div className={`portal ubs ubs-admin ubs-2 ubs-on-${at ?? "bare"}`}>
       <header className="ubs-head"><Mark /><span className="ubs-host">{game.company.domain && `portal.${game.company.domain}`}</span></header>
-      <nav className="ubs-tabs">{flat.map((l) => <A key={l.id} l={l} />)}</nav>
+      <nav className="ubs-tabs">{tabs}</nav>
+      {sub}
       {title && at !== "home" && <div className="ubs-crumb">{t("ubersmyth.nav.home")} <span>›</span> {title}</div>}
       <main className="ubs-main">{children}</main>
       {foot}
@@ -114,8 +119,8 @@ function Admin(props: SkinProps) {
   const at: ScreenName = navOf(screen.name);
   const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
   return (
-    <AdminFrame props={props} at={at} title={label(at)}>
-      <AdminScreen game={game} screen={screen} go={go} toClient={(c) => open("client", {}, { c })} browse={browse} />
+    <AdminFrame props={props} at={at} title={titleOf(screen) ?? label(at)}>
+      <AdminScreen game={game} screen={screen} go={go} dash="uber" label={label} toClient={(c) => open("client", {}, { c })} browse={browse} />
     </AdminFrame>
   );
 }

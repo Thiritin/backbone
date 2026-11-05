@@ -4,7 +4,7 @@ import { t } from "../../../../../../i18n/en";
 import { yearOf } from "../../../../../../sim/00-core/time";
 import { licenceStatus, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence";
 import { adminFirstName } from "../../../../../../sim/60-infra/shop-files";
-import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
+import { AdminScreen, SCREEN_LABEL, titleOf } from "../shared/AdminScreen";
 import { navOf, screenArgs, screenOf, type Screen, type ScreenName } from "../shared/nav";
 import type { LoginProps, SkinProps } from "../skins";
 import { LoginNote } from "../Login";
@@ -22,19 +22,24 @@ export const lookOf = (major: string): WhcLook => {
   return n >= 8 ? "flat" : n >= 5 ? "gloss" : "classic";
 };
 
-const MENUS: [string, ScreenName[]][] = [
-  ["shop-admin.home", ["home"]],
-  ["shop-admin.menuClients", ["clients"]],
-  ["shop-admin.menuOrders", ["orders"]],
-  ["shop-admin.menuBilling", ["invoices", "quotes"]],
-  ["shop-admin.menuSetup", ["products", "servers", "settings", "emails", "marketplace"]],
-  ["shop-admin.menuHelp", ["licence", "updates"]],
+// Every top item as the real admin lists it; one without a screen of its own opens the nearest one.
+const MENUS: [string, ScreenName, ScreenName[]][] = [
+  ["shop-admin.home", "home", []],
+  ["shop-admin.menuClients", "clients", ["clients"]],
+  ["shop-admin.menuOrders", "orders", ["orders"]],
+  ["shop-admin.menuBilling", "invoices", ["invoices", "quotes"]],
+  ["shop-whmCache.menuSupport", "emails", ["emails"]],
+  ["shop-whmCache.menuReports", "invoices", []],
+  ["shop-whmCache.menuTools", "import", ["import", "updates"]],
+  ["shop-admin.menuSetup", "products", ["products", "servers", "settings", "gateways", "marketplace"]],
+  ["shop-admin.menuHelp", "licence", ["licence"]],
 ];
 
-const label = (n: ScreenName) => (n === "products" ? t("shop-admin.productsServices") : SCREEN_LABEL[n] ?? n);
+const LABEL: Partial<Record<ScreenName, string>> = { gateways: t("shop-market.gateways"), import: t("shop-admin.d.import") };
+const label = (n: ScreenName) => (n === "products" ? t("shop-admin.productsServices") : LABEL[n] ?? SCREEN_LABEL[n] ?? n);
 
 const link = (on: () => void) => (e: { preventDefault: () => void }) => { e.preventDefault(); on(); };
-const current = (s: Screen): ScreenName => navOf(s.name);
+const current = (s: Screen): ScreenName => (s.name === "import" || s.name === "gateways" ? s.name : navOf(s.name));
 
 export function Wordmark({ go }: { go?: () => void }) {
   const mark = <><b>WHM</b><span>Cache</span></>;
@@ -44,8 +49,8 @@ export function Wordmark({ go }: { go?: () => void }) {
 type Nav = (n: ScreenName) => void;
 
 // The admin frame of each look; without nav it frames the licence-locked screen.
-export function AdminFrame({ game, variant, major, nav, on, children }: SkinProps & { nav?: Nav; on: ScreenName; children: ReactNode }) {
-  const look = lookOf(major), home = nav && (() => nav("home")), title = label(on);
+export function AdminFrame({ game, variant, major, nav, on, title: heading, children }: SkinProps & { nav?: Nav; on: ScreenName; title?: string; children: ReactNode }) {
+  const look = lookOf(major), home = nav && (() => nav("home")), title = heading ?? label(on);
   if (look === "flat") {
     return (
       <div className="portal whc whc-admin whc-flat">
@@ -68,7 +73,7 @@ export function AdminFrame({ game, variant, major, nav, on, children }: SkinProp
       {nav && <MenuBar nav={nav} on={on} />}
       <div className="whc-body">
         {look === "classic" && nav && <Sidebar game={game} variant={variant} nav={nav} />}
-        <main className="whc-main">
+        <main className={`whc-main${on === "home" ? " whc-home" : ""}`}>
           <h1 className="whc-title">{title}</h1>
           <div className="whc-panel">{children}</div>
         </main>
@@ -82,10 +87,10 @@ export function AdminFrame({ game, variant, major, nav, on, children }: SkinProp
 function MenuBar({ nav, on }: { nav: Nav; on: ScreenName }) {
   return (
     <nav className="whc-menu">
-      {MENUS.map(([key, items]) => (
-        <div key={key} className={`whc-drop${items.includes(on) ? " on" : ""}`}>
-          <a href="#" onClick={link(() => nav(items[0]))}>{t(key)}</a>
-          {items.length > 1 && <div className="whc-sub">{items.map((n) => <a key={n} href="#" onClick={link(() => nav(n))}>{label(n)}</a>)}</div>}
+      {MENUS.map(([key, to, items]) => (
+        <div key={key} className={`whc-drop${(key === "shop-admin.home" ? on === "home" : items.includes(on)) ? " on" : ""}`}>
+          <a href="#" onClick={link(() => nav(to))}>{t(key)}</a>
+          {items.length > 0 && <div className="whc-sub">{items.map((n) => <a key={n} href="#" onClick={link(() => nav(n))}>{label(n)}</a>)}</div>}
         </div>
       ))}
     </nav>
@@ -120,9 +125,9 @@ export function WhmCacheAdmin(props: SkinProps) {
   const { game, route, open, browse } = props, screen = screenOf(route.query), on = current(screen);
   const go = (s: Screen) => open("admin", {}, screenArgs(s));
   return (
-    <AdminFrame {...props} nav={(n) => go({ name: n })} on={on}>
+    <AdminFrame {...props} nav={(n) => go({ name: n })} on={on} title={titleOf(screen)}>
       <div className={`whc-s-${on}`}>
-        <AdminScreen game={game} screen={screen} go={go} wizard={(parseInt(props.major, 10) || 0) >= 7} toClient={(c) => open("client", {}, { c })} browse={browse} />
+        <AdminScreen game={game} screen={screen} go={go} wizard={(parseInt(props.major, 10) || 0) >= 7} dash="whmcs" label={label} toClient={(c) => open("client", {}, { c })} browse={browse} />
       </div>
     </AdminFrame>
   );

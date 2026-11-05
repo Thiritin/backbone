@@ -1,7 +1,7 @@
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { shopById } from "../../../../../../sim/10-catalog/shops";
-import { AdminScreen, SCREEN_LABEL } from "../shared/AdminScreen";
+import { AdminScreen, SCREEN_LABEL, titleOf } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
 import { VersionFooter } from "../shared/Licence";
 import { navOf, screenArgs, screenOf, type ScreenName } from "../shared/nav";
@@ -25,63 +25,41 @@ export const Mark = () => (
 );
 export const Wordmark = () => <span className="bl-word"><Mark />{shopById("blessta").name.toLowerCase()}</span>;
 
-type Group = "home" | "clients" | "billing" | "packages" | "settings";
-const GROUPS: [Group, ScreenName[]][] = [
-  ["home", ["home"]], ["clients", ["clients"]], ["billing", ["orders", "invoices", "quotes"]], ["packages", ["products", "servers"]], ["settings", ["settings", "emails", "marketplace", "licence", "updates"]],
+// The top bar of every version: each entry opens its first screen and lists the others in the row below.
+type Group = "home" | "clients" | "billing" | "packages" | "support" | "tools" | "settings";
+const GROUPS: [Group, ScreenName, ScreenName[]][] = [
+  ["home", "home", []], ["clients", "clients", ["clients"]], ["billing", "invoices", ["orders", "invoices", "quotes"]], ["packages", "products", ["products", "servers"]],
+  ["support", "emails", ["emails"]], ["tools", "import", ["import", "updates"]], ["settings", "settings", ["settings", "gateways", "marketplace", "licence"]],
 ];
 const labels = (): Partial<Record<ScreenName, string>> => ({
   ...SCREEN_LABEL, home: t("blessta.dashboard"), clients: t("blessta.browseClients"), products: t("shop-store.lblPkgGroups"), quotes: t("shop-admin.quoteRequests"),
+  import: t("shop-admin.d.import"), gateways: t("shop-market.gateways"),
 });
-
-const ICON: Partial<Record<ScreenName, string>> = {
-  home: "M3 9.5 10 4l7 5.5V17H3z M8 17v-5h4v5", clients: "M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M2 17c0-3 2.2-5 5-5s5 2 5 5 M13 4.5a2.5 2.5 0 0 1 0 5 M14 12c2 .4 4 2 4 5",
-  orders: "M2 3h2.5l2 10h9.5l2-7H5.5 M8 17h.01 M15 17h.01", invoices: "M5 2h10v16l-2.5-1.5L10 18l-2.5-1.5L5 18z M8 7h4 M8 11h4", quotes: "M5 2h7l3 3v13H5z M8 9h4 M8 13h4",
-  products: "M10 2 3 6v8l7 4 7-4V6z M3 6l7 4 7-4 M10 10v8", settings: "M4 5h12 M4 10h12 M4 15h12 M7 3v4 M13 8v4 M9 13v4",
-  servers: "M3 3h14v5H3z M3 12h14v5H3z M6 5.5h.01 M6 14.5h.01", licence: "M7.5 12a4 4 0 1 1 3-1.5L17 17l-1.5 1-1-1-1 1-1-1 M6.5 7.5h.01",
-  updates: "M16 10a6 6 0 1 1-2-4.5 M16 3v4h-4",
-  emails: "M3 5h14v10H3z M3 5l7 6 7-6",
-  marketplace: "M3 3h6v6H3z M11 3h6v6h-6z M3 11h6v6H3z M11 11h6v6h-6z",
-};
-const Icon = ({ name }: { name: ScreenName }) => <svg className="bl-icon" viewBox="0 0 20 20" aria-hidden="true"><path d={ICON[name]} /></svg>;
 
 function Admin(props: SkinProps) {
   const { game, route, open, major, variant } = props, screen = screenOf(route.query), era = eraOf(major), label = labels();
   const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
-  const current: ScreenName = navOf(screen.name);
-  const [group, screens] = GROUPS.find(([, s]) => s.includes(current)) ?? GROUPS[0];
-  const link = (s: ScreenName, icon = false) => (
-    <a key={s} href="#" className={current === s ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: s }); }}>{icon && <Icon name={s} />}{label[s]}</a>
+  const current: ScreenName = screen.name === "import" || screen.name === "gateways" ? screen.name : navOf(screen.name);
+  const [group, , screens] = GROUPS.find(([, , s]) => s.includes(current)) ?? GROUPS[0];
+  const link = (s: ScreenName) => (
+    <a key={s} href="#" className={current === s ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: s }); }}>{label[s]}</a>
   );
-  const body = (
-    <main className="bl-main">
-      {era === "paradigm" && <p className="bl-crumb">{t(`blessta.group.${group}`)}</p>}
-      <section className="bl-box">
-        <h1 className="bl-boxhead">{label[current]}</h1>
-        <div className="bl-boxbody"><AdminScreen game={game} screen={screen} go={go} wizard toClient={(c) => open("client", {}, { c })} browse={props.browse} /></div>
-      </section>
-    </main>
-  );
-  if (era === "paradigm") {
-    return (
-      <div className={`${cls(major)} bl-admin`}>
-        <aside className="bl-side">
-          <Wordmark />
-          {GROUPS.map(([g, s]) => <nav key={g}>{g !== "home" && <h2>{t(`blessta.group.${g}`)}</h2>}{s.map((x) => link(x, true))}</nav>)}
-        </aside>
-        <div className="bl-col">{body}<VersionFooter game={game} variant={variant} /></div>
-      </div>
-    );
-  }
   return (
     <div className={`${cls(major)} bl-admin`}>
       <header className="bl-top">
         <Wordmark />
         <nav className="bl-tabs">
-          {GROUPS.map(([g, s]) => <a key={g} href="#" className={g === group ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: s[0] }); }}>{t(`blessta.group.${g}`)}</a>)}
+          {GROUPS.map(([g, to]) => <a key={g} href="#" className={g === group ? "on" : ""} onClick={(e) => { e.preventDefault(); go({ name: to }); }}>{t(`blessta.group.${g}`)}</a>)}
         </nav>
       </header>
-      <nav className="bl-sub">{screens.map((s) => link(s))}</nav>
-      {body}
+      {screens.length > 0 && <nav className="bl-sub">{screens.map(link)}</nav>}
+      <main className={`bl-main${current === "home" ? " bl-home" : ""}`}>
+        {era === "paradigm" && <p className="bl-crumb">{t(`blessta.group.${group}`)}</p>}
+        <section className="bl-box">
+          <h1 className="bl-boxhead">{titleOf(screen) ?? label[current]}</h1>
+          <div className="bl-boxbody"><AdminScreen game={game} screen={screen} go={go} wizard dash="blesta" label={(n) => label[n] ?? n} toClient={(c) => open("client", {}, { c })} browse={props.browse} /></div>
+        </section>
+      </main>
       <VersionFooter game={game} variant={variant} />
     </div>
   );

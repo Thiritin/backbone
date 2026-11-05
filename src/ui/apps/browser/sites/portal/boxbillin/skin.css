@@ -1,6 +1,6 @@
 /* BoxBillin': cube (1 and 2, glossy charcoal and linen), slate (3 and 4, flat Bootstrap with an orange accent),
    foss (FOSSBillin' 0.x, light cards with a horizontal menu). */
-.bx { min-height: 100%; display: flex; flex-direction: column; }
+.bx { min-height: 100%; flex: none; display: flex; flex-direction: column; }
 .bx .bx-body { flex: 1; display: flex; align-items: stretch; }
 .bx .bx-main { flex: 1; min-width: 0; padding: 0; }
 .bx .bx-brand { display: inline-flex; align-items: center; gap: 8px; }
@@ -230,3 +230,11 @@
 .bx-foss .mkt-row { padding: 10px 0; border-bottom: 1px solid var(--fx-line); }
 .bx-foss .pt-badge { border-radius: 999px; background: var(--fx-bg); color: var(--fx-mute); font-weight: 500; }
 .bx-foss .pt-badge.ok { background: color-mix(in srgb, #2fb344 15%, var(--fx-card)); color: #2a8a3e; }
+
+/* BoxBilling keeps its dark left menu in the glossy era too */
+.bx-cube.bx-admin .bx-nav { width: 196px; padding: 8px 0; background: #2d3238; border-right: 1px solid #111; }
+.bx-cube.bx-admin .bx-nav a, .bx-cube.bx-admin .bx-nav a:first-child, .bx-cube.bx-admin .bx-nav a:last-child { margin: 0; padding: 9px 16px; border: 0; border-radius: 0; background: none; color: #c9d0d7; text-shadow: none; }
+.bx-cube.bx-admin .bx-nav a:hover { background: #353b42; }
+.bx-cube.bx-admin .bx-nav a.on { background: #23272c; color: #fff; text-shadow: none; box-shadow: inset 3px 0 0 #f08a1c; }
+.bx-cube.bx-admin .bx-nav a .bx-ico { color: #8d97a2; }
+.bx.bx-admin .pt-version { margin-top: auto; }
