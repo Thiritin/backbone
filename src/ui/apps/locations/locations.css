@@ -368,7 +368,7 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .loc-site .loc-card-h h3 { white-space: nowrap; }
 
 /* Device inspector: the device, a status strip and flat sections divided by hairlines instead of stacked cards. */
-.insp { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.insp { display: grid; gap: 14px; align-content: start; min-width: 0; grid-template-columns: minmax(0, 1fr); }
 .insp > .loc-model { margin-top: -10px; }
 .insp > .tabs { padding: 0; }
 .insp > .loc-card { border: 0; border-radius: 0; background: none; border-top: var(--ar-bw) solid var(--line); }
