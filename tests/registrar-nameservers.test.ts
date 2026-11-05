@@ -41,7 +41,7 @@ describe("name servers", () => {
     while (nowMinutes(s) < ready) tick(s);
     expect(nsPropagating(s, d())).toBe(false);
     expect(parked(s, d())).toBe(false);
-    expect(nameServers(s, d())).toEqual([`ns1.${companyDomain(s)}`, `ns2.${companyDomain(s)}`]);
+    expect(nameServers(s, d())).toEqual(["ns1.namecheep.com", "ns2.namecheep.com"]);
     expect(resolve(s, "second-shop.de").page.kind).toBe("notfound");
   });
 

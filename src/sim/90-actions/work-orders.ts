@@ -3,6 +3,7 @@
 import { t } from "../../i18n/en";
 import { workFactor } from "../10-catalog/lifecycle";
 import { hashRng, rand } from "../00-core/rng";
+import { billDue } from "../46-finance/payables";
 import { cents } from "../45-billing/billing";
 import { entryTile, officePlan, rackTiles, seatsAt, type Facing, type Pt, type Tile } from "../20-world/layout";
 import { HALL, ORDERS, WALK } from "../20-world/properties";
@@ -139,8 +140,7 @@ function finish(s: GameState, o: WorkOrder, events: SimEvent[]): void {
   if (o.worker === "player") events.push({ app: "Locations", key: "event.workDone", params: { device, work: t(`orders.kind.${jobKind(o.action.name as HandsAction)}`) } });
   if (o.worker !== "provider") return;
   const fee = o.fee ?? 0, dc = s.locations.find((l) => l.id === o.locationId)?.dc ?? "";
-  s.cash = cents(s.cash - fee);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device, hours, dc, done: Math.floor(doneAt(o) / 60) }, amount: -fee }];
+  billDue(s, "contractor", dc, [{ hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device, hours, dc, done: Math.floor(doneAt(o) / 60) }, amount: -fee }]);
 }
 
 // Applies the orders that are done by the minute, and marks a customer's job late once it is overdue.

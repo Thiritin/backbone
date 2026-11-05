@@ -125,7 +125,7 @@ export function planTraining(s: GameState, id: string, tasks: Task[]): ActionRes
   if (!e) return fail("error.unknownEmployee");
   if (tasks.some((k) => !TASKS[e.role].includes(k))) return fail("error.unknownTask");
   const plan = TASKS[e.role].filter((k) => tasks.includes(k) && !e.trained.includes(k) && e.training?.task !== k);
-  if (!e.training && plan.length && !trainerFor(s, e) && s.cash < staffPrice(COURSE_PRICE, yearOf(s.hour))) return fail("error.noCash");
+  if (!e.training && plan.length && !trainerFor(s, e) && !s.bank && s.cash < staffPrice(COURSE_PRICE, yearOf(s.hour))) return fail("error.noCash");
   e.plan = plan;
   startTraining(s, e);
   return { ok: true };

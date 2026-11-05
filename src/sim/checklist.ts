@@ -78,7 +78,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   hire: (s) => s.staff.some((e) => !e.bot),
   study: (s) => s.marketing.studies.length > 0,
   suite: (s) => s.locations.some((l) => l.space === "suite"),
-  pearMail: (s) => s.pearMail.accounts.length > 0,
+  mail: (s) => s.pearMail.accounts.length > 0,
   hosttoast: (s) => s.hosttoast.tier !== null,
   flyers: (s) => s.marketing.flyers.length > 0,
 };
@@ -87,11 +87,11 @@ export const tracked = (id: string): boolean => id in CHECKS;
 export const checkDone = (s: GameState, id: string): boolean => CHECKS[id]?.(s) || s.checklist.includes(id);
 
 // The Getting started tutorial: each step is a checklist goal, done in this order.
-export const TUTORIAL = ["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "setup", "findAddress", "shareWeb", "website", "domain", "email", "launch", "hosttoast", "flyers", "firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "sendInvoice"] as const;
+export const TUTORIAL = ["bank", "register", "mail", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "setup", "findAddress", "shareWeb", "website", "domain", "email", "launch", "hosttoast", "flyers", "firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "sendInvoice"] as const;
 
 // A step that belongs to an app shows once that app is installed.
-export const GUIDE = [...TUTORIAL, "payBills", "pearMail", "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
+export const GUIDE = [...TUTORIAL, "payBills", "loan", "tenCustomers", "research", "patch", "hire", "study"] as const;
 const AFTER: Partial<Record<(typeof GUIDE)[number], string>> = {
-  website: "Marketing", launch: "Marketing", pearMail: "Pear Mail", research: "Research", patch: "Security", hire: "Staff", study: "Market",
+  website: "Marketing", launch: "Marketing", research: "Research", patch: "Security", hire: "Staff", study: "Market",
 };
 export const guideSteps = (s: GameState) => GUIDE.filter((id) => (!AFTER[id] || s.installed.includes(AFTER[id]!)) && (id !== "payBills" || suppliersBilling(s)));

@@ -223,8 +223,8 @@ describe("company domain", () => {
 });
 
 describe("tutorial", () => {
-  it("runs bank, register, payBill, books, buyServer, mountServer, mountRouter, internet, setup, findAddress, shareWeb, website, domain, launch, email, firstCustomer, orderAccount, orderDomain, orderProvision, orderAccess, sendInvoice", () => {
-    expect(TUTORIAL).toEqual(["bank", "register", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "setup", "findAddress", "shareWeb", "website", "domain", "email", "launch", "hosttoast", "flyers", "firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "sendInvoice"]);
+  it("runs bank, register, mail, payBill, books, buyServer, mountServer, mountRouter, internet, setup, findAddress, shareWeb, website, domain, launch, email, firstCustomer, orderAccount, orderDomain, orderProvision, orderAccess, sendInvoice", () => {
+    expect(TUTORIAL).toEqual(["bank", "register", "mail", "payBill", "books", "buyServer", "mountServer", "mountRouter", "internet", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "setup", "findAddress", "shareWeb", "website", "domain", "email", "launch", "hosttoast", "flyers", "firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "sendInvoice"]);
   });
 
   it("starts with Marketing and gives it to old registered saves", () => {
