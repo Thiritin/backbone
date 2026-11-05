@@ -18,6 +18,7 @@ import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
 import { exportSave } from "../export-save";
 import { FullscreenButton } from "../FullscreenButton";
+import { roomOf } from "../world/World";
 import { openMenu } from "./ContextMenu";
 import type { MenuEntry } from "./menu";
 
@@ -107,7 +108,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         <SkyIcon kind={sky(here.city, game.hour)} night={daylight(dateOf(game.hour).getUTCHours() + game.minute / 60, dateOf(game.hour).getUTCMonth()) < 0.5} />{degrees(here.city, game.hour)} {here.name}
       </button>
       <span className="mb-sep" />
-      <button className="mb-item" onClick={() => setSurface("world")}>{t("desktop.icon.exit")}</button>
+      <button className="mb-item" onClick={() => setSurface("world")}>{roomOf(game).name}</button>
       <span className="mb-sep" />
       <SpeedControl speed={speed} setSpeed={setSpeed} />
       <span className="mb-sep" />
