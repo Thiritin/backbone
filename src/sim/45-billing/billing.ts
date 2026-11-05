@@ -411,7 +411,8 @@ export function renewTerms(s: GameState, inv: Invoice, sign = 1): void {
   });
 }
 
-export function billingTick(s: GameState): SimEvent[] {
+// cronOk is false while the shop system's cron job is missing: the month passes unbilled.
+export function billingTick(s: GameState, cronOk = true): SimEvent[] {
   const events: SimEvent[] = [];
   const booked: LedgerEntry[] = [];
   const book = (category: string, key: string, params: LedgerEntry["params"], amount: number) => {
@@ -460,7 +461,7 @@ export function billingTick(s: GameState): SimEvent[] {
   const free = new Set(s.customers.filter((c) => c.sponsor).map((c) => c.id));
   const add = (customerId: string, line: InvoiceLine) => !free.has(customerId) && lines.set(customerId, [...(lines.get(customerId) ?? []), line]);
   const monthStart = isMonthStart(s.hour);
-  if (monthStart) {
+  if (monthStart && cronOk) {
     const d = dateOf(s.hour);
     const from = hourOf(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1)));
     for (const v of s.services) {

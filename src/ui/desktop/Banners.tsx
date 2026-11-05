@@ -22,7 +22,7 @@ function Card({ b, time, dismiss, gear }: { b: Banner; time: string; dismiss: (i
 
 export function Banners() {
   const { banners, dismiss } = useStore();
-  return <div className="banners" aria-live="polite">{banners.map((b) => <Card key={b.id} b={b} time={t("desktop.notif.now")} dismiss={dismiss} />)}</div>;
+  return <div className="banners" aria-live="polite">{banners.map((b) => <Card key={b.id} b={b} time={t("desktop.notif.now")} dismiss={(id) => dismiss(id, true)} />)}</div>;
 }
 
 export function NotificationCenter({ onClose }: { onClose: () => void }) {

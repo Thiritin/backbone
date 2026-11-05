@@ -1,12 +1,16 @@
 import { shopArchive } from "../src/sim/10-catalog/archives";
-import { installDirLeft, shopSpace, adminFirstName } from "../src/sim/60-infra/shop-files";
+import { configWritable, CRON_GRACE, defaultAdmin, installDirLeft, shopCronOk, shopSpace, adminFirstName } from "../src/sim/60-infra/shop-files";
+import { syncShopGuide } from "../src/sim/60-infra/install-guide";
+import { billingTick } from "../src/sim/45-billing/billing";
+import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { webspaceOf } from "../src/sim/60-infra/webspace";
 import { shopActive } from "../src/sim/80-business/shop";
 import { upgradePhp } from "../src/sim/90-actions/clusters";
 import { downloadArchive } from "../src/sim/90-actions/media";
-import { installShopApp, requestShopReset, resetShopPassword, runShopInstaller, runShopUpgrade, shopLogin, type InstallForm } from "../src/sim/90-actions/shop-setup";
-import { createDatabase, createDbUser, createOwnWebspace, createSubdomain, deleteFile, grantDb } from "../src/sim/90-actions/webspace";
-import { extractFile, uploadFile } from "../src/sim/90-actions/webspace-files";
+import { changeShopPassword, installShopApp, requestShopReset, resetShopPassword, runShopInstaller, runShopUpgrade, shopLogin, type InstallForm } from "../src/sim/90-actions/shop-setup";
+import { createCron, createDatabase, createDbUser, createOwnWebspace, createSubdomain, deleteCron, deleteFile, grantDb, renameFile } from "../src/sim/90-actions/webspace";
+import { shopSetup } from "../src/sim/10-catalog/shop-setup";
+import { chmodFile, extractFile, uploadFile } from "../src/sim/90-actions/webspace-files";
 import { editRow } from "../src/sim/90-actions/webdb";
 import { setIonCube } from "../src/sim/90-actions/webpanel";
 import { PHP_UPGRADE_HOURS } from "../src/sim/60-infra/php";
@@ -28,7 +32,7 @@ import { setUpChannel } from "../src/sim/90-actions/marketing";
 import { installShop, renewShopUpdates, updateShop, upgradeShop } from "../src/sim/90-actions/shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import type { ActionResult } from "../src/sim/90-actions/hardware";
-import { readyGame, installWithKey, mailsAbout } from "./fixtures";
+import { readyGame, installWithKey, mailsAbout, newGame, withServer } from "./fixtures";
 
 // readyGame's FreePanel VM is the first panel host.
 const panelHost = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!;
@@ -188,14 +192,20 @@ describe("old saves", () => {
 describe("installing the shop by hand", () => {
   const admin = { first: "Ada", last: "Admin", email: "ada@example.com", user: "ada", pass: "s3cret!" };
   // A cPanic-style own web space with the archive extracted under portal.<domain> and a database with a user.
-  const prepared = (ym: string, id: ShopId, version = versionAt(id, hourOfMonth(ym)).version) => {
+  const prepared = (ym: string, id: ShopId, version = versionAt(id, hourOfMonth(ym)).version, ready = true) => {
     const s = game(ym), c = panelHost(s), domain = companyDomain(s);
     upgradePhp(s, c.id);
+    // WHMCache's tests turn the loader on themselves; Blessta ships encoded as well.
+    if (id === "blessta") { ok(setIonCube(s, c.id, true)); s.hour += PHP_UPGRADE_HOURS; }
     const ws = idOf(createOwnWebspace(s, c.id)), folder = "public_html/portal", zip = shopArchive(id, version)!.name;
     ok(downloadArchive(s, zip));
     ok(createSubdomain(s, ws, "portal", domain));
     ok(uploadFile(s, ws, folder, zip));
     ok(extractFile(s, ws, `${folder}/${zip}`));
+    // The vendor's guide: the config file under its real name, and the folders the installer writes to.
+    const setup = shopSetup(id, version);
+    if (ready && setup.rename) ok(renameFile(s, ws, `${folder}/${setup.config}.new`, setup.config.split("/").pop()!));
+    for (const [path] of ready ? setup.writable : []) ok(chmodFile(s, ws, `${folder}/${path}`, "0777"));
     const db = idOf(createDatabase(s, ws, "shop")), user = idOf(createDbUser(s, ws, "shop", "dbpass1"));
     ok(grantDb(s, ws, user, db));
     const form: InstallForm = { ...admin, dbHost: "localhost", dbName: db, dbUser: user, dbPass: "dbpass1" };
@@ -289,6 +299,8 @@ describe("installing the shop by hand", () => {
   it("installs in one step through Softaculus in the years it lists the shop", () => {
     const s = game("2014-05"), c = panelHost(s), domain = companyDomain(s);
     upgradePhp(s, c.id);
+    ok(setIonCube(s, c.id, true));
+    s.hour += PHP_UPGRADE_HOURS;
     const ws = idOf(createOwnWebspace(s, c.id)), f = { ...admin, domain, dir: "billing" };
     expect(err(installShopApp(s, ws, "whmCache", f))).toBe("shop-setup.app.notListed");
     ok(installShopApp(s, ws, "blessta", f));
@@ -300,6 +312,76 @@ describe("installing the shop by hand", () => {
     expect(resolve(s, `${domain}/billing/admin/`).page).toEqual({ kind: "shop", base: "/billing" });
     ok(shopLogin(s, "ada", admin.pass));
     expect(err(installShopApp(s, ws, "blessta", f))).toBe("shop-setup.app.notEmpty");
+  });
+
+  it("refuses until the config file is renamed and the folders are writable", () => {
+    const { s, c, ws, folder, form } = prepared("2016-05", "whmCache", "6.0", false);
+    ok(setIonCube(s, c.id, true));
+    s.hour += PHP_UPGRADE_HOURS;
+    const k = issueKey(s, "whmCache", null), go = () => err(runShopInstaller(s, ws, folder, { ...form, key: k.key }));
+    expect(go()).toBe("shop-setup.req.config.fail");
+    ok(renameFile(s, ws, `${folder}/configuration.php.new`, "configuration.php"));
+    expect(runShopInstaller(s, ws, folder, { ...form, key: k.key })).toMatchObject({ ok: false, error: "shop-setup.req.writable.fail", params: { path: "configuration.php" } });
+    for (const p of ["configuration.php", "attachments", "downloads"]) ok(chmodFile(s, ws, `${folder}/${p}`, "0777"));
+    expect(runShopInstaller(s, ws, folder, { ...form, key: k.key })).toMatchObject({ ok: false, params: { path: "templates_c" } });
+    ok(chmodFile(s, ws, `${folder}/templates_c`, "0777"));
+    expect(go()).toBeNull();
+    // The installer leaves the config open as the player set it: a finding until it is locked again.
+    expect(configWritable(s)).toBe(true);
+    ok(chmodFile(s, ws, `${folder}/configuration.php`, "0644"));
+    expect(configWritable(s)).toBe(false);
+  });
+
+  it("creates admin with the password admin in HostBull until it is changed", () => {
+    const { s, c, ws, folder, form } = prepared("2016-05", "hostBull");
+    ok(setIonCube(s, c.id, true));
+    s.hour += PHP_UPGRADE_HOURS;
+    ok(runShopInstaller(s, ws, folder, { ...form, user: "", pass: "", email: "", key: issueKey(s, "hostBull", null).key }));
+    expect(defaultAdmin(s)).toBe(true);
+    ok(shopLogin(s, "admin", "admin"));
+    expect(err(changeShopPassword(s, "admin", "wrong", "n3wpass!"))).toBe("shop-setup.login.hostBull");
+    ok(changeShopPassword(s, "admin", "admin", "n3wpass!"));
+    expect(defaultAdmin(s)).toBe(false);
+    ok(shopLogin(s, "admin", "n3wpass!"));
+  });
+
+  it("bills only while the cron job runs, and for a month after it was removed", () => {
+    const { s, c, ws, folder, form } = prepared("2016-05", "whmCache", "6.0");
+    ok(setIonCube(s, c.id, true));
+    s.hour += PHP_UPGRADE_HOURS;
+    ok(runShopInstaller(s, ws, folder, { ...form, key: issueKey(s, "whmCache", null).key }));
+    expect(shopCronOk(s)).toBe(false);
+    const home = webspaceOf(s, ws)!.home, job = idOf(createCron(s, ws, `php -q ${home}/${folder}/crons/cron.php`, 1));
+    expect(shopCronOk(s)).toBe(true);
+    syncShopGuide(s);
+    expect(s.shop.cronRanAt).toBe(s.hour);
+    ok(deleteCron(s, ws, job));
+    expect(shopCronOk(s)).toBe(true);
+    s.hour += CRON_GRACE + 1;
+    expect(shopCronOk(s)).toBe(false);
+  });
+
+  it("skips the month's invoice run while the shop has no cron job", () => {
+    const s = withServer(newGame(3));
+    s.hour = hourOfMonth("2010-05");
+    addService(s, addCustomer(s, "Initech", "enterprise", "late"), "vps", "VPS", 0.02, "hour");
+    s.hour = hourOfMonth("2010-06");
+    const without = structuredClone(s), withCron = structuredClone(s);
+    billingTick(without, false);
+    billingTick(withCron, true);
+    expect(without.invoices.length).toBe(0);
+    expect(withCron.invoices.length).toBe(1);
+  });
+
+  it("gives a saved shop from before the cron rule a month of billing", () => {
+    const { s, c, ws, folder, form } = prepared("2016-05", "whmCache", "6.0");
+    ok(setIonCube(s, c.id, true));
+    s.hour += PHP_UPGRADE_HOURS;
+    ok(runShopInstaller(s, ws, folder, { ...form, key: issueKey(s, "whmCache", null).key }));
+    expect(s.shop.cronRanAt).toBeUndefined();
+    const back = deserialize(serialize(s));
+    expect(back.shop.cronRanAt).toBe(back.hour);
+    expect(shopCronOk(back)).toBe(true);
   });
 
   it("gives a save with an installed shop its files, database and a mailed admin account", () => {

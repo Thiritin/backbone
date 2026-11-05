@@ -39,7 +39,7 @@ export default {
   "error.hosttoast.uptime99": () => "Verfügbarkeit unter 99 %",
   "error.hosttoast.uptime995": () => "Verfügbarkeit unter 99,5 %",
   "error.hosttoast.registered": () => "Die Firma ist bereits bei HOSTtoast gelistet.",
-  "error.hosttoast.notRegistered": () => "Registrieren Sie sich zuerst bei HOSTtoast.",
+  "error.hosttoast.notRegistered": () => "Registriere dich zuerst bei HOSTtoast.",
   "error.hosttoast.unknownTier": () => "Diese Stufe gibt es nicht.",
   "ledger.hosttoast": (p) => `HOSTtoast-Eintrag: ${p.tier}`,
   "ticket.mail.hosttoastLate.subject": (p) => `Ihr HOSTtoast-Eintrag ist jetzt ${p.tier}`,

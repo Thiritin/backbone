@@ -58,6 +58,8 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rack = game.racks.find((r) => r.id === rackId);
   const [sel, setSel] = useState<string | null>(device ?? null);
+  // The mount step stops outlining free units once something is racked.
+  const inRack = game.devices.filter((d) => d.rackId === rackId).length, racked0 = useRef(inRack);
   const [back, setBack] = useState(!!(hand || startPort || guide === "cable" || guide === "vga" || guide === "link"));
   // The side turning away while the other turns in.
   const [turning, setTurning] = useState<boolean | null>(null);
@@ -91,6 +93,13 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
     else run(id, op);
   };
   useEffect(() => { if (out) { const h = setTimeout(() => setOut(null), 4000); return () => clearTimeout(h); } }, [out]);
+  // A card opened on a panel that is already showing turns it to the side the step works on.
+  useEffect(() => {
+    if (!guide) return;
+    turn(guide === "cable" || guide === "vga" || guide === "link");
+    if (device) setSel(device);
+    racked0.current = inRack;
+  }, [guide, device]);
   const turn = (to: boolean) => {
     if (to === back) return;
     if (!to) { setPort(null); setJack(null); }
@@ -234,6 +243,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   // The card's cabling step outlines the line jack and router uplink, the boot step the server VGA port (the console end is port 100).
   useEffect(() => {
     if (guide === "mount") {
+      if (inRack > racked0.current) return;
       // The card picks the first free unit at once, so the stock tile shows beside it.
       if (free === null && !autoPick.current) { const first = document.querySelector<SVGGElement>(".wr-face .rack-free"); if (first) { autoPick.current = true; first.dispatchEvent(new MouseEvent("click", { bubbles: true })); } }
       // The free unit to click, then the stored devices that fit it.

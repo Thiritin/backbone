@@ -9,7 +9,7 @@ export default {
   "shop-link.ref.payout": (p) => `Auszahlung ${p.numbers}`,
   "error.payoutImport": () => "Diese Auszahlung umfasst mehrere Rechnungen.",
   "error.nothingToImport": () => "Es gibt nichts zu importieren.",
-  "error.noShopSystem": () => "Für dieses Modul brauchen Sie das Shopsystem dieses Herstellers.",
+  "error.noShopSystem": () => "Für dieses Modul brauchst du das Shopsystem dieses Herstellers.",
   "shop-link.import": () => "Aus dem Shop importieren",
   "shop-link.footer": (p) => `© ${p.year} ${p.maker}`,
   "shop-link.tagline.modemBill": () => "Abrechnung und Provisionierung für Webhoster",

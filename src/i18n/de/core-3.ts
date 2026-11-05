@@ -207,9 +207,9 @@ export default {
   "error.alreadyStopped": () => "Sie ist bereits gestoppt.",
   "error.alreadyRunning": () => "Sie läuft bereits.",
   "error.noRamToStart": () => "Auf dem Node ist nicht genug RAM frei, um sie zu starten.",
-  "error.lostDisk": () => "Ihre Festplatte ist verloren. Stelle sie zuerst wieder her.",
+  "error.lostDisk": () => "Die Festplatte ist verloren. Stelle sie zuerst wieder her.",
   "error.workloadBusy": () => "Sie wird noch wiederhergestellt oder verschoben.",
   "error.noZoneLink": () => "Keine Verbindung verbindet diese Zonen.",
-  "error.notLost": () => "Ihre Festplatte ist in Ordnung.",
+  "error.notLost": () => "Die Festplatte ist in Ordnung.",
   "error.backupUnavailable": () => "Der Backup-Cluster ist nicht erreichbar.",
 } satisfies Dict;

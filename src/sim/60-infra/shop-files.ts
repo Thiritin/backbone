@@ -5,21 +5,19 @@ import { md5 } from "../00-core/md5";
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { shopOfArchive } from "../10-catalog/archives";
+import { shopSetup } from "../10-catalog/shop-setup";
 import { PHP, phpAt } from "../10-catalog/platforms";
-import type { ShopId } from "../10-catalog/shops";
+import { SHOPS, type ShopId } from "../10-catalog/shops";
 import { versionInfo, versionsOf } from "../10-catalog/software-versions";
 import type { GameState } from "../50-state";
 import { ADMIN_TABLE, findRows, rowsOf, tablesOf } from "./webdb";
-import { MULTI_PHP_YEAR, webspaceOf, type Webspace } from "./webspace";
+import { modeOf, MULTI_PHP_YEAR, webspaceOf, type Webspace } from "./webspace";
 
-export const INSTALL_DIR = "install";
-// The file each installer writes the database credentials into.
-export const CONFIG_FILE: Partial<Record<ShopId, string>> = {
-  whmCache: "configuration.php", modemBill: "config.php", clientExit: "config.php", blessta: "config/blesta.php",
-  hostBull: "includes/config.php", ubersmyth: "config.ini.php", boxBillin: "bb-config.php",
-};
+// The file each installer writes the database credentials into, and the folder it runs from, by release.
+export const configFile = (id: ShopId, version: string): string => shopSetup(id, version).config;
+export const installDirOf = (id: ShopId, version: string): string | null => shopSetup(id, version).installDir;
 // Shop systems shipped ionCube-encoded: their requirements check fails until the host's PHP loads the ionCube Loader.
-export const IONCUBE: ShopId[] = ["whmCache", "clientExit", "hostBull"];
+export const IONCUBE: ShopId[] = ["whmCache", "clientExit", "hostBull", "blessta", "ubersmyth"];
 // Variants whose admin area refuses to load while the install folder exists; the others show a warning.
 export const INSTALL_DIR_BLOCKS: ShopId[] = ["whmCache", "hostBull", "boxBillin"];
 // The release year each shop or desk moved its admin passwords from MD5 to bcrypt; ModemBill never did.
@@ -39,7 +37,15 @@ export function filesIn(ws: Webspace, folder: string): { id: ShopId; version: st
   const f = ws.files[`${folder}/index.php`];
   return f?.from ? shopOfArchive(f.from) : null;
 }
-export const installDirIn = (ws: Webspace, folder: string): boolean => !!ws.files[`${folder}/${INSTALL_DIR}`]?.dir;
+export function installDirIn(ws: Webspace, folder: string): boolean {
+  const f = filesIn(ws, folder), dir = f && installDirOf(f.id, f.version);
+  return !!dir && !!ws.files[`${folder}/${dir}`]?.dir;
+}
+// Whether the folder still offers the web installer: its install folder, or for releases without one, the app itself.
+export function installerIn(ws: Webspace, folder: string): boolean {
+  const f = filesIn(ws, folder);
+  return !!f && (installDirOf(f.id, f.version) === null || installDirIn(ws, folder));
+}
 
 const phpIndex = (v: string) => PHP.findIndex((p) => p.version === v);
 // A release needs the PHP that was current three years before it came out.
@@ -50,9 +56,9 @@ export const newerRelease = (id: ShopId, a: string, b: string): boolean => {
   return vs.findIndex((x) => x.version === a) > vs.findIndex((x) => x.version === b);
 };
 
-export interface Requirement { key: "php" | "ioncube"; ok: boolean; params: Record<string, string> }
+export interface Requirement { key: "php" | "ioncube" | "config" | "writable"; ok: boolean; params: Record<string, string> }
 // The installer's requirements check against the PHP of the folder's domain and the host's loaders.
-export function requirementsOf(s: GameState, ws: Webspace, folder: string, id: string, version: string): Requirement[] {
+export function requirementsOf(s: GameState, ws: Webspace, folder: string, id: string, version: string, files = true): Requirement[] {
   const own = s.ownWebspaces.find((x) => x.id === ws.workloadId), c = s.clusters.find((x) => x.id === own?.clusterId);
   // Before the MultiPHP Manager every domain runs the host's PHP.
   const d = yearOf(s.hour) >= MULTI_PHP_YEAR ? Object.values(ws.domains).find((x) => x.folder === folder) : undefined;
@@ -60,6 +66,15 @@ export function requirementsOf(s: GameState, ws: Webspace, folder: string, id: s
   const out: Requirement[] = [{ key: "php", ok: phpIndex(php) >= phpIndex(need), params: { have: php, need } }];
   // The loader is there once the EasyApache build that adds it has finished.
   if (IONCUBE.includes(id as ShopId)) out.push({ key: "ioncube", ok: !!c?.ioncube && c.phpUntil <= s.hour, params: { have: php } });
+  // The web installer also wants its config file under its real name and its folders writable.
+  if (files && SHOPS.some((x) => x.id === id)) {
+    const setup = shopSetup(id as ShopId, version);
+    if (setup.rename) out.push({ key: "config", ok: !!ws.files[`${folder}/${setup.config}`], params: { path: setup.config } });
+    for (const [path, bits] of setup.writable) {
+      const f = ws.files[`${folder}/${path}`];
+      out.push({ key: "writable", ok: !!f && (parseInt(modeOf(path, f), 8) & bits) === bits, params: { path } });
+    }
+  }
   return out;
 }
 
@@ -115,7 +130,7 @@ export function shopBroken(s: GameState): boolean {
   if (!s.shop.install?.ws) return false;
   const at = shopSpace(s);
   if (!at) return true;
-  const { ws, folder, db, id, version } = at, files = filesIn(ws, folder), config = CONFIG_FILE[id];
+  const { ws, folder, db, id, version } = at, files = filesIn(ws, folder), config = configFile(id, version);
   return !files || files.id !== id || files.version !== version || !config || !ws.files[`${folder}/${config}`]
     || !urlOf(ws, folder) || !tablesOf(s, ws, db).length;
 }
@@ -174,4 +189,30 @@ export function shopFolderAt(s: GameState, host: string, path: string, has: (ws:
 export function adminFirstName(s: GameState): string | null {
   const at = shopSpace(s);
   return (at?.id === "whmCache" && rowsOf(s, at.ws, at.db, "tbladmins", 0, 1)[0]?.values.firstname) || null;
+}
+
+// The config file is world-writable: a security finding while a shop sits installed with it open.
+export function configWritable(s: GameState): boolean {
+  const at = shopSpace(s), f = at && at.ws.files[`${at.folder}/${configFile(at.id, at.version)}`];
+  return !!f && (parseInt(modeOf(configFile(at.id, at.version), f), 8) & 0o002) !== 0;
+}
+
+// The release's crontab lines are all there: each script run often enough.
+export function cronSet(ws: Webspace, folder: string, id: ShopId, version: string): boolean {
+  const cron = shopSetup(id, version).cron;
+  return !cron || cron.scripts.every((x) => Object.values(ws.cron).some((c) => c.command.includes(`${folder}/${x}`) && c.everyHours <= cron.hours));
+}
+// Hours a shop keeps billing after its cron job was last seen running.
+export const CRON_GRACE = 24 * 31;
+// The shop's daily automation (invoice runs, renewals) runs while its cron job is set, and for a month after it was last seen.
+export function shopCronOk(s: GameState): boolean {
+  const at = shopSpace(s);
+  if (!at || !shopSetup(at.id, at.version).cron) return true;
+  return cronSet(at.ws, at.folder, at.id, at.version) || (s.shop.cronRanAt !== undefined && s.hour - s.shop.cronRanAt <= CRON_GRACE);
+}
+
+// The admin account the installer left with its password still the vendor's default.
+export function defaultAdmin(s: GameState): boolean {
+  const at = shopSpace(s), row = at && at.id === "hostBull" ? adminRow(s, "login", "admin") : null;
+  return !!row && passMatches(row.pass, "admin");
 }
