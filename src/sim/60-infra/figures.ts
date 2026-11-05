@@ -59,6 +59,23 @@ export function seating(s: GameState, loc: Location, hour: number): { id: string
 }
 
 const key = (p: Pt): string => `${p.x},${p.y}`;
+
+// The floor a tile without one is on: an office's first floor is the reception's, which need not be floor 1.
+export const receptionFloor = (s: GameState, loc: Location): number => officePlan(s, loc)?.sections[0]?.floor ?? 1;
+// The floor the player is on in an office: the floor of their seat, else the reception's.
+export function playerFloor(s: GameState, loc: Location): number {
+  const seat = present(s, loc.id) ? (seatOf(s, loc.id, "player") as Tile | null) : null;
+  return seat?.floor ?? receptionFloor(s, loc);
+}
+
+// The player when no order of theirs moves them: sitting at their seat, or standing at pt. Always on a floor of the room, never missing
+// while they are present.
+export function idlePlayer(s: GameState, loc: Location, pt?: Pt): Figure | null {
+  const seat = present(s, loc.id) ? (seatOf(s, loc.id, "player") as Tile | null) : null;
+  if (!seat) return null;
+  const p = pt ?? seat, facing = seat.facing ?? "n", sitting = key(p) === key(seat) && seatsAt(s, loc).some((q) => key(q) === key(seat));
+  return { id: "player", name: "", role: "player", tile: { x: p.x, y: p.y, facing, floor: seat.floor ?? receptionFloor(s, loc) }, facing, colour: null, busy: false, seated: sitting, pose: sitting ? "sit" : "stand", path: [p], progress: 0 };
+}
 const face = (a: Pt, b: Pt): Facing => (Math.abs(b.x - a.x) >= Math.abs(b.y - a.y) ? (b.x >= a.x ? "e" : "w") : b.y >= a.y ? "s" : "n");
 
 // The way on foot: the hall's own path finder, else a grid search around racks and fixtures, else a straight L.
@@ -66,7 +83,7 @@ export function pathOf(s: GameState, loc: Location, from: Pt, to: Pt): Pt[] {
   if (key(from) === key(to)) return [from];
   if (loc.space === "hall") { const p = hallPath(s, loc.id, from, to); if (p) return p; }
   else {
-    const plan = officePlan(s, loc), size = roomSize(loc, plan), blocked = new Set([...Object.values(rackTiles(loc, s.racks, plan)).map(key), ...fixtureTiles(loc, plan).map(key)]);
+    const plan = officePlan(s, loc, (from as Tile).floor ?? receptionFloor(s, loc)), size = roomSize(loc, plan), blocked = new Set([...Object.values(rackTiles(loc, s.racks, plan)).map(key), ...fixtureTiles(loc, plan).map(key)]);
     blocked.delete(key(from)); blocked.delete(key(to));
     const prev = new Map<string, string | null>([[key(from), null]]), queue = [from];
     for (let i = 0; i < queue.length && !prev.has(key(to)); i++) {
@@ -115,7 +132,8 @@ export function figuresIn(s: GameState, locationId: string, minute: number): Fig
     else if (minute < arriveAt(o)) { pose = "walk"; path = route; at = along(path, (minute - o.startAt!) / o.walkMin); }
     else progress = (minute - arriveAt(o)) / o.workMin;
     const facing = pose === "walk" ? face(path[Math.max(0, path.indexOf(at) - 1)], path[Math.min(path.length - 1, path.indexOf(at) + 1)]) : front ? (front as Tile).facing : "s";
-    const base = { tile: { ...at, facing } as Tile, facing, pose, path, progress, busy: true, seated: false };
+    const floor = (stand as Tile).floor ?? (loc.space === "office" ? receptionFloor(s, loc) : undefined);
+    const base = { tile: { ...at, facing, ...(floor !== undefined && { floor }) } as Tile, facing, pose, path, progress, busy: true, seated: false };
     worked.add(worker);
     const job = pose === "work"
       ? { rackId: o.target.rackId ?? "", deviceId: o.deviceId ?? "", what: o.what ?? o.kind, until: Math.ceil(doneAt(o) / 60) } : undefined;

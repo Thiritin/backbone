@@ -1,11 +1,11 @@
 import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
-import { listingById } from "../src/sim/20-world/properties";
+import { listingById, sectionIds } from "../src/sim/20-world/properties";
 import { rackTiles } from "../src/sim/20-world/layout";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
-import { figuresIn } from "../src/sim/60-infra/figures";
+import { figuresIn, idlePlayer, playerFloor, receptionFloor } from "../src/sim/60-infra/figures";
 import { failComponents, tick } from "../src/sim/88-tick/tick";
 import { addLocation, buyRack, mountDevice, type ActionResult } from "../src/sim/90-actions/hardware";
 import { freeSections, rentSection } from "../src/sim/90-actions/properties";
@@ -76,5 +76,43 @@ describe("figures", () => {
     expect(figuresIn(s, loc, (MONDAY + 8) * 60)).toEqual([]);
     const [f] = figuresIn(s, loc, (MONDAY + 9) * 60);
     expect(f).toMatchObject({ id: s.staff[0].id, seated: true, tile: { y: 2, facing: "s" } });
+  });
+
+  it("always shows the player in every room kind, on a floor of the room", () => {
+    const s = withDomainMail(newGame(7));
+    s.cash = 2_000_000;
+    for (const l of s.locations) {
+      s.player.at = l.id;
+      const me = idlePlayer(s, l)!;
+      expect(me, l.space).toBeTruthy();
+      expect(me.tile.floor ?? 1).toBe(playerFloor(s, l));
+    }
+  });
+
+  it("shows the player in an office whose first floor is not floor 1, with and without free desks", () => {
+    const s = withDomainMail(newGame(7));
+    s.cash = 2_000_000;
+    const l = listingById("zeilwerk")!;
+    const upper = freeSections(s, l).find((id) => sectionIds(l).find((x) => x.id === id)!.floor === 2)!;
+    const pid = ok(rentSection(s, "zeilwerk", upper)), prop = s.properties.find((p) => p.id === pid)!;
+    const loc = s.locations.find((x) => x.id === prop.locationId)!;
+    s.player.at = loc.id;
+    expect(receptionFloor(s, loc)).toBe(2);
+    expect(idlePlayer(s, loc)!.tile.floor).toBe(2);
+    // every desk claimed by hires: the player stands at the entry, still on the reception floor
+    s.staff = Array.from({ length: 4 }, (_, i) => ({ ...({} as GameState["staff"][number]), id: `x${i}`, desk: { sectionId: upper, index: i } })) as GameState["staff"];
+    const me = idlePlayer(s, loc)!;
+    expect(me.tile.floor).toBe(2);
+    expect(me.seated).toBe(false);
+    expect(me.tile.x).toBeGreaterThanOrEqual(0);
+  });
+
+  it("recovers a saved game in an office without a figure", () => {
+    const s = withDomainMail(newGame(7));
+    s.cash = 2_000_000;
+    const pid = ok(rentSection(s, "gallushof", freeSections(s, listingById("gallushof")!)[0])), prop = s.properties.find((p) => p.id === pid)!;
+    s.player.at = prop.locationId!;
+    const back = deserialize(serialize(s));
+    expect(idlePlayer(back, back.locations.find((x) => x.id === prop.locationId)!)).toBeTruthy();
   });
 });

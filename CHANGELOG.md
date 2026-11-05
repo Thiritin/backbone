@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Your figure now always appears in an office, also when your rooms are not on the ground floor, so you can no longer get stuck without it.
 - Idle people and passing cars animate more smoothly with less load on the game.
 - The desktop icon that leads back to the room is now called Exit, and the Weather app no longer offers driving.
 - A fullscreen button sits in the desktop menu bar and in the room view, and the menu item for leaving the desktop is called Logout.
