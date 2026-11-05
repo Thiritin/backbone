@@ -167,7 +167,7 @@ function ServerFace(p: FrontProps) {
         const x = x0 + (i % per) * bw, y = 2 + Math.floor(i / per) * bh;
         return (
           <g key={i}>
-            <rect x={x + 0.4} y={y} width={bw - 0.8} height={bh - 0.6} rx="0.6" fill={st.bay} stroke="oklch(0.18 0.004 255)" strokeWidth="0.5" />
+            <rect x={x + 0.4} y={y} width={Math.max(0, bw - 0.8)} height={Math.max(0, bh - 0.6)} rx="0.6" fill={st.bay} stroke="oklch(0.18 0.004 255)" strokeWidth="0.5" />
             <rect x={x + bw * 0.12} y={y + bh * 0.62} width={bw * 0.76} height={bh * 0.2} rx="0.5" fill={st.trim} opacity="0.75" />
             <circle cx={x + 2.6} cy={y + 2.6} r="0.9" {...bayLed(p, i, LED.ok)} />
             <circle cx={x + 5.2} cy={y + 2.6} r="0.9" fill={p.state === "off" ? LED.off : "oklch(0.55 0.1 230)"} />
@@ -198,13 +198,13 @@ export const frontBays = (count: number, w: number, h: number) =>
 // One Twin node's slice of the chassis front: its drive caddies side by side over a strip with its tag, status lights and power button.
 function NodeFace(p: FrontProps) {
   const { w, h, state, name, model, brand, blink } = p, st = STYLE[brand] ?? STYLE.SuperMacro;
-  const n = model.server ? bayCount(model.server) : 3, strip = Math.max(8, h * 0.32), bw = (w - 4) / n, bh = h - strip - 3;
+  const n = model.server ? bayCount(model.server) : 3, strip = Math.max(8, h * 0.32), bw = (w - 4) / n, bh = Math.max(0, h - strip - 3);
   return (
     <>
       <rect x="0.3" y="0.3" width={w - 0.6} height={h - 0.6} rx="1" fill={st.ear} stroke="oklch(0.12 0.004 255)" strokeWidth="0.6" />
       {Array.from({ length: n }, (_, i) => (
         <g key={i}>
-          <rect x={2 + i * bw + 0.3} y="1.5" width={bw - 0.6} height={bh} rx="0.6" fill={st.bay} stroke="oklch(0.18 0.004 255)" strokeWidth="0.5" />
+          <rect x={2 + i * bw + 0.3} y="1.5" width={Math.max(0, bw - 0.6)} height={bh} rx="0.6" fill={st.bay} stroke="oklch(0.18 0.004 255)" strokeWidth="0.5" />
           <rect x={2 + i * bw + bw * 0.2} y={1.5 + bh * 0.3} width={bw * 0.6} height={bh * 0.5} rx="0.5" fill={st.trim} opacity="0.6" />
           <circle cx={2 + i * bw + bw / 2} cy={3.6} r="0.8" {...bayLed(p, i, LED.ok)} />
         </g>
@@ -245,7 +245,7 @@ function Caddies(p: FrontProps) {
         const x = 12 + (i % per) * cw, y = top + Math.floor(i / per) * ch;
         return (
           <g key={i}>
-            <rect x={x} y={y} width={cw - 1} height={ch - 1} rx="0.5" fill="oklch(0.28 0.005 255)" />
+            <rect x={x} y={y} width={Math.max(0, cw - 1)} height={Math.max(0, ch - 1)} rx="0.5" fill="oklch(0.28 0.005 255)" />
             <circle cx={x + cw / 2 - 0.5} cy={y + ch - 2.5} r="0.8" {...bayLed(p, i, LED.act)} />
           </g>
         );
