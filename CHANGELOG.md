@@ -5,6 +5,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-05
 - The Exit icon leaves the desktop with one click, the dark mode button is gone from the menu bar, the Browser opens smaller, new apps join the end of the dock, windows no longer cascade off screen, and the notification panel pauses the clock while it is open.
 - The menu bar shows a dash instead of 0 € until you have a bank account.
+- The rack tag marks the key your current step needs, a first restart with no customers needs one click, and pressing F11 early opens the boot menu on the next start.
 - Mail that arrives on the full hour, such as the first order, now reaches Pear Mail at the next check.
 - Getting started is now a small card with the next step, a progress bar and one button, and the corkboard shows the same ten steps with the current one highlighted.
 - A new game starts on Monday morning at 08:00 with the clock running, and the first web hosting order arrives within three days of going online.
