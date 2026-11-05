@@ -18,7 +18,7 @@ export function writeSession(key: string, value: unknown): void {
   }
 }
 
-export function useSessionState<T>(key: string, fallback: T): [T, (v: T) => void] {
+export function useSessionState<T>(key: string, fallback: T): [T, (v: T | ((p: T) => T)) => void] {
   const [value, setValue] = useState(() => readSession(key, fallback));
   useEffect(() => writeSession(key, value), [key, value]);
   return [value, setValue];
