@@ -48,4 +48,8 @@ export default {
   "art.slotState": (p) => `${p.noun} ${p.n}, ${p.state}`,
   "art.filled": () => "em uso",
   "art.empty": () => "livre",
+  "art.away": () => "Fora do local",
+  "art.reset": () => "Reset",
+  "art.rocker": () => "Interruptor de energia",
+  "art.upsButton": () => "Botão de energia",
 } satisfies Dict;
