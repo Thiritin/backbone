@@ -27,4 +27,9 @@ export default {
   "purchase.off.noMandate": () => "No direct debit mandate",
   "purchase.off.noInvoice": () => "No invoice terms",
   "purchase.col.doc": () => "Document",
+  "purchase.no.receipt": () => "Receipt no.",
+  "purchase.no.credit": () => "Credit note no.",
+  "purchase.no.contract": () => "Order no.",
+  "purchase.off.noBank": () => "No bank account",
+  "purchase.off.noCash": () => "Cash payment not possible",
 } satisfies Dict;

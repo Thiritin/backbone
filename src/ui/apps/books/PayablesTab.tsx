@@ -39,7 +39,7 @@ export function PayablesTab() {
         <tbody>
           {rows.map((p) => (
             <tr key={p.id} onClick={() => openApp("Preview", { kind: "payable", id: p.id })} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && openApp("Preview", { kind: "payable", id: p.id })}>
-              <td>{p.name}</td>
+              <td className="fin-cut" title={p.name}>{p.name}</td>
               <td className="num">{p.number}</td>
               <td>{t(`purchase.doc.${p.doc ?? "invoice"}`)}</td>
               <td>{t(`purchase.method.${p.method ?? "transfer"}`)}</td>

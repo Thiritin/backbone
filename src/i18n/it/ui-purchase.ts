@@ -26,4 +26,9 @@ export default {
   "purchase.off.noMandate": () => "Nessun mandato di addebito",
   "purchase.off.noInvoice": () => "Nessun pagamento su fattura",
   "purchase.col.doc": () => "Documento",
+  "purchase.no.receipt": () => "N. ricevuta",
+  "purchase.no.credit": () => "N. nota di credito",
+  "purchase.no.contract": () => "N. ordine",
+  "purchase.off.noBank": () => "Nessun conto bancario",
+  "purchase.off.noCash": () => "Pagamento in contanti non possibile",
 } satisfies Dict;

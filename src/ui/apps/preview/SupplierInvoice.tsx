@@ -59,19 +59,20 @@ export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
   const web = `www.${supplierHost(p.name)}`, total = p.lines.reduce((n, l) => n - l.amount, 0);
   const rate = vatRate(p.issuedAt);
   // Prices are gross, so the VAT is the share the input-tax lines carry.
-  const vat = -p.lines.filter((l) => INPUT_CATEGORIES.includes(l.category)).reduce((n, l) => n + l.amount, 0) * rate / (1 + rate);
+  const taxed = p.lines.filter((l) => INPUT_CATEGORIES.includes(l.category));
+  const vat = -taxed.reduce((n, l) => n + l.amount, 0) * rate / (1 + rate);
   const bank = ibanEra(game)
     ? `${t("checkout.iban")} ${groupIban(supplierIban(p.supplier))}`
     : `${t("paperwork.letter.account")} ${supplierAccount(p.supplier)} · ${t("paperwork.letter.code")} ${SUPPLIER_CODE}`;
   const doc = p.doc ?? "invoice";
   const meta: [string, string][] = [
-    [t("preview.number"), p.number], [t("preview.date"), formatDay(p.issuedAt)], ...(doc === "invoice" ? [[t("preview.due"), formatDay(p.dueAt)] as [string, string]] : []),
+    [doc === "invoice" ? t("preview.number") : t(`purchase.no.${doc}`), p.number], [t("preview.date"), formatDay(p.issuedAt)], ...(doc === "invoice" ? [[t("preview.due"), formatDay(p.dueAt)] as [string, string]] : []),
     [t("purchase.pay"), t(`purchase.method.${p.method ?? "transfer"}`)],
     ...(p.paidAt !== null ? [[t("preview.paid"), formatDay(p.paidAt)] as [string, string]] : []),
   ];
   return (
     <div className="books-a4-fit">
-      <article className={`books-a4 inv inv-${layout}`} style={{ "--brand": color } as CSSProperties} aria-label={t("books.invoice", { number: p.number })}>
+      <article className={`books-a4 inv inv-${layout}`} style={{ "--brand": color } as CSSProperties} aria-label={doc === "invoice" ? t("books.invoice", { number: p.number }) : `${t(`purchase.doc.${doc}`)} ${p.number}`}>
         <header className="inv-head">
           <div className="inv-logo">{logo}</div>
           <div className="inv-sender"><b>{p.name}</b><span>{web}</span></div>
@@ -91,7 +92,7 @@ export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
             <tr className="inv-total"><td /><td>{t("books.total")}</td><td className="r num">{euroCents(total)}</td></tr>
           </tbody>
         </table>
-        {vat > 0 && (
+        {taxed.length > 0 && (
           <dl className="inv-sum num">
             <div><dt>{t("purchase.net")}</dt><dd>{euroCents(total - vat)}</dd></div>
             <div><dt>{t("purchase.vat", { rate: rate.toLocaleString(LOCALE, { style: "percent" }) })}</dt><dd>{euroCents(vat)}</dd></div>

@@ -26,4 +26,9 @@ export default {
   "purchase.off.noMandate": () => "Sin mandato de domiciliación",
   "purchase.off.noInvoice": () => "Sin pago a plazo",
   "purchase.col.doc": () => "Documento",
+  "purchase.no.receipt": () => "N.º de recibo",
+  "purchase.no.credit": () => "N.º de abono",
+  "purchase.no.contract": () => "N.º de pedido",
+  "purchase.off.noBank": () => "Sin cuenta bancaria",
+  "purchase.off.noCash": () => "Pago en efectivo no posible",
 } satisfies Dict;

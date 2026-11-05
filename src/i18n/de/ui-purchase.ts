@@ -26,4 +26,9 @@ export default {
   "purchase.off.noMandate": () => "Kein Lastschriftmandat",
   "purchase.off.noInvoice": () => "Kein Zahlungsziel",
   "purchase.col.doc": () => "Beleg",
+  "purchase.no.receipt": () => "Quittungsnr.",
+  "purchase.no.credit": () => "Gutschriftsnr.",
+  "purchase.no.contract": () => "Auftragsnr.",
+  "purchase.off.noBank": () => "Kein Bankkonto",
+  "purchase.off.noCash": () => "Barzahlung nicht möglich",
 } satisfies Dict;

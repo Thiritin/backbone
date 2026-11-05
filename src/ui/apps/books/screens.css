@@ -58,3 +58,4 @@
 .bk-booking button[type="submit"] { padding: 2px 14px; font: inherit; }
 .bk-booking-ok { color: color-mix(in oklch, var(--ok) 70%, var(--text)); font-weight: 700; }
 .bk-booking-err { color: var(--bad-text); font-weight: 700; }
+.fin-cut { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

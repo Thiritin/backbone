@@ -12,6 +12,8 @@ export interface Offer { supplier: SupplierId; lines: LedgerEntry[]; name?: stri
 
 // Why a method is not offered; the sim's methodsFor decides, this only words it.
 function reason(s: GameState, m: Method): string {
+  if (m === "cash") return t("purchase.off.noCash");
+  if (m === "transfer") return t("purchase.off.noBank");
   if (m === "card") return t(cardReady(s) ? "purchase.off.cardLimit" : "purchase.off.noCard");
   if (m === "debit") return t("purchase.off.noMandate");
   return t("purchase.off.noInvoice");

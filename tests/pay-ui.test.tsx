@@ -27,6 +27,9 @@ describe("document kinds", () => {
     render(<SupplierInvoice game={s} p={s.payables[0]} />);
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(t(`purchase.doc.${doc}`));
     expect(screen.getByText(t(`purchase.method.${method}`))).toBeTruthy();
+    expect(screen.getByText(t("purchase.net"))).toBeTruthy();
+    expect(screen.getByText(t("purchase.gross"))).toBeTruthy();
+    expect(screen.getByText(doc === "invoice" ? t("preview.number") : t(`purchase.no.${doc}`))).toBeTruthy();
   });
 
   it("shows net, VAT and gross", () => {
