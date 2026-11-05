@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { euroCents } from "../../../sim/00-core/money";
 import { t } from "../../../i18n/en";
-import { AccountSheet, accountsOf, sides, yearOfHour, type Account } from "./accounts";
+import { AccountSheet, sides, yearOfHour, type Account } from "./accounts";
+import { useAccounts, useLedger } from "./data";
 import { arrowRows, useBooks } from "./view";
 
 // Thyme writes a balance as an amount with its side.
@@ -12,12 +13,12 @@ const balance = (v: number) => (Math.abs(v) < 0.005 ? "" : `${euroCents(Math.abs
 export function ChartTab({ go }: { go: (tab: string) => void }) {
   const game = useBooks();
   const now = yearOfHour(game.hour);
-  const years = [...new Set([now, ...game.ledger.map((e) => yearOfHour(e.hour))])].sort((a, b) => b - a);
+  const { years } = useLedger();
   const [year, setYear] = useState(now);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const q = query.trim().toLowerCase();
-  const all = accountsOf(game, year);
+  const all = useAccounts(year);
   const accounts = all.filter((a) => !q || String(a.no).startsWith(q) || a.label.toLowerCase().includes(q));
   const sel = accounts.find((a) => a.id === selected);
   const totals = (a: Account) => a.entries.reduce(([d, c], e) => { const [x, y] = sides(a, e); return [d + x, c + y]; }, [0, 0]);

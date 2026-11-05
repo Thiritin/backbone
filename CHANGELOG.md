@@ -6,6 +6,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The letterbox panel now lays the first letter on top with the later ones stacked beside it, letters you have read no longer come back when you open the box again, and the scan corner sits at the bottom of the page.
 - Letters from the trade office, tax office and other authorities are now the bill itself, with the same letterhead everywhere and a stamp once paid.
 - Invoices dated up to 2008 print in monospace on continuous-form paper like a dot-matrix printer; later ones keep the styled layout.
+- Racking a server, plugging cables and power cords, swapping parts and plugging in the stick happen at once when you stand at the device, with no waiting and no timer, even if you book Remote Hands for the job.
 - Release posts show only the version number and the list of changes, without a date or the game name in the title.
 - The Terminal opened from a card skips its scripted intro at once, the boot menu step outlines the USB entry and its keys, and the shop cart keeps its pay button in view.
 - The server card now also has you cable the server to the router, the boot step points to the crash cart and its F11 key, a closed step strip can be reopened, and the Early Access notice appears in the room at the start.

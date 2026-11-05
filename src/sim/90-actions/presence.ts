@@ -71,6 +71,8 @@ export function viaHands(s: GameState, action: HandsAction, args: unknown[], loc
   if (h === "none" && !self) return { ok: false, error: "error.notThere" };
   const busy = busyAction(s, action, args);
   if (busy) return { ok: false, error: busy };
+  // Standing at the rack the player's hands act at once.
+  if (self && present(s, locationId)) return "job";
   // ponytail: validates on a full copy of the game; a per-action check function if this gets slow.
   const trial = run(structuredClone(s), action, args);
   if (!trial.ok) return trial;

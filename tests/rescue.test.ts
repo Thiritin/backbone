@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { tick } from "../src/sim/88-tick/tick";
 import { createVm, removeNode } from "../src/sim/90-actions/clusters";
 import { connect, setPower } from "../src/sim/90-actions/hardware";
-import { migrateWorkload, migrationTargets, RESCUE_HOURS, rescueTargets, rescueWorkload } from "../src/sim/90-actions/vms";
+import { migrateWorkload, migrationTargets, rescueTargets, rescueWorkload } from "../src/sim/90-actions/vms";
 import { basement, buyDevice, hypervisor, withServer, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
@@ -30,7 +30,7 @@ describe("rescue", () => {
     expect([t.to, rest.length]).toEqual([second, 0]);
     ok(rescueWorkload(s, vm, second));
     const w = () => s.workloads.find((x) => x.id === vm)!;
-    expect(w().busyUntil).toBe(s.hour + RESCUE_HOURS + t.down);
+    expect(w().busyUntil).toBe(s.hour + t.down);
     while (s.hour < w().busyUntil) tick(s);
     expect([w().deviceId, w().clusterId, w().stopped]).toEqual([second, b, false]);
     expect(rescueTargets(s, vm)).toEqual([]);
