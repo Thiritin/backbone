@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { t } from "../../../../../i18n/en";
-import { useAccounts, type Account, type Kind } from "../../data";
+import type { Account, Kind } from "../../data";
 import { arrowRows } from "../../view";
-import { KINDS, money, shown, typeKey } from "./shared";
+import { KINDS, money, shown, typeKey, useChart } from "./shared";
 
 // The account tree page: kinds as parent rows with an expander, accounts below, a column header on top.
 export function Tree({ selected, select, open }: { selected: string | null; select: (id: string) => void; open: (a: Account) => void }) {
-  const accounts = useAccounts();
+  const accounts = useChart();
   const [closed, setClosed] = useState<Kind[]>([]);
   const total = (k: Kind) => accounts.filter((a) => a.kind === k).reduce((x, a) => x + a.balance, 0);
   return (

@@ -2,32 +2,29 @@ import { useState } from "react";
 import { euroCents } from "../../../../../sim/00-core/money";
 import { t } from "../../../../../i18n/en";
 import { OverviewTab, StatementTab, StatisticsTab } from "../../Reports";
-import { categoryLabel, useAccounts, useLedger, useReports, type Kind } from "../../data";
-import { money, shown } from "./shared";
+import { categoryLabel, useLedger, useReports } from "../../data";
+import { money, shown, useChart } from "./shared";
 
 export const REPORTS = ["balance", "pl", "accounts", "transactions", "figures", "stats"] as const;
 export type ReportKind = (typeof REPORTS)[number];
 
 const sum = (v: number[]) => v.reduce((a, b) => a + b, 0);
 
+// Equity is what the assets leave after the debts, so both sides of the balance sheet add up to the same total.
 function Balance() {
-  const accounts = useAccounts();
-  const side = (kinds: Kind[]) => accounts.filter((a) => kinds.includes(a.kind));
-  const block = (kinds: Kind[], total: string) => {
-    const list = side(kinds);
-    return (
-      <>
-        {list.map((a) => <tr key={a.id}><td>{a.label}</td><td className="r num">{money(a.kind, a.balance)}</td></tr>)}
-        <tr className="gc-sum"><td>{total}</td><td className="r num">{euroCents(list.reduce((x, a) => x + shown(a.kind, a.balance), 0))}</td></tr>
-      </>
-    );
-  };
+  const accounts = useChart();
+  const assets = accounts.filter((a) => a.kind === "asset"), debts = accounts.filter((a) => a.kind === "liability");
+  const total = assets.reduce((x, a) => x + shown(a.kind, a.balance), 0), owed = debts.reduce((x, a) => x + shown(a.kind, a.balance), 0);
+  const row = (a: (typeof accounts)[number]) => <tr key={a.id}><td>{a.label}</td><td className="r num">{money(a.kind, a.balance)}</td></tr>;
   return (
     <table className="gc-report"><tbody>
       <tr className="gc-head"><td colSpan={2}>{t("gc.grp.asset")}</td></tr>
-      {block(["asset"], t("gc.rep.assets"))}
-      <tr className="gc-head"><td colSpan={2}>{t("gc.grp.liability")} / {t("gc.grp.equity")}</td></tr>
-      {block(["liability", "equity"], t("gc.rep.liabilities"))}
+      {assets.map(row)}
+      <tr className="gc-sum"><td>{t("gc.rep.assets")}</td><td className="r num">{euroCents(total)}</td></tr>
+      <tr className="gc-head"><td colSpan={2}>{t("gc.grp.liability")}</td></tr>
+      {debts.map(row)}
+      <tr><td>{t("gc.grp.equity")}</td><td className="r num">{euroCents(total - owed)}</td></tr>
+      <tr className="gc-sum"><td>{t("gc.rep.liabilities")}</td><td className="r num">{euroCents(owed + (total - owed))}</td></tr>
     </tbody></table>
   );
 }
@@ -52,7 +49,7 @@ function ProfitLoss() {
 }
 
 function Accounts() {
-  const accounts = useAccounts();
+  const accounts = useChart();
   return (
     <table className="gc-report"><thead><tr><th>{t("gc.col.code")}</th><th>{t("gc.col.name")}</th><th className="r">{t("gc.col.total")}</th></tr></thead>
       <tbody>{accounts.map((a) => <tr key={a.id}><td className="num">{a.no}</td><td>{a.label}</td><td className="r num">{money(a.kind, a.balance)}</td></tr>)}</tbody>

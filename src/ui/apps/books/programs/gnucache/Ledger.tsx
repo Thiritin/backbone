@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { euroCents } from "../../../../../sim/00-core/money";
 import { bookByNumber } from "../../../../../sim/90-actions/bookkeeping";
 import { t } from "../../../../../i18n/en";
@@ -29,14 +29,21 @@ export function Ledger({ a, say }: { a: Account; say: (text: string) => void }) 
   const key = desc.trim().toLowerCase();
   const line = lines.find((l) => label(l) === desc) ?? (key ? lines.find((l) => label(l).toLowerCase().includes(key)) : undefined) ?? lines[0];
 
+  const label_ = (id: string) => accounts.find((x) => x.id === id)?.label ?? "";
   let run = a.balance - a.entries.reduce((x, e) => { const [d, c] = sides(a, e); return x + d - c; }, 0);
-  const rows = a.entries.map((e) => {
+  // Posted entries carry the running balance; the bank lines booked against a document sit among them without one.
+  const posted = a.entries.map((e) => {
     const [d, c] = sides(a, e);
     run += d - c;
-    return { e, d, c, run };
-  }).slice(-300);
-  const counter = (category: string) => accounts.find((x) => x.id === (a.id === "bank" ? category : "bank"))?.label ?? "";
+    return { hour: e.hour, num: "", text: t(e.key, e.params), to: a.id === "bank" ? label_(e.category) : label_("bank"), d, c, run: money(a.kind, run) };
+  });
+  const booked = a.id !== "bank" ? [] : [
+    ...game.transfers.filter((x) => x.matchedAt !== null && x.invoiceId).map((x) => ({ hour: x.hour, num: game.invoices.find((i) => i.id === x.invoiceId)?.number ?? "", text: `${x.from} ${t(x.reference, x.params)}`, to: label_("receivables"), d: Math.max(0, x.amount), c: Math.max(0, -x.amount), run: "" })),
+    ...(game.bank?.outgoing ?? []).filter((o) => o.matched !== null).map((o) => ({ hour: o.hour, num: game.payables.find((p) => p.id === o.payableId)?.number ?? "", text: `${o.name} ${o.reference}`, to: label_("payables"), d: 0, c: Math.abs(o.amount), run: "" })),
+  ];
+  const rows = [...posted, ...booked].sort((x, y) => x.hour - y.hour).slice(-300);
   const cell = (v: number) => (v ? euroCents(v) : "");
+  useEffect(() => { numRef.current?.focus(); }, []);
 
   const clear = () => { setNum(""); setDesc(""); numRef.current?.focus(); };
   const commit = () => {
@@ -45,7 +52,16 @@ export function Ledger({ a, say }: { a: Account; say: (text: string) => void }) 
     say(r.ok ? t("gc.status.booked") : t(r.error, r.params));
     if (r.ok) clear();
   };
-  const keys = (e: React.KeyboardEvent) => { if (e.key === "Enter") commit(); else if (e.key === "Escape") clear(); };
+  // Up and Down step between rows; Down from the last booked row lands in the blank one.
+  const move = (e: KeyboardEvent<HTMLElement>) => {
+    const tr = (e.target as HTMLElement).closest("tr"), blank = tr?.classList.contains("gc-blank");
+    if (!tr || (e.key !== "ArrowUp" && e.key !== "ArrowDown") || (blank && e.key === "ArrowDown")) return;
+    const next = (e.key === "ArrowUp" ? tr.previousElementSibling : tr.nextElementSibling) as HTMLElement | null;
+    if (!next) return;
+    e.preventDefault();
+    (next.classList.contains("gc-blank") ? next.querySelector("input") : next)?.focus();
+  };
+  const keys = (e: KeyboardEvent) => { if (e.key === "Enter") commit(); else if (e.key === "Escape") clear(); };
   return (
     <div className="gc-scroll">
       <table className="gc-register">
@@ -53,11 +69,11 @@ export function Ledger({ a, say }: { a: Account; say: (text: string) => void }) 
           <th>{t("gc.col.date")}</th><th>{t("gc.col.num")}</th><th>{t("gc.col.desc")}</th><th>{t("gc.col.transfer")}</th>
           <th className="r">{t("gc.col.debit")}</th><th className="r">{t("gc.col.credit")}</th><th className="r">{t("gc.col.balance")}</th>
         </tr></thead>
-        <tbody>
-          {rows.map(({ e, d, c, run }, i) => (
-            <tr key={i}>
-              <td className="num">{formatDay(e.hour)}</td><td /><td title={t(e.key, e.params)}>{t(e.key, e.params)}</td><td>{counter(e.category)}</td>
-              <td className="r num">{cell(d)}</td><td className="r num">{cell(c)}</td><td className="r num">{money(a.kind, run)}</td>
+        <tbody onKeyDown={move}>
+          {rows.map((r, i) => (
+            <tr key={i} tabIndex={0}>
+              <td className="num">{formatDay(r.hour)}</td><td className="num">{r.num}</td><td title={r.text}>{r.text}</td><td>{r.to}</td>
+              <td className="r num">{cell(r.d)}</td><td className="r num">{cell(r.c)}</td><td className="r num">{r.run}</td>
             </tr>
           ))}
           {a.id === "bank" && (

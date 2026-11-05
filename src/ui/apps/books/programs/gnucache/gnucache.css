@@ -135,3 +135,11 @@
 .gc .gc-buttons button, .gc .gc-choices button, .gc-toolbar button, .gc-drop button, .gc-tab-name, .gc-menu > button { box-shadow: none; text-shadow: none; }
 .gc .gc-buttons button, .gc .gc-choices button { background-image: none; }
 .gc-g2 .gc-buttons button, .gc-g2 .gc-choices button { background-image: linear-gradient(#fcfcfb, #dedcd8); }
+.gc-note { margin: 0; padding: 18px 20px; }
+.gc-register { table-layout: fixed; }
+.gc-register td { overflow: hidden; text-overflow: ellipsis; }
+.gc-register th:nth-child(1) { width: 104px; } .gc-register th:nth-child(2) { width: 82px; } .gc-register th:nth-child(4) { width: 18%; }
+.gc-register th:nth-child(n+5) { width: 78px; }
+.gc-register td, .gc-register th { padding-left: 5px; padding-right: 5px; }
+.gc-register input.num { width: 100%; }
+.gc-register th:nth-child(7) { width: 96px; }

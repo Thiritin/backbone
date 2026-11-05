@@ -58,11 +58,17 @@ describe("GnuCache program", () => {
     fireEvent.doubleClick(row);
     const number = screen.getByLabelText("Num") as HTMLInputElement;
     const inv = useStore.getState().game.invoices[0];
+    const before = document.querySelectorAll(".gc-register tbody tr").length;
     fireEvent.change(number, { target: { value: inv.number } });
     expect(useStore.getState().game.transfers[0].matchedAt).toBeNull();
     fireEvent.keyDown(number, { key: "Enter" });
     expect(useStore.getState().game.transfers[0].matchedAt).not.toBeNull();
     expect(screen.getByText("Posted")).toBeTruthy();
+    // The booked line stays as a read-only row with its document number, above the blank row.
+    const after = [...document.querySelectorAll(".gc-register tbody tr")];
+    expect(after.length).toBe(before + 1);
+    expect(after[after.length - 2].textContent).toContain(inv.number);
+    expect(after[after.length - 1].classList.contains("gc-blank")).toBe(true);
     // The booked line leaves the blank row: nothing is left to pick.
     expect((screen.getByLabelText("Num") as HTMLInputElement).value).toBe("");
     expect(document.querySelectorAll("#gc-lines option").length).toBe(0);
@@ -96,6 +102,21 @@ describe("GnuCache program", () => {
     expect(steps.length).toBeGreaterThan(0);
     expect(steps.every(Boolean)).toBe(true);
     expect(screen.queryByRole("dialog")).toBeNull();
+    // The new accounts show the whole chart of the template, with the numbers of the chosen chart.
+    expect(document.querySelectorAll(".gc-tree tbody tr").length).toBeGreaterThan(15);
+    expect(screen.getByText("1800")).toBeTruthy();
+  });
+
+  it("balances the balance sheet with equity", () => {
+    const s = owner();
+    s.books = { ...s.books, setup: { ...setupOf(s), company: true } };
+    put(s);
+    render(<BooksApp />);
+    menu("Reports", "Balance Sheet");
+    const total = (name: string) => screen.getByText(name).nextElementSibling!.textContent;
+    expect(total("Total Assets")).toBe(total("Total Liabilities and Equity"));
+    expect(total("Total Assets")).not.toBe("0,00 €");
+    expect(screen.getByText("Equity", { selector: "td" })).toBeTruthy();
   });
 
   it("runs the actions menus: backup, opening balances and the bank link", () => {
@@ -104,6 +125,8 @@ describe("GnuCache program", () => {
     put(s);
     render(<BooksApp />);
     menu("File", "Save Backup");
+    expect(screen.getByRole("alertdialog", { name: "Backup created" })).toBeTruthy();
+    fireEvent.click(screen.getByText("OK"));
     expect(useStore.getState().game.books.setup!.backupAt).not.toBeNull();
     menu("Actions", "Enter Opening Balances");
     expect(useStore.getState().game.books.setup!.opening).toBe(true);

@@ -11,7 +11,6 @@ import type { GameState } from "../../../sim/50-state";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
-import { AccountTree } from "./AccountTree";
 import { BankTab } from "./BankTab";
 import { BookingTab } from "./BookingTab";
 import { ChartTab } from "./ChartTab";
@@ -44,7 +43,6 @@ export const late = (s: GameState) => s.invoices.filter((i) => i.status === "ove
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id; go switches tab.
 // only: the one program that has the tab.
 const TABS: { id: string; group: Group; count: (s: GameState) => number; body: ComponentType<{ focus: string | null; go: (tab: string) => void }>; features?: Feature[]; only?: BooksVendorId }[] = [
-  { id: "accounts", group: "reports", count: () => 0, body: AccountTree, only: "gnucache" },
   { id: "overview", group: "reports", count: () => 0, body: OverviewTab },
   { id: "customers", group: "sales", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
   { id: "quotes", group: "sales", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab, features: ["quotes"] },

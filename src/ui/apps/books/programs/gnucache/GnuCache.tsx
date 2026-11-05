@@ -19,7 +19,7 @@ import { PayablesTab } from "../../PayablesTab";
 import { QuotesTab } from "../../QuotesTab";
 import { Register as KeyRegister } from "../../Register";
 import { InstallGuide } from "../../guide/InstallGuide";
-import { useAccounts, type Account } from "../../data";
+import type { Account } from "../../data";
 import { useBooks } from "../../view";
 import { GcIcon } from "./Icons";
 import { Ledger } from "./Ledger";
@@ -27,7 +27,7 @@ import { MenuBar, type MenuDef } from "./MenuBar";
 import { NewFile } from "./NewFile";
 import { Report, REPORTS, type ReportKind } from "./Reports";
 import { Tree } from "./Tree";
-import { money } from "./shared";
+import { money, useChart } from "./shared";
 import "./gnucache.css";
 
 type Body = ComponentType<{ focus: string | null; go: (tab: string) => void }>;
@@ -37,7 +37,7 @@ const BIZ: Record<string, { label: string; body: Body }> = {
   invoices: { label: "gc.i.invoices", body: InvoicesTab },
   quotes: { label: "gc.i.quotes", body: QuotesTab },
   payables: { label: "gc.i.suppliers", body: PayablesTab },
-  bank: { label: "gc.i.reconcile", body: BankTab },
+  bank: { label: "gc.tool.reconcile", body: BankTab },
 };
 const REPORT_OF: Record<string, ReportKind> = { overview: "figures", statement: "transactions", statistics: "stats" };
 
@@ -45,14 +45,14 @@ const REPORT_OF: Record<string, ReportKind> = { overview: "figures", statement: 
 export const lookOf = (year: number) => (year <= 2005 ? "g1" : year <= 2017 ? "g2" : "g3");
 
 export function GnuCache() {
-  const game = useBooks(), accounts = useAccounts();
+  const game = useBooks(), accounts = useChart();
   const act = useStore((s) => s.act), waiting = !!game.shop.variant && !hasModule(game, "shop-link");
   const look = lookOf(yearOf(game.hour)), v = currentVendor(game);
   const [pages, setPages] = useSessionState<string[]>("books.gnuPages", game.books.setupDone === true ? ["accounts"] : ["accounts", "guide"]);
   const [active, setActive] = useSessionState("books.gnuActive", "accounts");
   const [focus, setFocus] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(""), [notice, setNotice] = useState<string | null>(null);
   const company = setupOf(game).company;
   const [assistant, setAssistant] = useState(false), [welcome, setWelcome] = useState(!company), [keysOpen, setKeysOpen] = useState(false);
   const keys = MODULES.some((m) => licenceMail(game, m.id) && !hasModule(game, m.id));
@@ -65,7 +65,7 @@ export function GnuCache() {
   };
   const go = (tab: string) => open(REPORT_OF[tab] ? `rep:${REPORT_OF[tab]}` : BIZ[tab] ? `biz:${tab}` : "accounts");
   const openAccount = (a: Account) => (a.go ? go(a.go) : open(`reg:${a.id}`));
-  const run = (r: { ok: boolean }) => { if (r.ok) setStatus(t("gc.status.saved")); };
+  const run = (r: { ok: boolean }, done: string) => { if (r.ok) { setStatus(t(done)); setNotice(t(done)); } };
 
   useFocus("Books", (got) => {
     const f = got.kind === "url" ? got.inner : got;
@@ -84,8 +84,8 @@ export function GnuCache() {
   const menus: MenuDef[] = [
     { id: "file", label: t("gc.m.file"), items: [
       item("new", t("gc.i.newFile"), () => setAssistant(true)),
-      item("backup", t("gc.i.backup"), () => run(act(backupBooks))),
-      ...(waiting ? [item("import", t("gc.i.import"), () => run(act(importFromShop)))] : []),
+      item("backup", t("gc.i.backup"), () => run(act(backupBooks), "gc.done.backup")),
+      ...(waiting ? [item("import", t("gc.i.import"), () => run(act(importFromShop), "gc.status.saved"))] : []),
       ...(keys ? [item("keys", t("gc.i.keys"), () => setKeysOpen(true))] : []),
       item("close", t("gc.i.close"), () => close(active)),
     ] },
@@ -94,14 +94,14 @@ export function GnuCache() {
     ] },
     { id: "view", label: t("gc.m.view"), items: [item("tree", t("gc.i.accountsPage"), () => open("accounts"))] },
     { id: "actions", label: t("gc.m.actions"), items: [
-      item("opening", t("gc.i.opening"), () => run(act(enterOpening))),
+      item("opening", t("gc.i.opening"), () => run(act(enterOpening), "gc.done.opening")),
       item("reconcile", t("gc.i.reconcile"), () => open("biz:bank")),
-      item("post", t("gc.i.post"), () => open("reg:bank")),
+      item("post", t("gc.i.post"), () => { const a = accounts.find((x) => x.id === selected); open(a && !a.go ? `reg:${a.id}` : "reg:bank"); }),
     ] },
     { id: "business", label: t("gc.m.business"), items: ["customers", "invoices", "quotes", "payables"]
       .filter((b) => b !== "quotes" || (v && sells(v, "quotes"))).map((b) => item(b, t(BIZ[b].label), () => open(`biz:${b}`))) },
     { id: "reports", label: t("gc.m.reports"), items: REPORTS.map((r) => item(r, t(`gc.r.${r}`), () => open(`rep:${r}`))) },
-    { id: "tools", label: t("gc.m.tools"), items: [item("bank", t("gc.i.bankSetup"), () => run(act(linkBooksBank)))] },
+    { id: "tools", label: t("gc.m.tools"), items: [item("bank", t("gc.i.bankSetup"), () => run(act(linkBooksBank), "gc.done.bank"))] },
     { id: "windows", label: t("gc.m.windows"), items: look === "g1" ? [] : pages.map((p) => item(p, title(p), () => setActive(p))) },
     { id: "help", label: t("gc.m.help"), items: [item("contents", t("gc.i.contents"), () => open("guide"))] },
   ];
@@ -116,7 +116,7 @@ export function GnuCache() {
     <div className={`books gc gc-${look}`} aria-label={t("gc.titlebar", { file: company ? t("gc.file.name") : t("gc.file.untitled"), page: title(current) })}>
       <MenuBar menus={menus} />
       <div className="gc-toolbar" role="toolbar">
-        {tool("save", t("gc.tool.save"), () => run(act(backupBooks)))}
+        {tool("save", t("gc.tool.save"), () => run(act(backupBooks), "gc.done.backup"))}
         {tool("new", t("gc.tool.new"), () => setAssistant(true))}
         {tool("open", t("gc.tool.open"), () => { const a = accounts.find((x) => x.id === selected); if (a) openAccount(a); }, !selected)}
         {tool("close", t("gc.tool.close"), () => close(current))}
@@ -149,7 +149,16 @@ export function GnuCache() {
           </div>
         </div>
       )}
-      {assistant && <NewFile onCancel={() => setAssistant(false)} onApply={(c) => { const r = act(createBooksCompany, c); if (r.ok) { setAssistant(false); setWelcome(false); setStatus(t("gc.status.saved")); } }} />}
+      {assistant && <NewFile onCancel={() => setAssistant(false)} onApply={(c) => { const r = act(createBooksCompany, c); if (r.ok) { setAssistant(false); setWelcome(false); open("accounts"); run(r, "gc.done.company"); } }} />}
+      {notice && (
+        <div className="gc-modal">
+          <div className="gc-dialog" role="alertdialog" aria-label={notice}>
+            <div className="gc-dtitle">GnuCache</div>
+            <p className="gc-note">{notice}</p>
+            <div className="gc-buttons"><button className="gc-default" autoFocus onClick={() => setNotice(null)}>{t("gc.btn.ok")}</button></div>
+          </div>
+        </div>
+      )}
       {keysOpen && keys && <div className="gc-modal"><div className="gc-dialog"><KeyRegister onClose={() => setKeysOpen(false)} /></div></div>}
     </div>
   );
