@@ -1,9 +1,11 @@
 // docs/design/web-hosting.md, The web space: the player's changes to a web space, stored in its overlay.
+import { t } from "../../i18n/en";
 import { yearOf } from "../00-core/time";
 import { PHP } from "../10-catalog/platforms";
 import { companyDomain } from "../30-customers/domains";
 import type { GameState } from "../50-state";
 import { licenceBlock } from "../60-infra/licence";
+import { panelDeliver } from "../60-infra/panel-mail";
 import {
   accountFor, ALL_PRIVILEGES, dbUserMax, MULTI_PHP_YEAR, webspaceOf,
   type DomainKind, type WebLimits, type Webspace,
@@ -16,6 +18,7 @@ import { fail, FILE_NAME, fixed, folderOk, isFail, join, open, put, under } from
 const DOMAIN = /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/;
 const LABEL = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 const LOCAL = /^[a-z0-9]([a-z0-9._-]{0,62}[a-z0-9])?$/;
+const WELCOME_FROM = "postmaster";
 const DB_PART = /^[a-z0-9_]+$/;
 
 const full = (ws: Webspace, k: keyof WebLimits, used: number): ActionResult | null =>
@@ -92,6 +95,7 @@ export function createMailbox(s: GameState, workloadId: string, local: string, d
   const over = full(ws, "mailboxes", ws.usage.mailboxes);
   if (over) return over;
   put(s, workloadId, "mailboxes", address, { address, password: pass, quotaMb, usedMb: 0 });
+  panelDeliver(s, { from: `${WELCOME_FROM}@${domain}`, to: address, subject: t("panelmail.welcome.subject"), body: t("panelmail.welcome.body", { address }) });
   return { ok: true, id: address };
 }
 
@@ -100,6 +104,8 @@ export function deleteMailbox(s: GameState, workloadId: string, address: string)
   if (isFail(ws)) return ws;
   if (!ws.mailboxes[address]) return fail("webspace.error.noMailbox");
   put(s, workloadId, "mailboxes", address, false);
+  const { [address]: _gone, ...rest } = s.panelMail;
+  s.panelMail = rest;
   return { ok: true, id: address };
 }
 

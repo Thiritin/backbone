@@ -25,7 +25,9 @@ import { linkStatus, powered, working } from "../60-infra/status";
 import { nodeUsage, SLOW_PERF, vmFrozen } from "../60-infra/usage";
 import { BOARD_HOST } from "./sponsorboard";
 import { FLYER_HOST } from "../10-catalog/flyers";
-import { consoleAt, consoleHost, isDefaced } from "./consoles";
+import { consoleAt, consoleClusters, consoleHost, isDefaced } from "./consoles";
+import { familyOf } from "../60-infra/vulns";
+import { panelMailDomain } from "../60-infra/panel-mail";
 import { defaultWebmail } from "./webmail";
 import { customerSite, shopStatus, siteHost, siteStatus, slowHost } from "./website";
 import { vendorHost, vendorLive, VENDORS } from "./vendors";
@@ -53,6 +55,7 @@ export type Page =
   | { kind: "company" }
   | { kind: "customer"; serviceId: string }
   | { kind: "webspace"; body: SiteBody }
+  | { kind: "panelMail"; domain: string | null }
   | { kind: "vendor"; maker: string }
   | { kind: "provider"; id: string }
   | { kind: "registrar"; id: RegistrarId }
@@ -201,6 +204,7 @@ function machineOf(s: GameState, key: string, byIp: boolean): { hostname: string
 // A machine with management software answers with its console (the one on the port, when one is given), a defaced one
 // when the host is hacked; a port no console listens on finds nothing.
 function machinePage(s: GameState, m: { hostname: string; load: Load }, port: string, path: string): Pick<Resolved, "page" | "load"> {
+  if (port === ":2096" && consoleClusters(s, m.hostname).some((x) => familyOf(x) === "cpanic")) return { page: { kind: "panelMail", domain: null }, load: m.load };
   const c = consoleAt(s, m.hostname, port, path);
   if (!c && port) return { page: { kind: "notfound" }, load: "fast" };
   return { page: c ? { kind: "console", hostname: m.hostname, clusterId: c.id, defaced: isDefaced(s, c), path } : { kind: "host", hostname: m.hostname }, load: m.load };
@@ -263,6 +267,8 @@ export function resolve(s: GameState, raw: string): Resolved {
     return out({ kind: "desk", id: s.desk.id }, st === "up" ? "fast" : st === "slow" ? "slow" : "down");
   }
   if (host === `support.${domain}`) return out({ kind: "notfound" });
+  // The panel's own webmail answers at webmail.<domain> of a domain with panel mailboxes.
+  if (host.startsWith("webmail.") && panelMailDomain(s, host.slice(8))) return out({ kind: "panelMail", domain: host.slice(8) });
   // The default webmail front end answers at webmail.<domain> like on its machine, also for the domains of customer sites.
   if ((s.company.domain && host === `webmail.${domain}`) || (host.startsWith("webmail.") && siteAt(s, host.slice(8)))) {
     const c = defaultWebmail(s), h = c && consoleHost(s, c), m = h && machineOf(s, h, false);
