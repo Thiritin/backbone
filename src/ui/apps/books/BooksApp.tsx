@@ -28,6 +28,7 @@ import { InstallGuide } from "./guide/InstallGuide";
 import { Installer } from "./guide/Installer";
 import { setupOf } from "../../../sim/80-business/books-guide";
 import type { AppMenu } from "../../desktop/menu";
+import { GnuCache } from "./programs/gnucache/GnuCache";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
 import type { Entry, Group } from "./layouts/types";
@@ -61,6 +62,7 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
 // A browser program runs in the Browser at the vendor's site; Books only links there.
 export function BooksApp() {
   const game = useBooks(), openApp = useStore((s) => s.openApp), v = currentVendor(game);
+  if (v?.id === "gnucache") return <GnuCache />;
   if (v?.deployment !== "browser") return <BooksProgram />;
   return (
     <div className="books books-link">
