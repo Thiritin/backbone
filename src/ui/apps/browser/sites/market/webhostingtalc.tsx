@@ -222,7 +222,7 @@ export function WebHostingTalc({ game, path, year, go }: MarketProps) {
       </div>
       <main>
         {page === "/usercp.php" ? <UserCp game={game} />
-          : page === "/showthread.php" ? (l ? <Thread game={game} l={l} /> : <Bought is={(x) => x.replace(/\D/g, "") === tno}><p className="wt-box wt-pad">{t("whtalc.invalid")}</p></Bought>)
+          : page === "/showthread.php" ? (l ? <Thread game={game} l={l} /> : <p className="wt-box wt-pad"><Bought is={(x) => x.replace(/\D/g, "") === tno}>{t("whtalc.invalid")}</Bought></p>)
           : <Forum game={game} path={path} go={go} look={look} />}
       </main>
       <footer>{t("whtalc.powered", { name: look === "xf" ? "ZenForo" : "vBolletin" })} · © {year} WebHostingTalc</footer>

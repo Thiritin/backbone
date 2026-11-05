@@ -53,7 +53,7 @@ export function Craigslost({ game, path, go }: MarketProps) {
                 </div>
               </div>
             </>
-          ) : <Bought is={(x) => x === decodeURIComponent(id)}><p>{t("cl.notFound")}</p></Bought>}
+          ) : <p><Bought is={(x) => x === decodeURIComponent(id)}>{t("cl.notFound")}</Bought></p>}
         </main>
       ) : (
         <div className="cl-cols">
