@@ -29,7 +29,7 @@ import { dcOf, Facts, UsageBars } from "./ui";
 import { usageOf } from "../../../sim/60-infra/usage";
 import { NodeCard } from "./Clusters";
 import { softwareOn } from "../../../sim/90-actions/software";
-import { deviceMenu, secondPsuPrice, type DeviceUi } from "./deviceMenu";
+import { deviceMenu, secondPsuPrice, type DeviceUi, type WorldUi } from "./deviceMenu";
 import { PowerCard } from "./PowerCard";
 import { RemoteCard } from "./RemoteCard";
 import { consoleVia, remoteFix } from "../../../sim/60-infra/oob";
@@ -93,7 +93,7 @@ export function useDeviceMenu(game: GameState, onSelect: (id: string | null) => 
   return {
     plan: mnt.plan,
     pending,
-    entries: (d: Device, open = false) => deviceMenu(game, d, ui(d, open)),
+    entries: (d: Device, open = false, world?: WorldUi) => deviceMenu(game, d, ui(d, open), world),
     power: (d: Device, on: boolean) => ui(d, false).power(on),
     op: (d: Device, op: PowerOp) => ui(d, false).op(op),
     front: (d: Device, op: FrontOp) => ui(d, false).front(op),

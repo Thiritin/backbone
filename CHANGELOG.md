@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Right-clicking a device in a rack now opens a menu with the console, ports, parts, burn-in, second power supply, rename, removal and sale; it also opens with Shift+F10, the Menu key or a long touch press, and power and maintenance planning are left to the front buttons and the desktop.
 - Program installers and the accounting software now show in the browser download indicator and list while they download, like operating system images do.
 - Shop admin pages use their own buttons and tabs instead of the desktop ones, the start page shows order, ticket, invoice and income widgets, and there are new Accounts, Domains, Reports and Network pages.
 - Products and payment gateways have their own pages, invoices filter by status, the setup wizard of WHMCache 7 and later and Blessta is a panel you can dismiss, and importing existing customers sits under Import.
