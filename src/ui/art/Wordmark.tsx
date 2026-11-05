@@ -4,7 +4,7 @@ const FIT = { textLength: 313, lengthAdjust: "spacingAndGlyphs" as const };
 // Flat copy of docs/brand/wordmark.svg without glow, gradients or backing tile.
 export function Wordmark() {
   return (
-    <svg viewBox="40 70 880 140" role="img" aria-label="raid0" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="60 84 841 116" role="img" aria-label="raid0" xmlns="http://www.w3.org/2000/svg">
       <mask id="wm-stripes"><rect x="0" y="0" width="950" height="280" fill="#fff" /><rect x="510" y="112" width="80" height="6" fill="#000" /><rect x="510" y="139" width="80" height="6" fill="#000" /><rect x="510" y="166" width="80" height="6" fill="#000" /></mask>
       <polygon points="60,87 94,87 156,142 94,197 60,197 122,142" fill="#F2EEEA" />
       <text x="200" y="190" fontFamily={MONO} fontWeight={700} fontSize={130} fill="#F2EEEA" {...FIT}>raid</text>
