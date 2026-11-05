@@ -36,7 +36,8 @@ button { font: inherit; color: inherit; cursor: default; }
   border-radius: 10px; background: var(--win); color: var(--text); box-shadow: var(--shadow-pop);
   backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
 }
-.mb-drop button { border: 0; background: none; text-align: left; padding: 5px 10px; border-radius: 6px; }
+.mb-drop hr { margin: 4px 6px; border: 0; border-top: 1px solid color-mix(in oklch, currentColor 18%, transparent); }
+.mb-drop button { white-space: nowrap; border: 0; background: none; text-align: left; padding: 5px 10px; border-radius: 6px; }
 .mb-drop button:hover { background: var(--accent); color: var(--accent-ink); }
 
 .dock-app { border: 0; background: none; padding: 0; }
@@ -317,3 +318,6 @@ button { font: inherit; color: inherit; cursor: default; }
 .switch-app .dock-tile svg.lucide { width: 32px; height: 32px; }
 .switcher strong { font-size: 13px; font-weight: 600; }
 .menubar .mb-item.paused { opacity: 0.5; }
+
+.pause-menu { display: flex; flex-direction: column; gap: 6px; min-width: 240px; width: max-content; max-width: calc(100vw - 32px); padding: 12px; border: 1px solid var(--line, oklch(0 0 0 / 0.3)); border-radius: var(--r-win, 0); background: var(--surface, var(--field, oklch(0.97 0 0))); color: var(--ink, inherit); box-shadow: 0 8px 24px oklch(0 0 0 / 0.3); }
+.pause-menu .btn { white-space: nowrap; text-align: left; }

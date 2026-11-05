@@ -14,4 +14,10 @@ describe("weather app header", () => {
     const { container } = render(<WeatherApp />);
     expect(container.querySelector(".wx-now h2")!.textContent).toBe("Berlin");
   });
+
+  it("has no travel buttons", () => {
+    useStore.setState({ game: newGame(1) });
+    const { container } = render(<WeatherApp />);
+    expect(container.querySelector("button")).toBeNull();
+  });
 });

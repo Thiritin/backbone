@@ -29,6 +29,7 @@ import { Travel } from "../travel/Travel";
 import { useTrip } from "../travel/route";
 import type { ChangelogDay } from "../changelog";
 import { escapeStep } from "./escape";
+import { PauseMenu } from "./PauseMenu";
 
 const AUTOSAVE_MS = 15_000;
 
@@ -116,6 +117,7 @@ function Shell({ theme, onTheme }: { theme: string; onTheme: () => void }) {
 
   return (
     <>
+      <PauseMenu />
       {surface === "world" ? <><World /><Banners /></> : (
         <>
           <MenuBar theme={theme} onTheme={onTheme} onBell={toggleCenter} />

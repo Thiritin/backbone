@@ -72,7 +72,7 @@ function BlockView({ b }: { b: Block }) {
 const FOCUSABLE = "button:not(:disabled), [href], [tabindex]:not([tabindex='-1'])";
 
 // Shows the introduction by default; art tops the first page when ART has no picture for it.
-export function Intro({ onClose, pages = PAGES, art }: { onClose: () => void; pages?: Page[]; art?: ReactNode }) {
+export function Intro({ onClose, pages = PAGES, art, dark }: { onClose: () => void; pages?: Page[]; art?: ReactNode; dark?: boolean }) {
   const [n, setN] = useState(0);
   const [dir, setDir] = useState("fwd");
   const sheet = useRef<HTMLDivElement>(null);
@@ -121,7 +121,7 @@ export function Intro({ onClose, pages = PAGES, art }: { onClose: () => void; pa
   };
 
   return createPortal(
-    <div className="intro-backdrop" onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.target === e.currentTarget && e.preventDefault()} onKeyDown={key}>
+    <div className={dark ? "intro-backdrop start-dark" : "intro-backdrop"} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.target === e.currentTarget && e.preventDefault()} onKeyDown={key}>
       <div ref={sheet} className={pages === PAGES ? "intro" : "intro compact"} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="intro-title">
         <div key={n} className={`intro-page ${dir}`}>
           {pic && <div className="intro-art" aria-hidden="true">{pic}</div>}

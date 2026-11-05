@@ -1,4 +1,5 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { FullscreenButton } from "../FullscreenButton";
 import { floodedDevice } from "../../sim/60-infra/network";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
@@ -15,12 +16,13 @@ import { rackPower } from "../../sim/60-infra/status";
 import type { End, GameState, Location } from "../../sim/50-state";
 import { Defs } from "../art/fronts";
 import { rackItems } from "../apps/locations/RackView";
-import { tickGame, uiSound, useStore } from "../store";
+import { uiSound, useStore } from "../store";
 import { SpeedControl } from "../desktop/MenuBar";
 import { dateOf, formatClock } from "../../sim/00-core/time";
 import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
+import { nearDoor } from "./slots";
 import {
   at3, BeerCrate, Corkboard, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, darkness, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
   CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, rackHeight, RackBox, RaisedFloor, Scanner, Shimmer, Shelf, ShelfUnit, Tower, Tubes, WallJack, Walls, WALL, Washer,
@@ -64,21 +66,13 @@ const KEYS: Record<string, [number, number]> = {
 // How each room was zoomed and panned and whether its lights were on, per location, so the room resumes there.
 // Objects whose close-up opens after the figure walked to them.
 const STANDS = new Set<Use>(["storage", "power", "post", "scan", "board", "phone", "mainboard", "meetme"]);
-const PAN_MARGIN = 320;
 const looked: Record<string, { zoom: number | null; org: Pt | null; lights: boolean }> = {};
 
 export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
 
 export const World = memo(function World() {
-  // Fast-forward ticks arrive every frame; the room redraws on them only every quarter hour of game time.
-  const shownGame = useRef<GameState | null>(null);
-  const game = useStore((s) => {
-    const k = shownGame.current;
-    if (k && s.speed >= 60 && s.game === tickGame && s.game.hour >= k.hour && s.game.hour - k.hour < 0.25) return k;
-    return (shownGame.current = s.game);
-  });
-  const act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface);
+  const game = useStore((s) => s.game), act = useStore((s) => s.act), setSurface = useStore((s) => s.setSurface);
   const speed = useStore((s) => s.speed), setSpeed = useStore((s) => s.setSpeed);
   const loc = roomOf(game), home = loc.space === "basement", office = loc.space === "office";
   // An office shows one floor at a time, the reception's floor first.
@@ -117,7 +111,7 @@ export const World = memo(function World() {
   // The panel open over the room: storage, the post or the power of a fixture.
   const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board" | "mainboard" | "meetme" | "tickets"; title: string; id?: string; call?: Call | null } | null>(null);
   const held = useRef<string[]>([]);
-  const svg = useRef<SVGSVGElement>(null), frame = useRef<HTMLDivElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
   // Alerts wait behind a chip while a close-up or edit mode is open.
   const covered = !!(editing || panel || rackOpen || pair), setCloseup = useStore((s) => s.setCloseup);
   useEffect(() => { setCloseup(covered); return () => setCloseup(false); }, [covered, setCloseup]);
@@ -149,39 +143,13 @@ export const World = memo(function World() {
   const staffHere = game.staff.length;
   const site = useMemo(() => siteOf(game, loc, w, h), [loc.id, game.properties, staffHere, w, h]);
   const fitSite = Math.min(size.w * 0.98 / site.box.w, size.h * 0.98 / site.box.h) * (site.kind === "plot" ? (site.setting === "nowhere" ? 1 : 1.3) : 1);
-  // While a pan or zoom gesture runs, the view lives in this ref and the transform is written straight to the svg; state catches up at rest.
-  const dirty = useRef(false), restTimer = useRef(0);
-  if (dirty.current) view.current.fit = Math.min(fit, fitSite); else view.current = { zoom, o, fit: Math.min(fit, fitSite) };
-  // The svg is drawn larger than the window and panned by a transform, so a pan repaints nothing; the viewBox moves only when the pan outgrows the margin.
-  const panBase = useRef({ x: o.x, y: o.y, zoom, w: size.w, h: size.h });
-  if (panBase.current.zoom !== zoom || panBase.current.w !== size.w || panBase.current.h !== size.h || Math.abs(o.x - panBase.current.x) * zoom > PAN_MARGIN / 2 || Math.abs(o.y - panBase.current.y) * zoom > PAN_MARGIN / 2) panBase.current = { x: o.x, y: o.y, zoom, w: size.w, h: size.h };
-  const bs = panBase.current, pad = PAN_MARGIN / zoom;
-  const paint = () => {
-    const el = svg.current, v = view.current, b = panBase.current;
-    if (!el) return;
-    el.style.transform = `translate3d(${(b.x - v.o.x) * v.zoom}px, ${(b.y - v.o.y) * v.zoom}px, 0) scale(${v.zoom / b.zoom})`;
-    frame.current?.setAttribute("data-origin", `${v.o.x} ${v.o.y}`);
-  };
-  const commit = () => { clearTimeout(restTimer.current); if (!dirty.current) return; dirty.current = false; setZoom(view.current.zoom); setOrg(view.current.o); };
-  const nudge = (z: number, no: Pt) => {
-    const b = panBase.current;
-    view.current = { ...view.current, zoom: z, o: no }; dirty.current = true;
-    if (svg.current) svg.current.style.willChange = "transform";
-    paint();
-    const far = Math.abs(no.x - b.x) * z > PAN_MARGIN * 0.8 || Math.abs(no.y - b.y) * z > PAN_MARGIN * 0.8 || z / b.zoom > 1.6 || z / b.zoom < 0.6;
-    clearTimeout(restTimer.current);
-    if (far) commit(); else restTimer.current = window.setTimeout(commit, 150);
-  };
-  const nudgeRef = useRef(nudge); nudgeRef.current = nudge;
-  const commitRef = useRef(commit); commitRef.current = commit;
-  useLayoutEffect(() => { if (!dirty.current) { paint(); if (svg.current) svg.current.style.willChange = ""; } });
-  useEffect(() => () => clearTimeout(restTimer.current), []);
-  const port = { x: bs.x - pad, y: bs.y - pad, w: size.w / zoom + 2 * pad, h: size.h / zoom + 2 * pad };
+  view.current = { zoom, o, fit: Math.min(fit, fitSite) };
+  const port = { x: o.x, y: o.y, w: size.w / zoom, h: size.h / zoom };
   const zoomed = zoom >= 2;
   const hallRect = loc.space === "hall" ? siteAreas(game, loc).find((a) => a.id === "hall")?.rect : undefined;
 
   useEffect(() => {
-    const el = frame.current;
+    const el = svg.current;
     if (!el || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(([e]) => { const r = e.contentRect; if (r.width) setSize({ w: Math.round(r.width), h: Math.round(r.height) }); });
     ro.observe(el);
@@ -196,7 +164,7 @@ export const World = memo(function World() {
       const dir = held.current.reduce<[number, number]>((a, k) => [a[0] + KEYS[k][0], a[1] + KEYS[k][1]], [0, 0]);
       if ((dir[0] || dir[1]) && last) {
         const { zoom, o } = view.current, step = PAN_PX_S * Math.min(0.05, (now - last) / 1000) / zoom;
-        nudgeRef.current(zoom, { x: o.x + dir[0] * step, y: o.y + dir[1] * step });
+        setOrg({ x: o.x + dir[0] * step, y: o.y + dir[1] * step });
       }
       last = now;
       raf = requestAnimationFrame(frame);
@@ -207,7 +175,7 @@ export const World = memo(function World() {
 
   // Escape drops a cable in progress; open panels close themselves.
   const escape = useRef(() => {});
-  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (!useEdit.getState().escape()) setEditing(false); } };
+  escape.current = () => { if (from) setFrom(null); else if (cable) setCable(null); else if (editing) { if (!useEdit.getState().escape()) setEditing(false); } else useStore.getState().setPause(true); };
   useEffect(() => {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
@@ -236,7 +204,7 @@ export const World = memo(function World() {
 
   // Wheel zooms around the pointer.
   useEffect(() => {
-    const el = frame.current;
+    const el = svg.current;
     if (!el) return;
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -244,7 +212,8 @@ export const World = memo(function World() {
       const z1 = Math.min(ZOOM_MAX, Math.max(Math.min(fit, ZOOM_MIN), z0 * Math.exp(-e.deltaY * 0.002)));
       if (z1 === z0) return;
       const r = el.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
-      nudgeRef.current(z1, { x: o.x + sx / z0 - sx / z1, y: o.y + sy / z0 - sy / z1 });
+      setZoom(z1);
+      setOrg({ x: o.x + sx / z0 - sx / z1, y: o.y + sy / z0 - sy / z1 });
     };
     el.addEventListener("wheel", wheel, { passive: false });
     return () => el.removeEventListener("wheel", wheel);
@@ -252,9 +221,9 @@ export const World = memo(function World() {
 
   // Drag pans; a press that moved is no click.
   const drag = useRef<{ x: number; y: number; o: Pt } | null>(null), dragged = useRef(false);
-  const down = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY, o: view.current.o }; dragged.current = false; };
+  const down = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY, o }; dragged.current = false; };
   const move = (e: React.PointerEvent) => {
-    const r = frame.current!.getBoundingClientRect(), v = view.current, p = { x: v.o.x + (e.clientX - r.left) / v.zoom, y: v.o.y + (e.clientY - r.top) / v.zoom };
+    const r = svg.current!.getBoundingClientRect(), p = { x: o.x + (e.clientX - r.left) / zoom, y: o.y + (e.clientY - r.top) / zoom };
     if (link.current) { setLinkAt(p); return; }
     const d = drag.current;
     if (!d) return;
@@ -263,12 +232,12 @@ export const World = memo(function World() {
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (!dragged.current && Math.hypot(dx, dy) < 4) return;
     dragged.current = true;
-    nudge(view.current.zoom, { x: d.o.x - dx / view.current.zoom, y: d.o.y - dy / view.current.zoom });
+    setOrg({ x: d.o.x - dx / zoom, y: d.o.y - dy / zoom });
   };
 
   // A press on a rack that lets go on another opens both backs.
   const up = (e: React.PointerEvent) => {
-    drag.current = null; commit();
+    drag.current = null;
     const a = link.current;
     link.current = null;
     setLinkAt(null);
@@ -376,7 +345,7 @@ export const World = memo(function World() {
     // The desk runs under the scanner and the PC beside it, so the three read as one piece.
     desk: (f) => <Desk from={fx.scanner?.x ?? f.x} to={(fx.pc?.x ?? f.x) + 1} under={home && <><BeerCrate x={fx.scanner?.x ?? f.x} /><Tower x={fx.pc?.x ?? f.x} /></>} />,
     scanner: (f) => <Scanner x={f.x} />,
-    pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x} on={lights} />}</>,
+    pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x - 1} on={lights} />}</>,
     noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} y={f.y} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} y={f.y} />)}</>,
     shelf: (f) => <Shelf at={f} count={stored} />,
     fan: (f) => <CellarWindow f={f} fan spin={!loc.tripped && fanRuns(game, loc)} night={night} sky={sky(loc.city, game.hour)} />,
@@ -393,8 +362,8 @@ export const World = memo(function World() {
     mat: (f) => <Mat f={f} />,
     drain: (f) => <Drain f={f} />,
     lamp: (f) => <CeilingLamp f={f} on={lights} />,
-    phone: (f) => <Phone f={f} ringing={!!ringing} cordless={cordless} />,
-    letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} />,
+    phone: (f) => <Phone f={f} ringing={!!ringing} cordless={cordless} near={nearDoor(f, fx.door)} />,
+    letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} near={nearDoor(f, fx.door)} />,
     door: (f) => <Door f={f} open={door} steel={!home && !office} />,
     extinguisher: (f) => <Extinguisher f={f} />,
     cart: (f) => <Cart f={f} />,
@@ -455,9 +424,10 @@ export const World = memo(function World() {
   };
 
   return (
-    <div ref={frame} className="world" aria-label={loc.name} data-origin={`${o.x} ${o.y}`}>
-      <svg ref={svg} className={`world-svg ${seasons}${night ? " w-night" : ""}`} style={{ ...leaf, left: -PAN_MARGIN, top: -PAN_MARGIN, width: size.w + 2 * PAN_MARGIN, height: size.h + 2 * PAN_MARGIN, transformOrigin: `${PAN_MARGIN}px ${PAN_MARGIN}px` }}
-        viewBox={`${port.x} ${port.y} ${port.w} ${port.h}`} preserveAspectRatio="xMinYMin meet"
+    <div className="world" aria-label={loc.name}>
+      <FullscreenButton className="world-fs" />
+      <svg ref={svg} className={`world-svg ${seasons}${night ? " w-night" : ""}`} style={leaf}
+        viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
         <GroundRect view={port} kind={site.kind} />
         <Defs />

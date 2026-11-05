@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "site-bake": "node --experimental-strip-types scripts/site-bake.ts",
+    "site-bake": "node --stack-size=3900 --experimental-strip-types scripts/site-bake.ts",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",

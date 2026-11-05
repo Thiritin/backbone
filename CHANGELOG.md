@@ -3,10 +3,17 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Idle people and passing cars animate more smoothly with less load on the game.
+- The desktop icon that leads back to the room is now called Exit, and the Weather app no longer offers driving.
+- A fullscreen button sits in the desktop menu bar and in the room view, and the menu item for leaving the desktop is called Logout.
+- Escape opens a pause menu with Resume, Save and main menu, Export and Report an issue, and the game stops while it is open.
+- The menu at the top left only holds game information, and deleting progress is no longer a menu item.
+- The wall phone, mailbox and light switch are drawn as solid objects with depth, the desk lamp no longer covers the monitor, and wall and desk items no longer overlap.
+- The main menu has a new red and black look with the full raid0 wordmark.
 - The room view no longer keeps drifting after you stop panning with the keys or cancel a drag.
 
+- Houses, cars, trees, bushes and buildings outside your datacenter are drawn cleaner, without stray slivers and seams, and stand squarely on the tile grid.
 - The macOS desktop app is built for Macs with Apple silicon.
-- The world runs smoother, with less work spent on moving cars and people.
 - The desktop app is also available for Windows (x86_64) and for Linux on x86_64 and arm64, and it updates itself.
 
 ## 2026-11-04

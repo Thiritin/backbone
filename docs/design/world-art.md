@@ -69,3 +69,10 @@ Clicking an object shows the object itself drawn large. Its interactive parts ar
 - No symbols standing in for objects. A fan is a fan with blades and a grille, not a circle with a cross.
 - No empty walls and no empty floors.
 - No real brand names; every logo or label uses the game's pun names.
+
+## Baked outside models
+
+- `npm run site-bake` turns the Kenney models in `art/site` into flat SVG paths in `src/ui/world/site/models.gen.ts`; the output is committed.
+- Faces are ordered by depth over their overlaps and each keeps only the part nothing nearer covers, so roofs, frames and wedges never show through each other.
+- Every model stands on a whole-tile footprint (`fp` in the output). A side within 15% of a whole number snaps to it; the lot sizes and `CAR_SIZE` in `layout.ts` match.
+- Add `?grid` to the address to draw the tile lattice and every item's footprint over the outside.

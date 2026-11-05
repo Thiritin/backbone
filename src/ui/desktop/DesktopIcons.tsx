@@ -8,7 +8,6 @@ import { APPS, appFor, appTitle } from "../apps/registry";
 import { useStore } from "../store";
 import { Confirm } from "./Confirm";
 import { menuOn, openMenu } from "./ContextMenu";
-import { roomOf } from "../world/World";
 
 const ICON_W = 92, ICON_H = 90, MENUBAR = 30, DOCK = 80;
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
@@ -92,7 +91,7 @@ export function DesktopIcons() {
       <div role="button" tabIndex={0} className="desktop-icon" style={{ right: 16, top: MENUBAR + 16 }}
         onDoubleClick={() => setSurface("world")} onKeyDown={(e) => e.key === "Enter" && setSurface("world")}>
         <span className="dock-tile" style={{ "--tile": "var(--accent)" } as CSSProperties}><RoomIcon /></span>
-        <span className="di-label">{roomOf(game).name}</span>
+        <span className="di-label">{t("desktop.icon.exit")}</span>
       </div>
       {docs.map((d) => {
         const app = d.kind === "app" && APPS.some((a) => a.name === d.title) ? appFor(game, d.title) : null;

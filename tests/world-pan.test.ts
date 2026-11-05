@@ -6,7 +6,7 @@ import { useStore } from "../src/ui/store";
 import { World } from "../src/ui/world/World";
 import { readyGame } from "./fixtures";
 
-const origin = (c: HTMLElement) => c.querySelector(".world")!.getAttribute("data-origin")!;
+const origin = (c: HTMLElement) => c.querySelector("svg[viewBox]")!.getAttribute("viewBox")!.split(" ").slice(0, 2).join(" ");
 
 describe("world pan", () => {
   afterEach(() => vi.useRealTimers());

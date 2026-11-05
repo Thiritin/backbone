@@ -2,7 +2,6 @@ import type { Dict } from "./lang";
 
 // The room the player looks at and acts on.
 export default {
-  "world.standUp": () => "Stand up",
   "world.obj.pc": () => "Computer",
   "world.obj.desk": () => "Desk",
   "world.obj.scanner": () => "Scanner",
