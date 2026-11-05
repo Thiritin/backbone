@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- The main menu has a new red and black look with the full raid0 wordmark.
 - The room view no longer keeps drifting after you stop panning with the keys or cancel a drag.
 
 - The macOS desktop app is built for Macs with Apple silicon.
