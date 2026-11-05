@@ -16,6 +16,12 @@ const LEDGER = "ledger.module.";
 const purchaseOf = (e: LedgerEntry): string | null => (e.key.startsWith(LEDGER) ? e.key.slice(LEDGER.length) : null);
 // A purchase counts for the shop system it was bought for.
 export const bought = (s: GameState, id: string, shop = s.shop.variant): boolean => s.ledger.some((e) => purchaseOf(e) === id && e.params.shop === shop);
+// An order still waiting for its transfer.
+export const ordered = (s: GameState, id: string, shop = s.shop.variant): boolean =>
+  s.payables.some((p) => p.paidAt === null && p.lines.some((e) => purchaseOf(e) === id && e.params.shop === shop));
+// The payable of the newest order of a module at a shop vendor.
+export const moduleOrder = (s: GameState, id: string, shop = s.shop.variant): string | undefined =>
+  s.payables.filter((p) => p.lines.some((e) => purchaseOf(e) === id && e.params.shop === shop)).at(-1)?.id;
 // A shop vendor's licence email for a module it sells.
 export const SHOP_LICENCE = "shop-link.licence";
 export const isLicence = (topic: string): boolean => topic === SHOP_LICENCE;

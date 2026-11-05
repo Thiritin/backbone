@@ -3,9 +3,9 @@ import { hallOf } from "../20-world/properties";
 import { rand } from "../00-core/rng";
 import { freeRackTiles, officePlan, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
-import { billDue, CONTRACTOR, canPay, debitAllowed, HARDWARE_SHOP, type Method } from "../46-finance/payables";
-import { bankOf } from "../46-finance/bank";
-import { INVOICE_AFTER, paidOrders, placeOrder } from "./purchase";
+import { billDue, CONTRACTOR, canPay, debitAllowed, HARDWARE_SHOP, type Method, type SupplierId } from "../46-finance/payables";
+import { bankOf, cardReady } from "../46-finance/bank";
+import { INVOICE_AFTER, methodsFor, paidOrders, placeOrder } from "./purchase";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
 import { DAYS_PER_MONTH, hourOf, dateOf, monthIndexOf, nextMonthStart, yearOf } from "../00-core/time";
 import { freeJack, isProviderPanel } from "../60-infra/panels";
@@ -52,16 +52,25 @@ function nextName(base: string, taken: string[]): string {
   return `${base}-${String(n).padStart(2, "0")}`;
 }
 
-// Spending books a vendor document (the contractor, or the hardware shop for goods); income and own travel go straight to cash.
-const book = (s: GameState, category: string, key: string, params: Record<string, string | number>, amount: number, vendor?: string) => {
+// Spending books a vendor document (the contractor, the hardware shop for goods and leases, or the vendor given); income
+// and own travel go straight to cash.
+const book = (s: GameState, category: string, key: string, params: Record<string, string | number>, amount: number, vendor?: string, supplier?: SupplierId) => {
   if (amount < 0 && category !== "travel") {
-    const goods = category === "hardware";
-    billDue(s, goods ? "hardware" : "contractor", vendor ?? (goods ? HARDWARE_SHOP : CONTRACTOR), [{ hour: s.hour, category, key, params, amount }]);
+    const goods = category === "hardware" || category === "leasing";
+    billDue(s, supplier ?? (goods ? "hardware" : "contractor"), vendor ?? (goods ? HARDWARE_SHOP : CONTRACTOR), [{ hour: s.hour, category, key, params, amount }]);
     return;
   }
   s.cash = cents(s.cash + amount);
   s.ledger.push({ hour: s.hour, category, key, params, amount });
 };
+
+// A purchase paid with the method the player picked; without one it is booked as before.
+function payWith(s: GameState, method: Method | undefined, category: string, key: string, params: Record<string, string | number>, amount: number, vendor?: string, supplier?: SupplierId): ActionResult {
+  if (!method) { book(s, category, key, params, -amount, vendor, supplier); return { ok: true }; }
+  const goods = category === "hardware";
+  const r = placeOrder(s, { supplier: supplier ?? (goods ? "hardware" : "contractor"), name: vendor ?? (goods ? HARDWARE_SHOP : CONTRACTOR), lines: [{ hour: s.hour, category, key, params, amount: -amount }], method });
+  return r.ok ? { ok: true } : r;
+}
 const unplug = (s: GameState, deviceIds: Set<string>, keep = (_: string) => false) => {
   s.cables = s.cables.filter((c) => !((deviceIds.has(c.a.device) && !keep(c.b.device)) || (deviceIds.has(c.b.device) && !keep(c.a.device))));
 };
@@ -70,7 +79,10 @@ const unplug = (s: GameState, deviceIds: Set<string>, keep = (_: string) => fals
 const flatDefault = (s: GameState, locationId: string): number => (flatOffer(s, locationId) === "flat" ? FLAT_CONTRACTS[0].kw : 0);
 
 // What the provider's order form sends. A direct debit gives the site a mandate, so its rent invoices are debited at once.
-export interface ColoOrder extends Billing { payment: { kind: "debit"; iban: string; holder: string } | { kind: "transfer" } }
+export interface ColoOrder extends Billing { payment: { kind: "debit"; iban: string; holder: string } | { kind: "transfer" | "onAccount" | "card" | "cash" } }
+
+// The tick bills full months from the next month start, so a new contract pays the rest of this one pro rata.
+export const coloFirstCharge = (s: GameState, monthly: number): number => cents(monthly * Math.min(1, (nextMonthStart(s.hour) - s.hour) / (DAYS_PER_MONTH * 24)));
 
 // For a share, size is n for 1/n of a rack; the location then has one position, taken by the provider's rack.
 export function addLocation(s: GameState, dcId: string, space: "share" | "cage" | "suite", size: number, order?: ColoOrder): ActionResult {
@@ -81,22 +93,26 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   // A waitlist hold for exactly this space reserves it; otherwise the space must be free now.
   const hold = s.waitlist.find((w) => w.dc === dcId && w.space === space && w.size === size && w.heldUntil !== null);
   if (!hold && !fits(s, dcId, space, size)) return fail("error.noSpace");
-  const monthly = spacePrice(dc, space, size, s.providerPrices);
-  if (s.cash < monthly) return fail("error.noCash");
+  const monthly = spacePrice(dc, space, size, s.providerPrices), kind = order?.payment.kind;
+  const method: Method = !s.bank ? "cash" : kind === "debit" || kind === "card" || kind === "transfer" ? kind : "onAccount";
+  if (method === "cash" && s.cash < monthly) return fail("error.noCash");
   const bad = order && orderError(order);
   if (bad) return fail(bad);
-  if (order?.payment.kind === "debit" && !s.bank) return fail("error.noBank");
-  if (order?.payment.kind === "debit" && !debitAllowed(dc.name)) return fail("error.debitAbroad");
+  if (kind === "debit" && !s.bank) return fail("error.noBank");
+  if (kind === "debit" && !debitAllowed(dc.name)) return fail("error.debitAbroad");
+  const rest = coloFirstCharge(s, monthly);
+  const rentLines = rest > 0 ? [{ hour: s.hour, category: "rent", key: "ledger.space", params: { location: dc.name, dc: dc.id }, amount: -rest }] : [];
+  if (method === "card" && !methodsFor(s, "datacenter", rentLines, dc.name).includes("card")) return fail(cardReady(s) ? "error.cardLimit" : "error.noCard");
   if (hold) s.waitlist = s.waitlist.filter((w) => w.id !== hold.id);
   const positions = space === "share" ? 1 : size;
   const loc = { id: newId(s, "loc"), dc: dc.id, city: dc.city, az: nextAz(s.locations, dc.city), name: dc.name, space, positions, readyAt: s.hour + 24 * LEAD_DAYS[space], extraCircuit: false, tripped: false };
   s.locations.push(loc);
   s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly, endsAt: null, retainedAt: null, ...(order && { billing: { company: order.company, name: order.name, address: { street: order.address.street, zip: order.address.zip, city: order.address.city } } }) });
   if (order?.payment.kind === "debit") s.bank = { ...s.bank!, mandates: [...s.bank!.mandates.filter((x) => x !== dc.name), dc.name] };
-  // The order confirmation is the contract document. The tick bills full months from the next month start, so the order
-  // pays the rest of this one pro rata, at once.
-  const rest = cents(monthly * Math.min(1, (nextMonthStart(s.hour) - s.hour) / (DAYS_PER_MONTH * 24)));
-  placeOrder(s, { supplier: "datacenter", name: dc.name, lines: rest > 0 ? [{ hour: s.hour, category: "rent", key: "ledger.space", params: { location: dc.name, dc: dc.id }, amount: -rest }] : [], method: !s.bank ? "cash" : order?.payment.kind === "debit" ? "debit" : "onAccount", doc: "contract", order: loc.id });
+  // The order confirmation is the contract document; the pro rata rest rides on it by debit, else on its own document.
+  const apart = method !== "debit";
+  placeOrder(s, { supplier: "datacenter", name: dc.name, lines: apart ? [] : rentLines, method, doc: "contract", order: loc.id });
+  if (apart && rentLines.length) placeOrder(s, { supplier: "datacenter", name: dc.name, lines: rentLines, method, order: loc.id });
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
@@ -181,7 +197,7 @@ export function closeLocation(s: GameState, locationId: string): ActionResult {
 
 // Pays the setup fee now; the monthly price is billed with the rent from the next month start. The line lands on a free
 // jack of the rack's provider panel, the location's first rack with one when no rack is named.
-export function orderCrossConnect(s: GameState, contractId: string, to: string, rackId?: string): ActionResult {
+export function orderCrossConnect(s: GameState, contractId: string, to: string, rackId?: string, method?: Method): ActionResult {
   const c = s.contracts.find((x) => x.id === contractId);
   if (!c) return fail("error.unknownContract");
   if (c.endsAt !== null) return fail("error.alreadyCancelled");
@@ -193,9 +209,10 @@ export function orderCrossConnect(s: GameState, contractId: string, to: string, 
   if (!jack) return fail("error.noFreeJack");
   const setup = crossConnectSetup(dc);
   if (!canPay(s, setup)) return fail("error.noCash");
+  const paid = payWith(s, method, "rent", "ledger.crossConnectSetup", { to: targetName(to), dc: dc.id }, setup, dc.name, "datacenter");
+  if (!paid.ok) return paid;
   const x = { id: newId(s, "xc"), contractId, to, monthly: dc.crossConnect, since: s.hour, jack };
   s.crossConnects = [...s.crossConnects, x];
-  book(s, "rent", "ledger.crossConnectSetup", { to: targetName(to), dc: dc.id }, -setup);
   return { ok: true, id: x.id };
 }
 
@@ -224,16 +241,17 @@ export function buyRackError(s: GameState, locationId: string, model: RackModel,
   return placeError(s, locationId, model, position) ?? (!canPay(s, spec.price) ? "error.noCash" : null);
 }
 
-export function buyRack(s: GameState, locationId: string, model: RackModel, position: number): ActionResult {
+export function buyRack(s: GameState, locationId: string, model: RackModel, position: number, method?: Method): ActionResult {
   const error = buyRackError(s, locationId, model, position);
   if (error) return fail(error);
   const spec = RACK_MODELS.find((m) => m.id === model)!;
   const name = model === "shelf" ? t("rack.shelf") : nextName(`${prefix(s, locationId)}-rack`, s.racks.map((r) => r.name));
   const at = s.locations.find((l) => l.id === locationId)!, tile = at.space === "hall" ? undefined : freeRackTiles(at, s.racks, officePlan(s, at))[0];
   const rack = { id: newId(s, "rack"), model, locationId, position, name, arriveAt: null, price: spec.price, boughtAt: s.hour, provided: false, feedB: false, highDensity: false, extraKw: 0, extraKwAt: null, flatKw: flatDefault(s, locationId), flatKwAt: null, overSince: { a: null, b: null }, tile };
+  const paid = payWith(s, method, "hardware", "ledger.hardware", { model: spec.id === "shelf" ? "shelf" : `${spec.units}U rack`, device: name }, spec.price);
+  if (!paid.ok) return paid;
   s.racks.push(rack);
   syncProviderPanels(s);
-  book(s, "hardware", "ledger.hardware", { model: spec.id === "shelf" ? "shelf" : `${spec.units}U rack`, device: name }, -spec.price);
   return { ok: true, id: rack.id };
 }
 
@@ -377,12 +395,12 @@ const officeError = (s: GameState, modelId: string, locationId: string): string 
   isOfficeRouter(modelById(modelId)) && s.locations.find((l) => l.id === locationId)?.dc ? "error.basementOnly" : null;
 
 // Bought units go to the storage of the zone at locationId, which may not be ready yet.
-export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "part" | "vendor"> = {}): ActionResult {
+export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "part" | "vendor"> = {}, method?: Method): ActionResult {
   const line = { model: modelId, brand, qty, ...rest };
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);
   if (error) return fail(error);
-  const placed = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines: [hardwareEntry(s, line)], method: s.bank ? "transfer" : "cash" });
+  const placed = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines: [hardwareEntry(s, line)], method: method ?? (s.bank ? "transfer" : "cash") });
   if (!placed.ok) return placed;
   return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])) };
 }
@@ -1075,14 +1093,15 @@ export function setFlatPower(s: GameState, rackId: string, kw: number): ActionRe
 
 export const CIRCUIT_PRICE = 400;
 
-export function buyCircuit(s: GameState, locationId: string): ActionResult {
+export function buyCircuit(s: GameState, locationId: string, method?: Method): ActionResult {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return fail("error.unknownLocation");
   if (loc.space !== "basement") return fail("error.notBasement");
   if (loc.extraCircuit) return fail("error.alreadyBought");
   if (!canPay(s, CIRCUIT_PRICE)) return fail("error.noCash");
+  const paid = payWith(s, method, "hardware", "ledger.circuit", {}, CIRCUIT_PRICE);
+  if (!paid.ok) return paid;
   loc.extraCircuit = true;
-  book(s, "hardware", "ledger.circuit", {}, -CIRCUIT_PRICE);
   return { ok: true };
 }
 

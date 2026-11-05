@@ -342,7 +342,7 @@ describe("connections between racks", () => {
       fireEvent.pointerDown(pair.querySelector(`[data-pp="${pa}"] [data-jack="0"]`)!, { button: 0 });
       fireEvent.pointerUp(window);
       expect(g().providerCables).toHaveLength(0);
-      fireEvent.click(pair.querySelector("[data-slip] .wr-line")!);
+      fireEvent.click(pair.querySelector("[data-slip] .pay-step .btn.primary")!);
       expect(g().providerCables).toMatchObject([{ a: { device: pa, port: 0 }, b: { device: pb, port: 2 } }]);
       expect(pair.querySelectorAll(".pp-due").length).toBe(2);
     } finally {

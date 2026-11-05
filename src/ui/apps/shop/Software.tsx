@@ -6,9 +6,10 @@ import { useSessionState } from "../../session";
 import { euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { isAvailable, skillFor } from "../../../sim/10-catalog/research";
-import { storeItem, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
+import { storeItem, subscriptionEntry, subscriptionPrice, type StoreItem } from "../../../sim/10-catalog/store";
 import { cancel, install } from "../../../sim/90-actions/store";
 import { Confirm } from "../../desktop/Confirm";
+import { PayButton } from "../browser/sites/shared/PayButton";
 import { PearMark } from "../../desktop/Intro";
 import { appByName } from "../registry";
 import { rowLabel } from "./filter";
@@ -48,9 +49,15 @@ export function Tile({ item, size }: { item: StoreItem; size: number }) {
 function Action({ item, big }: { item: StoreItem; big?: boolean }) {
   const { game, act, openApp } = useStore();
   const cls = `pst-get${big ? " big" : ""}`;
-  const skill = skillFor(item.id);
+  const skill = skillFor(item.id), [paid, setPaid] = useState(false), amount = -subscriptionEntry(game, item).amount;
   if (skill && !isAvailable(item.id, game.unlocks)) return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp("Research", { kind: "skill", id: skill.id }); }}>{t("shop.needs", { skill: skill.name })}</button>;
-  if (!game.installed.includes(item.id)) return <button className={`${cls} primary`} onClick={(e) => { e.stopPropagation(); act(install, item.id); }}>{t("shop.get")}</button>;
+  // The button stays after a paid install to show the outcome and the invoice.
+  if (!game.installed.includes(item.id) || paid) return (
+    <span onClick={(e) => e.stopPropagation()}>
+      <PayButton className={`${cls} primary`} supplier="pear" name="Pear" amount={amount}
+        run={(m) => { const r = act(install, item.id, m); if (r.ok && amount > 0) setPaid(true); return r; }}>{t("shop.get")}</PayButton>
+    </span>
+  );
   if (item.kind !== "app") return <span className="pst-owned"><Check />{t("shop.installed")}</span>;
   return <button className={cls} onClick={(e) => { e.stopPropagation(); openApp(item.id === "Nagiosaurus" ? "Security" : item.id); }}>{t("shop.open")}</button>;
 }

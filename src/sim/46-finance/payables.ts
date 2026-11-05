@@ -9,7 +9,7 @@ import type { GameState, LedgerEntry } from "../50-state";
 import { ALL_DATACENTERS as DATACENTERS, COUNTRY, datacenterById } from "../20-world/datacenters";
 import { cardReady, cardSpent, groupIban, iban, ibanEra } from "./bank";
 
-export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software" | "landlord" | "shopVendor" | "network" | "services" | "contractor" | "marketplace";
+export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software" | "landlord" | "shopVendor" | "network" | "services" | "contractor" | "marketplace" | "registry";
 // throttle slows the home line, cut takes it off the internet, dark switches the locations' power off, licence stops the Pear
 // subscriptions, domains lets the domains lapse, noShip stops hardware orders, card blocks the credit card.
 export type Effect = "throttle" | "cut" | "dark" | "licence" | "domains" | "noShip" | "card";
@@ -28,10 +28,10 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   books: [],
   // An unpaid licence order just never sends its keys.
   software: [],
-  landlord: [], shopVendor: [], network: [], services: [], contractor: [], marketplace: [],
+  landlord: [], shopVendor: [], network: [], services: [], contractor: [], marketplace: [], registry: [],
 };
 // The pun name each new supplier trades under unless the order names another.
-export const SUPPLIER_NAMES: Partial<Record<SupplierId, string>> = { landlord: "Dwell Immobilien", shopVendor: "Taxware", network: "DE-KICKS", services: "Pear" };
+export const SUPPLIER_NAMES: Partial<Record<SupplierId, string>> = { landlord: "Engel & Vogel", shopVendor: "Taxware", network: "DE-KICKS", registry: "RIPE-ish NCC", services: "Pear" };
 // Authorities bill by letter and issue no invoice document of their own.
 export const AUTHORITIES: SupplierId[] = ["office", "notary", "register", "chamber", "tax"];
 export const PAY_DAYS = 14;
@@ -126,23 +126,24 @@ export function bill(s: GameState, b: Bill): Payable {
   const p: Payable = { id, supplier, name, number: `${supplier.slice(0, 2).toUpperCase()}-${id.slice(3)}`, amount, issuedAt: s.hour, dueAt: s.hour + (b.days ?? PAY_DAYS) * 24, paidAt: null, consequence: null, lines, sent: 0, booked: 0, method, doc, ...(b.order ? { order: b.order } : {}) };
   const from = { source: `supplier:${supplier}`, att: [{ k: "invoice" as const, id }] };
   const params = { name, number: p.number, amount: Math.abs(amount), payable: id };
+  const mail = (topic: string, ps: Record<string, string | number>) => { if (!b.paper) deliverMail(s, name, topic, ps, from); };
   const settle = () => Object.assign(p, { sent: amount, paidAt: s.hour, booked: amount });
   if (doc === "credit" || doc === "contract" || method === "cash") {
     book(s, lines);
     settle();
-    deliverMail(s, name, doc === "invoice" ? "receipt" : doc, params, from);
+    mail(doc === "invoice" ? "receipt" : doc, params);
   } else if (method === "debit") {
     book(s, lines);
     settle();
     const debit = { id: `out${s.nextId++}`, hour: s.hour, arriveAt: s.hour, name, account: ibanEra(s) ? supplierIban(supplier) : supplierAccount(supplier), amount, reference: p.number, payableId: id, matched: id, arrived: true as const, debit: true as const };
     s.bank = { ...s.bank!, outgoing: [...s.bank!.outgoing, debit] };
-    deliverMail(s, name, "debit", params, from);
+    mail("debit", params);
   } else if (method === "card") {
     const card = s.bank!.card!;
     s.bank = { ...s.bank!, card: { ...card, spent: [...card.spent, ...lines.map((e) => ({ ...e, hour: s.hour }))] } };
     settle();
-    deliverMail(s, name, "cardPaid", params, from);
-  } else if (!b.paper) deliverMail(s, name, "invoice", { ...params, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) }, from);
+    mail("cardPaid", params);
+  } else mail("invoice", { ...params, due: p.dueAt, iban: ibanEra(s) ? groupIban(supplierIban(supplier)) : "", account: supplierAccount(supplier), code: SUPPLIER_CODE, url: supplierUrl(name) });
   s.payables = [...s.payables, p];
   return p;
 }
@@ -175,12 +176,22 @@ export const HARDWARE_SHOP = "Alternatte";
 // The month's lines no supplier invoices (leases, addresses, properties, modules): one document per payee, debited from the
 // bank or paid in cash before there is one.
 const LANDLORD = new Set(["ledger.officeRent", "ledger.officeLine", "ledger.upkeep", "ledger.hallUpkeep"]);
-const NETWORK = new Set(["ledger.addresses", "ledger.lirYearly"]);
-const DIRECT_SUPPLIER = (key: string): SupplierId => (key === "ledger.lease" ? "hardware" : LANDLORD.has(key) ? "landlord" : NETWORK.has(key) ? "network" : "services");
+const NETWORK = new Set(["ledger.addresses"]);
+const DIRECT_SUPPLIER = (key: string): SupplierId => (key === "ledger.lease" ? "hardware" : LANDLORD.has(key) ? "landlord" : NETWORK.has(key) ? "network" : key === "ledger.lirYearly" ? "registry" : "services");
+// The issuer printed on a direct bill: the lessor, the utility, the line's provider or the datacenter before the catch-all.
+const directName = (l: LedgerEntry, supplier: SupplierId): string => {
+  const p = l.params, by = SUPPLIER_OF[l.key];
+  if (l.key === "ledger.lease") return String(p.lessor);
+  if (by === "power") return UTILITY;
+  if (by === "upstream" && p.isp) return String(p.isp);
+  if (by === "pear") return "Pear";
+  if (p.dc && DATACENTERS.some((d) => d.id === p.dc)) return datacenterById(String(p.dc)).name;
+  return SUPPLIER_NAMES[supplier] ?? supplier;
+};
 export function billDirect(s: GameState, lines: LedgerEntry[]): void {
   const by = new Map<string, { supplier: SupplierId; name: string; lines: LedgerEntry[] }>();
   for (const l of lines) {
-    const supplier = DIRECT_SUPPLIER(l.key), name = l.key === "ledger.lease" ? String(l.params.lessor) : SUPPLIER_NAMES[supplier] ?? supplier;
+    const supplier = DIRECT_SUPPLIER(l.key), name = directName(l, supplier);
     const g = by.get(`${supplier}|${name}`) ?? { supplier, name, lines: [] };
     g.lines.push(l);
     by.set(`${supplier}|${name}`, g);

@@ -55,6 +55,7 @@ describe("trade fairs", () => {
     expect(cost).toBeGreaterThan(4800);
     expect(cost).toBeLessThan(8000);
     expect(bookFair(s, "seebit", id)).toEqual({ ok: true });
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "services", name: "SeeBIT" });
     expect(s.cash).toBe(cash - cost);
     expect(s.ledger.at(-1)).toMatchObject({ category: "marketing", key: "ledger.tradeFair", amount: -cost });
     expect(bookFair(s, "seebit", id)).toEqual({ ok: false, error: "error.fairBooked" });

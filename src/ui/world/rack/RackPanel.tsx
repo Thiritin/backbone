@@ -29,6 +29,7 @@ import { CrashCart } from "./CrashCart";
 import { noteSelected, setPlug, useCable } from "./cartPlug";
 import { LidScene } from "./LidScene";
 import { jackEntries, jacksOf, jackText, ProviderPanel } from "./ProviderPanel";
+import { PayStep, type Purchase } from "../../apps/browser/sites/shared/PayStep";
 import { panelOf } from "../../../sim/60-infra/panels";
 import "../panel/panel.css";
 import "./rack.css";
@@ -434,13 +435,15 @@ function Act({ e }: { e: MenuItem }) {
 
 // A provider jack's tag: what it carries and, when free, the uplinks and provider cables it can take.
 function JackTag({ game, panel, jack }: { game: GameState; panel: Device; jack: number }) {
-  const j = jacksOf(game, panel)[jack], items = tidy(jackEntries(game, panel, jack));
+  const [buy, setBuy] = useState<(Purchase & { key: string }) | null>(null);
+  const j = jacksOf(game, panel)[jack], items = tidy(jackEntries(game, panel, jack, setBuy));
   return (
     <div className="wr-tag-body" data-jack-tag={jack}>
       <div className="wr-tag-h"><strong>{t("locations-2.jack", { panel: t("locations-1.carrierPanel"), jack: jack + 1 })}</strong></div>
       <div className="wr-model">{jackText(j)}</div>
       {j.due !== undefined && <div className="wr-model">{t("locations-1.dueOn", { day: formatDay(j.due) })}</div>}
       {items.length > 0 && <div className="wr-lines">{items.map((e, i) => (e === null ? <hr key={i} /> : <Act key={i} e={e} />))}</div>}
+      {buy?.key.startsWith(`${panel.rackId}-${jack}-`) && <PayStep key={buy.key} game={game} buy={buy} onClose={() => setBuy(null)} />}
     </div>
   );
 }

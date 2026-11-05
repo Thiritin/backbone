@@ -37,6 +37,8 @@ export default {
   "letter.officeChange.body": (p) => `Confermiamo che ${p.name} è iscritta come ${FORM[p.form] ?? p.form} da oggi. ${pay(p)}`,
   "letter.notaryInvoice.subject": (p) => `Fattura ${p.number}`,
   "letter.notaryInvoice.body": (p) => `Per l'atto notarile dello statuto di ${p.name} e il deposito al registro delle imprese addebitiamo ${euroCents(Number(p.amount))}. ${pay(p)}`,
+  "letter.landlordDoc.subject": (p) => `La sua locazione, documento ${p.number}`,
+  "letter.landlordDoc.body": (p) => `In allegato trova il nostro documento ${p.number} di ${euroCents(Number(p.amount))}.`,
   "letter.registerEntry.subject": () => "Iscrizione nel registro delle imprese",
   "letter.registerEntry.body": (p) => `${p.name} è stata iscritta nel registro delle imprese come ${FORM[p.form] ?? p.form}. L'iscrizione ha effetto da oggi. La nostra fattura per l'iscrizione segue a parte.`,
   "letter.registerInvoice.subject": (p) => `Fattura ${p.number}`,

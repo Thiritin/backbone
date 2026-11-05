@@ -13,6 +13,9 @@ import { formatDay } from "../../../billing/format";
 import "./registrars.css";
 import { LOCALE } from "../../../../../i18n/lang";
 import { usePageAct } from "../../pageAct";
+import { PayButton } from "../shared/PayButton";
+import { OrderDone } from "../shared/OrderDone";
+import { cents } from "../../../../../sim/45-billing/billing";
 import { displayHost } from "../../../../../sim/80-business/browser";
 
 export const REGISTRAR_HUE: Record<RegistrarId, number> = { nameCheep: 45, goDuddy: 150, interNetY: 250, openSrsly: 300 };
@@ -45,6 +48,7 @@ export function DomainSearch({ game, r, title, button = t("browser-sites-1.rg.se
   const act = usePageAct();
   const [query, setQuery] = useState(() => derivedDomain(game));
   const [shown, setShown] = useState(query);
+  const [done, setDone] = useState<{ name: string; payable?: string } | null>(null);
   const names = spinNames(shown).filter((n) => companyDomainError(game, n) !== "error.domainInvalid");
   const tier = tierOf(game, r), cur = game.registrar;
   return (
@@ -64,9 +68,9 @@ export function DomainSearch({ game, r, title, button = t("browser-sites-1.rg.se
                 <tr key={n}>
                   <td>{n}</td>
                   <td className="r num">{free ? euroCents(yearlyAt(game, r, tier, n)) : ""}</td>
-                  <td className="r">{!free ? <span className="rg-taken">{domainOf(game, n)?.customerId === null ? t("browser-sites-1.rg.yours") : t("browser-sites-1.rg.taken")}</span>
-                    : !game.company.domain ? <button className="rg-btn" onClick={() => act(orderCompanyDomain, r.id, n)}>{t("browser-sites-1.rg.buy")}</button>
-                    : own(game, r) && <button className="rg-btn" onClick={() => act(orderDomain, n)}>{t("browser-sites-1.rg.buy")}</button>}</td>
+                  <td className="r">{done?.name === n && done.payable ? <OrderDone payable={done.payable} /> : !free ? <span className="rg-taken">{domainOf(game, n)?.customerId === null ? t("browser-sites-1.rg.yours") : t("browser-sites-1.rg.taken")}</span>
+                    : !game.company.domain ? <PayButton className="rg-btn" supplier="registrar" name={r.name} amount={cents(yearlyAt(game, r, tier, n) / 12)} run={(m) => act(orderCompanyDomain, r.id, n, m)} onDone={(payable) => setDone({ name: n, payable })}>{t("browser-sites-1.rg.buy")}</PayButton>
+                    : own(game, r) && <PayButton className="rg-btn" supplier="registrar" name={r.name} amount={cents(yearlyAt(game, r, tier, n) / 12)} run={(m) => act(orderDomain, n, m)} onDone={(payable) => setDone({ name: n, payable })}>{t("browser-sites-1.rg.buy")}</PayButton>}</td>
                 </tr>
               );
             })}

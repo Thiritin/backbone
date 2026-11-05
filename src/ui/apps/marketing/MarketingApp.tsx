@@ -17,7 +17,9 @@ import { metrics } from "../../../sim/metrics";
 import { PRODUCT } from "../support/labels";
 import { t } from "../../../i18n/en";
 import { useFocus, useStore } from "../../store";
-import { resellersUrl } from "../../../sim/80-business/browser";
+import { AGENCY_TITLE, resellersUrl } from "../../../sim/80-business/browser";
+import { OrderDone } from "../browser/sites/shared/OrderDone";
+import { PayButton } from "../browser/sites/shared/PayButton";
 import { roleAccount, roleBoxes } from "../../../sim/42-mail/accounts";
 import type { MailRole } from "../../../sim/42-mail/types";
 import { setRoleMailbox } from "../../../sim/90-actions/mailbox";
@@ -106,6 +108,7 @@ function Channels() {
   const [managing, setManaging] = useState(false);
   useFocus("Marketing", (f) => { if (f.kind === "page" && f.id === "website") setManaging(true); });
   const year = yearOf(game.hour), full = isAvailable("Marketing", game.unlocks);
+  const [setupDoc, setSetupDoc] = useState<{ id: string; payable: string } | null>(null);
   if (managing) return <>
     <div className="mkt-list"><button className="btn" style={{ justifySelf: "start" }} onClick={() => setManaging(false)}>{t("desktop.back")}</button></div>
     <div className="mkt-list"><SiteCard /></div>
@@ -126,10 +129,10 @@ function Channels() {
         const def = id === "email" ? null : OWNED[id];
         const active = id === "email" || owns(game, id);
         let state: ReactNode;
-        if (active) state = <span className="pill ok">{t("marketing.active")}</span>;
+        if (active) state = <>{setupDoc?.id === id && <OrderDone payable={setupDoc.payable} />}<span className="pill ok">{t("marketing.active")}</span></>;
         else if (def!.needs && !owns(game, def!.needs)) state = <span className="pill">{t("marketing.needs", { name: CHANNEL_NAME[def!.needs!] })}</span>;
         else if (year < def!.fromYear) state = <span className="pill">{t("marketing.fromYear", { year: def!.fromYear })}</span>;
-        else state = <button className="btn primary" disabled={game.cash < def!.setup} onClick={() => act(setUpChannel, id as OwnedChannel)}>{t("marketing.setUp")}</button>;
+        else state = <PayButton className="btn primary" supplier="services" name={AGENCY_TITLE} amount={def!.setup} run={(m) => act(setUpChannel, id as OwnedChannel, m)} onDone={(p) => setSetupDoc(p ? { id, payable: p } : null)}>{t("marketing.setUp")}</PayButton>;
         return (
           <div key={id} className="shop-card">
             <div className="shop-name"><strong>{name}</strong><span>{text}</span></div>
@@ -346,6 +349,7 @@ function FairCard({ d }: { d: FairDate }) {
   const [who, setWho] = useState<string | null>(null);
   const { fair, booking } = d;
   const cost = fairCost(fair, d.year);
+  const [doc, setDoc] = useState<string | null>(null);
   const level = metrics(game).level.level;
   const free = game.staff.filter((e) => !game.fairs.some((b) => b.employeeId === e.id && b.start < d.end && d.start < b.end));
   const open = !booking && d.start > game.hour && level >= fair.level;
@@ -354,7 +358,7 @@ function FairCard({ d }: { d: FairDate }) {
   else if (d.start <= game.hour) state = <span className="pill">{t("marketing.underWay")}</span>;
   else if (level < fair.level) state = <span className="pill">{t("marketing.needsLevel", { level: fair.level })}</span>;
   else if (!game.staff.length) state = <span className="pill">{t("marketing.needsEmployee")}</span>;
-  else state = <button className="btn primary" disabled={!who || game.cash < cost} onClick={() => who && act(bookFair, fair.id, who)}>{t("marketing.book")}</button>;
+  else state = <PayButton className="btn primary" disabled={!who} supplier="services" name={fair.name} amount={cost} run={(m) => act(bookFair, fair.id, who!, m)} onDone={(p) => setDoc(p ?? null)}>{t("marketing.book")}</PayButton>;
   return (
     <div className="shop-card">
       <div className="shop-name"><strong>{fair.name}</strong><span>{fair.city} · {fair.days > 1 ? t("marketing.dateRange", { from: formatDay(d.start), to: formatDay(d.end - 24) }) : formatDay(d.start)}</span></div>
@@ -373,7 +377,7 @@ function FairCard({ d }: { d: FairDate }) {
           </div>
         </div>
       )}
-      <div className="shop-buy"><span className="grow" />{state}</div>
+      <div className="shop-buy">{doc && <OrderDone payable={doc} />}<span className="grow" />{state}</div>
     </div>
   );
 }

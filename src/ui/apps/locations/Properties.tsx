@@ -4,11 +4,14 @@ import { t } from "../../../i18n/en";
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
 import { DEPOSIT_MONTHS, listingsIn, NOTICE_MONTHS, priceFor, REFIT, rentFor, sectionIds, takenSections, type Listing } from "../../../sim/20-world/properties";
+import { SUPPLIER_NAMES, type Method } from "../../../sim/46-finance/payables";
 import type { GameState, SectionFit } from "../../../sim/50-state";
 import { addressLine } from "../../../sim/60-infra/properties";
 import { noticeEnd } from "../../../sim/90-actions/hardware";
 import { buyBuilding, freeSections, giveNotice, refitSection, rentSection } from "../../../sim/90-actions/properties";
+import type { ActionResult } from "../../../sim/90-actions/hardware";
 import { useStore } from "../../store";
+import { PayStep, type Purchase } from "../browser/sites/shared/PayStep";
 import { day } from "../hw";
 import { HallPlan } from "./HallPlan";
 import { Facts } from "./ui";
@@ -27,6 +30,8 @@ export function Properties({ game }: { game: GameState }) {
 function BuildingCard({ game, l, year }: { game: GameState; l: Listing; year: number }) {
   const act = useStore((s) => s.act);
   const [sel, setSel] = useState<string | null>(null);
+  const [buy, setBuy] = useState<Purchase & { key: string } | null>(null);
+  const pay = (key: string, amount: number, run: (m: Method) => ActionResult) => setBuy({ key, supplier: "landlord", name: SUPPLIER_NAMES.landlord!, amount, run });
   const mine = game.properties.find((p) => p.buildingId === l.id), taken = takenSections(game.seed, l), free = freeSections(game, l);
   const rent = rentFor(l, year), price = priceFor(l, year), ids = sectionIds(l);
   const own = mine?.sections.find((x) => x.id === sel), canRent = sel !== null && free.includes(sel) && mine?.kind !== "own";
@@ -37,7 +42,7 @@ function BuildingCard({ game, l, year }: { game: GameState; l: Listing; year: nu
     return taken.has(id) ? { cls: "taken", label: t("properties.state.taken") } : { cls: "free", label: t("properties.state.free") };
   };
   const refit = (fit: SectionFit) => own && own.fit !== fit && (
-    <button className="btn" disabled={own.refitUntil > game.hour} onClick={() => act(refitSection, mine!.id, own.id, fit)}>
+    <button className="btn" disabled={own.refitUntil > game.hour} onClick={() => pay(`refit-${own.id}-${fit}`, REFIT[fit].cost, (m) => act(refitSection, mine!.id, own.id, fit, m))}>
       {t(`properties.refit${fit[0].toUpperCase()}${fit.slice(1)}`, { cost: euro(REFIT[fit].cost) })}
     </button>
   );
@@ -73,15 +78,16 @@ function BuildingCard({ game, l, year }: { game: GameState; l: Listing; year: nu
       {mine?.hall && <HallPlan game={game} p={mine} />}
       <div className="loc-row prop-actions">
         {canRent && (
-          <button className="btn primary" onClick={() => act(rentSection, l.id, sel!).ok && setSel(null)}>
+          <button className="btn primary" onClick={() => { const id = sel!; pay(`rent-${id}`, rent * DEPOSIT_MONTHS, (m) => { const r = act(rentSection, l.id, id, m); if (r.ok) setSel(null); return r; }); }}>
             {t(mine ? "properties.expand" : "properties.rent", { cost: euro(rent * DEPOSIT_MONTHS) })}
           </button>
         )}
         {l.kind !== "halle" && <>{refit("desks")}{refit("closet")}{refit("servers")}</>}{mine?.kind === "own" && refit("hall")}
         <span className="grow" />
         {mine?.kind === "office" && mine.noticeAt === null && <button className="btn" onClick={() => act(giveNotice, mine.id)}>{t("properties.notice")}</button>}
-        {price !== null && mine?.kind !== "own" && <button className="btn" onClick={() => act(buyBuilding, l.id)}>{t("properties.buy", { cost: euro(price) })}</button>}
+        {price !== null && mine?.kind !== "own" && <button className="btn" onClick={() => pay("buy", price, (m) => act(buyBuilding, l.id, m))}>{t("properties.buy", { cost: euro(price) })}</button>}
       </div>
+      {buy && <PayStep key={buy.key} game={game} buy={buy} onClose={() => setBuy(null)} />}
     </div>
   );
 }

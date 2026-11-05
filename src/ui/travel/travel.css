@@ -37,3 +37,7 @@
   position: absolute; right: 8px; bottom: 6px; padding: 2px 6px; border-radius: 4px;
   background: oklch(0.99 0.01 92 / 0.85); color: oklch(0.34 0.03 250); font: 500 10px Inter, sans-serif; pointer-events: none;
 }
+.travel-pay {
+  position: absolute; top: 16px; left: 16px; padding: 10px; min-width: 260px; background: oklch(0.99 0.01 92 / 0.92); color: oklch(0.22 0.02 258); font: 13px Inter, sans-serif;
+}
+.travel-pay .pay-methods { margin: 0; }

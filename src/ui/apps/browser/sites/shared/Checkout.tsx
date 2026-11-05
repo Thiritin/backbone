@@ -7,6 +7,7 @@ import { salesAddress } from "../../../../../sim/80-business/mail";
 import type { ActionResult } from "../../../../../sim/90-actions/hardware";
 import { noAutofill } from "../../../../no-autofill";
 import { payOptions, type Offer } from "./PayMethods";
+import { OrderDone, startMethod, track } from "./OrderDone";
 import "./checkout.css";
 
 export type AddressValue = PostalAddress & { company?: string };
@@ -68,22 +69,22 @@ const STEP_OF: Record<string, number> = { "error.orderName": 0, "error.orderAddr
 // choice of the company's own addresses, the first preselected.
 export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer, place, confirm, onBack, emails }: {
   game: GameState; btn: string; lines?: CheckoutLine[]; total?: string; facts?: [string, string][]; onBack?: () => void; emails?: string[];
-  methods?: { kind: PaymentKind; label: string }[];
+  methods?: { kind: PaymentKind; label: string; off?: string | null }[];
   // The order's supplier and lines: the methods then follow the sim's rules, an unavailable one stays listed with its reason.
   offer?: Offer;
   place: (d: CheckoutDetails) => ActionResult;
   confirm: (order: string, kind: PaymentKind) => Confirmation;
 }) {
   const methods = offer ? payOptions(game, offer).map((o) => ({ kind: o.method as PaymentKind, label: o.label, off: o.off }))
-    : (fixed ?? []).map((m) => ({ ...m, off: null as string | null }));
+    : (fixed ?? []).map((m) => ({ ...m, off: m.off ?? null }));
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<{ order: string; info: Confirmation } | null>(null);
+  const [placed, setPlaced] = useState<{ order: string; info: Confirmation; doc?: string } | null>(null);
   const [first0, last0] = splitName(game.registration?.owner ?? "");
   const [first, setFirst] = useState(first0), [last, setLast] = useState(last0);
   const [email, setEmail] = useState(emails?.[0] ?? salesAddress(game));
   const [address, setAddress] = useState<AddressValue>({ company: game.company.name, street: "", zip: "", city: "" });
-  const [kind, setKind] = useState<PaymentKind>((methods.find((m) => !m.off) ?? methods[0]).kind);
+  const [kind, setKind] = useState<PaymentKind>(() => (offer && startMethod(game, offer)) || (methods.find((m) => !m.off) ?? methods[0]).kind);
   const [card, setCard] = useState({ number: "", expiry: "", cvc: "", holder: "" });
   const [debit, setDebit] = useState({ iban: game.bank ? (ibanEra(game) ? groupIban(ownIban(game)) : game.bank.number) : "", holder: game.company.name });
   const autofill = game.company.address && { company: game.company.name, ...officeAddress(game) };
@@ -97,6 +98,7 @@ export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer
         <table className="co-table"><tbody>{placed.info.bank.map(([k, v]) => <tr key={k}><td>{k}</td><td className="num">{v}</td></tr>)}</tbody></table>
       </>}
       <p>{placed.info.next}</p>
+      {placed.doc && <p><OrderDone payable={placed.doc} btn={btn} /></p>}
     </div>
   );
 
@@ -104,8 +106,8 @@ export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer
   const details: CheckoutDetails = { company: address.company ?? "", name: `${first.trim()} ${last.trim()}`.trim(), address, email, payment };
   const go = (n: number) => (e: FormEvent) => { e.preventDefault(); setError(null); setStep(n); };
   const order = () => {
-    const r = place(details);
-    if (r.ok) return setPlaced({ order: r.id ?? "", info: confirm(r.id ?? "", kind) });
+    const r = track(() => place(details));
+    if (r.ok) return setPlaced({ order: r.id ?? "", info: confirm(r.id ?? "", kind), doc: r.payable });
     setError(t(r.error, r.params));
     setStep(STEP_OF[r.error] ?? 2);
   };
@@ -165,7 +167,8 @@ export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer
         </form>
       )}
       {step === 2 && <>
-        {facts && <table className="co-table"><tbody>{facts.map(([k, v]) => <tr key={k}><td>{k}</td><td>{v}</td></tr>)}</tbody></table>}
+        {facts && <table className="co-table"><tbody>{facts.map(([k, v]) => <tr key={k}><td>{k}</td><td>{v}</td></tr>)}</tbody>
+          {total && !lines && <tfoot><tr><th>{t("checkout.total")}</th><td className="num"><b>{total}</b></td></tr></tfoot>}</table>}
         {lines && <table className="co-table">
           <thead><tr><th>{t("checkout.item")}</th><th className="num">{t("checkout.qty")}</th><th className="num">{t("checkout.price")}</th></tr></thead>
           <tbody>{lines.map((l, i) => <tr key={i}><td>{l.label}</td><td className="num">{l.qty}</td><td className="num">{l.price}</td></tr>)}</tbody>

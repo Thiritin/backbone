@@ -1,6 +1,6 @@
 // docs/design/gdd/connectivity.md: the provider panel on rented racks and provider cables between them.
 import { datacenterById, rackUnits } from "../20-world/datacenters";
-import { bill } from "../46-finance/payables";
+import { bill, type Method } from "../46-finance/payables";
 import { PANEL_JACKS, PROVIDER_CABLE, PROVIDER_PANEL } from "../10-catalog/uplinks";
 import { device, type End, type GameState } from "../50-state";
 import { freeJack, isProviderPanel, jackRoles, panelOf, rentedFloor } from "../60-infra/panels";
@@ -55,21 +55,37 @@ export function syncProviderPanels(s: GameState): string[] {
   return moved;
 }
 
-// Orders a cable from a jack on one rented rack's panel to a jack on another's in the same building. It is billed on completion.
-export function orderProviderCable(s: GameState, rackA: string, jackA: number, rackB: string, jackB: number): ActionResult {
+// The provider that lays a cable from a device in its building: the datacenter, else the exchange.
+const cableVendor = (s: GameState, deviceId: string): string => {
+  const loc = s.locations.find((l) => l.id === s.racks.find((r) => r.id === s.devices.find((d) => d.id === deviceId)?.rackId)?.locationId);
+  return loc?.dc ? datacenterById(loc.dc).name : "DE-KICKS";
+};
+
+// The error a provider cable order runs into before any payment, or null.
+export function providerCableError(s: GameState, rackA: string, jackA: number, rackB: string, jackB: number): string | null {
   const ra = s.racks.find((r) => r.id === rackA), rb = s.racks.find((r) => r.id === rackB);
-  if (!ra || !rb) return fail("error.unknownRack");
-  if (ra.id === rb.id) return fail("error.providerCableSameRack");
+  if (!ra || !rb) return "error.unknownRack";
+  if (ra.id === rb.id) return "error.providerCableSameRack";
   const la = s.locations.find((l) => l.id === ra.locationId)!, lb = s.locations.find((l) => l.id === rb.locationId)!;
-  if (!la.dc || la.dc !== lb.dc) return fail("error.otherBuilding");
-  if (la.id === lb.id && la.space !== "share") return fail("error.cableByHand");
+  if (!la.dc || la.dc !== lb.dc) return "error.otherBuilding";
+  if (la.id === lb.id && la.space !== "share") return "error.cableByHand";
   const pa = panelOf(s, ra.id), pb = panelOf(s, rb.id);
-  if (!pa || !pb) return fail("error.noProviderPanel");
+  if (!pa || !pb) return "error.noProviderPanel";
   const ok = (j: number) => Number.isInteger(j) && j >= 0 && j < PANEL_JACKS;
-  if (!ok(jackA) || !ok(jackB)) return fail("error.unknownPort");
-  if (jackRoles(s, pa.id)[jackA] !== "free" || jackRoles(s, pb.id)[jackB] !== "free") return fail("error.jackTaken");
+  if (!ok(jackA) || !ok(jackB)) return "error.unknownPort";
+  if (jackRoles(s, pa.id)[jackA] !== "free" || jackRoles(s, pb.id)[jackB] !== "free") return "error.jackTaken";
+  return null;
+}
+
+// Orders a cable from a jack on one rented rack's panel to a jack on another's in the same building. The provider confirms
+// the order at once and bills it on completion.
+export function orderProviderCable(s: GameState, rackA: string, jackA: number, rackB: string, jackB: number, method?: Method): ActionResult {
+  const no = providerCableError(s, rackA, jackA, rackB, jackB);
+  if (no) return fail(no);
+  const pa = panelOf(s, rackA)!, pb = panelOf(s, rackB)!;
   const id = `pc${s.nextId++}`;
-  s.providerCables = [...s.providerCables, { id, a: { device: pa.id, port: jackA }, b: { device: pb.id, port: jackB }, fee: PROVIDER_CABLE.fee, dueAt: s.hour + PROVIDER_CABLE.leadHours }];
+  s.providerCables = [...s.providerCables, { id, a: { device: pa.id, port: jackA }, b: { device: pb.id, port: jackB }, fee: PROVIDER_CABLE.fee, dueAt: s.hour + PROVIDER_CABLE.leadHours, method }];
+  bill(s, { supplier: "network", name: cableVendor(s, pa.id), lines: [], method: method ?? (s.bank ? "transfer" : "cash"), doc: "contract" });
   return { ok: true, id };
 }
 
@@ -87,9 +103,8 @@ export function providerCableTick(s: GameState): SimEvent[] {
   const name = (e: End) => s.devices.find((d) => d.id === e.device)?.name ?? "";
   for (const o of due) {
     s.cables = [...s.cables, { id: `cab${s.nextId++}`, a: o.a, b: o.b, kind: "provider", color: null }];
-    const loc = s.locations.find((l) => l.id === s.racks.find((r) => r.id === s.devices.find((d) => d.id === o.a.device)?.rackId)?.locationId);
     const line = { hour: s.hour, category: "rent", key: "ledger.providerCable", params: { a: name(o.a), b: name(o.b) }, amount: -o.fee };
-    bill(s, { supplier: "network", name: loc?.dc ? datacenterById(loc.dc).name : "DE-KICKS", lines: [line], method: s.bank ? "transfer" : "cash" });
+    bill(s, { supplier: "network", name: cableVendor(s, o.a.device), lines: [line], method: o.method ?? (s.bank ? "transfer" : "cash") });
   }
   return due.map((o) => ({ app: "Locations", key: "event.providerCable", params: { a: name(o.a), b: name(o.b) } }));
 }
