@@ -97,7 +97,7 @@ function Admin(props: SkinProps) {
   );
   return (
     <AdminFrame {...props} nav={nav} title={titleOf(screen) ?? label(current)}>
-      {screen.name === "home" && game.shop.setupDone !== false ? <Home game={game} go={go} /> : <AdminScreen game={game} screen={screen} go={go} dash="exec" label={label} toClient={(c) => open("client", {}, { c })} browse={props.browse} />}
+      {screen.name === "home" && game.shop.setupDone !== false ? <Home game={game} go={go} /> : <AdminScreen game={game} screen={screen} go={go} dash="exec" market="exec" label={label} toClient={(c) => open("client", {}, { c })} browse={props.browse} />}
     </AdminFrame>
   );
 }

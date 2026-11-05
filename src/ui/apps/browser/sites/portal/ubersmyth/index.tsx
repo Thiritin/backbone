@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { FileText, Inbox, KeyRound, LayoutDashboard, LayoutGrid, Mail, Package, Receipt, RefreshCw, Server, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
+import { BarChart3, FileText, Inbox, KeyRound, LayoutDashboard, LayoutGrid, Mail, Network, Package, Receipt, RefreshCw, Server, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 import { t } from "../../../../../../i18n/en";
 import { AdminScreen, titleOf } from "../shared/AdminScreen";
 import { ClientArea } from "../shared/ClientArea";
@@ -18,13 +18,14 @@ const eraOf = (major: string): Era => (["3", "4", "5"].includes(major) ? major :
 // The licence and updates screens stay reachable by address but sit in no tab.
 const GROUPS: [string, ScreenName[]][] = [
   ["overview", ["home"]], ["clients", ["clients", "orders"]], ["billing", ["invoices", "quotes"]], ["support", ["emails"]],
-  ["devices", ["servers"]], ["setup", ["settings", "products", "marketplace"]],
+  ["devices", ["servers"]], ["network", ["network"]], ["reports", ["reports"]], ["setup", ["settings", "products", "marketplace"]],
 ];
 const ICON: Partial<Record<ScreenName, LucideIcon>> = {
   home: LayoutDashboard, clients: Users, orders: Inbox, invoices: Receipt, quotes: FileText, products: Package,
-  settings: SlidersHorizontal, emails: Mail, marketplace: LayoutGrid, servers: Server, licence: KeyRound, updates: RefreshCw,
+  settings: SlidersHorizontal, emails: Mail, marketplace: LayoutGrid, servers: Server, network: Network, reports: BarChart3, licence: KeyRound, updates: RefreshCw,
 };
-const label = (n: ScreenName) => t(n === "emails" ? "ubersmyth.nav.support" : `ubersmyth.nav.${n}`);
+const label = (n: ScreenName) => n === "network" ? t("shop-admin.d.networkNav") : n === "reports" ? t("shop-admin.d.reports") : t(n === "emails" ? "ubersmyth.nav.support" : `ubersmyth.nav.${n}`);
+const groupLabel = (g: string) => (g === "network" || g === "reports" ? label(g as ScreenName) : t(`ubersmyth.group.${g}`));
 
 const Anvil = () => (
   <svg className="ubs-anvil" viewBox="0 0 24 16" aria-hidden="true">
@@ -48,14 +49,14 @@ function AdminFrame({ props, title, at, children }: { props: SkinProps; title?: 
   const group = groups.find((x) => x.links.some((l) => l.on));
   const foot = <VersionFooter game={game} variant={variant} />;
   const head = title && <h1 className="ubs-title">{title}</h1>;
-  const tabs = groups.map(({ g, links }) => <A key={g} l={{ id: g, label: t(`ubersmyth.group.${g}`), on: group?.g === g, go: links[0].go }} />);
+  const tabs = groups.map(({ g, links }) => <A key={g} l={{ id: g, label: groupLabel(g), on: group?.g === g, go: links[0].go }} />);
   const sub = group && group.links.length > 1 && <nav className="ubs-sub">{group.links.map((l) => <A key={l.id} l={l} />)}</nav>;
   if (era === "4") {
     return (
       <div className={`portal ubs ubs-admin ubs-4 ubs-on-${at ?? "bare"}`}>
         <aside className="ubs-side">
           <Mark />
-          {groups.map(({ g, links }) => <nav key={g}><h4>{t(`ubersmyth.group.${g}`)}</h4>{links.map((l) => <A key={l.id} l={l} />)}</nav>)}
+          {groups.map(({ g, links }) => <nav key={g}><h4>{groupLabel(g)}</h4>{links.map((l) => <A key={l.id} l={l} />)}</nav>)}
         </aside>
         <div className="ubs-col"><header className="ubs-top">{head}</header><main className="ubs-main">{children}</main>{foot}</div>
       </div>
@@ -116,7 +117,7 @@ function StoreFrame({ props, at, children }: { props: SkinProps; at?: "store" | 
 
 function Admin(props: SkinProps) {
   const { game, route, open, browse } = props, screen = screenOf(route.query);
-  const at: ScreenName = navOf(screen.name);
+  const at: ScreenName = screen.name === "network" || screen.name === "reports" ? screen.name : navOf(screen.name);
   const go = (s: Parameters<typeof screenArgs>[0]) => open("admin", {}, screenArgs(s));
   return (
     <AdminFrame props={props} at={at} title={titleOf(screen) ?? label(at)}>

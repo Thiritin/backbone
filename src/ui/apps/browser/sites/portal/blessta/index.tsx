@@ -29,11 +29,11 @@ export const Wordmark = () => <span className="bl-word"><Mark />{shopById("bless
 type Group = "home" | "clients" | "billing" | "packages" | "support" | "tools" | "settings";
 const GROUPS: [Group, ScreenName, ScreenName[]][] = [
   ["home", "home", []], ["clients", "clients", ["clients"]], ["billing", "invoices", ["orders", "invoices", "quotes"]], ["packages", "products", ["products", "servers"]],
-  ["support", "emails", ["emails"]], ["tools", "import", ["import", "updates"]], ["settings", "settings", ["settings", "gateways", "marketplace", "licence"]],
+  ["support", "emails", ["emails"]], ["tools", "reports", ["reports", "import", "updates"]], ["settings", "settings", ["settings", "gateways", "marketplace", "licence"]],
 ];
 const labels = (): Partial<Record<ScreenName, string>> => ({
   ...SCREEN_LABEL, home: t("blessta.dashboard"), clients: t("blessta.browseClients"), products: t("shop-store.lblPkgGroups"), quotes: t("shop-admin.quoteRequests"),
-  import: t("shop-admin.d.import"), gateways: t("shop-market.gateways"),
+  import: t("shop-admin.d.import"), reports: t("shop-admin.d.reports"), gateways: t("shop-market.gateways"),
 });
 
 function Admin(props: SkinProps) {

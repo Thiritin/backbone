@@ -22,4 +22,8 @@ export default {
   "modemBill.nav.emails": () => "E-Mail",
   "modemBill.nav.settings": () => "Einstellungen",
   "modemBill.nav.updates": () => "Updates",
+  "hostBull.nav.accounts": () => "Accounts",
+  "hostBull.nav.domains": () => "Domains",
+  "hostBull.nav.reports": () => "Berichte",
+  "modemBill.nav.quotes": () => "Angebote",
 } satisfies Dict;

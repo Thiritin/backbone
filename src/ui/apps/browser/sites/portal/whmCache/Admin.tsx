@@ -25,17 +25,19 @@ export const lookOf = (major: string): WhcLook => {
 // Every top item as the real admin lists it; one without a screen of its own opens the nearest one.
 const MENUS: [string, ScreenName, ScreenName[]][] = [
   ["shop-admin.home", "home", []],
-  ["shop-admin.menuClients", "clients", ["clients"]],
+  ["shop-admin.menuClients", "clients", ["clients", "accounts", "domains"]],
   ["shop-admin.menuOrders", "orders", ["orders"]],
   ["shop-admin.menuBilling", "invoices", ["invoices", "quotes"]],
   ["shop-whmCache.menuSupport", "emails", ["emails"]],
-  ["shop-whmCache.menuReports", "invoices", []],
+  ["shop-whmCache.menuReports", "reports", []],
   ["shop-whmCache.menuTools", "import", ["import", "updates"]],
   ["shop-admin.menuSetup", "products", ["products", "servers", "settings", "gateways", "marketplace"]],
   ["shop-admin.menuHelp", "licence", ["licence"]],
 ];
 
-const LABEL: Partial<Record<ScreenName, string>> = { gateways: t("shop-market.gateways"), import: t("shop-admin.d.import") };
+const LABEL: Partial<Record<ScreenName, string>> = {
+  gateways: t("shop-market.gateways"), import: t("shop-admin.d.import"), accounts: t("shop-admin.d.accounts"), domains: t("shop-admin.d.domains"), reports: t("shop-admin.d.reports"),
+};
 const label = (n: ScreenName) => (n === "products" ? t("shop-admin.productsServices") : LABEL[n] ?? SCREEN_LABEL[n] ?? n);
 
 const link = (on: () => void) => (e: { preventDefault: () => void }) => { e.preventDefault(); on(); };
@@ -88,7 +90,7 @@ function MenuBar({ nav, on }: { nav: Nav; on: ScreenName }) {
   return (
     <nav className="whc-menu">
       {MENUS.map(([key, to, items]) => (
-        <div key={key} className={`whc-drop${(key === "shop-admin.home" ? on === "home" : items.includes(on)) ? " on" : ""}`}>
+        <div key={key} className={`whc-drop${(items.length ? items.includes(on) : to === on) ? " on" : ""}`}>
           <a href="#" onClick={link(() => nav(to))}>{t(key)}</a>
           {items.length > 0 && <div className="whc-sub">{items.map((n) => <a key={n} href="#" onClick={link(() => nav(n))}>{label(n)}</a>)}</div>}
         </div>

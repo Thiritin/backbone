@@ -19,3 +19,11 @@
 .sk-modem .pt-wizard { background: #ffc; }
 .sk-modem .pt-tabs button { background: #ddd; border: 1px solid #000; border-bottom: 0; border-radius: 0; }
 .sk-modem .pt-badge { background: none; padding: 0; color: #000; font-weight: bold; }
+/* start page: plain headed lists with text links */
+.sk-modem .pt-dash { display: block; }
+.sk-modem .pt-dash .pt-box { margin: 0 0 16px; border: 0; background: none; }
+.sk-modem .pt-dash .pt-box-h { padding: 0 0 2px; background: none; border-bottom: 1px solid #000; font: bold 12px Verdana, Arial, sans-serif; color: #a00; }
+.sk-modem .pt-dash .pt-box-b { padding: 4px 0 0; }
+.sk-modem .pt-dash .pt-stats { display: block; }
+.sk-modem .pt-dash .pt-stats li { padding: 2px 0; border-bottom: 1px dotted #999; }
+.sk-modem .pt-dash .pt-stats a { color: #00c; text-decoration: underline; }

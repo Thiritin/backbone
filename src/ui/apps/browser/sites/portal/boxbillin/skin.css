@@ -238,3 +238,9 @@
 .bx-cube.bx-admin .bx-nav a.on { background: #23272c; color: #fff; text-shadow: none; box-shadow: inset 3px 0 0 #f08a1c; }
 .bx-cube.bx-admin .bx-nav a .bx-ico { color: #8d97a2; }
 .bx.bx-admin .pt-version { margin-top: auto; }
+/* green accents on the dark text menu */
+.bx-cube.bx-admin .bx-nav a.on { box-shadow: inset 3px 0 0 #7cbb3a; }
+.bx-cube.bx-admin .bx-nav a.on .bx-ico, .bx-slate.bx-admin .bx-nav a.on .bx-ico { color: #8fd04a; }
+.bx-slate.bx-admin .bx-nav { width: 230px; }
+.bx-slate.bx-admin .bx-nav a.on { border-left-color: #7cbb3a; }
+.bx-slate .bx-group b { color: #8fd04a; }

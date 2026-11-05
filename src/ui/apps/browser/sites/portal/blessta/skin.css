@@ -243,3 +243,17 @@
 .bl .bl-home .bl-box { background: none; border: 0; box-shadow: none; }
 .bl .bl-home .bl-boxhead { padding: 0 0 10px; font-size: 18px; font-weight: 600; color: inherit; background: none; border: 0; text-shadow: none; }
 .bl .bl-home .bl-boxbody { padding: 0; background: none; border: 0; }
+
+/* Blessta buttons are flat and square in every version */
+.bl.bl.bl .pt-btn { font-weight: 600; color: var(--ink, #2b3038); background: var(--hover, #eceff3); background-image: none; border: 1px solid var(--line, #d3d8de); border-radius: 0; box-shadow: none; text-shadow: none; filter: none; }
+.bl.bl.bl .pt-btn:hover:not(:disabled) { background: var(--line, #dfe3e8); }
+.bl.bl.bl .pt-btn.primary { color: #fff; background: var(--bl-accent); border-color: var(--bl-accent); }
+.bl.bl.bl .pt-btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--bl-accent) 85%, #000); }
+.bl.bl.bl .pt-btn:disabled { opacity: 0.5; }
+.bl .pt-wizard { border-radius: 0; }
+
+/* Dashboard: two wide columns that fill the page */
+.bl .pt-dash-blesta { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+.bl .pt-dash-blesta .pt-box { display: flex; flex-direction: column; min-height: 240px; }
+.bl .pt-dash-blesta .pt-box-b { flex: 1; }
+@media (max-width: 760px) { .bl .pt-dash-blesta { grid-template-columns: 1fr; } }

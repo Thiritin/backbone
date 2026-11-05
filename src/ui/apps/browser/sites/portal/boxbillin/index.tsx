@@ -62,7 +62,7 @@ function Admin(props: SkinProps) {
       <main className="bx-main">
         {era === "cube" && current === "home" && <div className="bx-tiles">{TILES.map(link)}</div>}
         <h1 className="bx-title">{titleOf(screen) ?? label(current)}</h1>
-        <div className="bx-panel"><AdminScreen game={game} screen={screen} dash="box" label={label} go={go} toClient={(c) => open("client", {}, { c })} browse={browse} /></div>
+        <div className="bx-panel"><AdminScreen game={game} screen={screen} dash="box" market="box" label={label} go={go} toClient={(c) => open("client", {}, { c })} browse={browse} /></div>
       </main>
     </AdminFrame>
   );

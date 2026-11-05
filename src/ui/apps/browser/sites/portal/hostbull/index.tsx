@@ -1,11 +1,13 @@
 import { t } from "../../../../../../i18n/en";
-import { yearOf } from "../../../../../../sim/00-core/time";
 import { makeSkin } from "../shared/makeSkin";
 import type { ScreenName } from "../shared/nav";
 import "./skin.css";
 
 // Stroke marks of the icon sidebar, one per menu entry.
 const PATHS: Partial<Record<ScreenName, string>> = {
+  accounts: "M2.5 2.5H13.5V13.5H2.5Z M2.5 6.5H13.5 M5 4.5H5.5",
+  domains: "M8 14A6 6 0 1 0 8 2A6 6 0 1 0 8 14 M2 8H14 M8 2C5.5 5 5.5 11 8 14 M8 2C10.5 5 10.5 11 8 14",
+  reports: "M2 14H14 M4 14V9 M8 14V3 M12 14V6",
   home: "M2 13.5H14 M3.5 13.5V8 M7 13.5V4.5 M10.5 13.5V9.5 M14 13.5V2.5",
   clients: "M6 7.5A2.5 2.5 0 1 0 6 2.5A2.5 2.5 0 1 0 6 7.5 M1.5 13.5C2 10.5 10 10.5 10.5 13.5 M11 3A2 2 0 0 1 11 7 M12.5 9.5C14 10.2 14.5 11.5 14.5 13",
   orders: "M1.5 2.5H3.5L5 10.5H12.5L14 4.5H4 M6 13.5H6.5 M11 13.5H11.5",
@@ -25,15 +27,15 @@ const icon = (n: ScreenName) => (
   </svg>
 );
 
-const SCREENS: ScreenName[] = ["home", "clients", "orders", "invoices", "quotes", "products", "servers", "emails", "settings", "marketplace", "updates"];
+const SCREENS: ScreenName[] = ["home", "clients", "accounts", "domains", "orders", "invoices", "reports", "quotes", "products", "servers", "emails", "settings", "marketplace", "updates"];
 
-// The dark navy sidebar came with HostBill 4 in 2019; the years before show the light admin.
+// The installed version sets the look: the 2019 line and later has the dark navy rail, older ones the light admin.
 export const hostBullSkin = makeSkin({
   cls: "sk-bull",
   nav: "side",
   dash: "hostbill",
   icon,
-  era: (hour) => (yearOf(hour) >= 2019 ? "late" : "mid"),
+  era: ({ major }) => (Number(major) < 2019 ? "mid" : "late"),
   screens: SCREENS,
   labels: Object.fromEntries(SCREENS.map((n) => [n, t(`hostBull.nav.${n}`)])),
   stepsFrom: 2013,

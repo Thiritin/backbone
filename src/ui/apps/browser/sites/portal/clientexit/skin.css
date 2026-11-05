@@ -263,3 +263,28 @@
 .cxe-classic .pt-empty td { color: #555; font-style: normal; background: #fff; }
 .cxe-desk .pt-empty td { color: #666; font-style: normal; background: #fafafa; }
 .cxe-flat .pt-empty td, .cxe-seven .pt-empty td { padding: 22px 8px; color: #7b8794; font-style: normal; }
+
+/* The start page: a wide left column and a narrow right column of plain tables. */
+.cxe .pt-dash-exec { grid-template-columns: minmax(0, 2fr) minmax(200px, 1fr); gap: 12px; }
+.cxe .pt-dash-exec .pt-w-income { grid-column: 1; grid-row: 1; }
+.cxe .pt-dash-exec .pt-w-activity { grid-column: 1; grid-row: 2 / span 2; }
+.cxe .pt-dash-exec .pt-w-overview { grid-column: 2; grid-row: 1 / span 2; }
+.cxe .pt-dash-exec .pt-w-todo { grid-column: 2; grid-row: 3; }
+.cxe .pt-dash-exec .pt-box-b { padding: 0; }
+.cxe .pt-dash-exec .pt-stats { gap: 0; }
+.cxe .pt-dash-exec .pt-stats li { padding: 4px 10px; border-bottom: 1px solid #e3e3e3; }
+.cxe .pt-dash-exec .pt-stats li:last-child { border-bottom: 0; }
+.cxe .pt-dash-exec .pt-none { margin: 0; padding: 6px 10px; }
+.cxe-classic .pt-dash-exec .pt-box { border-color: #808080; }
+.cxe-classic .pt-dash-exec .pt-box-h { padding: 2px 8px; font-size: 11px; color: #23395b; background: #d4d0c8; border-color: #808080; }
+.cxe-desk .pt-dash-exec .pt-box { border-color: #99bbe8; border-radius: 4px; }
+.cxe-desk .pt-dash-exec .pt-box-h { padding: 4px 10px; font-size: 11px; color: #15428b; background: linear-gradient(#e4eefa, #c7d9f0); border-color: #99bbe8; }
+.cxe-flat .pt-dash-exec .pt-box { border-color: #e1e5e9; border-radius: 2px; }
+.cxe-flat .pt-dash-exec .pt-box-h { padding: 10px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #7b8794; background: #fff; border-color: #e1e5e9; }
+.cxe-seven .pt-dash-exec .pt-box { border-color: #e7e8e4; border-radius: 12px; overflow: hidden; }
+.cxe-seven .pt-dash-exec .pt-box-h { padding: 12px 16px; font-weight: 600; background: #fff; border-color: #e7e8e4; }
+.cxe-seven .pt-dash-exec .pt-stats li { padding: 8px 16px; border-color: #f0f1ee; }
+@media (max-width: 700px) {
+  .cxe .pt-dash-exec { grid-template-columns: 1fr; }
+  .cxe .pt-dash-exec > * { grid-column: 1; grid-row: auto; }
+}
