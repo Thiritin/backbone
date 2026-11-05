@@ -68,6 +68,7 @@ export default {
   "misc1.browser.onlineBanking": (p) => `${p.name} Online-Banking`,
   "misc1.browser.notFound": () => "Nicht gefunden",
   "misc1.browser.downloads": () => "Downloads",
+  "misc1.browser.done": () => "Fertig",
   "misc1.browser.noDownloads": () => "Keine Downloads",
   "misc1.browser.showInFinder": () => "Im Finder zeigen",
   "misc1.browser.closeTab": () => "Tab schließen",
