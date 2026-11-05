@@ -1,6 +1,6 @@
 // Subscribing to a hosted desk (docs/design/plans/support-desk.md, The desk site); self-hosted desks install by hand in desk-setup.ts.
 import { deskById, deskReady, tenantHost, type DeskId } from "../10-catalog/desks";
-import { deskItem, monthlyCharge, subscriptionEntry } from "../10-catalog/store";
+import { deskItem, subscriptionEntry } from "../10-catalog/store";
 import { deskPath } from "../80-business/deskroutes";
 import { dropDesk, openDesk } from "../40-support/desk";
 import { deskRecords } from "../40-support/desk-records";
@@ -8,6 +8,7 @@ import { deliver } from "../42-mail/deliver";
 import { deliverMail } from "../42-mail/sources";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { spend } from "./purchase";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const TENANT = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
@@ -21,10 +22,9 @@ export function subscribeDesk(s: GameState, tenant: string, id: DeskId): ActionR
   const name = tenant.trim().toLowerCase();
   if (!TENANT.test(name)) return fail("error.deskTenant");
   if (s.desk?.id === id) return fail("error.deskInUse");
-  const item = deskItem(d), price = monthlyCharge(s, item);
-  if (s.cash < price) return fail("error.noCash");
-  s.cash = Math.round((s.cash - price) * 100) / 100;
-  s.ledger = [...s.ledger, subscriptionEntry(s, item)];
+  const item = deskItem(d);
+  const placed = spend(s, { supplier: "services", name: d.name, lines: [subscriptionEntry(s, item)] });
+  if (!placed.ok) return placed;
   dropDesk(s);
   openDesk(s, id, { kind: "hosted" }, name);
   const host = tenantHost(d, name);

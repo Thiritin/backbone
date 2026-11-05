@@ -1,5 +1,6 @@
 // Installation media (docs/design/software.md, section 4.1): the ISO images downloaded from the OS sites and the one USB
 // stick, written with one of them and plugged into one server at a time.
+import { canPay } from "../46-finance/payables";
 import { MS_PER_HOUR, nowHours } from "../00-core/time";
 import { archiveNamed } from "../10-catalog/archives";
 import { modelById } from "../10-catalog/hardware";
@@ -91,7 +92,7 @@ export function plugStick(s: GameState, deviceId: string, how: How | boolean = f
   if (d.hands) return fail("error.handsBusy");
   const job = handJob(s, d.label ?? d.name, loc, how, PLUG_HOURS, 1);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   s.media.stick = { ...s.media.stick, in: null };
   d.hands = { kind: "stick", doneAt: s.hour + job.commit() };
   return { ok: true };

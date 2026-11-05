@@ -9,7 +9,7 @@ import {
 import { pushLog } from "../60-infra/power";
 import { loadSaved } from "../60-infra/switches";
 import { locationOf, working } from "../60-infra/status";
-import { HARDWARE_SHOP, type Method } from "../46-finance/payables";
+import { canPay, HARDWARE_SHOP, type Method } from "../46-finance/payables";
 import type { ActionResult } from "./hardware";
 import { methodsFor, placeOrder } from "./purchase";
 
@@ -29,7 +29,7 @@ export function continueBoot(s: GameState, deviceId: string, how: How | boolean 
   }
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, CONTINUE_HOURS, 1);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   d.hands = { kind: "continue", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
@@ -50,7 +50,7 @@ export function recoverGear(s: GameState, deviceId: string, how: How | boolean =
   }
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, GEAR_RECOVER_HOURS, 1);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   d.hands = { kind: "recover", doneAt: s.hour + job.commit() };
   return { ok: true };
 }

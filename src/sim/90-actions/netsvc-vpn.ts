@@ -1,3 +1,4 @@
+import { canPay } from "../46-finance/payables";
 import { bump, isFinal } from "../40-support/tickets";
 import type { GameState } from "../50-state";
 import { CERT_FEE, certsOf, enroll, isAnyconnekt, putVpn, vpnOf, vpnServices } from "../60-infra/netsvc-vpn";
@@ -36,7 +37,7 @@ export function reissueCert(s: GameState, serviceId: string, index: number): Act
 export function renewCert(s: GameState, serviceId: string): ActionResult {
   const v = vpnServices(s).find((x) => x.id === serviceId);
   if (!v) return fail("error.unknownService");
-  if (isAnyconnekt(s, v) && s.cash < CERT_FEE) return fail("error.noCash");
+  if (isAnyconnekt(s, v) && !canPay(s, CERT_FEE)) return fail("error.noCash");
   enroll(s, v);
   return { ok: true };
 }

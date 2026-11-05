@@ -57,7 +57,7 @@ describe("buyCart", () => {
   it("pays the cart total in cash and puts everything in storage", () => {
     const s = rich(10_000);
     const first = ok(buyCart(s, CART, { kind: "cash" }, "loc1"));
-    expect(first).toBe("dev8");
+    expect(first).toBe("dev10");
     expect(s.cash).toBe(10_000 - 5060);
     expect(storageStacks(s, "loc1").map((x) => [x.model, x.ids.length])).toEqual([["g1-compute", 2], ["sw-8", 1]]);
     expect(s.ledger.map((l) => l.amount)).toEqual([-5000, -60]);
@@ -66,10 +66,10 @@ describe("buyCart", () => {
   it("leases the whole cart without paying now", () => {
     const s = rich(0);
     const { offer, first, lease: l } = lease(s);
-    expect(first).toBe("dev9");
+    expect(first).toBe("dev11");
     expect(s.cash).toBe(0);
-    expect(l).toEqual({ id: "lease8", lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: 0, paid: 0, devices: ["dev9", "dev10", "dev11"] });
-    expect(s.devices.filter((d) => d.lease === "lease8").map((d) => d.price)).toEqual([2500, 2500, 60]);
+    expect(l).toEqual({ id: "lease10", lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: 0, paid: 0, devices: ["dev11", "dev12", "dev13"] });
+    expect(s.devices.filter((d) => d.lease === "lease10").map((d) => d.price)).toEqual([2500, 2500, 60]);
   });
   it("rejects an empty cart, a bad line, too little cash and an offer that does not match the cart this month", () => {
     const s = rich(5059);
@@ -108,12 +108,12 @@ describe("lease payments", () => {
     expect(payments.every((p) => p.category === "leasing" && p.amount === -offer.monthly)).toBe(true);
     expect(payments.at(-1)!.params).toMatchObject({ paid: offer.months, months: offer.months });
     expect(s.devices.every((d) => d.lease === null)).toBe(true);
-    expect(sellDevice(s, "dev9").ok).toBe(true);
+    expect(sellDevice(s, "dev11").ok).toBe(true);
   });
   it("blocks selling leased hardware and buys the lease out for the remaining payments", () => {
     const s = rich();
     const { offer, lease: l } = lease(s);
-    expect(err(sellDevice(s, "dev9"))).toBe("error.leased");
+    expect(err(sellDevice(s, "dev11"))).toBe("error.leased");
     nextMonth(s);
     expect(s.leases[0].paid).toBe(1);
     const cash = s.cash;
@@ -125,7 +125,7 @@ describe("lease payments", () => {
     expect(s.ledger.at(-1)).toMatchObject({ category: "leasing", key: "ledger.leaseBuyout" });
     expect(s.leases).toEqual([]);
     expect(err(buyOutLease(s, l.id))).toBe("error.unknownLease");
-    ok(sellDevice(s, "dev9"));
+    ok(sellDevice(s, "dev11"));
   });
   it("saves leases and fills them for older saves", () => {
     const s = rich();

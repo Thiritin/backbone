@@ -7,7 +7,7 @@ import { ACTION_MINUTES, logActivity } from "./activity";
 import { storeItem } from "../10-catalog/store";
 import { bookFor, booksOffline, seated, sendDraft } from "../80-business/bookkeeping";
 import { bump, createTicket, MINUTES, rightTemplate, templatesOf, TOPIC_ACTIONS, type Ticket, type TicketKind } from "../40-support/tickets";
-import { bill } from "../46-finance/payables";
+import { billDue } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
@@ -149,7 +149,7 @@ export function startTraining(s: GameState, e: Employee): void {
   if (!trainer) {
     const price = staffPrice(COURSE_PRICE, yearOf(s.hour));
     const lines = [{ hour: s.hour, category: "salaries", key: "ledger.training", params: { name: e.name, task }, amount: -price }];
-    bill(s, { supplier: "services", name: COURSE_VENDOR, lines, method: s.bank ? "transfer" : "cash" });
+    billDue(s, "services", COURSE_VENDOR, lines);
   }
   e.plan = plan;
   e.training = { task, startedAt: s.hour, doneAt: s.hour + (trainer ? TRAINER_HOURS : COURSE_HOURS) };

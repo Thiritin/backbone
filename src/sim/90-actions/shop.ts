@@ -11,14 +11,14 @@ import { groupKind, groupOf, hasModule, installable, newShop, shopUpdate, shopUp
 import { SERVES } from "../10-catalog/platforms";
 import { t } from "../../i18n/en";
 import type { ActionResult } from "./hardware";
+import { spend } from "./purchase";
+import { vendorName } from "../80-business/vendor-shop";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
-function pay(s: GameState, amount: number, key: string, params: Record<string, string | number>): void {
-  if (amount <= 0) return;
-  s.cash = Math.round((s.cash - amount) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key, params, amount: -amount }];
-}
+// One vendor document for a shop system purchase; a free one books nothing.
+const pay = (s: GameState, id: string, amount: number, category: string, key: string, params: Record<string, string | number>) =>
+  spend(s, { supplier: "shopVendor", name: vendorName(id), lines: [{ hour: s.hour, category, key, params, amount: -amount }] });
 
 // docs/design/plans/shop-software.md: why the shop system cannot go into a web space of the panel host, which counts against
 // the panel's licence. version is the release whose files the installer runs, else the newest the key may install; a typed
@@ -79,8 +79,8 @@ export function renewShopUpdates(s: GameState): ActionResult {
   if (!id || !k || k.updatesUntil === undefined) return fail("error.noUpdates");
   const fee = shopUpdatesFee(s, k);
   if (fee === undefined) return fail("error.notForSale");
-  if (s.cash < fee) return fail("error.noCash");
-  payLicence(s, fee, "ledger.shopUpdates", { name: shopById(id).name });
+  const placed = pay(s, id, fee, "licenses", "ledger.shopUpdates", { name: shopById(id).name });
+  if (!placed.ok) return placed;
   updateKey(s, k.id, { updatesUntil: yearAfter(Math.max(k.updatesUntil, s.hour)) });
   return { ok: true, id: k.id };
 }
@@ -96,18 +96,12 @@ export function upgradeShop(s: GameState): ActionResult {
   if (k && !covers(k, next.version)) {
     const offer = k.covers.kind === "version" ? upgradeOffer(s, id, k.covers.major) : null;
     if (!offer) return fail("error.notForSale");
-    if (s.cash < offer.fee) return fail("error.noCash");
-    payLicence(s, offer.fee, "ledger.shopUpgrade", { name: shopById(id).name, major: next.major });
+    const placed = pay(s, id, offer.fee, "licenses", "ledger.shopUpgrade", { name: shopById(id).name, major: next.major });
+    if (!placed.ok) return placed;
     assignKey(s, issueKey(s, id, null, undefined, next.major).id, SHOP_MACHINE);
   }
   setVersion(s, next.version);
   return { ok: true, id: next.version };
-}
-
-function payLicence(s: GameState, amount: number, key: string, params: Record<string, string | number>): void {
-  if (amount <= 0) return;
-  s.cash = Math.round((s.cash - amount) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key, params, amount: -amount }];
 }
 
 export function buyModule(s: GameState, module: string): ActionResult {
@@ -117,8 +111,8 @@ export function buyModule(s: GameState, module: string): ActionResult {
   if (!v) return fail("error.needsShop");
   if (v.extra === null || v.lacks?.includes(module)) return fail("error.moduleNotSold");
   const price = v.extra;
-  if (price > 0 && s.cash < price) return fail("error.noCash");
-  pay(s, price, "ledger.shopModule", { module });
+  const placed = pay(s, v.id, price, "marketing", "ledger.shopModule", { module });
+  if (!placed.ok) return placed;
   s.shop = { ...s.shop, modules: { ...s.shop.modules, [module]: s.hour + (v.extraHours ?? 0) } };
   return { ok: true, id: module };
 }

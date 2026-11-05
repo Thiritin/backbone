@@ -9,7 +9,8 @@ export function fillPearMail(s: GameState, saved: Partial<PearMailState> | undef
   if (saved) { const fresh = newPearMail(); s.pearMail = { ...fresh, ...saved, prefs: { ...fresh.prefs, ...saved.prefs } }; return; }
   const a = s.mail.accounts.find((x) => x.id === s.mail.primary), now = nowMinutes(s);
   s.pearMail = { ...newPearMail(), welcomed: true };
-  if (!a) return;
+  // A registered save gets its account from provisionStarterMail, which checks it at once.
+  if (!a || s.registration) return;
   const address = `${a.local}@${a.domain}`;
   s.pearMail.accounts = [clientAccount("cl0", {
     accountId: a.id, address, description: address, fullName: a.title, password: a.password, protocol: capsOf(s, a).imap ? "imap" : "pop",

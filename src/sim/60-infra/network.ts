@@ -1,5 +1,5 @@
 // Traffic, exits, routing, billing, peering and DDoS per zone. Values come from docs/design/economy/traffic-and-bandwidth.md (Traffic and bandwidth).
-import { lineFactor } from "../46-finance/payables";
+import { billDue, lineFactor, SUPPLIER_NAMES } from "../46-finance/payables";
 import { hashRng, rand } from "../00-core/rng";
 import { isMonthStart, yearOf } from "../00-core/time";
 import {
@@ -360,8 +360,7 @@ export function attacks(s: GameState, events: SimEvent[]) {
     events.push({ app: "Locations", key: "event.ddos", params: { service: v.label, location: loc.name, gbit: round2(mbps / 1000) } });
     if (s.network.protection === "onDemand") {
       const fee = PROTECTIONS.onDemand.perIncident;
-      s.cash = cents(s.cash - fee);
-      s.ledger = [...s.ledger, { hour: s.hour, category: "transit", key: "ledger.ddosIncident", params: { name: PROTECTIONS.onDemand.name, service: v.label }, amount: -fee }];
+      billDue(s, "network", PROTECTIONS.onDemand.name, [{ hour: s.hour, category: "transit", key: "ledger.ddosIncident", params: { name: PROTECTIONS.onDemand.name, service: v.label }, amount: -fee }]);
     }
   });
   s.network = { ...s.network, attacks: list };
@@ -428,8 +427,7 @@ export function networkTick(s: GameState): SimEvent[] {
   if (isMonthStart(s.hour)) {
     const bills = networkBills(s);
     const total = cents(-bills.reduce((sum, b) => sum + b.amount, 0));
-    s.cash = cents(s.cash - total);
-    s.ledger = [...s.ledger, ...bills];
+    if (bills.length) billDue(s, "network", SUPPLIER_NAMES.network!, bills);
     s.network = { ...s.network, dcTb: {}, goodwill: s.network.goodwill * (1 - GOODWILL_DECAY) };
     if (total > 0) events.push({ app: "Books", key: "event.networkBills", params: { total } });
   }
