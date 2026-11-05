@@ -4,6 +4,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-05
 - Release posts show only the version number and the list of changes, without a date or the game name in the title.
+- The Terminal opened from a card skips its scripted intro at once, the boot menu step outlines the USB entry and its keys, and the shop cart keeps its pay button in view.
+- The server card now also has you cable the server to the router, the boot step points to the crash cart and its F11 key, a closed step strip can be reopened, and the Early Access notice appears in the room at the start.
+- The room shows the next step in a strip with an Open button, the TAN list marks the code to use next, the plug and mount steps outline the USB port and the free rack unit, and the shop list no longer overlaps beside the cart.
+- Each Getting started card now opens its exact next step: the shop on the sorted server list, the domain search, the website builder, the Debiant download, and the rack in the room, with a counter on multi-part cards.
+- The Debiant boot menu offers an automatic installation, the accounting vendor page installs the download with one button, the bank offers the TAN list at the TAN field, the Terminal types the login for you, and internet lines show speeds, prices and connection dates.
 - Right-clicking a device in a rack now opens a menu with the console, ports, parts, burn-in, second power supply, rename, removal and sale; it also opens with Shift+F10, the Menu key or a long touch press, and power and maintenance planning are left to the front buttons and the desktop.
 - Program installers and the accounting software now show in the browser download indicator and list while they download, like operating system images do.
 - Shop admin pages use their own buttons and tabs instead of the desktop ones, the start page shows order, ticket, invoice and income widgets, and there are new Accounts, Domains, Reports and Network pages.

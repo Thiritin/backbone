@@ -115,6 +115,7 @@ export default {
 
   "shop.any": () => "Any",
   "shop.sortBy": () => "Sort",
+  "shop.filters": () => "Filter",
   "shop.formFactor": () => "Form factor",
   "shop.minCores": () => "Min cores",
   "shop.minRam": () => "Min RAM",

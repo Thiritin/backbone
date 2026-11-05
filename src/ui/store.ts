@@ -156,6 +156,9 @@ export interface Store {
   // The location whose letterbox the world walks to next.
   seek: string | null;
   setSeek: (id: string | null) => void;
+  // The room's next-step strip is shown; closing it keeps it closed over a reload.
+  guideStrip: boolean;
+  setGuideStrip: (on: boolean) => void;
 }
 
 export type Surface = "desktop" | "world";
@@ -166,7 +169,7 @@ export const sameLine = (a: CartLine, b: CartLine): boolean =>
   a.model === b.model && a.brand === b.brand && a.vendor === b.vendor && JSON.stringify([a.extras ?? [], a.part ?? null]) === JSON.stringify([b.extras ?? [], b.part ?? null]);
 
 let bannerId = 0, focusId = 0;
-const fresh = () => ({ speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null, alertQueue: [] as Banner[], alertNow: false, surface: "world" as Surface });
+const fresh = () => ({ guideStrip: true, speed: 0 as Speed, windows: [], banners: [], history: [], unseen: 0, cart: [], openLoc: null, news: null, explain: null, alert: null, alertQueue: [] as Banner[], alertNow: false, surface: "world" as Surface });
 const topZ = (ws: Win[]) => ws.reduce((m, w) => Math.max(m, w.z), 0);
 
 function loadGame(): { game: GameState; loaded: boolean } {
@@ -311,6 +314,8 @@ export const useStore = create<Store>((set, get) => ({
   setSurface: (surface) => set({ surface }),
   seek: null,
   setSeek: (seek) => set({ seek }),
+  guideStrip: readSession<boolean>("strip", true),
+  setGuideStrip: (guideStrip) => set({ guideStrip }),
 
   // Steps game minutes, so hours may be fractional; the hourly tick runs on every sixtieth.
   advance: (hours) => {
@@ -394,18 +399,20 @@ export const useStore = create<Store>((set, get) => ({
     const sw = globalThis.innerWidth ?? Infinity, sh = globalThis.innerHeight ?? Infinity;
     // The guide card docks at the right edge below the exit icon; other windows keep clear of it while it is open.
     const guide = app === "Getting started", card = ws.some((x) => x.app === "Getting started" && !x.minimized) ? GUIDE_W + 32 : 16;
-    const x = guide ? Math.max(136, sw - size.w - 16) : 136 + n * 32, y = guide ? 128 : 64 + n * 28;
+    // With the guide card open every window opens at the same corner so it gets the full width left of the card.
+    const at = card > 16 ? 0 : n, x = guide ? Math.max(136, sw - size.w - 16) : app === "Shop" && card > 16 ? 24 : 136 + at * 32, y = guide ? 128 : 64 + at * 28;
     // Leaves room for the dock on small screens.
     const w = Math.min(size.w, sw - x - (guide ? 16 : card)), h = Math.min(size.h, sh - y - 110);
     uiSound("open");
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 320), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, app === "Shop" ? 480 : 320), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openConsole: (deviceId) => {
     const ws = get().windows, open = ws.find((w) => w.console === deviceId);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
     const n = ws.length % 5, x = 140 + n * 32, y = 80 + n * 28;
+    const sw = globalThis.innerWidth ?? Infinity, sh = globalThis.innerHeight ?? Infinity, card = ws.some((w) => w.app === "Getting started" && !w.minimized) ? GUIDE_W + 32 : 16;
     uiSound("open");
-    set({ windows: [...ws, { id: `console-${deviceId}-${Date.now()}`, app: "Console", console: deviceId, x, y, w: 720, h: 620, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
+    set({ windows: [...ws, { id: `console-${deviceId}-${Date.now()}`, app: "Console", console: deviceId, x, y, w: Math.max(Math.min(720, sw - x - card), 480), h: Math.max(Math.min(620, sh - y - 110), 360), z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   openDoc: (doc) => {
     const ws = get().windows, d = get().game.docs.find((x) => x.id === doc);
@@ -415,8 +422,12 @@ export const useStore = create<Store>((set, get) => ({
     if (d.kind === "cert") return;
     const open = ws.find((w) => w.doc === doc);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
-    const n = ws.length % 8;
-    set({ windows: [...ws, { id: `${doc}-${Date.now()}`, app: "Notes", doc, x: 160 + n * 32, y: 84 + n * 28, w: 560, h: 420, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
+    const n = ws.length % 8, sw = globalThis.innerWidth ?? 1280, sh = globalThis.innerHeight ?? 720;
+    // With the guide card open a document docks under it, so it never covers the page the player is reading it for.
+    const dock = ws.some((w) => w.app === "Getting started" && !w.minimized);
+    const box = dock ? { x: sw - GUIDE_W - 16, y: 392, w: GUIDE_W, h: Math.max(180, sh - 392 - 100) } : { x: 160 + n * 32, y: 84 + n * 28, w: 560, h: 420 };
+    // An unfolded step list folds away so the document is not covered.
+    set({ windows: [...(dock ? ws.map((w) => (w.app === "Getting started" ? { ...w, h: 250 } : w)) : ws), { id: `${doc}-${Date.now()}`, app: "Notes", doc, ...box, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   openCompose: (draft) => {
     const ws = get().windows, open = ws.find((w) => w.draft === draft);
@@ -521,6 +532,7 @@ export const useStore = create<Store>((set, get) => ({
 useStore.subscribe((s, prev) => {
   if (s.windows !== prev.windows) writeSession("windows", s.windows.map(({ focus: _, ...w }) => w));
   if (s.speed !== prev.speed) writeSession("speed", s.speed);
+  if (s.guideStrip !== prev.guideStrip) writeSession("strip", s.guideStrip);
 });
 
 export const loadedFromSave = initial.loaded;

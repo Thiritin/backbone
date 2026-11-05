@@ -12,6 +12,7 @@ import { mailSiteUrl } from "../../sim/10-catalog/mail-consumer";
 import { HOSTTOAST_HOST } from "../../sim/10-catalog/hosttoast";
 import { FLYER_HOST } from "../../sim/10-catalog/flyers";
 import type { GameState } from "../../sim/50-state";
+import { SITES } from "../../sim/10-catalog/sites";
 import { nextGoal, waiting, type Card, type Goal } from "../../sim/checklist";
 
 export type StepId = Goal;
@@ -49,7 +50,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     }
     case "payBill": {
       const box = inLetterbox(s)[0];
-      return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post", focus: box && { kind: "letterbox", id: box.box! } };
+      return { title: t("guide.step.payBill"), text: t("apps.guide.step.payBill"), app: "Post", focus: box ? { kind: "letterbox", id: box.box! } : { kind: "bill", id: "" } };
     }
     case "payBills": {
       const late = s.payables.find((p) => overdue(s, p) && p.sent < p.amount - 0.005) ?? s.payables.find((p) => p.paidAt === null);
@@ -65,10 +66,12 @@ export function stepOf(s: GameState, id: StepId): Step {
       const router = s.devices.find((d) => isOfficeRouter(modelById(d.model)) && ((d.store ?? locationOf(s, d)?.id) === home?.id));
       return { title: t("guide.step.mountRouter"), text: t("apps.guide.step.mountRouter"), app: "Locations", focus: router ? { kind: "device", id: router.id } : home && { kind: "location", id: home.id } };
     }
+    case "serverLinked":
+      return { title: t("guide.step.serverLinked"), text: t("apps.guide.step.serverLinked"), app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "downloadIso":
-      return { title: t("guide.step.downloadIso"), text: t("apps.guide.step.downloadIso"), app: "Browser", focus: { kind: "url", id: HOME_URL } };
+      return { title: t("guide.step.downloadIso"), text: t("apps.guide.step.downloadIso"), app: "Browser", focus: { kind: "url", id: `${displayHost(SITES.lunix.host)}/download` } };
     case "writeStick":
-      return { title: t("guide.step.writeStick"), text: t("apps.guide.step.writeStick"), app: "Applications" };
+      return { title: t("guide.step.writeStick"), text: t("apps.guide.step.writeStick"), app: "Applications", focus: { kind: "folder", id: "downloads" } };
     case "plugStick":
       return { title: t("guide.step.plugStick"), text: t("apps.guide.step.plugStick"), app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "bootUsb":
@@ -85,16 +88,16 @@ export function stepOf(s: GameState, id: StepId): Step {
         title: t("guide.step.domain"),
         text: t("apps.guide.step.domain", { partner }),
         app: "Browser",
-        focus: { kind: "url", id: s.registrar ? registrarUrl(s) : `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}` },
+        focus: { kind: "url", id: registrarUrl(s) },
       };
     }
     case "website":
       // Marketing is installed from the software shelf first.
       return s.installed.includes("Marketing")
-        ? { title: t("guide.step.website"), text: t("apps.guide.step.website"), app: "Marketing", focus: { kind: "page", id: "channels" } }
+        ? { title: t("guide.step.website"), text: t("apps.guide.step.website"), app: "Marketing", focus: { kind: "page", id: "website" } }
         : { title: t("guide.step.website"), text: t("apps.guide.step.website"), app: "Shop", focus: { kind: "software", id: "Marketing" } };
     case "launch":
-      return { title: t("guide.step.launch"), text: t("apps.guide.step.launch"), app: "Marketing", focus: { kind: "page", id: "channels" } };
+      return { title: t("guide.step.launch"), text: t("apps.guide.step.launch"), app: "Marketing", focus: { kind: "page", id: "website" } };
     case "email":
       return { title: t("guide.step.email"), text: t("apps.guide.step.email"), app: "Browser", focus: { kind: "url", id: mailSiteUrl("ionose") } };
     case "hosttoast":
@@ -108,7 +111,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "orderAccess":
       return { title: t(`guide.step.${id}`), text: t(`apps.guide.step.${id}`, { app: mailApp }), ...orderAt(s, mailWin) };
     case "orderDomain":
-      return { title: t("guide.step.orderDomain"), text: t("apps.guide.step.orderDomain", { app: mailApp }), app: "Browser", focus: { kind: "url", id: s.registrar ? registrarUrl(s) : `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}` } };
+      return { title: t("guide.step.orderDomain"), text: t("apps.guide.step.orderDomain", { app: mailApp }), app: "Browser", focus: { kind: "url", id: registrarUrl(s) } };
     case "sendInvoice":
       return { title: t("guide.step.sendInvoice"), text: t("apps.guide.step.sendInvoice"), app: "Books" };
     case "loan":
@@ -127,8 +130,10 @@ export function stepOf(s: GameState, id: StepId): Step {
 }
 
 // A card's own title and sentence; later-chapter cards are single goals and use the goal's text.
-export function cardOf(s: GameState, c: Card): { title: string; text: string; step: Step } {
+export function cardOf(s: GameState, c: Card, bootMenu = false): { title: string; text: string; step: Step } {
   const step = stepOf(s, nextGoal(s, c));
-  if (c.chapter === 1) return { title: t(`guide.card.${c.id}`), text: t(`guide.card.${c.id}${waiting(s, c.id) ? ".wait" : ".text"}`), step };
+  if (bootMenu && nextGoal(s, c) === "bootUsb") step.text = t("apps.guide.step.bootMenu");
+  // A card of several goals shows the sentence of the goal that is next.
+  if (c.chapter === 1) return { title: t(`guide.card.${c.id}`), text: waiting(s, c.id) ? t(`guide.card.${c.id}.wait`) : c.goals.length > 1 ? step.text : t(`guide.card.${c.id}.text`), step };
   return { title: step.title, text: step.text, step };
 }

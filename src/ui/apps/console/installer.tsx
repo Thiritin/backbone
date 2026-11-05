@@ -134,6 +134,14 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
     if (r.ok) setStep("boot");
     else if (["error.noAutoconf", "error.noMirror", "error.noInterfaces"].includes(r.error)) go("fetch")();
   };
+  // The boot menu's automated install: DHCP and the default hostname, then straight to the install.
+  const auto = () => {
+    const bad = badHostname(game, m.id, host);
+    if (bad) return tg.setNote(t(bad));
+    const r = tg.install("lunix", { mode: "dhcp" }, undefined, host);
+    if (r.ok) setStep("boot");
+    else if (["error.noAutoconf", "error.noMirror", "error.noInterfaces"].includes(r.error)) go("fetch")();
+  };
   const typeField = (key: string) => {
     if (!FIELDS.includes(step as Field)) return false;
     const f = step as Field;
@@ -145,6 +153,7 @@ function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
   const pages: Record<LunixStep, Page> = {
     boot: { title: t("console.debBoot", { version }), rows: [
       { label: t("console.install"), run: go("language") },
+      { label: t("console.autoInstall"), run: auto },
       { label: t("console.eraseDisk"), dim: tg.empty, run: tg.empty ? () => tg.setNote(t("error.noSoftware")) : go("erase") },
       { label: isDevice(m) ? t("console.reboot") : t("console.ejectReboot"), run: tg.leave },
     ] },

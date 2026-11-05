@@ -14,6 +14,7 @@ import { IMAGE_MB, stickHome, writeStick } from "../../sim/90-actions/media";
 import { createPortal } from "react-dom";
 import { menuOn, type MenuEntry } from "../desktop/ContextMenu";
 import { uiSound, useFocus, useStore } from "../store";
+import { cardBoard, nextGoal } from "../../sim/checklist";
 import { isoFile } from "./browser/sites/software/SoftwareSite";
 import { t } from "../../i18n/en";
 import { APPS, appFor, appTitle, listed } from "./registry";
@@ -76,6 +77,8 @@ export function ApplicationsApp() {
   const [copy, setCopy] = useState<OsImage | null>(null);
   useFocus("Applications", (f) => setFolder(f.id as Folder));
   const books = game.books.download;
+  // The writing step outlines the ISO to copy and the stick to copy it to.
+  const writing = (() => { const c = cardBoard(game).current; return !!c && nextGoal(game, c) === "writeStick"; })();
   const home = stickHome(game), at = home ? folder : folder === "usb" ? "apps" : folder;
   const write = (id: OsImage) => { if (!copy) setCopy(id); };
   const target = (id: Folder) => {
@@ -86,7 +89,7 @@ export function ApplicationsApp() {
     return {};
   };
   const side = (id: Folder, Icon: typeof Monitor, label: string) => (
-    <button className={`side-item${at === id ? " active" : ""}${over === id ? " drop" : ""}`} {...target(id)} aria-pressed={at === id} onClick={() => setFolder(id)}><Icon aria-hidden />{label}</button>
+    <button className={`side-item${at === id ? " active" : ""}${over === id ? " drop" : ""}`} data-guide={writing && id === "usb" ? "" : undefined} {...target(id)} aria-pressed={at === id} onClick={() => setFolder(id)}><Icon aria-hidden />{label}</button>
   );
 
   return (
@@ -124,7 +127,7 @@ export function ApplicationsApp() {
           );
         })}
         {at === "downloads" && game.media.images.map((id) => (
-          <Item key={id} label={isoFile(id)} menu={() => [{ label: t("apps.finder.writeToUsb"), disabled: !home, run: () => write(id) }]}
+          <Item key={id} guide={writing} label={isoFile(id)} open={() => home && write(id)} menu={() => [{ label: t("apps.finder.writeToUsb"), disabled: !home, run: () => write(id) }]}
             drag={(e) => { e.dataTransfer.setData(ISO, id); e.dataTransfer.effectAllowed = "copy"; }}>
             <span className="di-page"><FILE_ICON.iso /></span>
           </Item>
@@ -136,7 +139,7 @@ export function ApplicationsApp() {
           ...PROGRAMS.filter((p) => game.installers[p.id] && !game.installed.includes(p.id) && game.hour >= game.installers[p.id].readyAt).map((p) => ({ id: p.id, file: installerFile(p, yearOf(game.hour)) })),
           ...(books && game.hour >= books.readyAt && game.books.vendor !== books.vendor ? [{ id: books.vendor, file: `${booksVendor(books.vendor)?.program}.dmg` }] : []),
         ].map(({ id, file }) => (
-          <Item key={id} label={file} menu={() => [{ label: t("apps.finder.moveToApplications"), run: () => install(id) }]}
+          <Item key={id} label={file} open={() => install(id)} menu={() => [{ label: t("apps.finder.moveToApplications"), run: () => install(id) }]}
             drag={(e) => { e.dataTransfer.setData(INSTALLER, id); e.dataTransfer.effectAllowed = "copy"; }}>
             <span className="di-page"><FILE_ICON.installer /></span>
           </Item>
@@ -176,9 +179,9 @@ function Copying({ file, size, onStop, onDone }: { file: string; size: number; o
   );
 }
 
-function Item({ label, open, menu, drag, children }: { label: string; open?: () => void; menu?: () => MenuEntry[]; drag?: (e: DragEvent) => void; children: ReactNode }) {
+function Item({ label, open, menu, drag, guide, children }: { label: string; guide?: boolean; open?: () => void; menu?: () => MenuEntry[]; drag?: (e: DragEvent) => void; children: ReactNode }) {
   return (
-    <button className="app-grid-item" draggable={!!drag} onDragStart={drag} onDoubleClick={open} onKeyDown={(e) => e.key === "Enter" && open?.()} onContextMenu={menu && menuOn(menu)}>
+    <button className="app-grid-item" data-guide={guide ? "" : undefined} draggable={!!drag} onDragStart={drag} onDoubleClick={open} onKeyDown={(e) => e.key === "Enter" && open?.()} onContextMenu={menu && menuOn(menu)}>
       {children}
       <span>{label}</span>
     </button>

@@ -34,6 +34,7 @@ export default {
   "books-vendors.download": () => "Download",
   "books-vendors.downloading": (p) => `Downloading ${p.pct}%`,
   "books-vendors.inDownloads": () => "In Downloads",
+  "books-vendors.install": () => "Install",
   "books-vendors.supportEnded": (p) => `End of support: ${p.year}`,
   "ticket.mail.booksFeature.subject": (p) => `${p.program}: ${t(`books-editions.feature.${p.feature}`)}`,
   "ticket.mail.booksFeature.text": (p) => `${p.program} now includes ${t(`books-editions.feature.${p.feature}`)}.${Number(p.desktop) ? " It comes with your next yearly update." : ""}`,
