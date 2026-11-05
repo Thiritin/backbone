@@ -112,14 +112,14 @@ describe("power actions", () => {
 });
 
 describe("hung management controllers", () => {
-  it("refuse IPMI until a reset on site, which takes a quarter of an hour in the basement", () => {
+  it("refuse IPMI until a reset on site, which takes no time in the basement", () => {
     const s = game();
     expect(resetBmc(s, "dev3")).toEqual({ ok: false, error: "error.bmcFine" });
     dev3(s).bmcHung = true;
     const cash = s.cash;
     expect(resetBmc(s, "dev3").ok).toBe(true);
     expect(s.cash).toBe(cash);
-    expect(dev3(s).hands!.doneAt).toBeCloseTo(s.hour + 0.25, 9);
+    expect(dev3(s).hands!.doneAt).toBeCloseTo(s.hour, 9);
     expect(resetBmc(s, "dev3")).toEqual({ ok: false, error: "error.handsBusy" });
     tick(s);
     expect(dev3(s).bmcHung).toBe(false);

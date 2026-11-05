@@ -6,11 +6,12 @@ import { visibleCandidates, type Employee } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
 import { figuresIn, lobbySeats, seating } from "../src/sim/60-infra/figures";
 import { failComponents, tick, tickMinute } from "../src/sim/88-tick/tick";
-import { addLocation, buyRack, mountDevice, type ActionResult } from "../src/sim/90-actions/hardware";
+import { addLocation, buyRack, connect, disconnect, mountDevice, setPlugged, type ActionResult } from "../src/sim/90-actions/hardware";
 import { handsJobs, JOB_HOURS } from "../src/sim/90-actions/presence";
 import { setOnCall } from "../src/sim/90-actions/staff";
 import { cancelWorkOrder, doneAt, frontOf, orderWork, seatOf, workMinutes } from "../src/sim/90-actions/work-orders";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { plugStick } from "../src/sim/90-actions/media";
 import { buyDevice, freeFloor, hire, newGame, settle, withServer } from "./fixtures";
 import { ownHall, at } from "./own-dc-hall";
 
@@ -33,11 +34,24 @@ function site() {
   return { s, loc, rack, units: (n: number) => Array.from({ length: n }, () => ok(buyDevice(s, "sw-8", "Sysko", 1, loc))) };
 }
 
+// The player's queued hand work as an old save or an away order holds it.
+const queue = (s: GameState, id: string, rack: string, slot: number): ActionResult =>
+  orderWork(s, "player", s.player.at, { rackId: rack }, { name: "mountDevice", args: [id, rack, slot] }, { kind: "mount", workMin: 30, deviceId: id });
+
 describe("work orders: schedule", () => {
-  it("starts a player mount at once, arrives a minute later and mounts it 30 minutes after that", () => {
+  it("lands the player's own hands at once with no order", () => {
+    const { s, rack, units } = site();
+    const [id] = units(1), at = s.hour * 60 + s.minute;
+    ok(mountDevice(s, id, rack, 10, "self"));
+    expect(dev(s, id)).toMatchObject({ rackId: rack, slot: 10 });
+    expect(s.orders).toEqual([]);
+    expect(s.hour * 60 + s.minute).toBe(at);
+  });
+
+  it("starts a queued player mount at once, arrives a minute later and mounts it 30 minutes after that", () => {
     const { s, loc, rack, units } = site();
     const [id] = units(1), now = s.hour * 60;
-    ok(mountDevice(s, id, rack, 10));
+    ok(queue(s, id, rack, 10));
     const [o] = s.orders, tile = rackTiles(s.locations.find((l) => l.id === loc)!, s.racks)[rack];
     const d = Math.abs(seatOf(s, loc, "player")!.x - frontOf(tile).x) + Math.abs(seatOf(s, loc, "player")!.y - frontOf(tile).y);
     expect(o).toMatchObject({ worker: "player", kind: "mount", startAt: now, walkMin: 1 + Math.floor(d / 30), workMin: 30 });
@@ -52,9 +66,30 @@ describe("work orders: schedule", () => {
   it("runs two orders one after the other and refuses a sixth", () => {
     const { s, rack, units } = site();
     const ids = units(6);
-    ids.slice(0, 5).forEach((id, i) => ok(mountDevice(s, id, rack, 10 + i)));
+    ids.slice(0, 5).forEach((id, i) => ok(queue(s, id, rack, 10 + i)));
     expect(s.orders.map((o) => o.startAt)).toEqual([0, 1, 2, 3, 4].map((i) => s.orders[0].startAt! + i * (31)));
-    expect(err(mountDevice(s, ids[5], rack, 20))).toBe("error.queueFull");
+    expect(err(queue(s, ids[5], rack, 20))).toBe("error.queueFull");
+  });
+});
+
+describe("work orders: basement", () => {
+  it("racks, cables, plugs a cord and plugs the stick within one action each, no game minute passing", () => {
+    const s: GameState = { ...withServer(newGame(1)), cash: 1_000_000 };
+    const at = s.hour * 60 + s.minute, id = ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
+    ok(mountDevice(s, id, "rack2", 20));
+    expect(dev(s, id).rackId).toBe("rack2");
+    const cable = s.cables[0];
+    ok(disconnect(s, cable.id));
+    expect(s.cables.find((c) => c.id === cable.id)).toBeUndefined();
+    ok(connect(s, cable.a, cable.b));
+    const psu = dev(s, "dev3").components.find((c) => c.kind === "psu")!;
+    ok(setPlugged(s, "dev3", psu.id, false));
+    ok(setPlugged(s, "dev3", psu.id, true));
+    expect(dev(s, "dev3").components.find((c) => c.id === psu.id)!.plugged).toBe(true);
+    ok(plugStick(s, "dev3"));
+    expect(s.media.stick.in).toBe("dev3");
+    expect(s.orders).toEqual([]);
+    expect(s.hour * 60 + s.minute).toBe(at);
   });
 });
 
@@ -62,9 +97,9 @@ describe("work orders: cancel", () => {
   it("leaves a cancelled queued device unmounted and moves the queue up", () => {
     const { s, rack, units } = site();
     const [a, b, c] = units(3);
-    ok(mountDevice(s, a, rack, 10));
-    const queued = ok(mountDevice(s, b, rack, 11));
-    ok(mountDevice(s, c, rack, 12));
+    ok(queue(s, a, rack, 10));
+    const queued = ok(queue(s, b, rack, 11));
+    ok(queue(s, c, rack, 12));
     ok(cancelWorkOrder(s, queued));
     expect(s.orders[1].startAt).toBe(doneAt(s.orders[0]));
     settle(s);
@@ -73,7 +108,7 @@ describe("work orders: cancel", () => {
 
   it("wastes the time of the running order and does nothing", () => {
     const { s, rack, units } = site();
-    const [a] = units(1), id = ok(mountDevice(s, a, rack, 10));
+    const [a] = units(1), id = ok(queue(s, a, rack, 10));
     steps(s, 10);
     ok(cancelWorkOrder(s, id));
     settle(s);
@@ -129,7 +164,7 @@ describe("work orders: figures", () => {
   it("shows a worker walking, working with progress, walking back and gone", () => {
     const { s, loc, rack, units } = site();
     const [id] = units(1);
-    ok(mountDevice(s, id, rack, 10));
+    ok(queue(s, id, rack, 10));
     const [o] = s.orders, start = o.startAt!;
     const pose = (m: number) => figuresIn(s, loc, m).find((f) => f.id === "player");
     expect(pose(start - 1)).toBeUndefined();

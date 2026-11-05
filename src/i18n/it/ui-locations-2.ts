@@ -350,7 +350,6 @@ export default {
   "locations-2.openCustomer": () => "Apri cliente",
   "locations-2.handsOwn": () => "Di persona",
   "locations-2.handsRemote": (p) => `Remote hands ${p.cost} · ${p.time}`,
-  "locations-2.selfOnArrival": () => "Di persona · all'arrivo",
   "locations-2.handJobs": () => "Interventi in sede",
   "locations-2.handsJobs": () => "Remote hands",
   "locations-2.job.mountDevice": () => "Montare",
