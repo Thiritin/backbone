@@ -20,6 +20,8 @@ export const mailHooks = {
   arrive: (_s: GameState, _a: MailAccount, _m: Message): void => {},
   // Postfixit installs Dovecoat and Mailpig bundles it.
   selfHostCaps: (_s: GameState): SelfHostCaps => ({ imap: true, pop: true, sieve: false, junkBonus: 0 }),
+  // A panel mailbox takes the mail addressed to it; the web space code sets this.
+  panelInbox: (_s: GameState, _m: Message): boolean => false,
   // The tenant that receives the company domain's mail: the live tenant behind the best MX host that resolves. A name in
   // the company zone without an address is skipped as senders skip it; the own server is reached by the address its host
   // name resolves to, a provider by its MX host. A host that holds no tenant for the domain rejects the mail, and senders

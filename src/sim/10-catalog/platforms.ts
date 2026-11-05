@@ -68,7 +68,7 @@ const L: ServerOsId[] = ["lunix"], LW: ServerOsId[] = ["lunix", "windoors"], W: 
 const WEB = [80, 443];
 const repo = (url: string, file: string) => `echo "deb ${url}" > /etc/apt/sources.list.d/${file}.list`;
 const ON_MACHINE: Record<string, Omit<Pick<Software, MachineFields>, "site">> = {
-  cpanic: { os: L, ports: [...WEB, 2082, 2083, 2086, 2087], install: script("cd /home && curl -o latest -L https://securedownloads.cpanic.net/latest && sh latest") },
+  cpanic: { os: L, ports: [...WEB, 2082, 2083, 2086, 2087, 2096], install: script("cd /home && curl -o latest -L https://securedownloads.cpanic.net/latest && sh latest") },
   pleskit: { os: LW, ports: [...WEB, 8443, 8880], install: script("curl -O https://autoinstall.pleskit.com/pleskit-installer && sh pleskit-installer") },
   directadmen: { os: L, ports: [...WEB, 2222], install: script("wget -O setup.sh https://download.directadmen.com/setup.sh && sh setup.sh auto") },
   freepanel: { os: L, ports: [...WEB, 10000], install: apt("freepanel", "apt-get update") },

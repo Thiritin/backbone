@@ -68,6 +68,7 @@ import { LookoutSite, lookoutTitle } from "./sites/mail/lookout/LookoutSite";
 import { HostToastSite } from "./sites/hosttoast/HostToastSite";
 import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
+import { PanelWebmail } from "./consoles/squarecube/PanelWebmail";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
 import { ParkedPage } from "./sites/registrars/Parked";
@@ -99,6 +100,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "company": return game.company.name;
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
     case "webspace": return siteTitle(p.body) || r.host;
+    case "panelMail": return "Squarecube Webmail";
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "provider": return dcProvider(p.id).name;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
@@ -203,6 +205,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
     : p.id === "lookout" || p.id === "lookout-admin" ? <LookoutSite game={game} host={r.host} path={r.path} go={go} />
     : p.id === "goggle" ? <GoggleSite game={game} host={r.host} path={r.path} go={go} />
     : p.id === "gmial" ? <Gmial game={game} path={r.path} go={go} /> : <GmixSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "panelMail") body = <PanelWebmail game={game} domain={p.domain} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
