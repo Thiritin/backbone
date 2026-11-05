@@ -151,3 +151,16 @@ describe("GMix start page with a stored login", () => {
     expect(went.at(-1)).toBe("www.gmix.net/mail/inbox");
   });
 });
+
+describe("GMix logout", () => {
+  it("keeps the start page after an explicit logout", () => {
+    const s = startGame(1);
+    s.logins = { [`mail:${address(s)}`]: [address(s), start(s).password] };
+    show(s, "/");
+    fireEvent.click(screen.getByText(t("gmix.nav.logout")));
+    cleanup();
+    went = [];
+    show(s, "/");
+    expect(went).toEqual([]);
+  });
+});

@@ -6,7 +6,8 @@ import { hallSize } from "../20-world/layout";
 import {
   DEPOSIT_MONTHS, FIT_POSITIONS, hallCapacity, hallMonthly, holdsDesks, isHalle, listingById, NOTICE_MONTHS, officeLineIn, priceFor, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
 } from "../20-world/properties";
-import { cents } from "../45-billing/billing";
+import { bill, SUPPLIER_NAMES, type Method } from "../46-finance/payables";
+import { methodsFor, placeOrder } from "./purchase";
 import { device, type GameState, type LedgerEntry, type Property, type SectionFit } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { packArea } from "./hall";
@@ -14,10 +15,16 @@ import { closeLocation, noticeEnd, type ActionResult } from "./hardware";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
-const book = (s: GameState, category: string, key: string, params: LedgerEntry["params"], amount: number) => {
-  s.cash = cents(s.cash + amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category, key, params, amount }];
+const LANDLORD = SUPPLIER_NAMES.landlord!;
+
+// The landlord's document for a charge, a deposit or the price of a building: paid at once in cash, else by the method.
+const charge = (s: GameState, category: string, key: string, params: LedgerEntry["params"], amount: number, method?: Method): ActionResult => {
+  const lines = [{ hour: s.hour, category, key, params, amount: -amount }];
+  return placeOrder(s, { supplier: "landlord", name: LANDLORD, lines, method: method ?? methodsFor(s, "landlord", lines, LANDLORD)[0] });
 };
+// Money coming back is a credit note, settled at once.
+const credit = (s: GameState, key: string, params: LedgerEntry["params"], amount: number) =>
+  bill(s, { supplier: "landlord", name: LANDLORD, lines: [{ hour: s.hour, category: "rent", key, params, amount }], method: s.bank ? "transfer" : "cash", doc: "credit" });
 
 // An office is a location from its first section on: the room the staff work in and the zone its server rooms form.
 const placeOffice = (s: GameState, p: Property, readyAt: number) => {
@@ -38,7 +45,7 @@ export const freeSections = (s: GameState, l: Listing): string[] => {
 };
 
 // The first section in a building makes it the office; further ones expand it. One office at a time.
-export function rentSection(s: GameState, buildingId: string, sectionId: string): ActionResult {
+export function rentSection(s: GameState, buildingId: string, sectionId: string, method?: Method): ActionResult {
   const l = listingById(buildingId), year = yearOf(s.hour);
   if (!l || l.from > year) return fail("error.unknownBuilding");
   if (l.kind === "halle") return fail("error.buyOnly");
@@ -48,14 +55,17 @@ export function rentSection(s: GameState, buildingId: string, sectionId: string)
   if (!p && hasOffice(s)) return fail("error.oneOffice");
   if (p?.noticeAt != null) return fail("error.noticeGiven");
   const rent = p?.kind === "own" ? 0 : rentFor(l, year), deposit = rent * DEPOSIT_MONTHS;
-  if (s.cash < deposit) return fail("error.noCash");
+  if (deposit) {
+    const paid = charge(s, "rent", "ledger.officeDeposit", { building: l.name }, deposit, method);
+    if (!paid.ok) return paid;
+  }
   if (!p) {
     p = { id: `prop${s.nextId++}`, kind: "office", buildingId: l.id, building: { name: l.name, street: l.street, zip: l.zip, city: l.city }, sections: [], deposit: 0, noticeAt: null, boughtFor: null, locationId: null };
     s.properties = [...s.properties, p];
   }
   p.sections = [...p.sections, { id: sectionId, floor: section.floor, fit: "desks", since: s.hour, refitUntil: s.hour, rent }];
   placeOffice(s, p, s.hour);
-  if (deposit) { p.deposit += deposit; book(s, "rent", "ledger.officeDeposit", { building: l.name }, -deposit); }
+  p.deposit += deposit;
   return { ok: true, id: p.id };
 }
 
@@ -70,7 +80,7 @@ export function giveNotice(s: GameState, propertyId: string): ActionResult {
 }
 
 // Buying takes over every section other tenants do not hold; rent stops and the deposit comes back.
-export function buyBuilding(s: GameState, buildingId: string): ActionResult {
+export function buyBuilding(s: GameState, buildingId: string, method?: Method): ActionResult {
   const l = listingById(buildingId), year = yearOf(s.hour), price = l && priceFor(l, year);
   if (!l || l.from > year) return fail("error.unknownBuilding");
   if (price == null) return fail("error.buildingNotForSale");
@@ -78,7 +88,13 @@ export function buyBuilding(s: GameState, buildingId: string): ActionResult {
   if (p?.kind === "own") return fail("error.buildingOwned");
   if (!p && l.kind !== "halle" && hasOffice(s)) return fail("error.oneOffice");
   const back = p?.deposit ?? 0;
-  if (s.cash + back < price) return fail("error.noCash");
+  const cashPay = (method ?? (s.bank ? "transfer" : "cash")) === "cash";
+  if (cashPay && (s.bank || s.cash + back < price)) return fail("error.noCash");
+  // The returned deposit lands first when it pays for the building out of cash; otherwise it follows the order.
+  if (back && cashPay) credit(s, "ledger.officeDepositBack", { building: l.name }, back);
+  const paid = charge(s, "other", "ledger.buildingBought", { building: l.name }, price, method);
+  if (!paid.ok) return paid;
+  if (back && !cashPay) credit(s, "ledger.officeDepositBack", { building: l.name }, back);
   if (!p) {
     p = { id: `prop${s.nextId++}`, kind: "own", buildingId: l.id, building: { name: l.name, street: l.street, zip: l.zip, city: l.city }, sections: [], deposit: 0, noticeAt: null, boughtFor: null, locationId: null };
     s.properties = [...s.properties, p];
@@ -86,17 +102,15 @@ export function buyBuilding(s: GameState, buildingId: string): ActionResult {
   const fresh = freeSections(s, l).map((id) => ({ id, floor: sectionIds(l).find((x) => x.id === id)!.floor, fit: null, since: s.hour, refitUntil: s.hour, rent: 0 }));
   Object.assign(p, { kind: "own", noticeAt: null, boughtFor: price, deposit: 0, sections: [...p.sections.map((x) => ({ ...x, rent: 0 })), ...fresh] });
   if (l.kind !== "halle") placeOffice(s, p, s.hour);
-  if (back) book(s, "rent", "ledger.officeDepositBack", { building: l.name }, back);
-  book(s, "other", "ledger.buildingBought", { building: l.name }, -price);
   return { ok: true, id: p.id };
 }
 
 // The section is closed for the refit's days. A server room or closet adds rack positions to the property's office zone.
-export function refitSection(s: GameState, propertyId: string, sectionId: string, fit: SectionFit): ActionResult {
+export function refitSection(s: GameState, propertyId: string, sectionId: string, fit: SectionFit, method?: Method): ActionResult {
   const p = s.properties.find((x) => x.id === propertyId), x = p?.sections.find((k) => k.id === sectionId);
   if (!p || !x) return fail("error.unknownProperty");
   if (!(fit in REFIT)) return fail("error.unknownFit");
-  if (fit === "hall" || x.fit === "hall") return fit === "hall" ? refitHall(s, p, x.floor) : fail("error.hallFloor");
+  if (fit === "hall" || x.fit === "hall") return fit === "hall" ? refitHall(s, p, x.floor, method) : fail("error.hallFloor");
   if (isHalle(p.buildingId)) return fail("error.hallOnly");
   if (x.fit === fit) return fail("error.sameFit");
   if (x.refitUntil > s.hour) return fail("error.refitting");
@@ -105,8 +119,8 @@ export function refitSection(s: GameState, propertyId: string, sectionId: string
   const loc = s.locations.find((l) => l.id === p.locationId), gone = x.fit ? FIT_POSITIONS[x.fit] : 0;
   if (gone && loc && s.racks.some((r) => r.locationId === loc.id && r.position > loc.positions - gone)) return fail("error.racksInRoom");
   const { cost, days } = REFIT[fit];
-  if (s.cash < cost) return fail("error.noCash");
-  book(s, "other", "ledger.refit", { building: p.building.name }, -cost);
+  const paid = charge(s, "other", "ledger.refit", { building: p.building.name }, cost, method);
+  if (!paid.ok) return paid;
   if (loc) loc.positions -= gone;
   x.fit = fit;
   x.refitUntil = s.hour + 24 * days;
@@ -119,7 +133,7 @@ export function refitSection(s: GameState, propertyId: string, sectionId: string
 
 // GDD, Own datacenter: a whole floor of an owned building becomes part of the property's hall, a location of its own with no
 // provider. The floor's positions arrive as default rows the player may lay out anew.
-function refitHall(s: GameState, p: Property, floor: number): ActionResult {
+function refitHall(s: GameState, p: Property, floor: number, method?: Method): ActionResult {
   const l = listingById(p.buildingId ?? "");
   if (p.kind !== "own" || !l) return fail("error.hallOwnOnly");
   const onFloor = p.sections.filter((x) => x.floor === floor);
@@ -130,8 +144,8 @@ function refitHall(s: GameState, p: Property, floor: number): ActionResult {
   const office = s.locations.find((k) => k.id === p.locationId), gone = onFloor.reduce((n, x) => n + (x.fit ? FIT_POSITIONS[x.fit] : 0), 0);
   if (gone && office && s.racks.some((r) => r.locationId === office.id)) return fail("error.racksInRoom");
   const { cost, days } = REFIT.hall;
-  if (s.cash < cost) return fail("error.noCash");
-  book(s, "other", "ledger.refit", { building: p.building.name }, -cost);
+  const paid = charge(s, "other", "ledger.refit", { building: p.building.name }, cost, method);
+  if (!paid.ok) return paid;
   if (office) office.positions -= gone;
   const until = s.hour + 24 * days;
   for (const x of onFloor) Object.assign(x, { fit: "hall", refitUntil: until });
@@ -181,7 +195,7 @@ export function propertiesEnd(s: GameState, events: SimEvent[]): void {
   for (const p of s.properties) {
     if (p.noticeAt === null || noticeEnd(p.noticeAt, NOTICE_MONTHS) > s.hour) continue;
     if (p.locationId && !closeLocation(s, p.locationId).ok) { p.noticeAt = noticeEnd(p.noticeAt, 0); events.push({ app: "Locations", key: "event.contractRolled", params: { location: p.building.name } }); continue; }
-    if (p.deposit) book(s, "rent", "ledger.officeDepositBack", { building: p.building.name }, p.deposit);
+    if (p.deposit) credit(s, "ledger.officeDepositBack", { building: p.building.name }, p.deposit);
     s.properties = s.properties.filter((x) => x.id !== p.id);
     s.staff = s.staff.map((e) => (e.desk?.propertyId === p.id ? { ...e, desk: null } : e));
     events.push({ app: "Locations", key: "event.leaseEnded", params: { building: p.building.name } });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GameState } from "../src/sim/50-state";
+import { openAccount } from "../src/sim/46-finance/bank";
 import { datastoreUsed, nodeUsed, vmById, workloadOnline } from "../src/sim/60-infra/cluster";
 import { tick } from "../src/sim/88-tick/tick";
 import { createVm, setHa } from "../src/sim/90-actions/clusters";
@@ -66,6 +67,17 @@ describe("datastores", () => {
     ok(attachDatastore(s, c, store, "fc"));
     expect(s.cash).toBe(cash - 1400);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.fcAdapters", amount: -1400 });
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "hardware", method: "cash", doc: "receipt", amount: 1400 });
+  });
+
+  it("orders Fibre Channel adapters on an open invoice once a bank exists", () => {
+    const { s, c, store } = setup();
+    s.bank = { ...openAccount(s, "sparklasse"), welcomed: true };
+    const cash = s.cash;
+    expect(attachDatastore(s, c, store, "fc", "cash")).toMatchObject({ ok: false, error: "error.noCash" });
+    ok(attachDatastore(s, c, store, "fc"));
+    expect(s.cash).toBe(cash);
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "hardware", method: "transfer", doc: "invoice", amount: 1400, paidAt: null });
   });
 
   it("moves only datastore VMs live between nodes before 2012, and local ones too from 2012", () => {

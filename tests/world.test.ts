@@ -246,7 +246,7 @@ describe("world", () => {
     expect(inLetterbox(s)).toHaveLength(2);
     useStore.setState({ game: s, speed: 0, surface: "world" });
     render(createElement(World));
-    fireEvent.click(screen.getByRole("button", { name: t("world.obj.letterbox") }));
+    fireEvent.click(screen.getByRole("button", { name: `${t("world.obj.letterbox")} 2` }));
     const panel = screen.getByRole("dialog", { name: t("world.obj.letterbox") });
     const first = panel.querySelector("[data-letter]")!.getAttribute("data-letter");
     fireEvent.click(screen.getByRole("button", { name: t("world.nextLetter") }));

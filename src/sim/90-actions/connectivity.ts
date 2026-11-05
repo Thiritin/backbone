@@ -1,5 +1,6 @@
 // docs/design/gdd/connectivity.md: the provider panel on rented racks and provider cables between them.
-import { rackUnits } from "../20-world/datacenters";
+import { datacenterById, rackUnits } from "../20-world/datacenters";
+import { bill } from "../46-finance/payables";
 import { PANEL_JACKS, PROVIDER_CABLE, PROVIDER_PANEL } from "../10-catalog/uplinks";
 import { device, type End, type GameState } from "../50-state";
 import { freeJack, isProviderPanel, jackRoles, panelOf, rentedFloor } from "../60-infra/panels";
@@ -86,8 +87,9 @@ export function providerCableTick(s: GameState): SimEvent[] {
   const name = (e: End) => s.devices.find((d) => d.id === e.device)?.name ?? "";
   for (const o of due) {
     s.cables = [...s.cables, { id: `cab${s.nextId++}`, a: o.a, b: o.b, kind: "provider", color: null }];
-    s.cash = Math.round((s.cash - o.fee) * 100) / 100;
-    s.ledger = [...s.ledger, { hour: s.hour, category: "rent", key: "ledger.providerCable", params: { a: name(o.a), b: name(o.b) }, amount: -o.fee }];
+    const loc = s.locations.find((l) => l.id === s.racks.find((r) => r.id === s.devices.find((d) => d.id === o.a.device)?.rackId)?.locationId);
+    const line = { hour: s.hour, category: "rent", key: "ledger.providerCable", params: { a: name(o.a), b: name(o.b) }, amount: -o.fee };
+    bill(s, { supplier: "network", name: loc?.dc ? datacenterById(loc.dc).name : "DE-KICKS", lines: [line], method: s.bank ? "transfer" : "cash" });
   }
   return due.map((o) => ({ app: "Locations", key: "event.providerCable", params: { a: name(o.a), b: name(o.b) } }));
 }

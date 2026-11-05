@@ -33,7 +33,7 @@ export function PostApp() {
             {boxed.map((x) => (
               <div key={x.id} role="listitem" className="post-row boxed">
                 <strong>{x.from}</strong>
-                <small className="num">{paperDay(x.at)}</small>
+                <small className="num">{game.locations.find((o) => o.id === x.box)?.name} {paperDay(x.at)}</small>
               </div>
             ))}
           </div>
@@ -48,6 +48,7 @@ export function PostApp() {
           <div className="letter-actions">
             {l.scanned ? <span>{t("paperwork.post.scanned")}</span> : <button className="btn" onClick={() => act(scanLetter, l.id)}>{t("paperwork.post.scan")}</button>}
             {l.link && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: l.link! })}>{t("paperwork.post.open")}</button>}
+            {bill && <button className="btn" onClick={() => openApp("Preview", { kind: "payable", id: bill.id })}>{t(`purchase.doc.${bill.doc ?? "invoice"}`)}</button>}
             {bill && (bill.paidAt !== null ? <span>{t("bank.pay.paid")}</span>
               : game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, bill) })}>{t("bank.pay.pay")}</button>)}
           </div>

@@ -25,6 +25,7 @@ export default {
   "error.mailFeature": () => "Esta versión de Pear Mail no puede hacer eso.",
   "guide.step.mail": () => "Buzón configurado",
   "apps.guide.step.mail": (p) => `Tu buzón ${p.address} está configurado.`,
+  "apps.guide.step.mailPending": () => "Tu buzón se configura al registrar tu empresa.",
   "pearMail.add.title": () => "Añadir cuenta",
   "pearMail.add.fullName": () => "Nombre completo:",
   "pearMail.add.address": () => "Dirección de correo:",

@@ -1,8 +1,10 @@
 import { yearOf } from "../00-core/time";
+import type { Method } from "../46-finance/payables";
+import { methodsFor, placeOrder } from "./purchase";
 import { employeeMailbox, hireTenant, mailboxInUse, removeMailbox } from "../42-mail/accounts";
 import { cents } from "../45-billing/billing";
 import {
-  AD, adCandidates, COURSE_PRICE, fullyTrained, MAX_SHIFT, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates, weekdays,
+  AD, adCandidates, JOB_BOARD, COURSE_PRICE, fullyTrained, MAX_SHIFT, needsTraining, salaryUpToNow, staffPrice, startTraining, TASKS, trainerFor, visibleCandidates, weekdays,
   type AdTier, type Assignment, type Employee, type Role, type Shift, type Task,
 } from "../47-staff/staff";
 import { OP_TASK, queueOp, taskFor, techsAt, type OpKind, type TechRules } from "../47-staff/technicians";
@@ -32,10 +34,11 @@ function employee(s: GameState, id: string): Employee | null {
   return e;
 }
 
-export function postJobAd(s: GameState, role: Role, tier: AdTier): ActionResult {
+export function postJobAd(s: GameState, role: Role, tier: AdTier, method?: Method): ActionResult {
   const price = staffPrice(AD[tier].price, yearOf(s.hour));
-  if (s.cash < price) return fail("error.noCash");
-  pay(s, "ledger.jobAd", { role }, price);
+  const lines = [{ hour: s.hour, category: "salaries", key: "ledger.jobAd", params: { role }, amount: -price }];
+  const paid = placeOrder(s, { supplier: "services", name: JOB_BOARD, lines, method: method ?? methodsFor(s, "services", lines, JOB_BOARD)[0] });
+  if (!paid.ok) return paid;
   s.candidates = [...s.candidates, ...adCandidates(s, role, tier)];
   return { ok: true };
 }

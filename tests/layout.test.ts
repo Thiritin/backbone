@@ -95,7 +95,7 @@ describe("rack tiles", () => {
   });
 
   it("puts a bought rack on a free tile and a moved rack on one in its new room", () => {
-    const s = newGame(10);
+    const s = { ...newGame(10), cash: 100_000 };
     const r = addLocation(s, "interaction-fra", "cage", 4);
     if (!r.ok) throw new Error(r.error);
     const loc = s.locations.find((l) => l.id === r.id)!;
@@ -176,7 +176,7 @@ describe("rack tiles", () => {
   });
 
   it("moves a loaded cage rack off a tile that is no longer a rack tile", () => {
-    const s = newGame(21);
+    const s = { ...newGame(21), cash: 100_000 };
     const r = addLocation(s, "interaction-fra", "cage", 4);
     if (!r.ok) throw new Error(r.error);
     const loc = s.locations.find((l) => l.id === r.id)!;

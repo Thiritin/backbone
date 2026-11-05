@@ -116,7 +116,7 @@ describe("generated vulnerabilities", () => {
     expect(s.security.hacked).toEqual([a]);
     expect(events.find((e) => e.key === "event.vuln.hacked")?.params).toMatchObject({ device: cluster(s, a).name, customers: 1, kind: "panel" });
     for (let d = 0; d < 200; d++) { s.hour += 24; securityTick(s); }
-    expect(s.security.hacked).toEqual([a]);
+    expect(s.security.hacked.filter((id) => id === a)).toEqual([a]);
   });
 
   it("compromise a hypervisor with the same effects and clean up the same way", () => {

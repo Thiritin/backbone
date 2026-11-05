@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { hourOfMonth } from "../src/sim/00-core/time";
+import { setupClientAccount } from "../src/sim/90-actions/pear-mail";
+import { provisionStarterMail } from "../src/sim/43-pear-mail/setup";
 import { clientFolder } from "../src/sim/43-pear-mail/view";
 import { checkDone } from "../src/sim/checklist";
 import { newGame } from "../src/sim/50-state";
@@ -55,5 +58,36 @@ describe("starter mail", () => {
     const s = deserialize(serialize(newGame(1)));
     expect(s.pearMail.accounts).toHaveLength(0);
     expect(s.logins).toEqual({});
+  });
+});
+
+describe("starter mail edge cases", () => {
+  it("does not add a second account when the address was set up by hand", () => {
+    const s = fresh();
+    s.installed.push("Pear Mail");
+    const a = box(s), address = `${a.local}@${a.domain}`;
+    a.external = true;
+    expect(setupClientAccount(s, { fullName: a.title, address, password: a.password, protocol: "pop", host: "pop.gmix.net", smtp: "smtp.gmix.net" }).ok).toBe(true);
+    provisionStarterMail(s);
+    expect(s.pearMail.accounts).toHaveLength(1);
+  });
+
+  it("uses IMAP with a 5 minute check from 2012 on", () => {
+    const s = fresh();
+    s.hour = hourOfMonth("2013-03");
+    provisionStarterMail(s);
+    expect(s.pearMail.accounts[0]).toMatchObject({ protocol: "imap", checkEvery: 5, server: { host: "imap.gmix.net" } });
+  });
+
+  it("checks a registered save without Pear Mail data at once on load", () => {
+    const s = fresh();
+    registerCompany(s, "Basement Hosting", "Becker, Tin", "sole", addr);
+    const raw = JSON.parse(serialize(s));
+    delete raw.pearMail;
+    const old = deserialize(JSON.stringify(raw));
+    expect(old.pearMail.accounts).toHaveLength(1);
+    old.minute += 1;
+    tick(old);
+    expect(clientFolder(old, old.pearMail.accounts[0], "inbox").length).toBeGreaterThan(0);
   });
 });

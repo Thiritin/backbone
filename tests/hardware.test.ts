@@ -104,14 +104,14 @@ describe("buyDevice and storage", () => {
   it("buys identical units into storage, pays for all of them and books one line", () => {
     const s = atYear(2005, 10_000);
     const first = ok(buyDevice(s, "g1-compute", "Dwell", 3, "loc1"));
-    expect(first).toBe("dev8");
+    expect(first).toBe("dev10");
     expect(s.cash).toBe(2500);
     expect(s.ledger).toEqual([{ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: "PowerEdgy 1850", qty: 3 }, amount: -7500 }]);
     expect(dev(s, first)).toMatchObject({ rackId: null, panel: null, brand: "Dwell", name: "fra1-srv-02", price: 2500, boughtAt: s.hour });
     ok(buyDevice(s, "sw-8", "Sysko", 1, "loc1"));
     expect(storageStacks(s, "loc1")).toEqual([
-      { model: "g1-compute", brand: "Dwell", ids: ["dev8", "dev9", "dev10"] },
-      { model: "sw-8", brand: "Sysko", ids: ["dev11"] },
+      { model: "g1-compute", brand: "Dwell", ids: ["dev10", "dev11", "dev12"] },
+      { model: "sw-8", brand: "Sysko", ids: ["dev15"] },
     ]);
     expect(linkStatus(s, first).online).toBe(false);
   });
@@ -156,7 +156,7 @@ describe("mounting", () => {
     expect(err(mountStack(s, "g1-storage", "SuperMacro", "rack2", 1))).toBe("error.notInStorage");
     expect(err(mountStack(s, "g1-storage", "Dwell", "nope", 1))).toBe("error.unknownRack");
     const first = ok(mountStack(s, "g1-storage", "Dwell", "rack2", 3));
-    expect(first).toBe("dev8");
+    expect(first).toBe("dev10");
     expect(s.devices.filter((d) => d.model === "g1-storage" && d.rackId).map((d) => d.slot)).toEqual([2, 4, 6]);
     expect(storageStacks(s, "loc1")[0].ids).toHaveLength(9);
   });

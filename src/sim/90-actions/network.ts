@@ -11,15 +11,16 @@ import type { GameState, Location } from "../50-state";
 import { acceptChance, activeExchanges, coolingDown, type Network, type Uplink } from "../60-infra/network";
 import { locationOf, peerOf } from "../60-infra/status";
 import type { ActionResult } from "./hardware";
+import { SUPPLIER_NAMES, type Method } from "../46-finance/payables";
+import { methodsFor, placeOrder } from "./purchase";
 import { opticFor, portOptic, uplinkBand, uplinkOffers } from "../10-catalog/uplinks";
 import { freeJack, jackRoles, panelOf } from "../60-infra/panels";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
-const cents = (v: number) => Math.round(v * 100) / 100;
 const set = (s: GameState, patch: Partial<Network>) => { s.network = { ...s.network, ...patch }; };
-const pay = (s: GameState, key: string, params: Record<string, string | number>, amount: number) => {
-  s.cash = cents(s.cash - amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "transit", key, params, amount: -amount }];
+const pay = (s: GameState, name: string, key: string, params: Record<string, string | number>, amount: number, method?: Method): ActionResult => {
+  const lines = [{ hour: s.hour, category: "transit", key, params, amount: -amount }];
+  return placeOrder(s, { supplier: "network", name, lines, method: method ?? methodsFor(s, "network", lines, name)[0] });
 };
 
 // The location as a datacenter zone the player may buy network for, or the error why not.
@@ -120,24 +121,24 @@ export function cancelUplink(s: GameState, uplinkId: string): ActionResult {
 }
 
 // Registers your own AS number, which exchanges ask for.
-export function registerAsn(s: GameState): ActionResult {
+export function registerAsn(s: GameState, method?: Method): ActionResult {
   if (!s.unlocks.includes("network")) return fail("error.needsNetwork");
   if (s.network.asn) return fail("error.hasAsn");
-  if (s.cash < ASN_FEE) return fail("error.noCash");
   const asn = 20000 + Math.floor(rand(hashRng(s.seed, 0xa5)) * 40000);
-  pay(s, "ledger.asn", { asn }, ASN_FEE);
+  const paid = pay(s, SUPPLIER_NAMES.network!, "ledger.asn", { asn }, ASN_FEE, method);
+  if (!paid.ok) return paid;
   set(s, { asn });
   return { ok: true, id: String(asn) };
 }
 
-export function joinExchange(s: GameState, exchangeId: string): ActionResult {
+export function joinExchange(s: GameState, exchangeId: string, method?: Method): ActionResult {
   if (!s.unlocks.includes("network")) return fail("error.needsNetwork");
   const x = exchangeById(exchangeId);
   if (!x) return fail("error.noExchange");
   if (!s.network.asn) return fail("error.needsAsn");
   if (s.network.memberships.includes(x.id)) return fail("error.alreadyMember");
-  if (s.cash < EXCHANGE_FEES.setup) return fail("error.noCash");
-  pay(s, "ledger.exchangeJoin", { exchange: x.name }, EXCHANGE_FEES.setup);
+  const paid = pay(s, x.name, "ledger.exchangeJoin", { exchange: x.name }, EXCHANGE_FEES.setup, method);
+  if (!paid.ok) return paid;
   set(s, { memberships: [...s.network.memberships, x.id] });
   return { ok: true, id: x.id };
 }

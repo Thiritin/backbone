@@ -25,6 +25,7 @@ export default {
   "error.mailFeature": () => "Cette version de Pear Mail ne peut pas faire cela.",
   "guide.step.mail": () => "Boîte aux lettres configurée",
   "apps.guide.step.mail": (p) => `Ta boîte aux lettres ${p.address} est configurée.`,
+  "apps.guide.step.mailPending": () => "Ta boîte aux lettres est configurée à l'enregistrement de ton entreprise.",
   "pearMail.add.title": () => "Ajouter un compte",
   "pearMail.add.fullName": () => "Nom complet :",
   "pearMail.add.address": () => "Adresse électronique :",

@@ -25,6 +25,7 @@ export default {
   "error.mailFeature": () => "Diese Version von Pear Mail kann das nicht.",
   "guide.step.mail": () => "Postfach eingerichtet",
   "apps.guide.step.mail": (p) => `Dein Postfach ${p.address} ist eingerichtet.`,
+  "apps.guide.step.mailPending": () => "Dein Postfach wird bei der Firmenanmeldung eingerichtet.",
   "pearMail.add.title": () => "Account hinzufügen",
   "pearMail.add.fullName": () => "Vollständiger Name:",
   "pearMail.add.address": () => "E-Mail-Adresse:",

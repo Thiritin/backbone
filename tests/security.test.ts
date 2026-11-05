@@ -34,7 +34,7 @@ const run = (s: GameState, hours: number) => {
 // The basement's two servers as two bare-metal panel hosts with a web space on each, running PHP 4.4, one hour before the
 // 2007 advisory.
 function hosting(web = true) {
-  const s = { ...withServer(newGame(1)), cash: 100_000 };
+  const s = { ...withServer(newGame(2)), cash: 100_000 };
   const second = ok(buyDevice(s, "g1-compute", "Dwell", 1, "loc1"));
   ok(mountDevice(s, second, "rack2", 2));
   ok(connect(s, { device: second, port: 0 }, { device: "dev4", port: 1 }));

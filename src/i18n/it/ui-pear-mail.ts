@@ -25,6 +25,7 @@ export default {
   "error.mailFeature": () => "Questa versione di Pear Mail non può farlo.",
   "guide.step.mail": () => "Casella di posta configurata",
   "apps.guide.step.mail": (p) => `La tua casella ${p.address} è configurata.`,
+  "apps.guide.step.mailPending": () => "La tua casella viene configurata alla registrazione della tua azienda.",
   "pearMail.add.title": () => "Aggiungi account",
   "pearMail.add.fullName": () => "Nome completo:",
   "pearMail.add.address": () => "Indirizzo email:",

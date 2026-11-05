@@ -25,6 +25,7 @@ export default {
   "error.mailFeature": () => "This version of Pear Mail cannot do that.",
   "guide.step.mail": () => "Mailbox set up",
   "apps.guide.step.mail": (p) => `Your mailbox ${p.address} is set up.`,
+  "apps.guide.step.mailPending": () => "Your mailbox is set up when you register your company.",
   "pearMail.add.title": () => "Add Account",
   "pearMail.add.fullName": () => "Full Name:",
   "pearMail.add.address": () => "Email Address:",

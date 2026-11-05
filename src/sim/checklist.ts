@@ -21,14 +21,15 @@ const orderStep = (step: OrderStep) => (s: GameState) => s.sales.requests.some((
 const rented = (s: GameState) => s.locations.filter((l) => l.dc !== null);
 
 // Pay bills shows once a supplier that cuts services sends its first invoice.
-const suppliersBilling = (s: GameState) => s.payables.some((p) => CONSEQUENCES[p.supplier].length > 0);
+const suppliersBilling = (s: GameState) => s.payables.some((p) => (p.doc ?? "invoice") === "invoice" && CONSEQUENCES[p.supplier].length > 0);
 
 // Checklist goals the game detects from state. Goals without an entry are ticked by hand.
 export const CHECKS: Record<string, (s: GameState) => boolean> = {
   bank: (s) => !!s.bank,
   register: (s) => !!s.registration,
-  // Sent counts: the transfer reaches the supplier a day or two later.
-  payBill: (s) => s.payables.some((p) => p.paidAt !== null || p.sent >= p.amount - 0.005),
+  // Sent counts: the transfer reaches the supplier a day or two later. A receipt, credit or order confirmation settles at
+  // once and is no bill the player paid.
+  payBill: (s) => s.payables.some((p) => (p.doc ?? "invoice") === "invoice" && (p.paidAt !== null || p.sent >= p.amount - 0.005)),
   books: (s) => s.books.vendor !== null,
   // No supplier bill is open; a transfer on its way counts as paid.
   payBills: (s) => suppliersBilling(s) && !s.payables.some((p) => p.paidAt === null && p.sent < p.amount - 0.005),
