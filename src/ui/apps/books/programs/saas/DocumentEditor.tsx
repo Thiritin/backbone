@@ -7,9 +7,9 @@ export interface DocLine { text: string; amount: number }
 
 // The editor of a sales document: contact card, dates, line items with the tax split, a toggled preview and the program's actions.
 // Prices are gross; the net and tax lines are derived from the rate. fields holds the editable inputs a draft quote has.
-export function DocumentEditor({ title, number, status, contact, dates, lines, rate, fields, actions, from }: {
+export function DocumentEditor({ title, number, status, contact, dates, lines, rate, fields, actions, document }: {
   title: string; number: string; status: ReactNode; contact: { name: string; lines: string[] }; dates: [string, string][];
-  lines: DocLine[]; rate: number; fields?: ReactNode; actions: ReactNode; from: string;
+  lines: DocLine[]; rate: number; fields?: ReactNode; actions: ReactNode; document: ReactNode;
 }) {
   const [preview, setPreview] = useState(false);
   const gross = lines.reduce((n, l) => n + l.amount, 0), net = Math.round((gross / (1 + rate)) * 100) / 100, tax = Math.round((gross - net) * 100) / 100;
@@ -38,14 +38,7 @@ export function DocumentEditor({ title, number, status, contact, dates, lines, r
           <tr><td>{t("rx.gross")}</td><td className="r num">{euroCents(gross)}</td></tr>
         </tfoot>
       </table>
-      {preview && (
-        <article className="sx-card sx-preview" aria-label={t("rx.preview")}>
-          <small>{from}</small>
-          <h2>{title} {number}</h2>
-          <address>{[...new Set([contact.name, ...contact.lines])].map((l) => <div key={l}>{l}</div>)}</address>
-          {lines.map((l, n) => <div key={n} className="sx-head"><span>{l.text}</span><b className="num" style={{ marginLeft: "auto" }}>{euroCents(l.amount)}</b></div>)}
-        </article>
-      )}
+      {preview && <div className="sx-sheet" aria-label={t("rx.preview")}>{document}</div>}
     </section>
   );
 }

@@ -18,7 +18,7 @@ export default {
   "rx.belege.open": () => "Open documents",
   "rx.belege.overdue": () => "Overdue",
   "rx.belege.all": () => "All",
-  "rx.asPdf": () => "As PDF",
+  "rx.asPdf": () => "Download as PDF",
   "rx.assign": () => "Assign",
   "rx.assignSettle": () => "Assign and write off difference",
   "rx.bank": () => "Bank balance",
@@ -55,4 +55,5 @@ export default {
   "rx.uploadBeleg": () => "Upload document",
   "rx.uploaded": () => "Uploaded",
   "rx.vat": (p) => `VAT ${p.rate}`,
+  "rx.downloaded": (p) => `${p.file} saved to Downloads`,
 } satisfies Dict;

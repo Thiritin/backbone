@@ -72,6 +72,15 @@ describe("Rexoffice web app", () => {
     expect(useStore.getState().game.invoices[0].status).not.toBe("draft");
   });
 
+  it("saves a draft as a PDF in Downloads without sending it", () => {
+    const s = base(2018);
+    open(s, "rechnungen");
+    fireEvent.click(screen.getByText("Download as PDF"));
+    const g = useStore.getState().game;
+    expect(g.invoices[0].status).toBe("draft");
+    expect(g.media.files).toContain(`${g.invoices[0].number}.pdf`);
+  });
+
   it("assigns an uploaded document to the booking that paid it", () => {
     const s = base(2018);
     const p = invoice(s, "upstream", "Deutsche Telekomm", [{ hour: 0, category: "upstream", key: "ledger.homeLine", params: {}, amount: -59 }]);

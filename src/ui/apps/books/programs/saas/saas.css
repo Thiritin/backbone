@@ -1,6 +1,6 @@
 /* Shared building blocks of the web bookkeeping apps: sidebar shell, top bar, cards, tables, chips and the document editor.
    A program sets the --sx-* tokens on its root class. */
-.sx { --sx-nav: #fff; --sx-nav-ink: #3a3f4b; --sx-nav-on: #eef7ee; --sx-nav-w: 208px; --sx-accent: #43a047; --sx-accent-ink: #fff; --sx-bg: #f5f6f8; --sx-card: #fff; --sx-line: #e1e4e8; --sx-ink: #1f2430; --sx-mute: #6b7280; --sx-warn: #d9730d; --sx-bad: #c62828; --sx-ok: #2e7d32; --sx-r: 4px;
+.sx { --sx-nav: #fff; --sx-nav-ink: #3a3f4b; --sx-nav-on: #eef7ee; --sx-sel: #e9f1fb; --sx-nav-w: 208px; --sx-accent: #43a047; --sx-accent-ink: #fff; --sx-bg: #f5f6f8; --sx-card: #fff; --sx-line: #e1e4e8; --sx-ink: #1f2430; --sx-mute: #6b7280; --sx-warn: #d9730d; --sx-bad: #c62828; --sx-ok: #2e7d32; --sx-r: 4px;
   display: flex; height: 100%; min-height: 0; background: var(--sx-bg); color: var(--sx-ink); font: 13px/1.45 "Open Sans", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
 .sx *, .sx *::before, .sx *::after { box-sizing: border-box; }
 .sx-nav { width: var(--sx-nav-w); flex: none; background: var(--sx-nav); color: var(--sx-nav-ink); display: flex; flex-direction: column; border-right: 1px solid var(--sx-line); overflow: auto; }
@@ -27,7 +27,7 @@
 .sx-new > button { background: var(--sx-accent); border-color: var(--sx-accent); color: var(--sx-accent-ink); }
 .sx-gear { border: 0; background: none; color: var(--sx-mute); cursor: pointer; padding: 4px; }
 .sx-gear svg { width: 18px; height: 18px; }
-.sx-body { flex: 1; min-height: 0; overflow: auto; padding: 18px 20px; display: grid; gap: 16px; align-content: start; }
+.sx-body { grid-template-columns: minmax(0, 1fr); flex: 1; min-height: 0; overflow: auto; padding: 18px 20px; display: grid; gap: 16px; align-content: start; grid-auto-rows: max-content; }
 .sx-body h1 { margin: 0; font-size: 22px; font-weight: 600; }
 .sx-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .sx-head .sx-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -48,7 +48,7 @@
 .sx-table th { padding: 8px 12px; text-align: left; font-weight: 600; color: var(--sx-mute); border-bottom: 1px solid var(--sx-line); white-space: nowrap; }
 .sx-table td { padding: 8px 12px; border-bottom: 1px solid var(--sx-line); }
 .sx-table tbody tr:hover { background: var(--sx-bg); }
-.sx-table tr.sel { background: var(--sx-nav-on); }
+.sx-table tr.sel { background: var(--sx-sel); }
 .sx-table .r, .sx-doc .r { text-align: right; }
 .sx-table tr[tabindex] { cursor: pointer; }
 .sx-chip { display: inline-block; padding: 1px 8px; border-radius: 10px; background: var(--sx-bg); border: 1px solid var(--sx-line); font-size: 12px; white-space: nowrap; }
@@ -78,3 +78,5 @@
 .sx-feedrow small { display: block; color: var(--sx-mute); font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
 .sx-legacy { background: var(--sx-card); border: 1px solid var(--sx-line); border-radius: var(--sx-r); min-height: 320px; overflow: auto; }
 .sx-err { color: var(--sx-bad); }
+.sx-sheet { height: 560px; display: flex; flex-direction: column; container-type: size; background: var(--sx-bg); padding: 12px; border-radius: var(--sx-r); }
+.sx-nav { min-height: 0; }

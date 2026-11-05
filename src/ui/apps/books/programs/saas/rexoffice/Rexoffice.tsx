@@ -3,7 +3,7 @@ import { useState } from "react";
 import { yearOf } from "../../../../../../sim/00-core/time";
 import { sells } from "../../../../../../sim/10-catalog/bookkeeping";
 import { hasModule } from "../../../../../../sim/10-catalog/modules";
-import { booksOffline, booksUrl, currentVendor, hasFeature } from "../../../../../../sim/80-business/bookkeeping";
+import { booksOffline, currentVendor, hasFeature } from "../../../../../../sim/80-business/bookkeeping";
 import { setupOf } from "../../../../../../sim/80-business/books-guide";
 import { unsynced } from "../../../../../../sim/80-business/shoplink";
 import { importFromShop } from "../../../../../../sim/90-actions/shoplink";
@@ -18,6 +18,7 @@ import { Offline } from "../../../BooksApp";
 import { useBooks } from "../../../view";
 import { SaasShell, type NavItem } from "../Shell";
 import { Bank } from "./Bank";
+import { editionsUrl } from "./Gated";
 import { Belege } from "./Belege";
 import { Dashboard, openCount } from "./Dashboard";
 import { Documents } from "./Documents";
@@ -57,7 +58,7 @@ export function Rexoffice() {
   const ids = (["dashboard", "rechnungen", "angebote", "kontakte", "belege", "bank", "auswertungen", "steuern", ...(era === "modern" ? [] : ["einstellungen"])] as Section[]).filter(sold);
   const counts = openCount(game);
   const nav: NavItem[] = ids.map((id) => ({ id, label: t(`rx.nav.${id}`), icon: ICON[id], locked: locked(id), badge: id === "rechnungen" ? counts.late : id === "bank" ? counts.unmatched : id === "belege" ? counts.payables : undefined }));
-  const pick = (id: string) => (locked(id as Section) ? openApp("Browser", { kind: "url", id: booksUrl(v) }) : go(id));
+  const pick = (id: string) => (locked(id as Section) ? openApp("Browser", { kind: "url", id: editionsUrl(FEATURES[id as Section]!, game) }) : go(id));
   const page = locked(section) || !sold(section) ? "dashboard" : section;
 
   if (booksOffline(game)) return <div className="sx rx-signup"><Offline v={v} /></div>;

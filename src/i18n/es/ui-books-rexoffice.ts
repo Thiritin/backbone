@@ -18,7 +18,7 @@ export default {
   "rx.belege.open": () => "Documentos abiertos",
   "rx.belege.overdue": () => "Vencidos",
   "rx.belege.all": () => "Todos",
-  "rx.asPdf": () => "Como PDF",
+  "rx.asPdf": () => "Descargar como PDF",
   "rx.assign": () => "Asignar",
   "rx.assignSettle": () => "Asignar y cancelar la diferencia",
   "rx.bank": () => "Saldo bancario",
@@ -55,4 +55,5 @@ export default {
   "rx.uploadBeleg": () => "Subir documento",
   "rx.uploaded": () => "Subido",
   "rx.vat": (p) => `IVA ${p.rate}`,
+  "rx.downloaded": (p) => `${p.file} guardado en Descargas`,
 } satisfies Dict;

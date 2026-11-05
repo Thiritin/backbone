@@ -13,7 +13,7 @@ import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { useStore } from "../../../../../store";
 import { useBooks } from "../../../view";
-import { Locked } from "../../../Locked";
+import { Gated } from "./Gated";
 import { Empty, Tabs } from "../ui";
 
 type Row = { id: string; hour: number; tr?: Transfer; out?: Outgoing };
@@ -75,7 +75,7 @@ export function Bank({ q }: { q: string }) {
   };
   return (
     <>
-      <div className="sx-head"><h1>{t("rx.nav.bank")}</h1><div className="sx-actions"><Locked id="match-by-reference" label={t("books.matchByReference")} /><span>{t("books-screens.balance")}</span><b className="num">{euroCents(game.cash)}</b></div></div>
+      <div className="sx-head"><h1>{t("rx.nav.bank")}</h1><div className="sx-actions"><Gated feature="match-by-reference" run label={t("books.matchByReference")} /><span>{t("books-screens.balance")}</span><b className="num">{euroCents(game.cash)}</b></div></div>
       <Tabs value={view} onPick={(v) => setView(v as "open" | "all")} items={[{ id: "open", label: t("books.view.open"), count: todo.length }, { id: "all", label: t("books.view.all") }]} />
       {shown.length === 0 && <Empty>{t("books.noTransfers")}</Empty>}
       <div className="sx-feed">

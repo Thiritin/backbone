@@ -18,7 +18,7 @@ export default {
   "rx.belege.open": () => "Pièces ouvertes",
   "rx.belege.overdue": () => "En retard",
   "rx.belege.all": () => "Toutes",
-  "rx.asPdf": () => "En PDF",
+  "rx.asPdf": () => "Télécharger en PDF",
   "rx.assign": () => "Rapprocher",
   "rx.assignSettle": () => "Rapprocher et passer la différence en perte",
   "rx.bank": () => "Solde bancaire",
@@ -55,4 +55,5 @@ export default {
   "rx.uploadBeleg": () => "Importer une pièce",
   "rx.uploaded": () => "Importée",
   "rx.vat": (p) => `TVA ${p.rate}`,
+  "rx.downloaded": (p) => `${p.file} enregistré dans Téléchargements`,
 } satisfies Dict;

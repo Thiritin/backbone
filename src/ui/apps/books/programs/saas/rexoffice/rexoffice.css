@@ -20,5 +20,10 @@
 .rx-modern .sx-card, .rx-modern .sx-table { border-radius: 12px; }
 .rx-modern .sx-top { padding: 10px 20px; }
 .rx-modern .sx-btn.primary, .rx-modern .sx-new > button { font-weight: 600; }
-.rx-checklist { padding: 0; overflow: hidden; }
+.rx-checklist { padding: 0; }
 .rx-checklist .bg { border-radius: inherit; }
+.rx-early .sx-navitem { padding: 3px 2px; gap: 0; line-height: 1.2; }
+.rx-early .sx-navitem svg { width: 16px; height: 16px; }
+.rx-early .sx-nav ul { gap: 0; }
+.rx-early .sx-brand { padding: 8px 4px; }
+@media (max-height: 760px) { .rx-dash .sx-navitem, .rx-modern .sx-navitem { padding-block: 6px; } }

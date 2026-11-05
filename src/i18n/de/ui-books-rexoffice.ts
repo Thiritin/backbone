@@ -18,7 +18,7 @@ export default {
   "rx.belege.open": () => "Offene Belege",
   "rx.belege.overdue": () => "Überfällige",
   "rx.belege.all": () => "Alle",
-  "rx.asPdf": () => "Als PDF",
+  "rx.asPdf": () => "Als PDF herunterladen",
   "rx.assign": () => "Zuordnen",
   "rx.assignSettle": () => "Zuordnen und Differenz ausbuchen",
   "rx.bank": () => "Kontostand",
@@ -55,4 +55,5 @@ export default {
   "rx.uploadBeleg": () => "Beleg hochladen",
   "rx.uploaded": () => "Hochgeladen",
   "rx.vat": (p) => `USt ${p.rate}`,
+  "rx.downloaded": (p) => `${p.file} in Downloads gespeichert`,
 } satisfies Dict;

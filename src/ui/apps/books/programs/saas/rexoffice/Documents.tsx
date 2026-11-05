@@ -1,17 +1,14 @@
 import { Mail, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { euroCents } from "../../../../../../sim/00-core/money";
-import { dueStep, invoiceTotal, isUnpaid, type Invoice } from "../../../../../../sim/45-billing/billing";
-import { ownAddress } from "../../../../../../sim/30-customers/addresses";
+import { invoiceTotal, isUnpaid, type Invoice } from "../../../../../../sim/45-billing/billing";
 import { stepError } from "../../../../../../sim/30-market/manual";
 import { requestName } from "../../../../../../sim/30-market/market";
 import { orderOf } from "../../../../../../sim/30-market/orders";
 import type { Quote } from "../../../../../../sim/30-market/quotes";
 import { setupFee } from "../../../../../../sim/30-market/spec";
-import { sells } from "../../../../../../sim/10-catalog/bookkeeping";
-import { currentVendor, hasFeature } from "../../../../../../sim/80-business/bookkeeping";
 import { vatRate } from "../../../../../../sim/80-business/tax";
-import { sendInvoice, sendReminder } from "../../../../../../sim/90-actions/billing";
+import { downloadInvoice, sendInvoice, sendReminder } from "../../../../../../sim/90-actions/billing";
 import type { ActionResult } from "../../../../../../sim/90-actions/hardware";
 import { attachQuote, convertQuote, createQuote, deleteQuote, editQuote } from "../../../../../../sim/90-actions/orders";
 import { t } from "../../../../../../i18n/en";
@@ -20,8 +17,8 @@ import { More } from "../../../../More";
 import { PriceField } from "../../../../sales/PriceField";
 import { formatDay } from "../../../../billing/format";
 import { invoiceMenu, InvoiceDialog, type Asking } from "../../../InvoiceMenu";
-import { addressLines, statusLabel } from "../../../InvoicesTab";
-import { BooksLocked } from "../../../Locked";
+import { addressLines, Page, statusLabel } from "../../../InvoicesTab";
+import { Gated } from "./Gated";
 import { useBooks } from "../../../view";
 import { DocumentEditor } from "../DocumentEditor";
 import { Chip, Empty, Tabs } from "../ui";
@@ -42,19 +39,19 @@ function Invoices({ focus, q }: { focus: string | null; q: string }) {
   const [selected, setSelected] = useState<string | null>(focus);
   const [asking, setAsking] = useState<Asking | null>(null);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState("");
   const [quote, setQuote] = useState("");
   const name = (id: string) => game.customers.find((c) => c.id === id)?.name ?? id;
   const all = [...game.invoices].reverse().filter((i) => !q || `${i.number} ${name(i.customerId)}`.toLowerCase().includes(q.toLowerCase()));
   const list = all.filter(KEEP[filter]);
   const inv = game.invoices.find((i) => i.id === selected) ?? list[0];
   const ready = game.quotes.filter((x) => x.status === "accepted" && x.origin === "books");
-  const run = (r: ActionResult) => { setError(r.ok ? "" : t(r.error, r.params)); return r; };
+  const run = (r: ActionResult) => { setError(r.ok ? "" : t(r.error, r.params)); setSaved(""); return r; };
   const from = () => {
     const r = run(act(convertQuote, quote || ready[0].id));
     if (r.ok) setSelected(r.id!);
   };
   const c = inv && game.customers.find((x) => x.id === inv.customerId);
-  const step = inv && dueStep(inv, game.hour);
   return (
     <>
       <div className="sx-head">
@@ -81,24 +78,23 @@ function Invoices({ focus, q }: { focus: string | null; q: string }) {
       )}
       {inv && (
         <DocumentEditor title={t("rx.invoice")} number={inv.number} status={<Chip tone={TONE[inv.status]}>{statusLabel(inv)}</Chip>}
-          from={[game.company.name, ownAddress(game).street].join(" · ")} rate={vatRate(inv.issuedAt)}
+          rate={vatRate(inv.issuedAt)} document={<Page game={game} title={t("books.invoice", { number: inv.number })} to={c?.address} items={inv.lines} footer={<span>{formatDay(inv.issuedAt)}</span>} />}
           contact={{ name: c?.name ?? "", lines: c ? addressLines(c.address) : [] }}
           dates={[[t("rx.col.date"), formatDay(inv.issuedAt)], [t("bank.pay.due"), inv.status === "draft" ? "" : formatDay(inv.dueAt)], ...(inv.paidAt !== null ? [[t("rx.paidOn"), formatDay(inv.paidAt)] as [string, string]] : [])]}
           lines={inv.lines.map((l) => ({ text: t(l.key, l.params), amount: l.amount }))}
           actions={
             <>
               {inv.status === "draft" && <>
-                <button type="button" className="sx-btn" onClick={() => run(act(sendInvoice, inv.id))}><Send aria-hidden />{t("rx.asPdf")}</button>
+                <button type="button" className="sx-btn" onClick={() => { const r = run(act(downloadInvoice, inv.id)); if (r.ok) setSaved(t("rx.downloaded", { file: r.id! })); }}><Send aria-hidden />{t("rx.asPdf")}</button>
                 <button type="button" className="sx-btn primary" onClick={() => run(act(sendInvoice, inv.id))}><Mail aria-hidden />{t("rx.byEmail")}</button>
               </>}
               {isUnpaid(inv) && <button type="button" className="sx-btn" onClick={() => setAsking({ inv, what: "markPaid" })}>{t("books.menu.markPaid")}</button>}
-              {inv.status !== "draft" && isUnpaid(inv) && (hasFeature(game, "dunning")
-                ? <button type="button" className="sx-btn" disabled={step === null} onClick={() => run(act(sendReminder, inv.id))}>{t("rx.dunning")}</button>
-                : currentVendor(game) && sells(currentVendor(game)!, "dunning") && <BooksLocked label={t("rx.dunning")} />)}
+              {inv.status !== "draft" && isUnpaid(inv) && <Gated feature="dunning" label={t("rx.dunning")} onClick={() => run(act(sendReminder, inv.id))} />}
               <More label={inv.number} entries={() => invoiceMenu(inv, game.hour, setAsking)} />
             </>
           } />
       )}
+      {saved && <p role="status">{saved}</p>}
       {error && <p className="sx-err" role="alert">{error}</p>}
       {asking && <InvoiceDialog asking={asking} onClose={() => setAsking(null)} />}
     </>
@@ -146,7 +142,7 @@ function Quotes({ focus, q, go }: { focus: string | null; q: string; go: (s: str
       )}
       {sel && (
         <DocumentEditor key={sel.id} title={t("rx.quote")} number={sel.number} status={<Chip>{t(`orderSteps.status.${sel.status}`)}</Chip>}
-          from={[game.company.name, ownAddress(game).street].join(" · ")} rate={vatRate(game.hour)}
+          rate={vatRate(game.hour)} document={<Page game={game} title={t("orderSteps.quote", { number: sel.number })} to={c?.address} items={sel.lines} footer={<span>{formatDay(sel.sentAt ?? sel.createdAt ?? game.hour)}</span>} />}
           contact={{ name: c?.name ?? (order ? requestName(order) : ""), lines: c ? addressLines(c.address) : [] }}
           dates={[[t("rx.col.date"), formatDay(sel.sentAt ?? sel.createdAt ?? game.hour)]]}
           lines={sel.lines.map((l) => ({ text: t(l.key, l.params), amount: l.amount }))}
