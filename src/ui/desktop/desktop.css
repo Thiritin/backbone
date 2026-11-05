@@ -275,6 +275,7 @@ button { font: inherit; color: inherit; cursor: default; }
 .ctx button.on { background: var(--accent); color: var(--accent-ink); }
 .ctx button[aria-disabled] { color: var(--text-3); }
 .ctx-check { width: 18px; display: inline-flex; justify-content: center; flex: none; }
+.ctx-check svg { width: 14px; height: 14px; }
 .ctx-check svg.lucide { width: 13px; height: 13px; stroke-width: 2.25; }
 .ctx-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .ctx-key { margin-left: 24px; font: inherit; opacity: 0.6; }
