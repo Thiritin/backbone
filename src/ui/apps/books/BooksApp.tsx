@@ -30,6 +30,7 @@ import { setupOf } from "../../../sim/80-business/books-guide";
 import type { AppMenu } from "../../desktop/menu";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
+import { TaxwareProgram } from "./programs/taxware/TaxwareProgram";
 import type { Entry, Group } from "./layouts/types";
 import "../billing/billing.css";
 import "./books.css";
@@ -70,7 +71,13 @@ export function BooksApp() {
   );
 }
 
+// A product with a program of its own draws it; every other product shares the tabbed screens.
 export function BooksProgram() {
+  const v = currentVendor(useBooks());
+  return v?.id === "lexwear" ? <TaxwareProgram /> : <TabsProgram />;
+}
+
+function TabsProgram() {
   const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const waiting = useStore((s) => unsynced(s.game));
   // Before Shop link, a shop system hands its records over only on import.

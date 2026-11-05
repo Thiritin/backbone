@@ -1,0 +1,29 @@
+/* Layout of the double-entry screens; each program themes them through its own classes. */
+.de-page { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 6px; }
+.de-scroll { flex: 1; min-height: 0; overflow: auto; }
+.de-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
+.de-bar label, .de-year { display: inline-flex; align-items: center; gap: 6px; }
+.de-h { margin: 6px 0 4px; font-size: 1em; font-weight: 700; }
+.de-table { width: 100%; }
+.de-table .r { text-align: right; }
+.de-sum td { font-weight: 700; border-top: 1px solid currentColor; }
+.de-neg { color: var(--de-neg, #b00000); }
+.de-late td { color: var(--de-neg, #b00000); }
+.de-none { color: var(--de-muted, #666); padding: 8px 4px; }
+.de-err { color: var(--de-neg, #b00000); margin: 2px 0; }
+.de-failed td { background: var(--de-failed, #fde8e8); }
+.de-mask { padding: 8px; flex: none; }
+.de-grid { display: grid; grid-template-columns: max-content 1fr; gap: 5px 12px; align-items: center; }
+.de-grid select, .de-grid input:not([type="checkbox"]) { min-width: 0; }
+.de-grid > select { max-width: 100%; }
+.de-label { color: var(--de-muted, #444); }
+.de-no { width: 7ch; }
+.de-saldo { margin-left: 8px; color: var(--de-muted, #555); }
+.de-check { display: inline-flex; align-items: center; gap: 4px; }
+.de-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+.de-stapel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.de-foot { display: flex; align-items: center; gap: 16px; padding: 6px 8px; flex: none; flex-wrap: wrap; }
+.de-foot .btn { margin-left: auto; }
+.de-del { padding: 0 6px; min-height: 0; line-height: 1.4; }
+.de-bilanz { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.de-kz { width: auto; min-width: 60%; margin-bottom: 10px; }

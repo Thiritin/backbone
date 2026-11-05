@@ -1,0 +1,184 @@
+/* Taxware Office: the program draws its own Windows chrome inside the window, one look per generation. */
+.books.txo { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; border-top: 0; color: var(--tw-ink); background: var(--tw-face); font: var(--tw-font); }
+.txo button { font: inherit; color: inherit; }
+.txo .btn { font: inherit; }
+.txo-title { display: flex; align-items: center; gap: 6px; flex: none; height: 20px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; color: var(--tw-cap-ink); background: var(--tw-cap); }
+.txo-logo { width: 12px; height: 12px; flex: none; background: var(--tw-brand); box-shadow: inset -3px -3px 0 rgb(0 0 0 / 0.18); }
+.txo-menubar { display: flex; flex: none; padding: 1px 2px; background: var(--tw-face); border-bottom: 1px solid var(--tw-line); }
+.txo-menu { position: relative; }
+.txo-menu > button { border: 1px solid transparent; background: none; padding: 2px 7px; }
+.txo-menu > button:hover, .txo-menu > button[aria-expanded="true"] { background: var(--tw-hot); color: var(--tw-hot-ink); }
+.txo-drop { position: absolute; z-index: 30; left: 0; top: 100%; min-width: 190px; display: flex; flex-direction: column; padding: 2px; background: var(--tw-menu-bg, var(--tw-face)); border: 1px solid var(--tw-line-dark); box-shadow: 2px 2px 0 rgb(0 0 0 / 0.25); }
+.txo-drop button { text-align: left; border: 0; background: none; padding: 3px 20px; white-space: nowrap; }
+.txo-drop button:hover { background: var(--tw-hot); color: var(--tw-hot-ink); }
+.txo-drop .txo-sep { border-top: 1px solid var(--tw-line); margin-top: 3px; padding-top: 5px; }
+.txo-drop [aria-checked="true"]::before { content: "\2022"; position: absolute; margin-left: -12px; }
+.txo [aria-disabled="true"] { opacity: 0.5; }
+.txo-split { flex: 1; min-height: 0; display: flex; }
+.txo-nav { width: 190px; flex: none; overflow: auto; }
+.txo-nav ul { list-style: none; margin: 0; padding: 0; }
+.txo-folder { display: block; font-weight: 700; padding: 3px 6px 1px; }
+.txo-leaf { display: flex; align-items: center; gap: 5px; width: 100%; border: 0; background: none; text-align: left; padding: 2px 6px 2px 20px; }
+.txo-leaf svg { width: 15px; height: 15px; flex: none; color: var(--tw-accent); }
+.txo-leaf[aria-current] { background: var(--tw-sel); color: var(--tw-sel-ink); }
+.txo-leaf[aria-current] svg { color: inherit; }
+.txo-count, .txo-badge { margin-left: auto; min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--tw-brand); color: #fff; font-size: 10px; text-align: center; }
+.txo-status { display: flex; flex: none; gap: 2px; padding: 2px; background: var(--tw-face); }
+.txo-status span { padding: 1px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.txo-status span:first-child { flex: 1; }
+.txo-cap-btn { display: grid; place-items: center; width: 16px; height: 14px; padding: 0; margin-left: 2px; line-height: 1; font-size: 10px; }
+.txo-cap-btn svg { width: 10px; height: 10px; }
+.txo-caption { display: flex; align-items: center; gap: 2px; height: 18px; padding: 0 2px 0 5px; flex: none; font-weight: 700; color: var(--tw-cap-ink); background: var(--tw-cap); }
+.txo-caption > span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.txo-child-body, .txo-doc { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: auto; background: var(--tw-paper); color: var(--tw-ink); }
+.txo-modal { position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; background: rgb(0 0 0 / 0.18); padding: 16px; }
+.txo-dialog { display: flex; flex-direction: column; min-width: 320px; max-width: 100%; max-height: 100%; background: var(--tw-face); border: 1px solid var(--tw-line-dark); box-shadow: 3px 3px 0 rgb(0 0 0 / 0.3); }
+.txo-guide { width: 640px; height: 90%; }
+.txo-dialog-body { flex: 1; min-height: 0; overflow: auto; padding: 8px; }
+.txo-guide .txo-dialog-body { background: var(--tw-paper); color: var(--text); font: 13px var(--font, system-ui); }
+.txo-buttons { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+.txo-list { width: 100%; background: var(--tw-paper); }
+.txo-list tr.sel td { background: var(--tw-sel); color: var(--tw-sel-ink); }
+.txo-link { border: 0; background: none; padding: 0; color: var(--tw-accent); text-decoration: underline; cursor: pointer; text-align: left; }
+.txo-panel { padding: 8px 10px; background: var(--tw-paper); border: 1px solid var(--tw-line); }
+.txo-panel h3 { margin: 0 0 6px; font-size: 1em; }
+.txo-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.txo-panel li { display: flex; justify-content: space-between; gap: 10px; }
+.txo-info dl { margin: 0; display: grid; gap: 4px; }
+.txo-info dl div { display: flex; justify-content: space-between; gap: 10px; }
+.txo-info dd { margin: 0; }
+.txo-start { flex: 1; min-height: 0; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.txo-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* The theme of the screens inside: tables, buttons and fields in the program's own type. */
+.txo .de-table th { font-weight: 400; text-align: left; }
+.txo .fin-scroll, .txo .fin-toolbar, .txo .fin-bar { font: inherit; }
+.txo-faktura .txo-caption, .txo-tab.txo-faktura { --tw-cap: var(--tw-faktura); }
+
+/* 2005 to 2008: grey bevelled Windows, navy captions, Tahoma 8 pt, a Navigator tree and MDI child windows. */
+.txo-classic {
+  --tw-face: #d4d0c8; --tw-paper: #fff; --tw-ink: #000; --tw-line: #808080; --tw-line-dark: #404040;
+  --tw-cap: linear-gradient(90deg, #0a246a, #a6caf0); --tw-cap-ink: #fff; --tw-faktura: linear-gradient(90deg, #6b2d00, #e0a070);
+  --tw-hot: #0a246a; --tw-hot-ink: #fff; --tw-sel: #0a246a; --tw-sel-ink: #fff; --tw-accent: #0a246a; --tw-brand: #c8102e;
+  --tw-font: 11px Tahoma, Verdana, sans-serif; --de-muted: #444;
+}
+.txo-classic .txo-title { height: 18px; }
+.txo-classic .txo-menubar { border-bottom: 1px solid #fff; box-shadow: 0 1px 0 #808080; }
+.txo-classic .txo-drop { border: 2px outset #d4d0c8; box-shadow: 1px 1px 0 #000; }
+.txo-classic .txo-tools { display: flex; align-items: center; gap: 1px; flex: none; padding: 2px 3px; border-bottom: 1px solid #808080; box-shadow: 0 1px 0 #fff; }
+.txo-classic .txo-tools button { width: 23px; height: 22px; display: grid; place-items: center; padding: 0; border: 1px solid transparent; background: none; }
+.txo-classic .txo-tools button:hover { border-color: #fff #808080 #808080 #fff; }
+.txo-classic .txo-tools button:active { border-color: #808080 #fff #fff #808080; }
+.txo-tool-sep { width: 2px; height: 18px; margin: 0 3px; border-left: 1px solid #808080; border-right: 1px solid #fff; }
+.txo-classic .txo-split { gap: 3px; padding: 3px; }
+.txo-classic .txo-nav { background: #fff; border: 2px inset #d4d0c8; }
+.txo-classic .txo-nav-head { padding: 2px 5px; background: #808080; color: #fff; font-weight: 700; }
+.txo-classic .txo-folder::before { content: "\229F"; margin-right: 4px; color: #808080; font-weight: 400; }
+.txo-classic .txo-leaf { border-left: 1px dotted #808080; margin-left: 10px; width: calc(100% - 10px); padding-left: 8px; }
+.txo-mdi { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden; background: #808080; border: 2px inset #d4d0c8; }
+.txo-child { position: absolute; display: flex; flex-direction: column; background: #d4d0c8; border: 2px outset #d4d0c8; z-index: 1; }
+.txo-child.active { z-index: 2; }
+.txo-child:not(.active) .txo-caption { --tw-cap: linear-gradient(90deg, #808080, #c0c0c0); color: #d4d0c8; }
+.txo-child .txo-child-body { margin: 2px; border: 2px inset #d4d0c8; }
+.txo-arr-tile { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); grid-auto-rows: minmax(220px, 1fr); gap: 2px; padding: 2px; overflow: auto; }
+.txo-arr-tile .txo-child { position: relative; }
+.txo-arr-max .txo-child { inset: 0; }
+.txo-arr-max .txo-child:not(.active) { display: none; }
+.txo-classic .txo-cap-btn { background: #d4d0c8; color: #000; border: 1px outset #fff; }
+.txo-classic .txo-status span { border: 1px solid; border-color: #808080 #fff #fff #808080; }
+.txo-classic .txo-dialog { border: 2px outset #d4d0c8; }
+.txo-classic .txo-mdi > .txo-dialog { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 380px; }
+.txo-classic .btn, .txo-classic .txo-child-body button:not(.txo-link):not(.txo-cap-btn) { background: #d4d0c8; color: #000; border: 2px outset #f4f3ee; border-radius: 0; padding: 2px 10px; min-height: 0; box-shadow: none; }
+.txo-classic .txo-child-body button:active, .txo-classic .btn:active { border-style: inset; }
+.txo-classic .txo-child-body input, .txo-classic .txo-child-body select { font: inherit; border: 2px inset #d4d0c8; border-radius: 0; background: #fff; color: #000; padding: 1px 3px; }
+.txo-classic .txo-child-body .table th, .txo-classic .txo-list th { background: #d4d0c8; color: #000; border: 1px solid; border-color: #fff #808080 #808080 #fff; padding: 1px 4px; }
+.txo-classic .txo-child-body .table td { padding: 1px 4px; border-bottom: 1px solid #ece9d8; }
+.txo-classic .txo-child-body { font: 11px Tahoma, Verdana, sans-serif; }
+.txo-classic .de-mask { background: #d4d0c8; border-bottom: 2px groove #fff; }
+
+/* 2009 to 2014: the redesign, light Vista gradients, Segoe UI 9 pt, a labelled band with search, side navigation and document tabs. */
+.txo-workflow {
+  --tw-face: #f0f0f0; --tw-paper: #fff; --tw-ink: #1e1e1e; --tw-line: #c5ccd8; --tw-line-dark: #8e99ab;
+  --tw-cap: linear-gradient(180deg, #e3ecf8, #c9d8ee); --tw-cap-ink: #1e395b; --tw-faktura: linear-gradient(180deg, #f8eadc, #ecc9a8);
+  --tw-hot: #d5e6f7; --tw-hot-ink: #1e1e1e; --tw-sel: #cde3f8; --tw-sel-ink: #102a4c; --tw-accent: #1e5aa8; --tw-brand: #d9261c;
+  --tw-font: 12px "Segoe UI", Tahoma, sans-serif; --tw-menu-bg: #f7f7f7;
+}
+.txo-workflow .txo-title { font-weight: 400; height: 22px; }
+.txo-workflow .txo-menu > button:hover, .txo-workflow .txo-menu > button[aria-expanded="true"] { border-color: #99c4ea; border-radius: 2px; }
+.txo-workflow .txo-drop button:hover { outline: 1px solid #99c4ea; }
+.txo-band { display: flex; align-items: stretch; gap: 0; flex: none; padding: 3px 6px 0; background: linear-gradient(180deg, #fdfdfe, #e5ebf4); border-bottom: 1px solid var(--tw-line-dark); }
+.txo-group { display: flex; flex-direction: column; padding: 0 6px; border-right: 1px solid var(--tw-line); }
+.txo-group-items { display: flex; gap: 2px; }
+.txo-group-items button { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 74px; padding: 3px 2px; border: 1px solid transparent; border-radius: 3px; background: none; font-size: 11px; line-height: 1.15; text-align: center; }
+.txo-group-items button:hover { background: linear-gradient(180deg, #fdf4d0, #fbe39b); border-color: #e3c36a; }
+.txo-group-items svg { width: 24px; height: 24px; color: var(--tw-accent); }
+.txo-group-name { text-align: center; color: #4d5b72; font-size: 11px; padding: 1px 0 2px; }
+.txo-search { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: #fff; border: 1px solid var(--tw-line-dark); border-radius: 2px; }
+.txo-search svg { width: 14px; height: 14px; color: #6b7a90; }
+.txo-search input { border: 0; outline: 0; font: inherit; width: 150px; background: none; color: inherit; }
+.txo-workflow .txo-split { gap: 0; }
+.txo-workflow .txo-nav { background: #dde6f2; border-right: 1px solid var(--tw-line-dark); padding-bottom: 6px; }
+.txo-workflow .txo-nav-head { padding: 6px 8px; font-size: 14px; color: #1e395b; }
+.txo-workflow .txo-folder { margin-top: 6px; padding: 3px 8px; background: linear-gradient(180deg, #f4f7fb, #cfdbec); border-block: 1px solid #b6c5da; color: #1e395b; }
+.txo-workflow .txo-leaf { padding-left: 14px; }
+.txo-workflow .txo-leaf:hover { background: #eaf1fa; }
+.txo-docs { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.txo-tabs { display: flex; gap: 2px; flex: none; padding: 4px 4px 0; background: #e6ebf2; border-bottom: 1px solid var(--tw-line-dark); overflow: hidden; }
+.txo-tab { display: flex; align-items: center; border: 1px solid var(--tw-line-dark); border-bottom: 0; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #f6f8fb, #dfe6ef); padding-right: 3px; }
+.txo-tab button:first-child { border: 0; background: none; padding: 3px 8px; white-space: nowrap; }
+.txo-tab[aria-selected="true"] { background: #fff; margin-bottom: -1px; }
+.txo-tab.txo-faktura { background: var(--tw-faktura); }
+.txo-tab .txo-cap-btn { border: 0; background: none; }
+.txo-workflow .txo-doc[hidden] { display: none; }
+.txo-workflow .txo-status { border-top: 1px solid var(--tw-line); background: linear-gradient(180deg, #f2f5f9, #dfe6ef); }
+.txo-workflow .txo-status span + span { border-left: 1px solid var(--tw-line); }
+.txo-workflow .txo-caption { height: 24px; }
+.txo-flow { padding: 12px; background: linear-gradient(180deg, #fff, #eef3fa); border: 1px solid var(--tw-line); }
+.txo-flow h3 { margin: 0 0 10px; color: #1e395b; font-size: 15px; font-weight: 400; }
+.txo-flow ol { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.txo-flow li { display: flex; align-items: center; gap: 6px; }
+.txo-arrow { width: 22px; height: 22px; color: #8ea7c9; }
+.txo-step { display: flex; align-items: center; gap: 8px; min-width: 120px; padding: 10px 14px; border: 1px solid #9fb6d6; border-radius: 4px; background: linear-gradient(180deg, #fafcff, #d9e5f5); color: #1e395b; font-size: 13px; }
+.txo-step .num { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--tw-accent); color: #fff; font-size: 11px; }
+.txo-step:hover { background: linear-gradient(180deg, #fffaf0, #fbe39b); border-color: #e3c36a; }
+
+/* 2015 on: flat white and blue, a dark main navigation, context tabs and a start page of tiles. */
+.txo-flat {
+  --tw-face: #fff; --tw-paper: #fff; --tw-ink: #222; --tw-line: #dfe3e8; --tw-line-dark: #b9c1cb;
+  --tw-cap: #fff; --tw-cap-ink: #222; --tw-faktura: #fff;
+  --tw-hot: #e5f1fa; --tw-hot-ink: #0b4f86; --tw-sel: #0072bc; --tw-sel-ink: #fff; --tw-accent: #0072bc; --tw-brand: #e2001a;
+  --tw-font: 13px "Segoe UI", system-ui, sans-serif;
+}
+.txo-brand { display: flex; align-items: center; gap: 8px; flex: none; padding: 8px 14px; border-bottom: 1px solid var(--tw-line); font-size: 14px; }
+.txo-brand b { color: var(--tw-brand); }
+.txo-firma { margin-left: auto; color: #667; font-size: 12px; }
+.txo-flat .txo-logo { box-shadow: none; }
+.txo-flat .txo-menubar { padding: 0 8px; background: #f7f8fa; }
+.txo-flat .txo-menu > button { padding: 4px 10px; }
+.txo-flat .txo-drop { border-color: var(--tw-line-dark); box-shadow: 0 4px 12px rgb(0 0 0 / 0.12); }
+.txo-main { width: 180px; flex: none; display: flex; flex-direction: column; gap: 1px; padding: 8px 0; background: #1d3b5a; overflow: auto; }
+.txo-main button { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 9px 16px; color: #d6e2ee; text-align: left; }
+.txo-main button svg { width: 18px; height: 18px; stroke-width: 1.6; }
+.txo-main button:hover { background: #24496f; color: #fff; }
+.txo-main button[aria-current] { background: #0072bc; color: #fff; }
+.txo-page { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #fff; }
+.txo-context { flex: none; padding: 12px 16px 0; border-bottom: 1px solid var(--tw-line); }
+.txo-context h2 { margin: 0 0 8px; font-size: 18px; font-weight: 400; }
+.txo-subtabs { display: flex; gap: 18px; }
+.txo-subtabs button { border: 0; border-bottom: 3px solid transparent; background: none; padding: 4px 0 6px; color: #556; }
+.txo-subtabs [aria-selected="true"] { border-color: var(--tw-accent); color: var(--tw-accent); }
+.txo-faktura .txo-context h2 { color: #b05a00; }
+.txo-flat .txo-doc { padding: 4px 8px; }
+.txo-flat .de-table th { color: #667; border-bottom: 1px solid var(--tw-line); }
+.txo-flat .txo-status { border-top: 1px solid var(--tw-line); color: #667; font-size: 12px; background: #f7f8fa; }
+.txo-flat .txo-dialog { border-color: var(--tw-line-dark); box-shadow: 0 8px 28px rgb(0 0 0 / 0.2); }
+.txo-flat .txo-caption { height: 32px; padding: 0 8px 0 12px; border-bottom: 1px solid var(--tw-line); font-weight: 600; }
+.txo-start-f { display: grid; grid-template-columns: 1fr 260px; grid-template-rows: 1fr auto; gap: 16px; padding: 16px; }
+.txo-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); grid-auto-rows: 110px; gap: 12px; align-content: start; }
+.txo-tiles .txo-tile { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 14px; border: 1px solid var(--tw-line); background: #fff; text-align: left; font-size: 14px; }
+.txo-tiles .txo-tile svg { width: 30px; height: 30px; stroke-width: 1.4; color: var(--tw-accent); }
+.txo-tiles .txo-tile:hover { border-color: var(--tw-accent); background: #f3f8fc; }
+.txo-tile .txo-badge { position: absolute; top: 10px; right: 10px; }
+.txo-side { display: flex; flex-direction: column; gap: 12px; }
+.txo-flat .txo-panel { border-top: 3px solid var(--tw-accent); }
+.txo-service { grid-column: 1 / -1; display: flex; gap: 18px; align-items: center; padding: 10px 12px; background: #f2f4f7; }

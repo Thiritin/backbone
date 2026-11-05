@@ -2,8 +2,8 @@
 // features decide what the program does. Prices are game euros: once for a desktop licence, a month for a browser plan.
 export type BooksVendorId = "lexwear" | "wizo" | "saga" | "orgamin" | "collmix" | "sevdeck" | "lexoffize" | "gnucache";
 export type Feature = "quotes" | "monthly-run" | "match-by-reference" | "hbci" | "tax" | "reports" | "helpdesk-link" | "statistics" | "dunning";
-// The layout family the Books window draws the program in.
-export type Layout = "tree" | "icons" | "menus" | "tabs" | "web" | "flat" | "gtk";
+// The layout family the Books window draws the program in; a product with its own program has none.
+export type Layout = "icons" | "menus" | "tabs" | "web" | "flat" | "gtk";
 
 export interface Edition {
   id: string; name: string; price: number;
@@ -29,7 +29,7 @@ export interface BooksVendor {
   ships?: Partial<Record<Feature, number>>;
   // The year updates stop, the features that stop working from a year on, and the program the vendor offers instead.
   supportEnd?: number; breaks?: Partial<Record<Feature, number>>; successor?: BooksVendorId;
-  layout: Layout;
+  layout?: Layout;
   // bar and ink colour the Books chrome, accent the selection.
   skin: { bar: string; ink: string; accent: string };
 }
@@ -43,7 +43,7 @@ const ed = (id: string, name: string, price: number, features: Feature[], more: 
   ({ id, name, price, update: 0, features, users: 1, seat: 0, ...more });
 
 export const BOOKS_VENDORS: BooksVendor[] = [
-  { id: "lexwear", name: "Taxware", program: "Taxware Office", from: 2005, deployment: "desktop", setupMb: 180, layout: "tree",
+  { id: "lexwear", name: "Taxware", program: "Taxware Office", from: 2005, deployment: "desktop", setupMb: 180,
     editions: [ed("buchhalter", "buchhalter", 249, ["quotes", "monthly-run", "match-by-reference", "reports"], { update: 99 }),
       ed("financial-office", "financial office", 499, ["quotes", "monthly-run", "match-by-reference", "reports", "tax", "statistics"], { update: 149 }),
       ed("financial-office-pro", "financial office pro", 899, ["quotes", "monthly-run", "match-by-reference", "reports", "tax", "statistics", "dunning", "helpdesk-link"], { update: 199, users: NETWORK })],
