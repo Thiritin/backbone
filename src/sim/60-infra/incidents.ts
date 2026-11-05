@@ -72,6 +72,13 @@ function customersOf(s: GameState, workloads: Workload[]): Customer[] {
 // The active customers whose services run on this device, directly or in a virtual machine.
 export const customersOnDevice = (s: GameState, deviceId: string): Customer[] => customersOf(s, s.workloads.filter((w) => onDevices(s, w, new Set([deviceId]))));
 
+// The active customers a stop of this device takes offline: those on a server, and for a router every customer in its room.
+export function customersAffectedBy(s: GameState, d: Device): Customer[] {
+  if (modelById(d.model).kind !== "gateway") return customersOnDevice(s, d.id);
+  const room = locationOf(s, d)?.id, here = new Set(s.devices.filter((x) => locationOf(s, x)?.id === room).map((x) => x.id));
+  return customersOf(s, s.workloads.filter((w) => onDevices(s, w, here)));
+}
+
 function record(s: GameState, inc: Omit<Incident, "id">): Incident {
   const full = { id: `inc${s.nextId++}`, ...inc };
   s.ops = { ...s.ops, incidents: [...s.ops.incidents, full] };

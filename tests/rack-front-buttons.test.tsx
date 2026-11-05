@@ -6,7 +6,14 @@ import { modelById } from "../src/sim/10-catalog/hardware";
 import { RackPanel } from "../src/ui/world/rack/RackPanel";
 import { useStore } from "../src/ui/store";
 import { customersOnDevice } from "../src/sim/60-infra/incidents";
+import { useDeviceMenu } from "../src/ui/apps/locations/Inspector";
 import { newGame, readyGame, withServer } from "./fixtures";
+
+let forced: string | null = null;
+vi.mock("../src/sim/checklist", async (orig) => {
+  const m = await orig<typeof import("../src/sim/checklist")>();
+  return { ...m, nextGoal: (g: never, c: never) => forced ?? m.nextGoal(g, c), cardBoard: (g: never) => ({ ...m.cardBoard(g), current: forced ? { id: "x", goals: [forced], chapter: 1 } : m.cardBoard(g).current }) };
+});
 
 const dev = () => useStore.getState().game.devices.find((d) => modelById(d.model).kind === "server")!;
 const router = () => useStore.getState().game.devices.find((d) => modelById(d.model).kind === "gateway")!;
@@ -20,7 +27,7 @@ const up = (el: Element) => fireEvent.pointerUp(el, { button: 0 });
 const tap = (el: Element) => { down(el); up(el); fireEvent.click(el); };
 
 beforeEach(() => { vi.useFakeTimers(); useStore.setState({ game: withServer(newGame(1)) }); });
-afterEach(() => { cleanup(); vi.useRealTimers(); });
+afterEach(() => { forced = null; cleanup(); vi.useRealTimers(); });
 
 describe("rack front buttons", () => {
   it("presses at once without selecting the device or opening its tag", () => {
@@ -136,5 +143,40 @@ describe("rack front buttons", () => {
       tap(btn(c, t("art.reset")));
       expect(c.querySelector("[data-slip=customers]")).not.toBeNull();
     });
+  });
+
+  it("marks the control the guide card needs on the drawn front", () => {
+    const d = dev();
+    d.on = false; d.bootUntil = undefined; useStore.setState({ game: { ...useStore.getState().game } });
+    forced = "mountServer";
+    expect(mount().querySelectorAll(".wr-face:not(.out) [data-guide]").length).toBe(1);
+    cleanup(); forced = "plugStick";
+    expect(mount().querySelector(".wr-face:not(.out) rect[data-guide]")).not.toBeNull();
+    cleanup(); forced = "bootUsb";
+    expect(mount().querySelector(".wr-face:not(.out) [data-guide]")).not.toBeNull();
+  });
+
+  it("asks before the router goes off while customers are behind it", () => {
+    const g = readyGame(1), r = g.devices.find((x) => modelById(x.model).kind === "gateway")!;
+    r.on = true; useStore.setState({ game: g });
+    const c = mount("back");
+    tap(btn(c, t("art.rocker")));
+    expect(c.querySelector("[data-slip=customers]")).not.toBeNull();
+    expect(router().on).toBe(true);
+  });
+
+  it("names the affected customers in the desktop confirm", () => {
+    const g = readyGame(1), d = g.devices.find((x) => modelById(x.model).kind === "server")!;
+    d.on = true; d.bootUntil = undefined; d.setup = false;
+    useStore.setState({ game: g });
+    let pending: { text: string } | null = null;
+    function H() {
+      const game = useStore((s) => s.game), menus = useDeviceMenu(game, () => {}, () => {}, undefined, true);
+      pending = menus.pending ?? null;
+      return <button onClick={() => menus.front(game.devices.find((x) => x.id === d.id)!, "hold")}>go</button>;
+    }
+    const { getByText } = render(<H />);
+    fireEvent.click(getByText("go"));
+    expect(pending!.text).toContain(t("world.affected", { count: customersOnDevice(useStore.getState().game, d.id).length }));
   });
 });

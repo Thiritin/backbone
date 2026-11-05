@@ -99,8 +99,8 @@ export type PanelOp = "power" | "hold" | "reset" | "switch" | "hint";
 
 // A control on a device face, pressed directly when the player is on site: a tap fires onTap, holding for `hold` ms
 // fires onHold behind a filling ring. The children draw the button and get true while it is pressed; box is the hit area.
-export function PanelButton({ x, y, r, box, away, label, hold, onTap, onHold, children }: {
-  x: number; y: number; r: number; box: [number, number, number, number]; away?: boolean; label: string; hold?: number;
+export function PanelButton({ x, y, r, box, away, guide, label, hold, onTap, onHold, children }: {
+  x: number; y: number; r: number; box: [number, number, number, number]; away?: boolean; guide?: boolean; label: string; hold?: number;
   onTap?: () => void; onHold?: () => void; children: (down: boolean) => ReactNode;
 }) {
   const [down, setDown] = useState(false), timer = useRef<ReturnType<typeof setTimeout>>(undefined), live = useRef(false);
@@ -109,6 +109,7 @@ export function PanelButton({ x, y, r, box, away, label, hold, onTap, onHold, ch
   return (
     <g>
       {children(down)}
+      {guide && <circle data-guide="" cx={x} cy={y} r={ring + 1.4} fill="none" stroke="oklch(0.75 0.19 60)" strokeWidth="1.4" pointerEvents="none" />}
       {down && hold && onHold && (
         <circle cx={x} cy={y} r={ring} fill="none" stroke={LED.warn} strokeWidth="0.9" strokeDasharray={len} strokeDashoffset={len} transform={`rotate(-90 ${x} ${y})`} pointerEvents="none">
           <animate attributeName="stroke-dashoffset" from={len} to="0" dur={`${hold}ms`} fill="freeze" />
@@ -171,6 +172,8 @@ export interface FrontProps {
   trans?: boolean;
   // The face's controls, pressed directly; they are inert while the player is away.
   onPanel?: (op: PanelOp) => void;
+  // The control the guide card needs next.
+  guide?: "power" | "usb" | "reset";
   away?: boolean;
   // The password printed on the sticker of a small-office router.
   note?: string;
@@ -216,16 +219,16 @@ function ServerFace(p: FrontProps) {
       <rect x={x0 + per * bw + 3} y="2.5" width={Math.max(0, cx - x0 - per * bw - 6)} height={h - 5} rx="1" fill={st.vent} opacity="0.8" />
       <rect x={cx} y="2" width={panel} height={h - 4} rx="1" fill="oklch(0.14 0.004 255)" />
       <AssetTag x={cx + 3} y={Math.min(h / 2, 7)} text={name} h={h} />
-      <PanelButton x={cx + panel - 10} y={h - 6} r={Math.min(3, h * 0.14)} box={[cx + panel - 20, 0, 20, h]} away={p.away} label={state === "off" ? t("art.powerOn") : t("art.shutDown")} hold={2000}
+      <PanelButton x={cx + panel - 10} y={h - 6} r={Math.min(3, h * 0.14)} box={[cx + panel - 20, 0, 20, h]} away={p.away} guide={p.guide === "power" && state === "off"} label={state === "off" ? t("art.powerOn") : t("art.shutDown")} hold={2000}
         onTap={p.onPanel && (() => p.onPanel!("power"))} onHold={p.onPanel && (() => p.onPanel!("hold"))}>
         {(down) => <circle cx={cx + panel - 10 + (down ? 0.5 : 0)} cy={h - 6 + (down ? 0.5 : 0)} r={Math.min(3, h * 0.14)} fill={down ? "oklch(0.12 0.004 255)" : "oklch(0.2 0.004 255)"} stroke={state === "off" ? LED.off : LED.act} strokeWidth="0.9" />}
       </PanelButton>
-      <PanelButton x={cx + panel - 32} y={h - 6} r={1} box={[cx + panel - 42, 0, 20, h]} away={p.away} label={t("art.reset")} onTap={p.onPanel && (() => p.onPanel!("reset"))}>
+      <PanelButton x={cx + panel - 32} y={h - 6} r={1} box={[cx + panel - 42, 0, 20, h]} away={p.away} guide={p.guide === "reset"} label={t("art.reset")} onTap={p.onPanel && (() => p.onPanel!("reset"))}>
         {(down) => <circle cx={cx + panel - 32 + (down ? 0.5 : 0)} cy={h - 6 + (down ? 0.5 : 0)} r="1" fill={down ? "oklch(0.3 0.004 255)" : "oklch(0.05 0.004 255)"} stroke="oklch(0.34 0.005 255)" strokeWidth="0.5" />}
       </PanelButton>
       <StatusLeds x={cx + panel - 52} y={h - 6} state={state} blink={blink} fault={p.fault} trans={p.trans} />
       {h >= 18 && <BrandMark brand={brand} x={cx + 4} y={h - 11} size={8} />}
-      <UsbPort cx={cx - (h >= 28 ? 13 : 10)} cy={h - 6} h={h} stick={p.stick} onUsb={p.onUsb} />
+      <UsbPort cx={cx - (h >= 28 ? 13 : 10)} cy={h - 6} h={h} stick={p.stick} onUsb={p.onUsb} guide={p.guide === "usb" && !p.stick} />
     </>
   );
 }
@@ -526,13 +529,14 @@ export function Pdu({ w, h, name, model, state }: FrontProps) {
 
 // A front USB port with its centre at (cx, cy): a light bezel on a dark plate so it reads on any face, the USB trident
 // beside it on faces of two units or more, and the stick in it when it is plugged in. Every face places its own.
-export function UsbPort({ cx, cy, h, stick, onUsb }: { cx: number; cy: number; h: number; stick?: boolean; onUsb?: () => void }) {
+export function UsbPort({ cx, cy, h, stick, onUsb, guide }: { cx: number; cy: number; h: number; stick?: boolean; onUsb?: () => void; guide?: boolean }) {
   const x = cx - 10, y = cy - 4, label = stick ? t("art.unplugUsb") : t("art.plugInUsb"), glyph = h >= 28;
   return (
     <>
       <rect x={x - 2} y={y - 2} width={glyph ? 38 : 24} height="12" rx="1" fill="oklch(0.12 0.004 255)" aria-hidden="true" />
       <rect x={x} y={y} width="20" height="8" rx="0.8" fill="oklch(0.08 0.004 255)" stroke="oklch(0.78 0.01 255)" strokeWidth="1" aria-label={t("art.usbPort")} />
       <rect x={x + 3} y={y + 2.5} width="14" height="2.5" fill="oklch(0.6 0.14 250)" aria-hidden="true" />
+      {guide && <rect data-guide="" x={x - 3} y={y - 3} width="26" height="14" rx="1.5" fill="none" stroke="oklch(0.75 0.19 60)" strokeWidth="1.4" pointerEvents="none" />}
       {glyph && <path d={`M${x + 28} ${cy + 3.5}V${cy - 3.5}M${x + 28} ${cy - 1}l3-1.8M${x + 28} ${cy + 1.2}l-3-1.8`} fill="none" stroke="oklch(0.78 0.01 255)" strokeWidth="1" strokeLinecap="round" aria-hidden="true" />}
       {stick && (
         <g aria-hidden="true">

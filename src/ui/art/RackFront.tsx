@@ -38,6 +38,7 @@ interface Props {
   // A press on a control of a device's face; away is whether the player is not on site, which leaves them inert.
   onPanel?: (device: string, op: PanelOp) => void;
   away?: boolean;
+  guide?: "power" | "usb" | "reset";
   // The server whose console end holds the crash cart cable; the cable runs from it to the right side of the rack.
   consoleOn?: string | null;
   // A click on a server's front USB port, where the stick plugs in.
@@ -91,7 +92,7 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, consoleOn, onUsb, onPanel, away, onMove, onPort, hand = null, portTitle, canLink, needs = [], onAway, duct }: Props) {
+export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, consoleOn, onUsb, onPanel, away, guide, onMove, onPort, hand = null, portTitle, canLink, needs = [], onAway, duct }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
@@ -110,7 +111,7 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       setSlide({ id: it.id, from: it.slot, y0: e.clientY, to: it.slot, px: pitch * (e.currentTarget.ownerSVGElement?.getScreenCTM()?.d ?? 1) });
     },
   });
-  const panel = (it: RackItem) => ({ away, onPanel: onPanel && ((op: PanelOp) => onPanel(it.id, op)) });
+  const panel = (it: RackItem) => ({ away, guide, onPanel: onPanel && ((op: PanelOp) => onPanel(it.id, op)) });
   const placed = new Map<string, { it: RackItem; y: number; h: number }>();
   const out: ReactNode[] = [];
   let y = 0;
