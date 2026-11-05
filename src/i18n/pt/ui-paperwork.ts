@@ -42,6 +42,7 @@ export default {
   "paperwork.letter.greeting": () => "Exmos. Senhores,",
   "paperwork.letter.closing": () => "Com os melhores cumprimentos,",
   "paperwork.letter.machine": () => "Esta carta foi emitida automaticamente e é válida sem assinatura.",
+  "paperwork.letter.paid": () => "Pagamento recebido",
   "paperwork.letter.bank": () => "Dados bancários",
   "paperwork.letter.account": () => "Conta",
   "paperwork.letter.code": () => "Código do banco",

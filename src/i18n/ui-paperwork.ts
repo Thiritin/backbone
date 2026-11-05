@@ -42,6 +42,7 @@ export default {
   "paperwork.letter.greeting": () => "Dear Sir or Madam,",
   "paperwork.letter.closing": () => "Yours faithfully",
   "paperwork.letter.machine": () => "This letter was produced by machine and is valid without a signature.",
+  "paperwork.letter.paid": () => "Payment received",
   "paperwork.letter.bank": () => "Bank details",
   "paperwork.letter.account": () => "Account",
   "paperwork.letter.code": () => "Bank code",

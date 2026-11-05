@@ -14,7 +14,9 @@ import { groupIban, ibanEra } from "../../../sim/46-finance/bank";
 import { SUPPLIER_CODE, supplierAccount, supplierHost, supplierIban, type Payable } from "../../../sim/46-finance/payables";
 import type { GameState } from "../../../sim/50-state";
 import { INPUT_CATEGORIES, vatRate } from "../../../sim/80-business/tax";
+import { LETTERHEADS } from "../../art/letterheads";
 import { brandColor, hasMark, Logo } from "../../art/logos";
+import { yearOf } from "../../../sim/00-core/time";
 import { formatDay } from "../billing/format";
 import { addressLines } from "../books/InvoicesTab";
 import { hueOf } from "../browser/Favicon";
@@ -41,6 +43,8 @@ const word = (mark: ReactNode, name: string) => <span className="logo">{mark}<sp
 export function supplierBrand(name: string): { color: string; logo: ReactNode; layout: typeof LAYOUTS[number] } {
   const provider = DATACENTERS.find((d) => d.name === name)?.provider, mark = provider ?? name.toLowerCase().replace(/ /g, "-");
   const layout = LAYOUTS[hueOf(provider ?? name) % LAYOUTS.length];
+  const head = LETTERHEADS[name];
+  if (head) return { color: "#1a1a1a", logo: <span className="logo"><span className="letter-logo">{head.mark}</span></span>, layout };
   if (hasMark(mark)) return { color: brandColor(mark), logo: <Logo provider={mark} word />, layout };
   const sw = [...SERVER_OS, ...SOFTWARE, ...SHOP_LICENCES].find((x) => x.name === name);
   if (sw) {
@@ -55,8 +59,61 @@ export function supplierBrand(name: string): { color: string; logo: ReactNode; l
 
 // A supplier's invoice in its own colours and layout.
 export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
+  return yearOf(p.issuedAt) < DOT_UNTIL ? <DotInvoice game={game} p={p} /> : <StyledInvoice game={game} p={p} />;
+}
+
+// Small companies printed their invoices on a dot-matrix printer on continuous forms up to 2008; the laser PDF follows.
+export const DOT_UNTIL = 2009;
+// The site line from the short brand: a legal name too long for an address falls back to its first word.
+const webOf = (name: string): string => { const h = supplierHost(name); return `www.${h.length > 24 ? `${name.split(" ")[0].toLowerCase().replace(/[^a-z0-9]/g, "")}.de` : h}`; };
+const W = 60;
+const wrap = (text: string, n: number): string[] => text.split(" ").reduce<string[]>((o, w) => {
+  const last = o[o.length - 1];
+  if (last !== undefined && last.length + 1 + w.length <= n) o[o.length - 1] = `${last} ${w}`; else o.push(w);
+  return o;
+}, []);
+type Ln = string | [string, string];
+
+function DotInvoice({ game, p }: { game: GameState; p: Payable }) {
+  const web = webOf(p.name), total = p.lines.reduce((n, l) => n - l.amount, 0), doc = p.doc ?? "invoice";
+  const rate = vatRate(p.issuedAt), taxed = p.lines.filter((l) => INPUT_CATEGORIES.includes(l.category));
+  const vat = -taxed.reduce((n, l) => n + l.amount, 0) * rate / (1 + rate);
+  const bank = ibanEra(game) ? `${t("checkout.iban")} ${groupIban(supplierIban(p.supplier))}` : `${t("paperwork.letter.account")} ${supplierAccount(p.supplier)} ${t("paperwork.letter.code")} ${SUPPLIER_CODE}`;
+  const title = t(`purchase.doc.${doc}`);
+  const head: Ln[] = [
+    ...wrap(p.name.toUpperCase(), W), web, "", ...addressLines(ownAddress(game)), "",
+    [doc === "invoice" ? t("preview.number") : t(`purchase.no.${doc}`), p.number], [t("preview.date"), formatDay(p.issuedAt)],
+    ...(doc === "invoice" ? [[t("preview.due"), formatDay(p.dueAt)] as Ln] : []),
+    [t("purchase.pay"), t(`purchase.method.${p.method ?? "transfer"}`)],
+    ...(p.paidAt !== null ? [[t("preview.paid"), formatDay(p.paidAt)] as Ln] : []), "",
+  ];
+  const body: Ln[] = [
+    ...p.lines.flatMap((l, n): Ln[] => wrap(t(l.key, l.params), W - 18).map((x, i) => (i ? [`    ${x}`, ""] : [`${String(n + 1).padStart(2)}. ${x}`, euroCents(-l.amount)]) as Ln)),
+    ...(!taxed.length ? [[t("purchase.vatFree"), ""] as Ln] : taxed.length ? [[t("purchase.net"), euroCents(total - vat)], [t("purchase.vat", { rate: rate.toLocaleString(LOCALE, { style: "percent" }) }), euroCents(vat)], [t("purchase.gross"), euroCents(total)]] as Ln[] : []),
+  ];
+  const out = (ls: Ln[]) => ls.map((l, i) => typeof l === "string" ? <div key={i}>{l || "\u00a0"}</div> : <div key={i} className="dot-row"><span>{l[0]}</span><span className="num">{l[1]}</span></div>);
+  return (
+    <div className="books-a4-fit">
+      <article className="books-a4 inv-dot" aria-label={doc === "invoice" ? t("books.invoice", { number: p.number }) : `${title} ${p.number}`}>
+        <i className="dot-strip l" /><i className="dot-strip r" />
+        <div className="dot-text">
+          {out(head)}
+          <h2>{title}</h2>
+          <hr />
+          {out(body)}
+          <hr className="dbl" />
+          <div className="dot-row"><span>{t("books.total").toUpperCase()}</span><span className="num">{euroCents(total)}</span></div>
+          <div>&nbsp;</div>
+          {doc === "invoice" && <div>{t("paperwork.letter.bank")}: {bank}</div>}
+        </div>
+      </article>
+    </div>
+  );
+}
+
+function StyledInvoice({ game, p }: { game: GameState; p: Payable }) {
   const { color, logo, layout } = supplierBrand(p.name);
-  const web = `www.${supplierHost(p.name)}`, total = p.lines.reduce((n, l) => n - l.amount, 0);
+  const web = webOf(p.name), total = p.lines.reduce((n, l) => n - l.amount, 0);
   const rate = vatRate(p.issuedAt);
   // Prices are gross, so the VAT is the share the input-tax lines carry.
   const taxed = p.lines.filter((l) => INPUT_CATEGORIES.includes(l.category));
@@ -92,6 +149,7 @@ export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
             <tr className="inv-total"><td /><td>{t("books.total")}</td><td className="r num">{euroCents(total)}</td></tr>
           </tbody>
         </table>
+        {taxed.length === 0 && <dl className="inv-sum num"><div><dt>{t("purchase.vatFree")}</dt></div></dl>}
         {taxed.length > 0 && (
           <dl className="inv-sum num">
             <div><dt>{t("purchase.net")}</dt><dd>{euroCents(total - vat)}</dd></div>
@@ -100,7 +158,7 @@ export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
           </dl>
         )}
         <footer className="inv-foot">
-          <span>{p.name}</span><span>{web}</span><span>{t("paperwork.letter.bank")}: <span className="num">{bank}</span></span>
+          <span>{p.name}</span><span>{web}</span>{doc === "invoice" && <span>{t("paperwork.letter.bank")}: <span className="num">{bank}</span></span>}
         </footer>
       </article>
     </div>

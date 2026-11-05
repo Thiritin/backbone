@@ -56,7 +56,9 @@ export function StoragePanel({ loc, onClose }: Props) {
 // Fetched letters as paper: the current sheet in the middle, the sheets still to read stacked right, the ones gone through stacked left.
 export function PostPanel({ title, onClose }: { title: string; onClose: () => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
-  const letters = [...atDesk(game)].reverse();
+  // The post just fetched, oldest first so the first letter lies on top; letters read on an earlier visit are gone.
+  const [mine] = useState(() => new Set(atDesk(game).filter((x) => !x.read).map((x) => x.id)));
+  const letters = atDesk(game).filter((x) => mine.has(x.id));
   // The stack opens at the first unpaid bill, so a card that sent the player here lands on it.
   const [i, setI] = useState(() => Math.max(0, letters.findIndex((x) => game.payables.some((p) => p.id === x.payable && p.paidAt === null))));
   const at = Math.min(i, letters.length - 1), l = letters[at];
