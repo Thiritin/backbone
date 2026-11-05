@@ -59,7 +59,11 @@ export function startUpload(workloadId: string, folder: string, file: string, ov
 
 // The game hour the first running download or upload ends, or null with none running.
 export function nextTransferEnd(): number | null {
-  const ends = [...Object.values(useDownloads.getState()), ...Object.values(useUploads.getState())].filter((x): x is Transfer => !!x).map((x) => x.start + x.hours);
+  const g = useStore.getState().game, now = nowHours(g), book = g.books.download;
+  const ends = [
+    ...[...Object.values(useDownloads.getState()), ...Object.values(useUploads.getState())].filter((x): x is Transfer => !!x).map((x) => x.start + x.hours),
+    ...Object.values(g.installers).map((x) => x.readyAt), ...(book ? [book.readyAt] : []),
+  ].filter((e) => e > now);
   return ends.length ? Math.min(...ends) : null;
 }
 

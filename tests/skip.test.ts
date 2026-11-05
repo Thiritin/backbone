@@ -39,4 +39,13 @@ describe("skip", () => {
     expect(useStore.getState().game.hour).toBe(game.hour + 2);
     expect(useStore.getState().speed).toBe(1);
   });
+
+  it("stops where a program installer download finishes", () => {
+    const game = readyGame(1);
+    game.installers = { FileGorilla: { startedAt: game.hour, readyAt: game.hour + 2 } };
+    useStore.setState({ game, speed: SKIP, alert: null });
+    useStore.getState().advance(first + 50);
+    expect(useStore.getState().game.hour).toBe(game.hour + 2);
+    expect(useStore.getState().speed).toBe(1);
+  });
 });
