@@ -14,6 +14,7 @@ import { isAlert } from "../sim/alerts";
 import { typeOf } from "./notify-types";
 import { deserialize, serialize } from "../sim/91-save/save";
 import { actionName, runAction } from "../sim/90-actions/index";
+import { nextTransferEnd } from "./downloads";
 import { nowHours, SKIP, SPEEDS, type Speed } from "../sim/00-core/time";
 import { playerAt } from "../sim/60-infra/handwork";
 import { useTrip, type Trip } from "./travel/route";
@@ -306,7 +307,10 @@ export const useStore = create<Store>((set, get) => ({
   advance: (hours) => {
     const game = { ...get().game, rng: { ...get().game.rng } }, skip = get().speed === SKIP;
     let alert: Banner | null = null, happened = false;
+    const transferEnd = skip ? nextTransferEnd() : null;
     for (let i = 0, n = Math.round(hours * 60); i < n; i++) {
+      // A running download or upload is an event too: the skip stops where it finishes.
+      if (transferEnd !== null && nowHours(game) >= transferEnd) happened = true;
       for (const e of tickMinute(game)) {
         happened = true;
         // Pear Mail has no banners before Notification Center; the Dock bounce and the sound announce mail.
