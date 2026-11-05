@@ -47,18 +47,18 @@ function Store({ game, route, open, flat }: SkinProps & StoreLook) {
     const gone = !it.sellable;
     return (
       <li key={key} className={`shop-item${gone ? " gone" : ""}`}>
-        <span className="shop-name">{it.name}</span>
+        <span className="ps-name">{it.name}</span>
         {it.cycles.length > 0 && <span className="num">{t("shop-store.from", { price: euroCents(lowest(it)) })}</span>}
         {gone ? <span className="shop-sold">{t("shop-store.soldOut")}</span>
-          : <button className="btn" onClick={() => open("configure", { group, product: key })}>{t("shop-store.orderNow")}</button>}
+          : <button className="pt-btn" onClick={() => open("configure", { group, product: key })}>{t("shop-store.orderNow")}</button>}
       </li>
     );
   };
   return (
     <div className="shop-store">
       {flat
-        ? <ul className="shop-list">{game.shop.products.filter((p) => !p.hidden).map((p) => row(p.id, p.groupId))}</ul>
-        : shown.map((g) => <section key={g.id}><h2>{g.name}</h2><ul className="shop-list">{game.shop.products.filter((p) => p.groupId === g.id && !p.hidden).map((p) => row(p.id, g.id))}</ul></section>)}
+        ? <ul className="ps-list">{game.shop.products.filter((p) => !p.hidden).map((p) => row(p.id, p.groupId))}</ul>
+        : shown.map((g) => <section key={g.id}><h2>{g.name}</h2><ul className="ps-list">{game.shop.products.filter((p) => p.groupId === g.id && !p.hidden).map((p) => row(p.id, g.id))}</ul></section>)}
     </div>
   );
 }
@@ -86,7 +86,7 @@ function Checkout({ game }: { game: GameState }) {
       <h3>{t("shop-store.contact")}</h3>
       <label>{t("shop-store.company")}<input readOnly value={game.company.name} /></label>
       <label>{t("shop-store.email")}<input readOnly value={game.company.domain ? `info@${game.company.domain}` : ""} /></label>
-      <button className="btn primary">{t("shop-store.completeOrder")}</button>
+      <button className="pt-btn primary">{t("shop-store.completeOrder")}</button>
     </form>
   );
 }
@@ -115,7 +115,7 @@ function Configure({ game, route, open, steps, inCart }: SkinProps & StoreLook &
       )}
       {inCart && <Summary it={it} cycle={cycle} />}
       {inCart && <Checkout game={game} />}
-      {!inCart && <button className="btn primary" onClick={() => open("cart", { group, product: key }, { cycle, domain, p: key })}>{t("shop-store.addToCart")}</button>}
+      {!inCart && <button className="pt-btn primary" onClick={() => open("cart", { group, product: key }, { cycle, domain, p: key })}>{t("shop-store.addToCart")}</button>}
     </div>
   );
 }

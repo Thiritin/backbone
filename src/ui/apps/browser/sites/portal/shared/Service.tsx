@@ -1,3 +1,4 @@
+import { PSelect, PBtn } from "./ui";
 import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
@@ -50,21 +51,21 @@ export function ServiceDetail({ game, go, id }: ScreenProps & { id: string }) {
       <h3>{t("shop-terms.access")}</h3>
       <dl className="pt-fields">
         {field(t("shop-terms.username"), access.user)}
-        <div><dt>{t("shop-terms.password")}</dt><dd>{shown ? access.password : "••••••••"} <button className="btn" onClick={() => setShown(!shown)}>{t(shown ? "shop-terms.hide" : "shop-terms.reveal")}</button></dd></div>
+        <div><dt>{t("shop-terms.password")}</dt><dd>{shown ? access.password : "••••••••"} <PBtn onClick={() => setShown(!shown)}>{t(shown ? "shop-terms.hide" : "shop-terms.reveal")}</PBtn></dd></div>
         {field(t("shop-terms.address"), access.address)}
         {ns && field(t("shop-terms.nameservers"), ns.join(", "))}
       </dl>
       {failed && !failed.ok && <p className="pt-error" role="alert">{t(failed.error, failed.params)}</p>}
       <div className="pt-form">
-        {commands.map(([c, on, fn]) => { const label = commandLabel(variant, c); return label && <button key={c} className="btn" disabled={!module || !on} onClick={() => run(fn())}>{label}</button>; })}
-        <button className="btn" disabled={!live} onClick={() => run(act(resendWelcome, v.id))}>{t("shop-mail.resendWelcome")}</button>
+        {commands.map(([c, on, fn]) => { const label = commandLabel(variant, c); return label && <PBtn key={c} disabled={!module || !on} onClick={() => run(fn())}>{label}</PBtn>; })}
+        <PBtn disabled={!live} onClick={() => run(act(resendWelcome, v.id))}>{t("shop-mail.resendWelcome")}</PBtn>
       </div>
       {commandLabel(variant, "changePackage") && packages.length > 0 && (
         <div className="pt-form">
-          <select className="field" aria-label={t("shop-terms.package")} value={pkg || packages[0].name} onChange={(e) => setPkg(e.target.value)}>
+          <PSelect aria-label={t("shop-terms.package")} value={pkg || packages[0].name} onChange={(e) => setPkg(e.target.value)}>
             {packages.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
-          </select>
-          <button className="btn" disabled={!module || !live} onClick={() => run(act(changePackage, v.id, pkg || packages[0].name))}>{commandLabel(variant, "changePackage")}</button>
+          </PSelect>
+          <PBtn disabled={!module || !live} onClick={() => run(act(changePackage, v.id, pkg || packages[0].name))}>{commandLabel(variant, "changePackage")}</PBtn>
         </div>
       )}
     </div>
