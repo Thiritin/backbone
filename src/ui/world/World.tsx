@@ -36,8 +36,9 @@ import { frontOf, seatOf } from "../../sim/90-actions/work-orders";
 import { PairPanel } from "./rack/PairPanel";
 import { menuOn } from "../desktop/ContextMenu";
 import { RoomCables } from "./rack/Cables";
-import { PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
+import { ConsolePanel, PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
 import { PhonePanel } from "./panel/PhonePanel";
+import { cartTarget, getPlug, setPlug } from "./rack/cartPlug";
 import { boardOf, CorkboardPanel } from "./panel/Corkboard";
 import { TicketsPanel } from "./panel/Tickets";
 import { answerCall } from "../../sim/90-actions/staff";
@@ -66,7 +67,7 @@ const KEYS: Record<string, [number, number]> = {
 };
 // How each room was zoomed and panned and whether its lights were on, per location, so the room resumes there.
 // Objects whose close-up opens after the figure walked to them.
-const STANDS = new Set<Use>(["storage", "power", "post", "scan", "board", "phone", "mainboard", "meetme"]);
+const STANDS = new Set<Use>(["storage", "power", "post", "scan", "board", "phone", "mainboard", "meetme", "console"]);
 const looked: Record<string, { zoom: number | null; org: Pt | null; lights: boolean }> = {};
 
 export const roomOf = (game: GameState): Location =>
@@ -110,7 +111,7 @@ export const World = memo(function World() {
   const link = useRef<string | null>(null);
   const [linkAt, setLinkAt] = useState<Pt | null>(null);
   // The panel open over the room: storage, the post or the power of a fixture.
-  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board" | "mainboard" | "meetme" | "tickets"; title: string; id?: string; call?: Call | null } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "storage" | "post" | "scan" | "power" | "phone" | "board" | "mainboard" | "meetme" | "tickets" | "console"; title: string; id?: string; call?: Call | null } | null>(null);
   const held = useRef<string[]>([]);
   const svg = useRef<SVGSVGElement>(null);
   // Alerts wait behind a chip while a close-up or edit mode is open.
@@ -332,6 +333,7 @@ export const World = memo(function World() {
     door: () => openDoor(),
     post: () => { if (waiting) act(fetchPost); if (atDesk(useStore.getState().game).length) setPanel({ kind: "post", title: t(label) }); },
     scan: () => setPanel({ kind: "scan", title: t(label) }),
+    console: () => { const g = useStore.getState().game, to = cartTarget(g, loc.id, getPlug()); if (to) setPlug(to); setPanel({ kind: "console", title: t(label) }); },
     stairs: () => { const fs = officeFloors(plan?.sections ?? []); setFloor(fs[(fs.indexOf(plan?.floor ?? 1) + 1) % fs.length]); setRackOpen(null); },
     light: () => setLights((v) => !v),
     board: () => setPanel({ kind: "board", title: t(label) }),
@@ -376,7 +378,7 @@ export const World = memo(function World() {
     letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} near={nearDoor(f, fx.door)} />,
     door: (f) => <Door f={f} open={door} steel={!home && !office} />,
     extinguisher: (f) => <Extinguisher f={f} />,
-    cart: (f) => <Cart f={f} />,
+    cart: (f) => <Cart f={f} year={date.getUTCFullYear()} />,
     cooling: (f) => <Cooling f={f} />,
     pdu: (f) => <Pdu f={f} reading={watts} />,
     dock: (f) => <Dock f={f} />,
@@ -477,6 +479,7 @@ export const World = memo(function World() {
         spot={(k) => (k === "rack" ? (racks[0] ? { id: racks[0].id, name: racks[0].name } : null) : fx[k] ? { id: k, name: t(artOf(k, fx[k]).label ?? k) } : null)}
         onGlow={(id) => { setHint(id); setTimeout(() => setHint((v) => (v === id ? null : v)), HINT_MS); }} />}
       {panel?.kind === "tickets" && <TicketsPanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
+      {panel?.kind === "console" && <ConsolePanel loc={loc} title={panel.title} onClose={() => setPanel(null)} />}
       {panel?.kind === "scan" && <ScanPanel title={panel.title} onClose={() => setPanel(null)} />}
       {rackOpen && <RackPanel key={rackOpen.id} rackId={rackOpen.id} port={rackOpen.port} hand={cable} onHand={setCable} onClose={() => setRackOpen(null)}
         onConnectFrom={(device) => { setFrom({ rack: rackOpen.id, device }); setRackOpen(null); }} />}

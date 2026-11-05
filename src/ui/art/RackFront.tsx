@@ -35,6 +35,8 @@ interface Props {
   onPlug?: (device: string, psu: number) => void;
   // A click on a server's console end on the back, where the monitor plugs in.
   onConsole?: (device: string) => void;
+  // The server whose console end holds the crash cart cable; the cable runs from it to the right side of the rack.
+  consoleOn?: string | null;
   // A click on a server's front USB port, where the stick plugs in.
   onUsb?: (device: string) => void;
   // A powered-off device dragged on the front to a new bottom unit.
@@ -86,7 +88,7 @@ const parseEnd = (s: string): End => { const [device, port] = s.split(":"); retu
 // Every unit is drawn on its own, top unit first. On the back, cables leave a port to the right, run up or down a
 // channel beside the rack, one lane each, and come back left into the other port; cables to remote boxes climb the
 // channel and turn into the box. Plugged power supplies send a cord left behind the rail to the power strip.
-export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, onUsb, onMove, onPort, hand = null, portTitle, canLink, needs = [], onAway, duct }: Props) {
+export function RackFront({ units, shelf = false, items, links = [], remotes = [], side = "front", w, u, selected, hot = null, onDevice, onDeviceMenu, onFree, onConnect, onPlug, onConsole, consoleOn, onUsb, onMove, onPort, hand = null, portTitle, canLink, needs = [], onAway, duct }: Props) {
   const back = side === "back";
   const [slide, setSlide] = useState<{ id: string; from: number; y0: number; to: number; px: number } | null>(null);
   const slid = useRef(false);
@@ -362,6 +364,10 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       hits.push(vga
         ? <rect key={endKey(end)} className={`rack-port rack-vga${fit(end)}`} data-end={endKey(end)} x={pad + s.x - HIT_X} y={top + py + s.y - HIT_Y} width={s.w + 2 * HIT_X} height={s.h + 2 * HIT_Y} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} onClick={() => onConsole(it.id)}><title>Plug in monitor</title></rect>
         : <rect key={endKey(end)} {...tap(end)} data-end={endKey(end)} x={pad + s.x - HIT_X} y={top + py + s.y - HIT_Y} width={s.w + 2 * HIT_X} height={s.h + 2 * HIT_Y} rx="1" onPointerDown={grab(end, pad + s.x + s.w / 2, top + py + s.y + s.h / 2)} />);
+      if (vga && consoleOn === it.id) {
+        const cx = pad + s.x + s.w / 2, cy = top + py + s.y + s.h / 2;
+        hits.push(<path key="cart-cable" className="rack-cart-cable" pointerEvents="none" d={`M${cx} ${cy} C${cx} ${cy + 16} ${W - 14} ${cy + 6} ${W - 2} ${cy + 22}`} />);
+      }
     }
   }
 

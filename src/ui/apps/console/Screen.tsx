@@ -11,6 +11,7 @@ import { continueBoot } from "../../../sim/90-actions/remote";
 import { useSessionState } from "../../session";
 import { useStore } from "../../store";
 import { useBios } from "./bios";
+import { POWER_ACTION } from "../locations/power";
 import { isDevice, NetFailed, OsInstalling, useInstaller, winEra, type Machine } from "./installer";
 import { LunixBoot, LunixHalt, LunixLogin, useLunix } from "./lunix";
 import { useWindoors, WindoorsBoot, WindoorsHalt } from "./windoors";
@@ -23,6 +24,8 @@ const LABELS: Record<string, string> = {
   Delete: "Del", F1: "F1", F2: "F2", F3: "F3", F8: "F8", F10: "F10", F11: "F11", Escape: "Esc", Tab: "Tab", Enter: "Enter",
   Backspace: "Bksp", ArrowLeft: "←", ArrowUp: "↑", ArrowDown: "↓", ArrowRight: "→", d: "D", CtrlAltDel: "Ctrl+Alt+Del",
 };
+// Del and Ctrl+Alt+Del are printed on the key in the language of the game.
+const keyLabel = (k: string) => (k === "Delete" ? t("console.keyDel") : k === "CtrlAltDel" ? t("console.keyCad") : LABELS[k] ?? k);
 const HANDLED = new Set([...Object.keys(LABELS)]);
 export const stickName = (img: OsImage) => {
   const { id, version } = imageParts(img);
@@ -90,7 +93,7 @@ export function useOsScreen(game: GameState, m: Machine, active: boolean, stick:
 export function Keys({ keys, onKey, focus }: { keys: string[]; onKey: (k: string) => void; focus: () => void }) {
   return (
     <div className="scr-keys" role="group" aria-label={t("console.keys")}>
-      {[...new Set(keys)].filter((k) => k !== "Backspace").map((k) => <button key={k} onClick={() => { onKey(k); focus(); }}>{LABELS[k] ?? k}</button>)}
+      {[...new Set(keys)].filter((k) => k !== "Backspace").map((k) => <button key={k} onClick={() => { onKey(k); focus(); }}>{keyLabel(k)}</button>)}
     </div>
   );
 }
@@ -124,8 +127,11 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
+  // On a monitor at the rack, Ctrl+Alt+Del restarts a machine whose OS is up and has not asked for it itself.
+  const restart = via === "monitor" && (kind === "login" || kind === "desktop") && !os.keys.includes("CtrlAltDel");
   const onKey = (key: string) => {
-    if (shown === "post" || shown === "notFound") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
+    if (key === "CtrlAltDel" && restart) act(POWER_ACTION.reboot, d.id);
+    else if (shown === "post" || shown === "notFound") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
     else if (key === "F11" && shown !== "menu" && shown !== "bios" && shown !== "dark") setQueued(true);
     else if (shown === "stuck") { if (key === "F1") act(continueBoot, d.id); else if (key === "Delete" || key === "F2") act(enterSetup, d.id); }
     else if (shown === "bios") bios.onKey(key);
@@ -137,7 +143,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
     } else if (shown !== "dark" && shown !== "hung") os.onKey(key);
   };
   const keys = shown === "post" || shown === "notFound" ? ["Delete", "F2", "F11"] : shown === "stuck" ? ["F1", "Delete"] : shown === "bios" ? ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight", "Enter", "Escape", "F10"]
-    : shown === "menu" ? ["ArrowUp", "ArrowDown", "Enter", "Escape"] : shown === "dark" || shown === "hung" ? [] : os.keys;
+    : shown === "menu" ? ["ArrowUp", "ArrowDown", "Enter", "Escape"] : shown === "dark" || shown === "hung" ? [] : restart ? [...os.keys, "CtrlAltDel"] : os.keys;
   const look = shown === "bios" || shown === "menu" || shown === "dark" || shown === "post" || shown === "stuck" ? shown : os.look;
   return (
     <div className={`scr-wrap ${via}`}>

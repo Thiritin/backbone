@@ -15,6 +15,8 @@ export default {
   "console.vmScreen": () => "Schermo della macchina virtuale",
   "console.serverScreen": () => "Schermo del server",
   "console.keys": () => "Tasti",
+  "console.keyDel": () => "Canc",
+  "console.keyCad": () => "Ctrl+Alt+Canc",
 
   "console.biosHelpRaid": () => "Invio scorre i livelli consentiti dai dischi. Un nuovo livello cancella l'array.",
   "console.biosHelpRebuild": () => "Una ricostruzione rapida rallenta il server, una lenta lo lascia esposto più a lungo.",

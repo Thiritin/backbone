@@ -21,6 +21,7 @@ export default {
   "world.obj.fan": () => "Ventilador de ventana",
   "world.obj.cooling": () => "Unidad de refrigeración",
   "world.obj.pdu": () => "PDU",
+  "world.obj.cart": () => "Carro de consola",
   "world.obj.extinguisher": () => "Extintor",
   "world.obj.noc": () => "Puesto NOC",
   "world.obj.dock": () => "Muelle de carga",
