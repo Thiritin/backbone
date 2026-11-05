@@ -2,9 +2,17 @@
 // Wall items span u0..u1 along the wall in units of 32 per tile; the light switch sits in the tile past the door's.
 export const WALL_SLOTS = {
   switch: [3, 9],
-  phone: [12, 30],
+  phone: [12, 26],
   letterbox: [12, 26],
 } as const;
+
+// An item in the tile just before a door's slides away from it so its far edge ends DOOR_END units into the tile, clear of the frame.
+export const DOOR_END = 20;
+export const nearDoor = (f: { x: number; y: number }, door?: { x: number; y: number }) => !!door && f.x === 0 && door.x === 0 && f.y === door.y + 1;
+export function wallSlot(kind: keyof typeof WALL_SLOTS, near: boolean): [number, number] {
+  const [a, b] = WALL_SLOTS[kind], shift = near && b > DOOR_END ? b - DOOR_END : 0;
+  return [a - shift, b - shift];
+}
 
 // Rectangles on the desk top within one column, in tiles. The lamp and scanner share the column before the monitor's.
 interface Rect { x0: number; x1: number; y0: number; y1: number }

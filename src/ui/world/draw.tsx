@@ -1,4 +1,4 @@
-import { DESK_SLOTS, WALL_SLOTS } from "./slots";
+import { DESK_SLOTS, wallSlot, WALL_SLOTS } from "./slots";
 import { useId, type CSSProperties, type ReactNode } from "react";
 import type { Cage, Fixture, Tile } from "../../sim/20-world/layout";
 import type { Sky } from "../../sim/20-world/weather";
@@ -610,8 +610,8 @@ export function Night({ w, h, opacity }: { w: number; h: number; opacity: number
 }
 
 // Waiting letters stick out of the slot, up to three, with their count beside the box.
-export function Letterbox({ f, count, shown }: { f: Fixture; count: number; shown: string }) {
-  const D = 5, [L0, L1] = WALL_SLOTS.letterbox, up = count > 0;
+export function Letterbox({ f, count, shown, near = false }: { f: Fixture; count: number; shown: string; near?: boolean }) {
+  const D = 5, [L0, L1] = wallSlot("letterbox", near), up = count > 0;
   return (
     <g data-slot="letterbox">
       <WallBox f={f} u0={L0} u1={L1} z0={38} z1={56} d={D} tone="w-tone-brass" />
@@ -854,42 +854,42 @@ export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number;
 
 // The wall phone beside the door: a beige corded set until 2010, then a cordless handset in its wall base. Ringing shakes the handset.
 export const CORDLESS_YEAR = 2010;
-export function Phone({ f, ringing, cordless }: { f: Fixture; ringing: boolean; cordless: boolean }) {
-  const [P0, P1] = WALL_SLOTS.phone, ring = ringing ? "w-ringing" : undefined;
+export function Phone({ f, ringing, cordless, near = false }: { f: Fixture; ringing: boolean; cordless: boolean; near?: boolean }) {
+  const [P0, P1] = wallSlot("phone", near), ring = ringing ? "w-ringing" : undefined;
   return (
     <g data-slot="phone" data-phone={ringing ? "ringing" : "idle"}>
       {cordless ? (
         <>
           <WallBox f={f} u0={P0 + 2} u1={P1 - 2} z0={40} z1={58} d={3} tone="w-tone-dark" />
           <g className={ring}>
-            <WallBox f={f} u0={P0 + 5} u1={P0 + 13} z0={43} z1={62} d={5} tone="w-tone-slate" />
+            <WallBox f={f} u0={P0 + 4} u1={P0 + 10} z0={43} z1={62} d={5} tone="w-tone-slate" />
             <g transform={wallFront(f, 62, 5)}>
-              <rect className="w-phone-screen" x={P0 + 6} y="2" width="6" height="3.4" />
-              <rect className={`w-led${ringing ? " w-led-on" : ""}`} x={P0 + 8.3} y="14.5" width="1.4" height="1" />
+              <rect className="w-phone-screen" x={P0 + 5} y="2" width="4" height="3.4" />
+              <rect className={`w-led${ringing ? " w-led-on" : ""}`} x={P0 + 6.3} y="14.5" width="1.4" height="1" />
             </g>
           </g>
         </>
       ) : (
         <>
-          <WallBox f={f} u0={P0 + 1} u1={P1 - 1} z0={40} z1={66} d={3} tone="w-tone-beige" />
-          <WallBox f={f} u0={P0 + 2} u1={P0 + 6} z0={43} z1={45} d={4.6} tone="w-tone-slate" />
-          <WallBox f={f} u0={P0 + 2} u1={P0 + 6} z0={56.5} z1={58.5} d={4.6} tone="w-tone-slate" />
-          <WallBox f={f} u0={P0 + 10} u1={P1 - 3} z0={43} z1={54} d={4.6} tone="w-tone-beige" />
-          <g transform={wallFront(f, 54, 4.6)}>
+          <WallBox f={f} u0={P0} u1={P1} z0={40} z1={67} d={3} tone="w-tone-beige" />
+          <WallBox f={f} u0={P0 + 0.4} u1={P0 + 5.6} z0={45} z1={47} d={4.8} tone="w-tone-slate" />
+          <WallBox f={f} u0={P0 + 0.4} u1={P0 + 5.6} z0={59.5} z1={61.5} d={4.8} tone="w-tone-slate" />
+          <WallBox f={f} u0={P0 + 6.6} u1={P1 - 1} z0={42} z1={55} d={4.2} tone="w-tone-beige" />
+          <g transform={wallFront(f, 55, 4.2)}>
             {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => (
               <g key={`${r}${c}`}>
-                <rect className="w-phone-key-edge" x={P0 + 11.2 + c * 2.4} y={1.2 + r * 2.5 + 0.5} width="1.8" height="1.8" />
-                <rect className="w-phone-key" x={P0 + 11.2 + c * 2.4} y={1.2 + r * 2.5} width="1.8" height="1.8" />
+                <rect className="w-phone-key-edge" x={P0 + 7.4 + c * 1.9} y={1.1 + r * 3 + 0.4} width="1.4" height="1.9" />
+                <rect className="w-phone-key" x={P0 + 7.4 + c * 1.9} y={1.1 + r * 3} width="1.4" height="1.9" />
               </g>
             )))}
           </g>
           <g className={ring}>
-            <WallBox f={f} u0={P0 + 1.8} u1={P0 + 6.2} z0={61.5} z1={65} d={6.2} tone="w-tone-dark" />
-            <WallBox f={f} u0={P0 + 2.8} u1={P0 + 5.2} z0={48.5} z1={61.5} d={5.4} tone="w-tone-dark" />
-            <WallBox f={f} u0={P0 + 1.8} u1={P0 + 6.2} z0={45} z1={48.5} d={6.2} tone="w-tone-dark" />
+            <WallBox f={f} u0={P0 + 1} u1={P0 + 5} z0={61.5} z1={65} d={5.8} tone="w-tone-handset" />
+            <WallBox f={f} u0={P0 + 1.9} u1={P0 + 4.1} z0={50.5} z1={61.5} d={5.2} tone="w-tone-handset" />
+            <WallBox f={f} u0={P0 + 1} u1={P0 + 5} z0={47} z1={50.5} d={5.8} tone="w-tone-handset" />
           </g>
-          <g transform={wallFront(f, 58, 6)}>
-            <path className="w-phone-cord-wall" d={`M${P0 + 2.4},5 C${P0 - 2},7 ${P0 - 2},12 ${P0 + 1},15 S${P0 + 3},17 ${P0 + 3.4},18`} fill="none" />
+          <g transform={wallFront(f, 47, 5.8)}>
+            <path className="w-phone-cord-wall" d={`M${P0 + 3},0 q-2,1 0,1.6 q2,1 0,1.6 q-2,1 0,1.6 q2,1 0,1.6`} fill="none" />
           </g>
         </>
       )}

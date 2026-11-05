@@ -21,6 +21,7 @@ import { dateOf, formatClock } from "../../sim/00-core/time";
 import { iso, type Pt } from "./grid";
 import { useTrip } from "../travel/route";
 import { artOf, type Use } from "./rooms";
+import { nearDoor } from "./slots";
 import {
   at3, BeerCrate, Corkboard, Boiler, CableDuct, cageFence, Cart, CeilingLamp, CellarWindow, Chair, Concrete, Cooling, darkness, daylight, Desk, DeskLamp, Dock, Door, Drain, DryingRack, Extinguisher, FuseBox,
   CORDLESS_YEAR, Hygrometer, Letterbox, LightSwitch, Phone, Mat, Monitor, Night, Parcel, PARCEL_H, Pdu, pts, rackHeight, RackBox, RaisedFloor, Scanner, Shimmer, Shelf, ShelfUnit, Tower, Tubes, WallJack, Walls, WALL, Washer,
@@ -360,8 +361,8 @@ export function World() {
     mat: (f) => <Mat f={f} />,
     drain: (f) => <Drain f={f} />,
     lamp: (f) => <CeilingLamp f={f} on={lights} />,
-    phone: (f) => <Phone f={f} ringing={!!ringing} cordless={cordless} />,
-    letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} />,
+    phone: (f) => <Phone f={f} ringing={!!ringing} cordless={cordless} near={nearDoor(f, fx.door)} />,
+    letterbox: (f) => <Letterbox f={f} count={waiting} shown={n(waiting)} near={nearDoor(f, fx.door)} />,
     door: (f) => <Door f={f} open={door} steel={!home && !office} />,
     extinguisher: (f) => <Extinguisher f={f} />,
     cart: (f) => <Cart f={f} />,

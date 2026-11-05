@@ -3,7 +3,7 @@ import { hourOf } from "../src/sim/00-core/time";
 import { FIXTURES, fixtures, officePlan, type Fixture } from "../src/sim/20-world/layout";
 import { listingById } from "../src/sim/20-world/properties";
 import { freeSections, rentSection } from "../src/sim/90-actions/properties";
-import { DESK_SLOTS, WALL_SLOTS } from "../src/ui/world/slots";
+import { DESK_SLOTS, DOOR_END, nearDoor, wallSlot, WALL_SLOTS } from "../src/ui/world/slots";
 import { newGame } from "./fixtures";
 
 type Span = readonly [number, number];
@@ -36,6 +36,17 @@ describe("wall slots", () => {
       for (const items of wallSpans(fx).values()) for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) expect(meets(items[i][1], items[j][1])).toBe(false);
     });
   }
+  it("keeps items beside the door clear of its frame and of the switch", () => {
+    for (const [, fx] of rooms) {
+      for (const [name, f] of Object.entries(fx)) {
+        const id = f.kind ?? name;
+        if (id !== "phone" && id !== "letterbox") continue;
+        const near = nearDoor(f, fx.door), [a, b] = wallSlot(id, near);
+        if (near) expect(b).toBeLessThanOrEqual(DOOR_END);
+        if (f.y === fx.door.y - 1) expect(a).toBeGreaterThan(WALL_SLOTS.switch[1]);
+      }
+    }
+  });
   it("covers the switch tile in both rooms", () => {
     for (const [, fx] of rooms) expect([...wallSpans(fx).values()].some((v) => v.length > 1)).toBe(true);
   });
