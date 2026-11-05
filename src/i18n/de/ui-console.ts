@@ -46,6 +46,7 @@ export default {
   "console.erase": () => "<Löschen>",
   "console.debBoot": (p) => `Bootmenü des Installationsprogramms für Debiant GNU/Lunix ${p.version}`,
   "console.install": () => "Installieren",
+  "console.autoInstall": () => "Automatische Installation",
   "console.eraseDisk": () => "Festplatte löschen",
   "console.reboot": () => "Neu starten",
   "console.ejectReboot": () => "Auswerfen und neu starten",

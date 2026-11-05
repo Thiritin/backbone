@@ -136,7 +136,7 @@ export function ApplicationsApp() {
           ...PROGRAMS.filter((p) => game.installers[p.id] && !game.installed.includes(p.id) && game.hour >= game.installers[p.id].readyAt).map((p) => ({ id: p.id, file: installerFile(p, yearOf(game.hour)) })),
           ...(books && game.hour >= books.readyAt && game.books.vendor !== books.vendor ? [{ id: books.vendor, file: `${booksVendor(books.vendor)?.program}.dmg` }] : []),
         ].map(({ id, file }) => (
-          <Item key={id} label={file} menu={() => [{ label: t("apps.finder.moveToApplications"), run: () => install(id) }]}
+          <Item key={id} label={file} open={() => install(id)} menu={() => [{ label: t("apps.finder.moveToApplications"), run: () => install(id) }]}
             drag={(e) => { e.dataTransfer.setData(INSTALLER, id); e.dataTransfer.effectAllowed = "copy"; }}>
             <span className="di-page"><FILE_ICON.installer /></span>
           </Item>

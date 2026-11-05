@@ -12,6 +12,7 @@ import { mailSiteUrl } from "../../sim/10-catalog/mail-consumer";
 import { HOSTTOAST_HOST } from "../../sim/10-catalog/hosttoast";
 import { FLYER_HOST } from "../../sim/10-catalog/flyers";
 import type { GameState } from "../../sim/50-state";
+import { SITES } from "../../sim/10-catalog/sites";
 import { nextGoal, waiting, type Card, type Goal } from "../../sim/checklist";
 
 export type StepId = Goal;
@@ -66,7 +67,7 @@ export function stepOf(s: GameState, id: StepId): Step {
       return { title: t("guide.step.mountRouter"), text: t("apps.guide.step.mountRouter"), app: "Locations", focus: router ? { kind: "device", id: router.id } : home && { kind: "location", id: home.id } };
     }
     case "downloadIso":
-      return { title: t("guide.step.downloadIso"), text: t("apps.guide.step.downloadIso"), app: "Browser", focus: { kind: "url", id: HOME_URL } };
+      return { title: t("guide.step.downloadIso"), text: t("apps.guide.step.downloadIso"), app: "Browser", focus: { kind: "url", id: `${displayHost(SITES.lunix.host)}/` } };
     case "writeStick":
       return { title: t("guide.step.writeStick"), text: t("apps.guide.step.writeStick"), app: "Applications" };
     case "plugStick":
@@ -85,16 +86,16 @@ export function stepOf(s: GameState, id: StepId): Step {
         title: t("guide.step.domain"),
         text: t("apps.guide.step.domain", { partner }),
         app: "Browser",
-        focus: { kind: "url", id: s.registrar ? registrarUrl(s) : `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}` },
+        focus: { kind: "url", id: registrarUrl(s) },
       };
     }
     case "website":
       // Marketing is installed from the software shelf first.
       return s.installed.includes("Marketing")
-        ? { title: t("guide.step.website"), text: t("apps.guide.step.website"), app: "Marketing", focus: { kind: "page", id: "channels" } }
+        ? { title: t("guide.step.website"), text: t("apps.guide.step.website"), app: "Marketing", focus: { kind: "page", id: "website" } }
         : { title: t("guide.step.website"), text: t("apps.guide.step.website"), app: "Shop", focus: { kind: "software", id: "Marketing" } };
     case "launch":
-      return { title: t("guide.step.launch"), text: t("apps.guide.step.launch"), app: "Marketing", focus: { kind: "page", id: "channels" } };
+      return { title: t("guide.step.launch"), text: t("apps.guide.step.launch"), app: "Marketing", focus: { kind: "page", id: "website" } };
     case "email":
       return { title: t("guide.step.email"), text: t("apps.guide.step.email"), app: "Browser", focus: { kind: "url", id: mailSiteUrl("ionose") } };
     case "hosttoast":
@@ -108,7 +109,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "orderAccess":
       return { title: t(`guide.step.${id}`), text: t(`apps.guide.step.${id}`, { app: mailApp }), ...orderAt(s, mailWin) };
     case "orderDomain":
-      return { title: t("guide.step.orderDomain"), text: t("apps.guide.step.orderDomain", { app: mailApp }), app: "Browser", focus: { kind: "url", id: s.registrar ? registrarUrl(s) : `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}` } };
+      return { title: t("guide.step.orderDomain"), text: t("apps.guide.step.orderDomain", { app: mailApp }), app: "Browser", focus: { kind: "url", id: registrarUrl(s) } };
     case "sendInvoice":
       return { title: t("guide.step.sendInvoice"), text: t("apps.guide.step.sendInvoice"), app: "Books" };
     case "loan":

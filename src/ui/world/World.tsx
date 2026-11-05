@@ -275,6 +275,13 @@ export const World = memo(function World() {
     const a = hit && artOf(hit[0], hit[1]);
     if (hit && a?.label) use(hit[0], run(a.label, "letterbox").post, () => beside(hit[1]), t(a.label))({ stopPropagation() {} } as MouseEvent);
   });
+  // The next-step card walks the player to a rack and opens its close-up: "rack:shelf" for the shelf, "rack:rack" for the first full rack.
+  useEffect(() => {
+    if (!seek?.startsWith("rack:")) return;
+    useStore.getState().setSeek(null);
+    const shelf = seek === "rack:shelf", r = racks.find((x) => (x.model === "shelf") === shelf) ?? racks[0];
+    if (r) use(r.id, () => setRackOpen({ id: r.id }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+  });
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   // A unit that landed in storage within the last day stands by the door as a parcel until it is mounted.
   const parcels = game.devices.filter((d) => d.store === loc.id && !d.chassisId && d.arrivedAt !== null && d.arrivedAt > game.hour - 24);

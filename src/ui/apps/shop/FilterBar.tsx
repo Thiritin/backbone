@@ -28,7 +28,7 @@ export function ShopFilter({ items, filter, set, clear, sort, setSort }: { sort:
     <label className="shop-filter-row">
       <span className="shop-filter-h">{label}</span>
       <select value={String(filter[key] ?? "")} onChange={(e) => set({ [key]: options.find((o) => String(o ?? "") === e.target.value) ?? any })}>
-        {[any, ...options.filter((o) => o !== any)].map((o) => (
+        {[any, ...options.filter((o) => o !== any && (o === filter[key] || left({ [key]: o }) > 0))].map((o) => (
           <option key={String(o)} value={String(o ?? "")}>{o === any ? t("shop.any") : text(o!)} ({left({ [key]: o })})</option>
         ))}
       </select>

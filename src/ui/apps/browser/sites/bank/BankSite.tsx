@@ -3,6 +3,7 @@ import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
 import { dateOf, hourOf, yearOf } from "../../../../../sim/00-core/time";
+import { useStore } from "../../../../store";
 import { bankById, monthlyFee, plansFor, tanMethods, type Bank, type BankId, type Plan, type PlanId, type TanMethod } from "../../../../../sim/10-catalog/banks";
 import { annuity, LOAN_AMOUNTS, LOAN_YEARS, loanAvailable, loanRate } from "../../../../../sim/45-billing/billing";
 import { cardDetails, cardSpent, groupIban, iban as toIban, ibanEra, ownIban, spendable, WRONG_LIMIT, type Draft, type Payee } from "../../../../../sim/46-finance/bank";
@@ -243,6 +244,7 @@ function Transfer({ game, bank, prefill, go, standing }: { game: GameState; bank
           <div className="bks-row">
             <button className="bks-btn primary">{b.tan === "itan" || b.tan === "mtan" ? t("bank.site.send") : t(`bank.site.confirm.${b.tan}`)}</button>
             <button type="button" className="bks-btn" onClick={() => act(cancelTransfer)}>{t("bank.site.cancel")}</button>
+            {b.tan === "itan" && game.docs.some((d) => d.id === "tans") && <button type="button" className="bks-btn" onClick={() => useStore.getState().openDoc("tans")}>{t("doc.tans")}</button>}
           </div>
         </form>
       </Box>

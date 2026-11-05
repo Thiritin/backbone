@@ -46,6 +46,7 @@ export default {
   "console.erase": () => "<Erase>",
   "console.debBoot": (p) => `Debiant GNU/Lunix ${p.version} installer boot menu`,
   "console.install": () => "Install",
+  "console.autoInstall": () => "Automated install",
   "console.eraseDisk": () => "Erase disk",
   "console.reboot": () => "Reboot",
   "console.ejectReboot": () => "Eject and reboot",

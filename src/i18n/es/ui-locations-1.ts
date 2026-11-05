@@ -122,6 +122,7 @@ export default {
   "locations-1.pricePerMonth": (p) => `${p.price} / mes`,
   "locations-1.lineActive": () => "Activa",
   "locations-1.connects": () => "Conecta",
+  "locations-1.connectOn": (p) => `Conexión el ${p.date}`,
   "locations-1.cancel": () => "Cancelar",
   "locations-1.order": () => "Pedir",
   "locations-1.internetLine": () => "Línea de internet",

@@ -46,6 +46,7 @@ export default {
   "console.erase": () => "<Effacer>",
   "console.debBoot": (p) => `Menu de démarrage de l'installateur Debiant GNU/Lunix ${p.version}`,
   "console.install": () => "Installer",
+  "console.autoInstall": () => "Installation automatisée",
   "console.eraseDisk": () => "Effacer le disque",
   "console.reboot": () => "Redémarrer",
   "console.ejectReboot": () => "Éjecter et redémarrer",

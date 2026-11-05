@@ -68,14 +68,15 @@ export function TerminalApp() {
     return () => { live = false; };
   }, [ready, setLines, setDraft]);
 
-  // Terminal on a server drops any open session and connects to it.
+  // Terminal on a server drops any open session and types the login, which Enter sends.
   const [target, setTarget] = useState<string | null>(null);
   useFocus("Terminal", (f) => { if (f.kind === "ssh") setTarget(f.id); });
   useEffect(() => {
     if (!ready || !target) return;
     setTarget(null);
     shell.setSession(null);
-    shell.submit(`ssh ${target}`, null);
+    setDraft(`ssh root@${target}`);
+    input.current?.focus();
   }, [ready, target]);
 
   if (open) return <Editor file={open} onChange={setOpen} onClose={() => { setOpen(null); setTimeout(() => input.current?.focus()); }} />;
