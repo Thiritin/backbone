@@ -62,6 +62,8 @@ export default {
   "world.out.halting": (p) => `${p.name} fährt herunter`,
   "world.out.starting": (p) => `${p.name} startet`,
   "world.out.off": (p) => `${p.name} ausgeschaltet`,
+  "world.out.renamed": (p) => `${p.name} umbenannt`,
+  "world.out.nameEmpty": () => "Name darf nicht leer sein",
   "world.out.reboot": (p) => `${p.name} neu gestartet`,
   "world.affected": (p) => `${p.count} ${p.count === 1 ? 'Kunde ist' : 'Kunden sind'} betroffen.`,
   "world.out.customers": (p) => `${p.line}, ${p.count} ${p.count === 1 ? 'Kunde' : 'Kunden'} betroffen`,

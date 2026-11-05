@@ -63,6 +63,8 @@ export default {
   "world.out.halting": (p) => `${p.name} shuts down`,
   "world.out.starting": (p) => `${p.name} starts`,
   "world.out.off": (p) => `${p.name} is switched off`,
+  "world.out.renamed": (p) => `${p.name} renamed`,
+  "world.out.nameEmpty": () => "Name must not be empty",
   "world.out.reboot": (p) => `${p.name} restarts`,
   "world.affected": (p) => `${p.count} ${p.count === 1 ? 'customer is' : 'customers are'} affected.`,
   "world.out.customers": (p) => `${p.line}, ${p.count} ${p.count === 1 ? 'customer' : 'customers'} affected`,

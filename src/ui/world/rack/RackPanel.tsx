@@ -43,6 +43,8 @@ const FRONT_U = 28, BACK_U = 30;
 const TURN_MS = 150;
 // The tag's distance from the rack and its string hole's offset from the tag's corner.
 const TAG_GAP = 56, HOLE = 16, TAG_W = 260;
+// Room kept free under a tag for the notification toasts.
+const SAFE_BOTTOM = 130;
 // The stage height the fitted rack leaves for the room around it; rack.css reserves the same in the fit height.
 const CHROME = 84;
 const same = (a: End, b: End) => a.device === b.device && a.port === b.port;
@@ -225,7 +227,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
     const s = sc.getBoundingClientRect(), r = at.getBoundingClientRect(), y = r.top + r.height / 2 - s.top;
     const base = sc.offsetLeft - (TAG_W + TAG_GAP) / 2;
     const left = st.clientWidth ? tagLeft(sc.offsetWidth + TAG_GAP, base, st.scrollLeft, st.clientWidth, TAG_W) : sc.offsetWidth + TAG_GAP;
-    setPin({ x: r.right - s.left, y, left, top: Math.max(Math.min(-HOLE, y - HOLE), Math.min(y - HOLE, s.height + 40 - (tagEl.current?.offsetHeight ?? 0))) });
+    setPin({ x: r.right - s.left, y, left, top: Math.max(Math.min(-HOLE, y - HOLE), Math.min(y - HOLE, Math.min(s.height + 40, st.getBoundingClientRect().bottom - s.top - SAFE_BOTTOM) - (tagEl.current?.offsetHeight ?? 0))) });
   };
   useLayoutEffect(repin, [anchor, sel, back, zoom, game, turning, jack]);
   // A tag opened at high zoom is brought into view.
@@ -304,7 +306,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   if (back && pp && jack !== null && !hand) tag = <JackTag game={game} panel={pp} jack={jack} />;
   else if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
-  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} />; }
+  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} onResult={(r, name) => setOut(r === "empty" ? t("world.out.nameEmpty") : t("world.out.renamed", { name }))} />; }
 // A picked free unit sets what fits there on the floor beside the rack.
   const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} /> : null;
 
@@ -336,7 +338,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
         )}
         <Keys back={back} zoom={zoom} onTurn={() => turn(!back)} onZoom={(z) => zoomTo(z)} onFit={fitToggle} />
         <div className={`wr-room${lid ? " lidded" : ""}`}>
-          <div ref={scene} className={`wr-scene${tag || floor ? " tagged" : ""}`}>
+          <div ref={scene} className="wr-scene">
             <div className={`wr-cab${shelf ? " shelf" : ""}`}>
               {back && pp && <ProviderPanel game={game} panel={pp} picked={jack} hand={hand} onJack={(e) => (hand ? plug(e) : (pick(null), setJack(e.port)))} onConnect={(a, b) => { act(connect, a, b); }} />}
               <WorkTag game={game} rackId={rack.id} />

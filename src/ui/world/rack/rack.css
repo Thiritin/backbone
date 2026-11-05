@@ -30,8 +30,7 @@
 /* The close-up scene: the rack stands centred on a floor strip; the wheel zooms it up to twice its fitted height. */
 .wr-stage { position: relative; --depth: 22px; --tag-w: 260px; --tag-gap: 56px; flex: 1; min-height: 0; overflow: auto; container-type: size; background: oklch(0.2 0.018 255); }
 .wr-room { min-width: 100%; min-height: 100%; width: max-content; display: flex; flex-direction: column; align-items: center; padding: calc(var(--depth) + 10px) 48px 0; box-sizing: border-box; }
-.wr-scene { position: relative; z-index: 1; transition: transform 220ms ease-out; }
-.wr-scene.tagged { transform: translateX(calc(-0.5 * (var(--tag-w) + var(--tag-gap)))); }
+.wr-scene { position: relative; z-index: 1; transform: translateX(calc(-0.5 * (var(--tag-w) + var(--tag-gap)))); }
 .wr-cab { position: relative; z-index: 1; background: var(--rack); }
 /* The rack's lit top and its darker right side, drawn as faces around the front art. */
 .wr-cab::before { content: ""; position: absolute; pointer-events: none; }

@@ -489,7 +489,8 @@ function ConnectRow({ game, device, model, port }: { game: GameState; device: De
 }
 
 // The name doubles as the label field: click to rename, Enter or leaving the field saves, Escape cancels, empty clears.
-export function LabelEdit({ device, editing, onEditing }: { device: Device; editing: boolean; onEditing: (on: boolean) => void }) {
+// onResult makes an empty name a refusal and reports what a commit did; without it an empty name clears the label.
+export function LabelEdit({ device, editing, onEditing, onResult }: { device: Device; editing: boolean; onEditing: (on: boolean) => void; onResult?: (r: "renamed" | "empty", name: string) => void }) {
   const act = useStore((s) => s.act);
   const [text, setText] = useState(device.label ?? "");
   const cancel = useRef(false);
@@ -501,11 +502,17 @@ export function LabelEdit({ device, editing, onEditing }: { device: Device; edit
       </h2>
     );
   }
-  const done = () => { if (!cancel.current) act(setLabel, device.id, text); cancel.current = false; onEditing(false); };
+  const done = () => {
+    if (!cancel.current) {
+      if (onResult && !text.trim()) onResult("empty", "");
+      else if (act(setLabel, device.id, text).ok && onResult && text.trim() !== devName(device)) onResult("renamed", text.trim());
+    }
+    cancel.current = false; onEditing(false);
+  };
   return (
     <input className="field loc-label-in" autoFocus aria-label={t("locations-1.label")} value={text} placeholder={device.name} maxLength={LABEL_MAX}
       onChange={(e) => setText(e.target.value)} onBlur={done}
-      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { cancel.current = true; e.currentTarget.blur(); } }} />
+      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.stopPropagation(); cancel.current = true; e.currentTarget.blur(); } }} />
   );
 }
 

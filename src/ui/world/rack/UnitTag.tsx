@@ -26,7 +26,7 @@ export function Slip({ name, text, action, onStamp, onCancel, slip }: { name: st
 
 // The asset tag hung on a selected device: a paper tag with its name, model, rack unit and inventory number.
 // Every action lives on the front panel, the crash cart or the right-click menu; its confirmation slips pin below the tag.
-export function UnitTag({ deviceId, renaming, onRenaming, menus, onSold }: { deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; menus: Menus; onSold: () => void }) {
+export function UnitTag({ deviceId, renaming, onRenaming, menus, onSold, onResult }: { deviceId: string; renaming: boolean; onRenaming: (on: boolean) => void; menus: Menus; onSold: () => void; onResult?: (r: "renamed" | "empty", name: string) => void }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const d = game.devices.find((x) => x.id === deviceId)!;
   const m = modelById(d.model), failed = d.components.filter((c) => c.failedAt !== null), { pending, sale } = menus;
@@ -34,7 +34,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, onSold }: { dev
   return (
     <div className="wr-tag-body wr-asset" data-device={d.id}>
       {failed.length > 0 && <div className="wr-model wr-fault" data-fault="">{failed.map(partLabel).join(", ")} · {t("locations-1.failed")}</div>}
-      <div className="wr-tag-h">{renaming ? <LabelEdit device={d} editing onEditing={onRenaming} /> : <span data-name="">{devName(d)}</span>}</div>
+      <div className="wr-tag-h">{renaming ? <LabelEdit device={d} editing onEditing={onRenaming} onResult={onResult} /> : <span data-name="">{devName(d)}</span>}</div>
       <div className="wr-model">{m.kind === "server" ? `${d.brand} ${modelName(m, d.brand)}` : m.name}</div>
       <div className="wr-asset-row">
         {d.rackId && <span data-unit="">{t("world.tagUnit", { n: top > d.slot ? `${d.slot}-${top}` : d.slot })}</span>}

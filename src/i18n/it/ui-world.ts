@@ -62,6 +62,8 @@ export default {
   "world.out.halting": (p) => `${p.name} si spegne`,
   "world.out.starting": (p) => `${p.name} si avvia`,
   "world.out.off": (p) => `${p.name} spento`,
+  "world.out.renamed": (p) => `${p.name} rinominato`,
+  "world.out.nameEmpty": () => "Il nome non può essere vuoto",
   "world.out.reboot": (p) => `${p.name} riavviato`,
   "world.affected": (p) => `${p.count} ${p.count === 1 ? 'cliente coinvolto' : 'clienti coinvolti'}.`,
   "world.out.customers": (p) => `${p.line}, ${p.count} ${p.count === 1 ? 'cliente coinvolto' : 'clienti coinvolti'}`,

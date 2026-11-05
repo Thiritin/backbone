@@ -8,12 +8,12 @@ import { useStore } from "../src/ui/store";
 import { UnitTag } from "../src/ui/world/rack/UnitTag";
 import { newGame, withServer } from "./fixtures";
 
-let renamed = false, sold = 0;
+let renamed = false, sold = 0, results: string[] = [];
 function Harness({ id }: { id: string }) {
   const game = useStore((s) => s.game);
   const menus = useDeviceMenu(game, () => {}, () => {}, undefined, true);
   (globalThis as { menus?: typeof menus }).menus = menus;
-  return game.devices.some((d) => d.id === id) ? <UnitTag deviceId={id} renaming={renamed} onRenaming={() => {}} menus={menus} onSold={() => { sold++; }} /> : null;
+  return game.devices.some((d) => d.id === id) ? <UnitTag deviceId={id} renaming={renamed} onRenaming={() => {}} menus={menus} onSold={() => { sold++; }} onResult={(r, n) => results.push(`${r}:${n}`)} /> : null;
 }
 
 function mount(game = withServer(newGame(1))) {
@@ -23,7 +23,7 @@ function mount(game = withServer(newGame(1))) {
   return { dev, view };
 }
 
-afterEach(() => { cleanup(); renamed = false; sold = 0; });
+afterEach(() => { cleanup(); renamed = false; sold = 0; results = []; });
 
 describe("asset tag", () => {
   it("shows name, brand and model, rack unit and inventory number", () => {
@@ -54,6 +54,23 @@ describe("asset tag", () => {
     renamed = true;
     const { view } = mount();
     expect(view.container.querySelector("input")).not.toBeNull();
+  });
+
+  it("commits a rename on Enter, refuses an empty name and cancels on Escape", () => {
+    renamed = true;
+    const { dev, view } = mount();
+    const field = () => view.container.querySelector("input")!;
+    fireEvent.change(field(), { target: { value: "web-01" } });
+    fireEvent.keyDown(field(), { key: "Escape" });
+    expect(results).toEqual([]);
+    expect(useStore.getState().game.devices.find((d) => d.id === dev.id)!.label ?? null).toBeNull();
+    fireEvent.change(field(), { target: { value: "  " } });
+    fireEvent.blur(field());
+    expect(results).toEqual(["empty:"]);
+    fireEvent.change(field(), { target: { value: "web-01" } });
+    fireEvent.blur(field());
+    expect(results).toEqual(["empty:", "renamed:web-01"]);
+    expect(useStore.getState().game.devices.find((d) => d.id === dev.id)!.label).toBe("web-01");
   });
 
   it("confirms a sale from the menu on a slip, and the stamp removes the device", () => {
