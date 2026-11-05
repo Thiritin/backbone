@@ -6,23 +6,26 @@
 //   useOpenItems()      { receivables, payables, receivable, payable }: unpaid invoices and open supplier bills
 //   useVatReturns()     { available, linked, certs }: tax portal state and the certificates that can link it
 //   useReports()        { overview(), profitLoss(year) }: headline figures and the year's profit and loss
+//   useBankLines()      BankLine[]: bank lines not yet booked, oldest first; docsFor(s, line) the numbers each can take
 //
 // The chart of account numbers is CHART in ./chart; sides() gives an entry's debit and credit for an account.
 import { useMemo } from "react";
 import { useBooks } from "../view";
 import { accountsOf } from "./accounts";
-import { ledgerYears, statement } from "./ledger";
+import { bankLines, ledgerYears, statement } from "./ledger";
 import { openItems } from "./openItems";
 import { overview, profitLoss } from "./reports";
 import { vatReturns } from "./vat";
 
 export { accountsOf, sides, yearOfHour, type Account, type Kind } from "./accounts";
-export { categoryLabel, CHART, FIXED_NO } from "./chart";
-export { ledgerYears, openItems, overview, profitLoss, statement, vatReturns };
+export { categoryLabel, CHART, chartOf, FIXED_NO, FIXED_SKR04, SKR04, type ChartId } from "./chart";
+export { docsFor, type BankLine } from "./ledger";
+export { bankLines, ledgerYears, openItems, overview, profitLoss, statement, vatReturns };
 
 export const useAccounts = (year?: number) => { const g = useBooks(); return useMemo(() => accountsOf(g, year), [g, year]); };
 export const useLedger = () => { const g = useBooks(); return useMemo(() => ({ years: ledgerYears(g), ...statement(g) }), [g]); };
 export const useOpenItems = () => { const g = useBooks(); return useMemo(() => openItems(g), [g]); };
+export const useBankLines = () => { const g = useBooks(); return useMemo(() => bankLines(g), [g]); };
 export const useVatReturns = () => { const g = useBooks(); return useMemo(() => vatReturns(g), [g]); };
 export const useReports = () => {
   const g = useBooks();

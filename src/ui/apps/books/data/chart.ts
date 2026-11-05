@@ -1,5 +1,7 @@
 // Ledger category names and the account numbers the books use for them.
 import { t } from "../../../../i18n/en";
+import type { GameState } from "../../../../sim/50-state";
+import { setupOf } from "../../../../sim/80-business/books-guide";
 import type { Kind } from "./accounts";
 
 const CATEGORY: Record<string, string> = {
@@ -18,3 +20,19 @@ export const CHART: Record<string, [number, Kind]> = {
 };
 // The fixed accounts every set of books has.
 export const FIXED_NO = { bank: 1200, receivables: 1400, payables: 1600 } as const;
+
+// The same categories under SKR04, the chart a company can pick instead in its setup.
+export const SKR04: Record<string, [number, Kind]> = {
+  transfers: [1460, "asset"], loans: [3150, "liability"], vat: [3820, "liability"], capital: [2900, "equity"],
+  payments: [4400, "income"], setup: [4401, "income"], sales: [4402, "income"], credit: [4830, "income"],
+  salaries: [6020, "expense"], rent: [6310, "expense"], power: [6325, "expense"], tax: [7610, "expense"], insurance: [6400, "expense"],
+  marketing: [6600, "expense"], maintenance: [6485, "expense"], leasing: [6840, "expense"], hardware: [6260, "expense"],
+  transit: [6805, "expense"], domains: [6810, "expense"], subscriptions: [6837, "expense"], licenses: [6838, "expense"], fees: [6855, "expense"],
+};
+export const FIXED_SKR04 = { bank: 1800, receivables: 1200, payables: 3300 } as const;
+
+export type ChartId = "skr03" | "skr04";
+// The chart the company chose in its setup, SKR03 until it picks; other is the income and expense account for an unlisted category.
+export const chartOf = (s: GameState) => setupOf(s).chart === "skr04"
+  ? { id: "skr04" as ChartId, map: SKR04, fixed: FIXED_SKR04 as Record<keyof typeof FIXED_NO, number>, other: [4830, 6300] }
+  : { id: "skr03" as ChartId, map: CHART, fixed: FIXED_NO as Record<keyof typeof FIXED_NO, number>, other: [2700, 4900] };
