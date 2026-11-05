@@ -3,6 +3,7 @@ import { t } from "../../i18n/en";
 import { atDesk, inLetterbox, type Letter as Post } from "../../sim/40-support/letters";
 import { readLetter } from "../../sim/90-actions/paperwork";
 import { scanLetter } from "../../sim/90-actions/post";
+import { playerAt } from "../../sim/60-infra/handwork";
 import { useStore } from "../store";
 import { officeAddress } from "../../sim/60-infra/properties";
 import { paperDay } from "./FormDoc";
@@ -16,6 +17,7 @@ export function PostApp() {
   const [sel, setSel] = useSessionState<string | null>("post.sel", null);
   const letters = [...atDesk(game)].reverse(), boxed = [...inLetterbox(game)].reverse(), l = letters.find((x) => x.id === sel);
   const bill = l?.payable ? game.payables.find((p) => p.id === l.payable) : undefined;
+  const here = playerAt(game).id;
   const open = (id: string, read: boolean) => { setSel(id); if (!read) act(readLetter, id); };
   return (
     <div className="post">
@@ -34,6 +36,7 @@ export function PostApp() {
               <div key={x.id} role="listitem" className="post-row boxed">
                 <strong>{x.from}</strong>
                 <small className="num">{game.locations.find((o) => o.id === x.box)?.name} {paperDay(x.at)}</small>
+                {here === x.box && <button className="btn" onClick={() => openApp("Post", { kind: "letterbox", id: x.box! })}>{t("paperwork.post.toBox")}</button>}
               </div>
             ))}
           </div>

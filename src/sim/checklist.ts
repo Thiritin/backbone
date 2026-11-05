@@ -36,7 +36,7 @@ export const CHECKS: Record<string, (s: GameState) => boolean> = {
   buyServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server"),
   mountServer: (s) => s.devices.some((d) => modelById(d.model).kind === "server" && d.rackId && d.on),
   mountRouter: (s) => s.devices.some((d) => !!d.rackId && isOfficeRouter(modelById(d.model)) && jacked(s, d.id)),
-  internet: (s) => lineActive(s),
+  internet: (s) => lineActive(s) && s.homeLine.id !== MOMS_DSL.id,
   domain: (s) => !!s.registrar && !!s.company.domain,
   website: siteBuilt,
   launch: (s) => s.marketing.launched && s.marketing.lines.length > 0,

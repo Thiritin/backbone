@@ -30,6 +30,7 @@ export default {
   "paperwork.post.empty": () => "No hay cartas",
   "paperwork.post.box": () => "En el buzón",
   "paperwork.post.scan": () => "Escanear",
+  "paperwork.post.toBox": () => "Al buzón",
   "paperwork.post.scanned": () => "Escaneada",
   "paperwork.letter.office": () => "Oficina de actividades comerciales",
   "paperwork.letter.register": () => "Juzgado local, registro mercantil",
