@@ -553,7 +553,7 @@
   {
    "id": "pine-round",
    "kit": "nature-kit",
-   "src": "nature-kit/tree_pineRoundA.glb",
+   "src": "nature-kit/tree_pineTallA.glb",
    "yaw": 0,
    "size": [
     0,
@@ -567,7 +567,8 @@
   {
    "id": "bush",
    "kit": "nature-kit",
-   "src": "nature-kit/plant_bush.glb",
+   "src": "nature-kit/tree_fat.glb",
+   "rules": [{ "m": "drop", "name": "woodBark" }],
    "yaw": 0,
    "size": [
     0,
@@ -581,7 +582,8 @@
   {
    "id": "bush-large",
    "kit": "nature-kit",
-   "src": "nature-kit/plant_bushLarge.glb",
+   "src": "nature-kit/tree_fat.glb",
+   "rules": [{ "m": "drop", "name": "woodBark" }],
    "yaw": 0,
    "size": [
     0,
@@ -595,7 +597,8 @@
   {
    "id": "bush-small",
    "kit": "nature-kit",
-   "src": "nature-kit/plant_bushSmall.glb",
+   "src": "nature-kit/tree_fat.glb",
+   "rules": [{ "m": "drop", "name": "woodBark" }],
    "yaw": 0,
    "size": [
     0,

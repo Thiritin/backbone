@@ -39,8 +39,8 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     it("street", -300, sy0, w + 300, sy1, 0, "front", { moving: true }),
     it("walk", -300, py1 + 0.4, w + 300, py1 + 0.4 + 1.8, 0, "front"),
     it("bays", w + 1, bayY(edge ? 1 : 3), w + 1 + BAY.l, bayY(-1), 0, "front", { count: edge ? 2 : 4 }),
-    carItem("hatchback", w + 1.4, bayY(0) + 0.35, PLAYER_CAR, "front", { kind: "hatchback" }),
-    ...Array.from({ length: edge ? 1 : Math.min(3, staff) }, (_, k) => carItem(["suv", "sedan", "van"][k], w + 1.2, bayY(k + 1) + 0.35, tone(5 + k), "front", { kind: ["suv", "sedan", "van"][k] })),
+    carItem("hatchback", w + 1.4, bayY(0) + 0.1, PLAYER_CAR, "front", { kind: "hatchback" }),
+    ...Array.from({ length: edge ? 1 : Math.min(3, staff) }, (_, k) => carItem(["suv", "sedan", "van"][k], w + 1.2, bayY(k + 1) + 0.1, tone(5 + k), "front", { kind: ["suv", "sedan", "van"][k] })),
     it("gate", gateX0, py1 - 0.3, gateX1, py1 + 0.3, M, "front", { kind: setting !== "business" && c.slide ? "slide" : "barrier" }),
     it("booth", gateX1 + 1.1, py1 - 1.6, boothX1, py1 + 0.7, Math.round(2.8 * M), "front"),
     carItem(setting === "industrial" ? "delivery" : "coupe", -34, sy0 + 4.2, tone(7), "front", { kind: setting === "industrial" ? "delivery" : "coupe", moving: true }), carItem(setting === "industrial" ? "bintruck" : "suv", w + 16, sy0 + 1.4, tone(8), "front", { kind: setting === "industrial" ? "bintruck" : "suv", moving: true }),
@@ -118,5 +118,5 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     items.push(...street.filter((i) => !edge || i.t !== "rack"));
   }
   const seats = edge ? [] : lobbySlots(cls, h);
-  return { kind: "plot", setting, cls, seed, w, h, lift: 0, plot: { x0: px0, y0: py0, x1: px1, y1: py1 }, items, bay: { x: w + 1.4, y: bayY(0) + 0.35, dir: "x" }, seats, box: bounds(items, 0, w, h) };
+  return { kind: "plot", setting, cls, seed, w, h, lift: 0, plot: { x0: px0, y0: py0, x1: px1, y1: py1 }, items, bay: { x: w + 1.4, y: bayY(0) + 0.1, dir: "x" }, seats, box: bounds(items, 0, w, h) };
 }

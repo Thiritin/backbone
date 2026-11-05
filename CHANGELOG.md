@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-05
 
+- Houses, cars, trees, bushes and buildings outside your datacenter are drawn cleaner, without stray slivers and seams, and stand squarely on the tile grid.
 - The macOS desktop app is built for Macs with Apple silicon.
 - The desktop app is also available for Windows (x86_64) and for Linux on x86_64 and arm64, and it updates itself.
 

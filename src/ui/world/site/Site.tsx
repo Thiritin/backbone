@@ -1,3 +1,4 @@
+import { GRID_DEBUG, GridDebug } from "./gridDebug";
 import "./site.css";
 import { memo } from "react";
 import { t } from "../../../i18n/en";
@@ -85,6 +86,7 @@ const sorted = (items: Item[]) => [...items].sort((a, b) => flatFirst(a) - flatF
 const Layer = ({ s, layer, name, band, year, drive }: { s: SiteSpec; layer: Item["layer"]; name: string; band: string; year: number; drive?: Drive }) => (
   <g className="w-site" pointerEvents="none" transform={layer === "back" && s.lift ? `translate(0 ${-s.lift})` : undefined}>
     {sorted(s.items.filter((i) => i.layer === layer)).map((i, k) => <One key={k} i={i} s={s} name={name} band={band} year={year} drive={drive ?? PARKED} />)}
+    {GRID_DEBUG && <GridDebug s={s} layer={layer} />}
   </g>
 );
 
