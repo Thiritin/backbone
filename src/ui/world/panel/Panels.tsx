@@ -231,7 +231,7 @@ export function ConsolePanel({ loc, title, onClose }: { loc: Location; title: st
   const game = useStore((s) => s.game), plugged = usePlug();
   return (
     <Slab title={title} onClose={onClose} data={{ "console-panel": "" }}>
-      <CrashCart deviceId={cartTarget(game, loc.id, plugged)} onClose={onClose} />
+      <CrashCart deviceId={cartTarget(game, loc.id, plugged)} />
     </Slab>
   );
 }

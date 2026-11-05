@@ -22,6 +22,7 @@ export default {
   "world.obj.cooling": () => "Unité de climatisation",
   "world.obj.pdu": () => "PDU",
   "world.obj.cart": () => "Chariot console",
+  "world.cartRestart": (p) => `${p.name} redémarre`,
   "world.obj.extinguisher": () => "Extincteur",
   "world.obj.noc": () => "Poste NOC",
   "world.obj.dock": () => "Quai de chargement",

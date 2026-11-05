@@ -47,6 +47,15 @@ describe("crash cart", () => {
     expect(renderToString(<Screen game={s} device={d} via="bmc" />)).not.toContain("Ctrl+Alt+Del");
   });
 
+  it("offers F11 but no restart while the machine is not up", () => {
+    const s = readyGame(5);
+    const d = s.devices.find((x) => x.id === "dev3")!;
+    d.bootUntil = s.hour + 1;
+    const html = renderToString(<Screen game={s} device={d} via="monitor" />);
+    expect(html).toContain(">F11<");
+    expect(html).not.toContain("Ctrl+Alt+Del");
+  });
+
   it("plugs into the room's only server, and shows no signal when there is no choice", () => {
     const s = readyGame(5);
     const loc = s.locations.find((l) => l.space === "basement")!;

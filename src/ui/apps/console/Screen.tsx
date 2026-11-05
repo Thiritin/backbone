@@ -105,11 +105,11 @@ export const focusIn = (box: HTMLDivElement | null) => (box?.querySelector("inpu
 
 // The server's screen: black while off, the POST splash (the window for Del and F11), the firmware prompt, the BIOS
 // setup, the boot menu, then whatever the OS on its disks or the stick shows.
-export function Screen(props: { game: GameState; device: Device; via: Via; active?: boolean }) {
+export function Screen(props: { game: GameState; device: Device; via: Via; active?: boolean; onRestart?: () => void }) {
   return <DeviceScreen key={props.device.id} {...props} />;
 }
 
-function DeviceScreen({ game, device: d, via, active = true }: { game: GameState; device: Device; via: Via; active?: boolean }) {
+function DeviceScreen({ game, device: d, via, active = true, onRestart }: { game: GameState; device: Device; via: Via; active?: boolean; onRestart?: () => void }) {
   const act = useStore((s) => s.act);
   const box = useRef<HTMLDivElement>(null);
   const bios = useBios(game, d);
@@ -130,7 +130,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   // On a monitor at the rack, Ctrl+Alt+Del restarts a machine whose OS is up and has not asked for it itself.
   const restart = via === "monitor" && (kind === "login" || kind === "desktop") && !os.keys.includes("CtrlAltDel");
   const onKey = (key: string) => {
-    if (key === "CtrlAltDel" && restart) act(POWER_ACTION.reboot, d.id);
+    if (key === "CtrlAltDel" && restart) { if (act(POWER_ACTION.reboot, d.id).ok) onRestart?.(); }
     else if (shown === "post" || shown === "notFound") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }
     else if (key === "F11" && shown !== "menu" && shown !== "bios" && shown !== "dark") setQueued(true);
     else if (shown === "stuck") { if (key === "F1") act(continueBoot, d.id); else if (key === "Delete" || key === "F2") act(enterSetup, d.id); }
@@ -147,7 +147,7 @@ function DeviceScreen({ game, device: d, via, active = true }: { game: GameState
   const look = shown === "bios" || shown === "menu" || shown === "dark" || shown === "post" || shown === "stuck" ? shown : os.look;
   return (
     <div className={`scr-wrap ${via}`}>
-      <div ref={box} className="scr" data-look={look} data-hung={kind === "hung" || undefined} tabIndex={0} role="application" aria-label={t("console.serverScreen")} onKeyDown={keyHandler(onKey)}>
+      <div ref={box} className="scr" data-look={look} data-hung={kind === "hung" || undefined} tabIndex={0} role="application" aria-label={t("console.serverScreen")} onKeyDown={(e) => { if (e.key === "Escape" && !keys.includes("Escape")) return; keyHandler(onKey)(e); }}>
         {shown === "dark" && <span className="scr-osd">{t("console.noSignal")}</span>}
         {shown === "post" && <Post game={game} d={d} />}
         {shown === "stuck" && <pre>{"CMOS checksum error - Defaults loaded\nPress F1 to continue, DEL to enter SETUP"}</pre>}

@@ -20,7 +20,7 @@
 
 .wr-num, .wr-model { font-variant-numeric: tabular-nums; color: oklch(0.75 0.03 220); font-size: 13px; }
 /* The close plate screwed to the scene's corner. */
-.wr-x { position: absolute; top: 8px; right: 8px; z-index: 5; width: 30px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; }
+.wr-x { position: absolute; top: 8px; right: 8px; z-index: 25; width: 30px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; }
 .wr-x svg { display: block; width: 100%; height: 100%; }
 .wr-x-plate { fill: oklch(0.72 0.01 250); stroke: oklch(0.6 0.012 250); stroke-width: 1; }
 .wr-x-screw { fill: oklch(0.55 0.01 250); }
@@ -296,3 +296,4 @@
 .wk-power[data-guide], .wk-port[data-guide], .wk-ic[data-guide] { outline: 3px solid oklch(0.75 0.19 60); outline-offset: 2px; }
 .wk-power[data-guide]::after, .wk-port[data-guide]::after, .wk-ic[data-guide]::after { content: ""; position: absolute; left: -2px; top: -2px; width: 8px; height: 8px; background: oklch(0.75 0.19 60); }
 .rack-cart-cable { fill: none; stroke: oklch(0.6 0.02 255); stroke-width: 2.5; stroke-linecap: round; }
+.wr-cart-note { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; color: oklch(0.9 0.01 255); font-size: 14px; }

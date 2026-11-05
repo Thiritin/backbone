@@ -38,7 +38,7 @@ import { menuOn } from "../desktop/ContextMenu";
 import { RoomCables } from "./rack/Cables";
 import { ConsolePanel, PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
 import { PhonePanel } from "./panel/PhonePanel";
-import { cartTarget, getPlug, setPlug } from "./rack/cartPlug";
+import { cartTarget, getPlug, setPlug, usePlug } from "./rack/cartPlug";
 import { boardOf, CorkboardPanel } from "./panel/Corkboard";
 import { TicketsPanel } from "./panel/Tickets";
 import { answerCall } from "../../sim/90-actions/staff";
@@ -326,6 +326,9 @@ export const World = memo(function World() {
       </g>
     ) });
   }
+  // A cable left on a server that was unmounted or sold comes off.
+  const cabled = usePlug();
+  useEffect(() => { if (cabled && !game.devices.some((d) => d.id === cabled && d.rackId)) setPlug(null); }, [cabled, game.devices]);
   const run = (label: string, id = ""): Record<Use, () => void> => ({
     desktop: () => setSurface("desktop"),
     storage: () => { if (game.devices.some((d) => d.store === loc.id && !d.chassisId)) setPanel({ kind: "storage", title: "" }); },

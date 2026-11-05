@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { t } from "../../../i18n/en";
 import { Screen } from "../../apps/console/Screen";
 import { useStore } from "../../store";
@@ -7,11 +8,13 @@ import "./rack.css";
 export function CrashCart({ deviceId, onClose }: { deviceId: string | null; onClose?: () => void }) {
   const game = useStore((s) => s.game);
   const d = game.devices.find((x) => x.id === deviceId);
+  const [note, setNote] = useState<string | null>(null);
   return (
     <div className="wr-cart" data-cart-panel={deviceId ?? ""}>
       <div className="wr-cart-monitor">
-        {d ? <Screen game={game} device={d} via="monitor" /> : <div className="scr-wrap monitor"><div className="scr" data-look="dark"><span className="scr-osd">{t("console.noSignal")}</span></div></div>}
+        {d ? <Screen game={game} device={d} via="monitor" onRestart={() => setNote(t("world.cartRestart", { name: d.name || d.id }))} /> : <div className="scr-wrap monitor"><div className="scr" data-look="dark"><span className="scr-osd">{t("console.noSignal")}</span></div></div>}
       </div>
+      {note && <div className="wr-cart-note" role="status">{note}</div>}
       <svg className="wr-cart-frame" viewBox="0 -20 640 270" aria-hidden="true">
         <rect className="wr-cart-post" x="48" y="30" width="10" height="190" />
         <rect className="wr-cart-post" x="582" y="30" width="10" height="190" />
