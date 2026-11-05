@@ -86,7 +86,7 @@ describe("GMix site", () => {
     cleanup();
     s.installed = [...s.installed, "keepassive"];
     s.logins = { ...s.logins, [`mail:${address(s)}`]: [address(s), start(s).password] };
-    show(s, "/");
+    show(s, "/login");
     expect((document.querySelector('input[name="password"]') as HTMLInputElement).value).toBe(start(s).password);
     fireEvent.click(screen.getByText(t("gmix.login.submit")));
     expect(went.at(-1)).toBe("www.gmix.net/welcome");
@@ -140,5 +140,14 @@ describe("GMix site", () => {
       amounts.push(...mailLedger(s).filter((e) => e.params?.name === "GMix").map((e) => -e.amount));
     }
     expect(amounts).toEqual([0.99, 0.99, 0.99, 4.99]);
+  });
+});
+
+describe("GMix start page with a stored login", () => {
+  it("opens the inbox of the starter box and keeps the form for other addresses", () => {
+    const s = startGame(1);
+    s.logins = { [`mail:${address(s)}`]: [address(s), start(s).password] };
+    show(s, "/");
+    expect(went.at(-1)).toBe("www.gmix.net/mail/inbox");
   });
 });

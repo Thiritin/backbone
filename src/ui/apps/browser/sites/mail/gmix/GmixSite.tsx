@@ -1,4 +1,4 @@
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { dateOf, nextMonthStart, yearOf } from "../../../../../../sim/00-core/time";
@@ -56,6 +56,11 @@ export function GmixSite({ game, path, go }: SiteProps) {
   const [signedIn, setSession] = useSessionState<string | null>("gmix.account", null);
   // Written at once, since a sign-in navigates and the next page mounts before the hook would store it.
   const setSignedIn = (id: string | null) => { writeSession("gmix.account", id); setSession(id); };
+  // The starter box is already signed in from the stored login, so the start page opens its inbox.
+  useEffect(() => {
+    const box = game.mail.accounts.find((a) => a.id === game.mail.primary && a.closedAt === null && a.domain === GMIX_DOMAIN);
+    if (!signedIn && route === "" && box && game.logins[`mail:${box.local}@${box.domain}`]) { setSignedIn(box.id); to("mail/inbox"); }
+  }, []);
   const account = game.mail.accounts.find((a) => a.id === signedIn && a.closedAt === null && a.domain === GMIX_DOMAIN) ?? null;
   const page = (() => {
     if (route === "plans") return <Plans game={game} to={to} go={go} tiers={[...TIERS]} />;
@@ -85,7 +90,7 @@ export function GmixSite({ game, path, go }: SiteProps) {
           <Link to={to} path="plans">{t("gmix.nav.plans")}</Link>
           {account && <Link to={to} path="mail/inbox">{t("gmix.nav.mail")}</Link>}
           {account ? <Link to={to} path="account">{t("gmix.nav.account")}</Link> : <Link to={to} path="signup">{t("gmix.nav.join")}</Link>}
-          {account && <a href="#logout" onClick={(e) => { e.preventDefault(); setSignedIn(null); to(""); }}>{t("gmix.nav.logout")}</a>}
+          {account && <a href="#logout" onClick={(e) => { e.preventDefault(); setSignedIn(null); to("login"); }}>{t("gmix.nav.logout")}</a>}
         </nav>
       </header>
       <main className="gx-main">{page}</main>
