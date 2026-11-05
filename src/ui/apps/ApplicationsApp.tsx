@@ -5,7 +5,7 @@ import { yearOf } from "../../sim/00-core/time";
 import { installerFile, programById, PROGRAMS } from "../../sim/10-catalog/programs";
 import { installProgram, removable, uninstallApp } from "../../sim/90-actions/programs";
 import { booksVendor } from "../../sim/10-catalog/bookkeeping";
-import { installBooks } from "../../sim/90-actions/bookkeeping";
+import { openBooksInstaller } from "./books/guide/Installer";
 import { ask } from "../desktop/Confirm";
 import { useEffect, useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import { imageParts, type OsImage } from "../../sim/10-catalog/server-os";
@@ -64,9 +64,9 @@ function install(id: string) {
   if (programById(id)) return void act(installProgram, id);
   const v = booksVendor(id), now = booksVendor(game.books.vendor);
   if (!v) return;
-  if (!now || now.id === v.id) return void act(installBooks, id);
+  if (!now || now.id === v.id) return void openBooksInstaller(id);
   const p = { old: now.program, name: v.program };
-  ask({ title: t("apps.finder.replaceTitle", p), text: t("apps.finder.replaceText", p), action: t("apps.finder.replace"), run: () => act(installBooks, id) });
+  ask({ title: t("apps.finder.replaceTitle", p), text: t("apps.finder.replaceText", p), action: t("apps.finder.replace"), run: () => openBooksInstaller(id) });
 }
 
 // The app is still named Applications in saves; on screen it is Finder, with Applications as one of its folders.

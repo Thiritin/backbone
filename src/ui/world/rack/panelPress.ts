@@ -4,7 +4,6 @@ import type { Device, GameState } from "../../../sim/50-state";
 import { customersAffectedBy } from "../../../sim/60-infra/incidents";
 import { booting, halting } from "../../../sim/60-infra/status";
 import { atServer, setPower } from "../../../sim/90-actions/hardware";
-import { cardBoard, nextGoal } from "../../../sim/checklist";
 import { devName } from "../../apps/hw";
 import type { PanelOp } from "../../art/fronts";
 import type { useStore } from "../../store";
@@ -31,11 +30,4 @@ export function panelPress(game: GameState, act: Act, d: Device, op: PanelOp): s
   if (op === "power" && halting(d)) return t("world.out.stillHalting", { name });
   const n = affected(game, d, op), key = op === "power" ? (d.on ? "world.out.halting" : "world.out.starting") : op === "hold" ? "world.out.off" : "world.out.reboot";
   return act(atServer, d.id, op, "self").ok ? withCount(t(key, { name }), n) : null;
-}
-
-const FRONT_GUIDE: Partial<Record<string, "power" | "usb" | "reset">> = { mountServer: "power", mountRouter: "power", plugStick: "usb", bootUsb: "reset" };
-// The control on the drawn device that the current guide card needs.
-export function frontGuide(game: GameState): "power" | "usb" | "reset" | undefined {
-  const cur = cardBoard(game).current;
-  return cur ? FRONT_GUIDE[nextGoal(game, cur)] : undefined;
 }

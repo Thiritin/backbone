@@ -3,8 +3,12 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
-- Every purchase now opens the same payment step: pick a method, check the total and confirm, then open the invoice, receipt or order confirmation.
-- Flyers, trade fairs, review platforms, shop software, lease buyouts and cross connects now bill from their own vendor, domains are billed when you register them, and a provider cable sends its order confirmation at once.
+- Every purchase now asks how to pay in one step, takes cash until you open a bank account, names the reason up front when an order cannot go through, and afterwards shows Ordered or Paid with a link to the invoice or receipt.
+- A provider cable sends its order confirmation at once and its invoice after installation, the landlord bills you by letter, and flyers, trade fairs, review platforms, shop software, lease buyouts, cross connects and domains bill from their own vendor.
+- Shop systems now come with a step-by-step installation guide, need a cron job to bill automatically, and ask for the config file under its real name and writable folders before the installer runs.
+- Every bookkeeping program now installs through its own setup pages, with licence, serial number and sign-up, and a first-steps guide in the style of its era opens on first launch and ticks off each step until the books are ready.
+- Each accounting software vendor now has its own website look in every era, with a download section, system requirements and an installation guide link.
+- Selecting a device in a rack now hangs a paper asset tag on it with its name, model, rack unit and inventory number, and the router password is read from the sticker on the router.
 - The letterbox panel now lays the first letter on top with the later ones stacked beside it, letters you have read no longer come back when you open the box again, and the scan corner sits at the bottom of the page.
 - Letters from the trade office, tax office and other authorities are now the bill itself, with the same letterhead everywhere and a stamp once paid.
 - Invoices dated up to 2008 print in monospace on continuous-form paper like a dot-matrix printer; later ones keep the styled layout.

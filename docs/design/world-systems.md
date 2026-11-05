@@ -4,7 +4,7 @@ How every game system meets the 2D plane. Decided 2026-11-03. The desktop stays 
 
 | System | In the room | Close-up | Desktop keeps |
 | --- | --- | --- | --- |
-| Racks and hardware | Racks and the shelf on their tiles, device LEDs blinking, failed parts with a red LED, heat haze above an overloaded rack | Rack scene with front and back, lid scene with the chassis pulled out, parts on paper tags | Rack view, inspector, remote hands from afar |
+| Racks and hardware | Racks and the shelf on their tiles, device LEDs blinking, failed parts with a red LED, heat haze above an overloaded rack | Rack scene with front and back, lid scene with the chassis pulled out, parts on paper tags, a paper asset tag on a selected device (name, model, rack unit, inventory number, failed part) without buttons, the router password on its front sticker | Rack view, inspector, remote hands from afar |
 | Cabling | Cables along the trays between racks and to the wall socket | Rack back with drag cabling, provider panel drawn large, side-by-side backs for cross-rack runs, order slips | Port inspector, port groups |
 | Crash cart | A trolley right of the rack in the basement and the rented halls, a beige CRT before 2010 and a flat panel after | The cart with its monitor and keyboard; the Ctrl+Alt+Del key restarts a server whose OS is up | The rack view keeps its own monitor |
 | Deliveries | Parcels drawn by the basement door for a day after arrival, crates on the shelf | Shelf with stored units on its boards | Shop, storage tab |
