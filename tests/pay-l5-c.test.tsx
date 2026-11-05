@@ -96,6 +96,8 @@ describe("marketing channels", () => {
     fireEvent.click(screen.getAllByText(t("marketing.setUp")).find((b) => b.tagName === "BUTTON" && !(b as HTMLButtonElement).disabled)!);
     offers("services", AGENCY_TITLE, Math.max(...Object.values(OWNED).map((d) => d.setup)));
     opens(orders("transfer", confirm));
+    // The outcome sits in the card of the channel just set up, beside its Active pill.
+    expect(document.querySelector(".order-done")!.closest(".shop-card")!.textContent).toContain(t("marketing.active"));
   });
 });
 

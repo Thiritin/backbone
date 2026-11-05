@@ -108,13 +108,12 @@ function Channels() {
   const [managing, setManaging] = useState(false);
   useFocus("Marketing", (f) => { if (f.kind === "page" && f.id === "website") setManaging(true); });
   const year = yearOf(game.hour), full = isAvailable("Marketing", game.unlocks);
-  const [setupDoc, setSetupDoc] = useState<string | null>(null);
+  const [setupDoc, setSetupDoc] = useState<{ id: string; payable: string } | null>(null);
   if (managing) return <>
     <div className="mkt-list"><button className="btn" style={{ justifySelf: "start" }} onClick={() => setManaging(false)}>{t("desktop.back")}</button></div>
     <div className="mkt-list"><SiteCard /></div>
   </>;
   return <>
-    {setupDoc && <div className="mkt-pay"><OrderDone payable={setupDoc} /></div>}
     <div className="shop-grid mkt-flat">
       <div className="shop-card">
         <div className="shop-name"><strong>{t("marketing.website")}</strong><span>{t("marketing.websiteText")}</span></div>
@@ -130,10 +129,10 @@ function Channels() {
         const def = id === "email" ? null : OWNED[id];
         const active = id === "email" || owns(game, id);
         let state: ReactNode;
-        if (active) state = <span className="pill ok">{t("marketing.active")}</span>;
+        if (active) state = <>{setupDoc?.id === id && <OrderDone payable={setupDoc.payable} />}<span className="pill ok">{t("marketing.active")}</span></>;
         else if (def!.needs && !owns(game, def!.needs)) state = <span className="pill">{t("marketing.needs", { name: CHANNEL_NAME[def!.needs!] })}</span>;
         else if (year < def!.fromYear) state = <span className="pill">{t("marketing.fromYear", { year: def!.fromYear })}</span>;
-        else state = <PayButton className="btn primary" supplier="services" name={AGENCY_TITLE} amount={def!.setup} run={(m) => act(setUpChannel, id as OwnedChannel, m)} onDone={(p) => setSetupDoc(p ?? null)}>{t("marketing.setUp")}</PayButton>;
+        else state = <PayButton className="btn primary" supplier="services" name={AGENCY_TITLE} amount={def!.setup} run={(m) => act(setUpChannel, id as OwnedChannel, m)} onDone={(p) => setSetupDoc(p ? { id, payable: p } : null)}>{t("marketing.setUp")}</PayButton>;
         return (
           <div key={id} className="shop-card">
             <div className="shop-name"><strong>{name}</strong><span>{text}</span></div>
