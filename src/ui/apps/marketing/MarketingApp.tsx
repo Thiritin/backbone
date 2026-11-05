@@ -112,8 +112,8 @@ function Channels() {
     <div className="mkt-list"><SiteCard /></div>
   </>;
   return <>
-    {full && (Object.keys(OWNED) as OwnedChannel[]).some((id) => !owns(game, id)) && <div className="pay-row">{setup.picker}</div>}
-    {setup.done && <div className="pay-row">{setup.done}</div>}
+    {full && (Object.keys(OWNED) as OwnedChannel[]).some((id) => !owns(game, id)) && <div className="pay-row mkt-pay">{setup.picker}</div>}
+    {setup.done && <div className="pay-row mkt-pay">{setup.done}</div>}
     <div className="shop-grid mkt-flat">
       <div className="shop-card">
         <div className="shop-name"><strong>{t("marketing.website")}</strong><span>{t("marketing.websiteText")}</span></div>
