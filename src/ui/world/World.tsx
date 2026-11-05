@@ -178,6 +178,8 @@ export function World() {
     const busy = (e: KeyboardEvent) =>
       e.metaKey || e.ctrlKey || e.altKey || !!(e.target as HTMLElement).closest?.("input, textarea, select, [contenteditable]") || !!document.querySelector("[role=dialog], [role=alertdialog], [role=menu]");
     const down = (e: KeyboardEvent) => {
+      // The OS swallows the keyup of a key released under a modifier, so a modifier drops every held key.
+      if (e.metaKey || e.ctrlKey || e.altKey) held.current = [];
       if (busy(e)) return;
       if (e.key === "Escape") { escape.current(); return; }
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
@@ -186,6 +188,7 @@ export function World() {
       if (!held.current.includes(k)) held.current.push(k);
     };
     const release = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) { held.current = []; return; }
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       held.current = held.current.filter((x) => x !== k);
     };
@@ -193,7 +196,8 @@ export function World() {
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", release);
     window.addEventListener("blur", clear);
-    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", release); window.removeEventListener("blur", clear); };
+    document.addEventListener("visibilitychange", clear);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", release); window.removeEventListener("blur", clear); document.removeEventListener("visibilitychange", clear); };
   }, []);
 
   // Wheel zooms around the pointer.
@@ -221,6 +225,8 @@ export function World() {
     if (link.current) { setLinkAt(p); return; }
     const d = drag.current;
     if (!d) return;
+    // A release outside the view or a cancelled gesture sends no pointerup; a move with no button down ends the drag.
+    if (!e.buttons) { drag.current = null; return; }
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (!dragged.current && Math.hypot(dx, dy) < 4) return;
     dragged.current = true;
@@ -419,7 +425,7 @@ export function World() {
     <div className="world" aria-label={loc.name}>
       <svg ref={svg} className={`world-svg ${seasons}${night ? " w-night" : ""}`} style={leaf}
         viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
-        onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
+        onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
         <GroundRect view={port} kind={site.kind} />
         <Defs />
         <SiteBack s={site} name={game.company.name} band={game.company.color} month={month} year={date.getUTCFullYear()} drive={drive} />
