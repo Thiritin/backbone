@@ -18,7 +18,7 @@ import { useStore } from "../../store";
 
 export const ARM_MS = 3000;
 // The key on the tag that the current guide card needs.
-const GUIDE_KEY: Partial<Record<string, "power" | "console" | "reboot">> = { mountServer: "power", mountRouter: "power", bootUsb: "reboot", installOs: "console" };
+const GUIDE_KEY: Partial<Record<string, "power" | "console" | "reboot">> = { mountServer: "power", mountRouter: "power", installOs: "console" };
 type Menus = ReturnType<typeof useDeviceMenu>;
 const real = (e: MenuEntry | undefined): e is MenuItem => !!e;
 const bare = (s: string) => s.replace(/(\.\.\.|…)$/, "");

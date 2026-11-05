@@ -128,7 +128,7 @@ describe("unit tag", () => {
     const d = g.devices.find((x) => modelById(x.model).kind === "server" && x.rackId && x.on && working(g, x.id))!;
     const marks = (goal: string | null) => { forced = goal; const { view } = mount(g, d.id); const r = [...view.container.querySelectorAll("[data-guide]")].map((e) => e.getAttribute("data-key") ?? (e.hasAttribute("data-cart") ? "console" : "")); cleanup(); return r; };
     expect(marks(null)).toEqual([]);
-    expect(marks("bootUsb")).toEqual(["console", POWER_LABEL.reboot.replace(/(\.\.\.|…)$/, "")]);
+    expect(marks("bootUsb")).toEqual([]);
     expect(marks("installOs")).toEqual(["console"]);
     forced = null;
   });

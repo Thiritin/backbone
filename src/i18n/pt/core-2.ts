@@ -174,6 +174,7 @@ export default {
   "guide.step.buyServer": () => "Compra um servidor",
   "guide.step.mountServer": () => "Monta-o e liga-o",
   "guide.step.mountRouter": () => "Liga o roteador",
+  "guide.step.serverLinked": () => "Liga o servidor",
   "guide.step.findAddress": () => "Encontre o endereço do servidor",
   "guide.step.shareWeb": () => "Compartilhe a porta web",
   "guide.step.internet": () => "Adiciona internet",

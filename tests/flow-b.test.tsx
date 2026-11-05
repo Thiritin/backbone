@@ -17,7 +17,7 @@ import { ShopApp } from "../src/ui/apps/shop/ShopApp";
 import { NextStrip } from "../src/ui/world/NextStrip";
 import { NoteApp } from "../src/ui/apps/NoteApp";
 import { useStore } from "../src/ui/store";
-import { withServer, withStick } from "./fixtures";
+import { registered, withServer, withStick } from "./fixtures";
 
 afterEach(() => { cleanup(); sessionStorage.clear(); });
 
@@ -90,14 +90,14 @@ describe("accounting download", () => {
     expect(useStore.getState().game.books.vendor).toBe("lexwear");
   });
 
-  it("shows the card in the room and drops it with the card window", () => {
-    useStore.setState({ game: newGame(5), windows: [] });
-    useStore.getState().openApp("Getting started");
+  it("shows the card in the room, and a chip brings it back once it is closed", () => {
+    useStore.setState({ game: newGame(5), windows: [], guideStrip: true });
     render(<NextStrip />);
     expect(screen.getByText(t("guide.step.bank"))).toBeTruthy();
     fireEvent.click(screen.getByLabelText(t("apps.close")));
-    expect(useStore.getState().windows.some((w) => w.app === "Getting started")).toBe(false);
     expect(screen.queryByText(t("guide.step.bank"))).toBeNull();
+    fireEvent.click(screen.getByText(t("doc.guide")));
+    expect(screen.getByText(t("guide.step.bank"))).toBeTruthy();
   });
 
   it("marks the code the bank asks for on the TAN list", () => {
@@ -107,5 +107,11 @@ describe("accounting download", () => {
     useStore.setState({ game: s });
     render(<NoteApp id="tans" />);
     expect(document.querySelector(".tan-cell.now")?.textContent).toContain("BBB");
+  });
+
+  it("registering the company gives the owner a mail account, so the order card never meets the setup sheet", () => {
+    const s = registered(newGame(1));
+    expect(s.mail.accounts.length).toBeGreaterThan(0);
+    expect(s.mail.primary).toBeTruthy();
   });
 });

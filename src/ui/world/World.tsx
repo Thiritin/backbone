@@ -102,7 +102,7 @@ export const World = memo(function World() {
   const [hint, setHint] = useState<string | null>(null);
   // The own hall is being edited.
   const [editing, setEditing] = useState(false);
-  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string; guide?: "cable" | "vga" | "usb" | "mount" } | null>(null);
+  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string; guide?: "cable" | "vga" | "usb" | "link" | "mount" } | null>(null);
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
   // A connection between two racks: the pair whose backs are open, and the rack or device a right-click started from.
@@ -277,12 +277,19 @@ export const World = memo(function World() {
     const a = hit && artOf(hit[0], hit[1]);
     if (hit && a?.label) use(hit[0], run(a.label, "letterbox").post, () => beside(hit[1]), t(a.label))({ stopPropagation() {} } as MouseEvent);
   });
+  // The boot card walks the player to the crash cart.
+  useEffect(() => {
+    if (seek !== "cart:") return;
+    useStore.getState().setSeek(null);
+    const hit = Object.entries(fx).find(([id, f]) => (f.kind ?? id) === "cart"), a = hit && artOf(hit[0], hit[1]);
+    if (hit && a?.label) use(hit[0], run(a.label).console, () => beside(hit[1]), t(a.label))({ stopPropagation() {} } as MouseEvent);
+  });
   // The next-step card walks the player to a rack and opens its close-up: "rack:shelf" for the shelf, "rack:rack" for the first full rack.
   useEffect(() => {
-    if (seek?.startsWith("dev:") || seek?.startsWith("cable:") || seek?.startsWith("vga:") || seek?.startsWith("usb:")) {
+    if (seek?.startsWith("dev:") || seek?.startsWith("cable:") || seek?.startsWith("vga:") || seek?.startsWith("usb:") || seek?.startsWith("link:")) {
       useStore.getState().setSeek(null);
       const kind = seek.split(":")[0], d = game.devices.find((x) => x.id === seek.slice(kind.length + 1)), r = racks.find((x) => x.id === d?.rackId);
-      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(kind === "cable" || kind === "vga" || kind === "usb" ? { guide: kind } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(kind === "cable" || kind === "vga" || kind === "usb" || kind === "link" ? { guide: kind } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
       return;
     }
     if (!seek?.startsWith("rack:")) return;

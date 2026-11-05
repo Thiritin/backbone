@@ -222,3 +222,4 @@
 :root[data-os="tahoe"] .scr { border-radius: 18px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.25), 0 10px 28px -12px oklch(0 0 0 / 0.55); }
 :root[data-os="tahoe"] .scr:focus-visible { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12), 0 0 0 2px var(--accent); }
 :root[data-os="tahoe"] :is(.scr-keys button, .con-bar button) { box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5); }
+.scr-keys button[data-guide] { outline: 3px solid oklch(0.75 0.19 60); outline-offset: 1px; }

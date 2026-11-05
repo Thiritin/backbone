@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- The server card now also has you cable the server to the router, the boot step points to the crash cart and its F11 key, a closed step strip can be reopened, and the Early Access notice appears in the room at the start.
 - The room shows the next step in a strip with an Open button, the TAN list marks the code to use next, the plug and mount steps outline the USB port and the free rack unit, and the shop list no longer overlaps beside the cart.
 - Each Getting started card now opens its exact next step: the shop on the sorted server list, the domain search, the website builder, the Debiant download, and the rack in the room, with a counter on multi-part cards.
 - The Debiant boot menu offers an automatic installation, the accounting vendor page installs the download with one button, the bank offers the TAN list at the TAN field, the Terminal types the login for you, and internet lines show speeds, prices and connection dates.

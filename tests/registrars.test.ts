@@ -224,7 +224,7 @@ describe("company domain", () => {
 
 describe("tutorial", () => {
   it("runs the ten chapter-one cards in order", () => {
-    expect(TUTORIAL).toEqual(["bank", "register", "domain", "website", "payBill", "buyServer", "mountServer", "mountRouter", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "setup", "shareWeb", "launch", "firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "books", "sendInvoice"]);
+    expect(TUTORIAL).toEqual(["bank", "register", "domain", "website", "payBill", "buyServer", "mountServer", "mountRouter", "serverLinked", "downloadIso", "writeStick", "plugStick", "bootUsb", "installOs", "setup", "shareWeb", "launch", "firstCustomer", "orderAccount", "orderDomain", "orderProvision", "orderAccess", "books", "sendInvoice"]);
   });
 
   it("starts with Marketing and gives it to old registered saves", () => {

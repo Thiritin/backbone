@@ -66,6 +66,8 @@ export function stepOf(s: GameState, id: StepId): Step {
       const router = s.devices.find((d) => isOfficeRouter(modelById(d.model)) && ((d.store ?? locationOf(s, d)?.id) === home?.id));
       return { title: t("guide.step.mountRouter"), text: t("apps.guide.step.mountRouter"), app: "Locations", focus: router ? { kind: "device", id: router.id } : home && { kind: "location", id: home.id } };
     }
+    case "serverLinked":
+      return { title: t("guide.step.serverLinked"), text: t("apps.guide.step.serverLinked"), app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "downloadIso":
       return { title: t("guide.step.downloadIso"), text: t("apps.guide.step.downloadIso"), app: "Browser", focus: { kind: "url", id: `${displayHost(SITES.lunix.host)}/download` } };
     case "writeStick":
@@ -130,6 +132,7 @@ export function stepOf(s: GameState, id: StepId): Step {
 // A card's own title and sentence; later-chapter cards are single goals and use the goal's text.
 export function cardOf(s: GameState, c: Card): { title: string; text: string; step: Step } {
   const step = stepOf(s, nextGoal(s, c));
-  if (c.chapter === 1) return { title: t(`guide.card.${c.id}`), text: t(`guide.card.${c.id}${waiting(s, c.id) ? ".wait" : ".text"}`), step };
+  // A card of several goals shows the sentence of the goal that is next.
+  if (c.chapter === 1) return { title: t(`guide.card.${c.id}`), text: waiting(s, c.id) ? t(`guide.card.${c.id}.wait`) : c.goals.length > 1 ? step.text : t(`guide.card.${c.id}.text`), step };
   return { title: step.title, text: step.text, step };
 }
