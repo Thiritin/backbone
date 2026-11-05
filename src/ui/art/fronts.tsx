@@ -82,6 +82,12 @@ export function AssetTag({ x, y, text, h, anchor = "start" }: { x: number; y: nu
     </g>
   );
 }
+// The text cut to the width, ending in an ellipsis.
+function fit(text: string, max: number, fs: number) {
+  let s = text;
+  while (s.length > 1 && tw(s, fs) + 4 > max) s = s.slice(0, -1);
+  return s === text ? s : `${s.trimEnd()}…`;
+}
 // Older call sites give the text baseline; the tag centres on the line.
 function Label({ x, y, text, size = 6.5, anchor = "start" }: { x: number; y: number; text: string; size?: number; anchor?: "start" | "middle" | "end"; fill?: string }) {
   return <AssetTag x={x} y={y - size * 0.35} text={text} h={24} anchor={anchor === "end" ? "end" : "start"} />;
@@ -429,7 +435,7 @@ function Gateway(p: FrontProps) {
         <rect x="1" y={h - 3.2} width={w - 2} height="0.8" fill="var(--metal-3)" />
         <rect x={bx} y={by} width={bw} height={bh} rx="2.5" fill="oklch(0.78 0.008 90)" stroke="oklch(0.6 0.01 90)" strokeWidth="0.6" />
         <rect x={bx + 1.5} y={by + 1} width={bw - 3} height="1.2" rx="0.6" fill="oklch(0.86 0.006 90)" />
-        <Label x={bx + 8} y={by + bh / 2 + fs * 0.9} text={name} size={fs} />
+        <Label x={bx + 8} y={by + bh / 2 + fs * 0.9} text={p.note ? fit(name, bw * 0.5 - 12, fs * 0.9) : name} size={fs} />
         {p.note && (
           <g>
             <title>{p.note}</title>
