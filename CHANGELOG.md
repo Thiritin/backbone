@@ -4,6 +4,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-05
 - The registrar page now shows which name servers a domain uses, the registrar's or your own, with a status that reads Active, Propagating or Not responding; your own name servers only answer while you run a DNS server.
+- A notification tells you when post lands in a letterbox, and clicking it walks you to the letterbox.
 - Your figure now always appears in an office, also when your rooms are not on the ground floor, so you can no longer get stuck without it.
 - Importing a save no longer shows installer progress left over from the previous game.
 - Operating system installers, the webmail installer and the new virtual machine forms keep their progress when you switch to another window or tab.

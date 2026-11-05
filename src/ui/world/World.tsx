@@ -266,6 +266,15 @@ export const World = memo(function World() {
   const staff = useFigures(game, loc, plan, tiles, speed);
   const power = useMemo(() => (powerByLocation(game)[loc.id]?.kwh ?? 0) * 1000, [game, loc.id]);
   const waiting = boxAt(game, loc.id).length;
+  // A letterbox notification clicks the box for the player.
+  const seek = useStore((x) => x.seek);
+  useEffect(() => {
+    if (seek !== loc.id) return;
+    useStore.getState().setSeek(null);
+    const hit = Object.entries(fx).find(([id, f]) => (f.kind ?? id) === "letterbox");
+    const a = hit && artOf(hit[0], hit[1]);
+    if (hit && a?.label) use(hit[0], run(a.label, "letterbox").post, () => beside(hit[1]), t(a.label))({ stopPropagation() {} } as MouseEvent);
+  });
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   // A unit that landed in storage within the last day stands by the door as a parcel until it is mounted.
   const parcels = game.devices.filter((d) => d.store === loc.id && !d.chassisId && d.arrivedAt !== null && d.arrivedAt > game.hour - 24);
@@ -401,7 +410,7 @@ export const World = memo(function World() {
     const a = artOf(id, f), art = draw[f.kind ?? id](f);
     if (loc.tripped && (["fan", "window", "owindow"].includes(f.kind ?? id) || (lights && ["lamp", "tube"].includes(f.kind ?? id)))) bright.push(<g key={`b${id}`} pointerEvents="none" aria-hidden>{art}</g>);
     const node = a.use && !(a.use === "door" && site.bay) && a.label && art
-      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}${hint === id ? " w-glow" : ""}`} role="button" aria-label={t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use], a.use === "desktop" ? seat : STANDS.has(a.use) ? () => beside(f) : undefined, t(a.label))}>{art}</g>
+      ? <g key={id} className={`w-obj${lit === id ? " w-lit" : ""}${hint === id ? " w-glow" : ""}`} role="button" aria-label={a.use === "post" && waiting ? `${t(a.label)} ${waiting}` : t(a.label)} onClick={use(id, run(a.label, f.kind ?? id)[a.use], a.use === "desktop" ? seat : STANDS.has(a.use) ? () => beside(f) : undefined, t(a.label))}>{art}</g>
       : <g key={id} aria-label={a.label && t(a.label)} aria-hidden={!a.label || undefined} pointerEvents="none">{art}</g>;
     if (a.wall) back.push(node);
     else if (a.top) over.push(node);

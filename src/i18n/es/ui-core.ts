@@ -3,6 +3,7 @@ import type { Dict } from "../lang";
 export default {
   "core.notify.billsAndTax": () => "Facturas e impuestos",
   "core.notify.cashAndLoans": () => "Caja y préstamos",
+  "core.notify.letterbox": () => "Buzón",
   "core.notify.tickets": () => "Tickets",
   "core.notify.migrationOffers": () => "Ofertas de migración",
   "core.notify.ordersAndSales": () => "Pedidos y ventas",
