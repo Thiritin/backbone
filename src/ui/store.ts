@@ -305,7 +305,7 @@ export const useStore = create<Store>((set, get) => ({
   pauseResume: 0 as Speed,
   bell: false,
   bellResume: null,
-  setBell: (open) => set(({ bell, speed, bellResume }) => open ? (bell ? {} : { bell: true, bellResume: speed || null, speed: 0 as Speed }) : bell ? { bell: false, bellResume: null, speed: speed === 0 && bellResume ? bellResume : speed } : {}),
+  setBell: (open) => set(({ bell, speed, bellResume, alert, pause, resume }) => open ? (bell ? {} : { bell: true, bellResume: speed || null, speed: 0 as Speed }) : !bell ? {} : { bell: false, bellResume: null, ...(speed !== 0 || !bellResume || pause ? {} : alert ? { resume: resume || bellResume } : { speed: bellResume }) }),
   setPause: (open) => set(({ pause, speed, pauseResume }) => open ? (pause ? {} : { pause: true, pauseResume: speed, speed: 0 as Speed }) : pause ? { pause: false, speed: pauseResume } : {}),
   surface: "world",
   setSurface: (surface) => set({ surface }),
@@ -398,12 +398,12 @@ export const useStore = create<Store>((set, get) => ({
     // Leaves room for the dock on small screens.
     const w = Math.min(size.w, sw - x - (guide ? 16 : card)), h = Math.min(size.h, sh - y - 110);
     uiSound("open");
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 480), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 320), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openConsole: (deviceId) => {
     const ws = get().windows, open = ws.find((w) => w.console === deviceId);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
-    const n = ws.length % 8, x = 140 + n * 32, y = 80 + n * 28;
+    const n = ws.length % 5, x = 140 + n * 32, y = 80 + n * 28;
     uiSound("open");
     set({ windows: [...ws, { id: `console-${deviceId}-${Date.now()}`, app: "Console", console: deviceId, x, y, w: 720, h: 620, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },

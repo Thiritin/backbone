@@ -70,4 +70,23 @@ describe("desktop shell", () => {
     const xs = s().windows.map((w) => w.x);
     expect(Math.max(...xs)).toBeLessThan(136 + 5 * 32);
   });
+
+  it("a pause from an alert is kept when the bell closes", () => {
+    useStore.setState({ speed: 8, alert: { } as never, pause: false });
+    act(() => s().setBell(true));
+    act(() => s().setBell(false));
+    expect(s().speed).toBe(0);
+    useStore.setState({ alert: null });
+  });
+
+  it("new windows stay left of the guide card on a small screen", () => {
+    const sw = globalThis.innerWidth;
+    Object.defineProperty(globalThis, "innerWidth", { value: 1024, configurable: true });
+    useStore.setState({ game: newGame(1), surface: "desktop", windows: [] });
+    act(() => s().openApp("Getting started"));
+    act(() => s().openApp("Browser"));
+    const guide = s().windows.find((w) => w.app === "Getting started")!, br = s().windows.find((w) => w.app === "Browser")!;
+    expect(br.x + br.w).toBeLessThanOrEqual(guide.x);
+    Object.defineProperty(globalThis, "innerWidth", { value: sw, configurable: true });
+  });
 });
