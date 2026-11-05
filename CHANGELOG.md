@@ -3,7 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
-- The wall phone, mailbox and light switch are drawn as solid objects with depth, and the phone no longer overlaps the light switch beside the door.
+- The wall phone, mailbox and light switch are drawn as solid objects with depth, the desk lamp no longer covers the monitor, and wall and desk items no longer overlap.
 - The room view no longer keeps drifting after you stop panning with the keys or cancel a drag.
 
 - The macOS desktop app is built for Macs with Apple silicon.

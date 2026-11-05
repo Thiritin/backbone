@@ -1,3 +1,4 @@
+import { DESK_SLOTS, WALL_SLOTS } from "./slots";
 import { useId, type CSSProperties, type ReactNode } from "react";
 import type { Cage, Fixture, Tile } from "../../sim/20-world/layout";
 import type { Sky } from "../../sim/20-world/weather";
@@ -23,8 +24,6 @@ export const onX = (x: number, y: number, z: number) => plane(at3(x, y, z), -0.5
 // The far wall behind fixture f: the left wall for column 0, else the right one; local x spans the fixture's width.
 const wallT = (f: Fixture, z: number) => (f.x === 0 && f.y > 0 ? onX(0, f.y + 1, z) : onY(f.x, 0, z));
 const onLeft = (f: Fixture) => f.x === 0 && f.y > 0;
-// Wall items share a tile in fixed slots along the wall: the light switch takes the first SLOT_X0 units, everything else draws from SLOT_X0 to the tile end.
-export const SLOT_X0 = 11;
 // The plane d units out of the wall behind f, where the front of a box d deep sits.
 const wallFront = (f: Fixture, z: number, d: number) => (onLeft(f) ? onX(d / 32, f.y + 1, z) : onY(f.x, d / 32, z));
 // A box d units deep standing out of the wall behind f, from u0 to u1 along it and z0 to z1 high.
@@ -145,31 +144,37 @@ export function Desk({ from, to, y = 0, under }: { from: number; to: number; y?:
 
 // Flat screen on its stand, keyboard with key rows and a mouse on desk column x, the screen facing the room.
 export function Monitor({ x, y = 0 }: { x: number; y?: number }) {
-  const z = DESK_Z, sy = y + 0.36, ky = y + 0.5;
+  const z = DESK_Z, sy = y + 0.36, { keyboard: K, mouse: R } = DESK_SLOTS.main, ky = y + K.y0;
   const rows = [0.04, 0.08, 0.12].map((k) => `M${pts(at3(x + 0.24, ky + k, z + 1.6))} L${pts(at3(x + 0.72, ky + k, z + 1.6))}`).join(" ");
   return (
     <>
-      <Prism x0={x + 0.36} y0={y + 0.22} x1={x + 0.64} y1={y + 0.38} z0={z} z1={z + 1} tone="w-tone-pc" />
-      <Prism x0={x + 0.46} y0={y + 0.28} x1={x + 0.54} y1={y + 0.32} z0={z + 1} z1={z + 7} tone="w-tone-pc" />
-      <Prism x0={x + 0.12} y0={y + 0.3} x1={x + 0.88} y1={sy} z0={z + 6} z1={z + 27} tone="w-tone-pc" />
-      <polygon className="w-screen" points={pts(at3(x + 0.16, sy, z + 9), at3(x + 0.84, sy, z + 9), at3(x + 0.84, sy, z + 25), at3(x + 0.16, sy, z + 25))} />
-      <path className="w-glint" d={`M${pts(at3(x + 0.2, sy, z + 13))} L${pts(at3(x + 0.3, sy, z + 23))}`} />
-      <rect className="w-pled" x={at3(x + 0.8, sy, z + 7.5).x} y={at3(x + 0.8, sy, z + 7.5).y} width="1.2" height="0.8" />
-      <Prism x0={x + 0.2} y0={ky} x1={x + 0.76} y1={ky + 0.16} z0={z} z1={z + 1.5} tone="w-tone-paper" />
-      <path className="w-keys" d={rows} />
-      <Prism x0={x + 0.82} y0={ky + 0.04} x1={x + 0.9} y1={ky + 0.14} z0={z} z1={z + 1.5} tone="w-tone-paper" />
+      <g data-slot="monitor">
+        <Prism x0={x + 0.36} y0={y + 0.22} x1={x + 0.64} y1={y + 0.38} z0={z} z1={z + 1} tone="w-tone-pc" />
+        <Prism x0={x + 0.46} y0={y + 0.28} x1={x + 0.54} y1={y + 0.32} z0={z + 1} z1={z + 7} tone="w-tone-pc" />
+        <Prism x0={x + 0.12} y0={y + 0.3} x1={x + 0.88} y1={sy} z0={z + 6} z1={z + 27} tone="w-tone-pc" />
+        <polygon className="w-screen" points={pts(at3(x + 0.16, sy, z + 9), at3(x + 0.84, sy, z + 9), at3(x + 0.84, sy, z + 25), at3(x + 0.16, sy, z + 25))} />
+        <path className="w-glint" d={`M${pts(at3(x + 0.2, sy, z + 13))} L${pts(at3(x + 0.3, sy, z + 23))}`} />
+        <rect className="w-pled" x={at3(x + 0.8, sy, z + 7.5).x} y={at3(x + 0.8, sy, z + 7.5).y} width="1.2" height="0.8" />
+      </g>
+      <g data-slot="keyboard">
+        <Prism x0={x + K.x0} y0={ky} x1={x + K.x1} y1={y + K.y1} z0={z} z1={z + 1.5} tone="w-tone-paper" />
+        <path className="w-keys" d={rows} />
+      </g>
+      <g data-slot="mouse">
+        <Prism x0={x + R.x0} y0={y + R.y0} x1={x + R.x1} y1={y + R.y1} z0={z} z1={z + 1.5} tone="w-tone-paper" />
+      </g>
     </>
   );
 }
 
 export function Scanner({ x }: { x: number }) {
-  const z = DESK_Z + 7;
+  const z = DESK_Z + 7, S = DESK_SLOTS.side.scanner;
   return (
-    <>
-      <Prism x0={x + 0.18} y0={0.14} x1={x + 0.82} y1={0.64} z0={DESK_Z} z1={z} tone="w-tone-pc" />
-      <polygon className="w-lid" points={pts(at3(x + 0.27, 0.22, z), at3(x + 0.73, 0.22, z), at3(x + 0.73, 0.56, z), at3(x + 0.27, 0.56, z))} />
-      <circle className="w-pled" cx={at3(x + 0.74, 0.64, z - 3).x} cy={at3(x + 0.74, 0.64, z - 3).y} r="0.7" />
-    </>
+    <g data-slot="scanner">
+      <Prism x0={x + S.x0} y0={S.y0} x1={x + S.x1} y1={S.y1} z0={DESK_Z} z1={z} tone="w-tone-pc" />
+      <polygon className="w-lid" points={pts(at3(x + 0.27, 0.22, z), at3(x + 0.66, 0.22, z), at3(x + 0.66, 0.56, z), at3(x + 0.27, 0.56, z))} />
+      <circle className="w-pled" cx={at3(x + 0.67, 0.64, z - 3).x} cy={at3(x + 0.67, 0.64, z - 3).y} r="0.7" />
+    </g>
   );
 }
 
@@ -404,13 +409,12 @@ export function CableDuct({ w, h, door, socket }: { w: number; h: number; door?:
 
 // Light switch at hand height just past the latch side of the door on tile f, so it takes no rack tile of its own.
 export function LightSwitch({ f, on }: { f: Fixture; on: boolean }) {
+  const [a, b] = WALL_SLOTS.switch, u0 = 32 + a, u1 = 32 + b;
   return (
-    <>
-      <WallBox f={f} u0={35} u1={41} z0={32} z1={39} d={1} tone="w-tone-enamel" />
-      <g data-switch={on ? "on" : "off"}>
-        <WallBox f={f} u0={36.6} u1={39.4} z0={on ? 35.4 : 33} z1={on ? 37.4 : 35} d={1.8} tone="w-tone-enamel" />
-      </g>
-    </>
+    <g data-slot="switch" data-switch={on ? "on" : "off"}>
+      <WallBox f={f} u0={u0} u1={u1} z0={32} z1={39} d={1} tone="w-tone-enamel" />
+      <WallBox f={f} u0={u0 + 1.6} u1={u1 - 1.6} z0={on ? 35.4 : 33} z1={on ? 37.4 : 35} d={1.8} tone="w-tone-enamel" />
+    </g>
   );
 }
 
@@ -516,14 +520,15 @@ export function BeerCrate({ x }: { x: number }) {
 
 // Desk lamp between the scanner and the screen, its shade turned toward the keyboard; it is on at night.
 export function DeskLamp({ x, on }: { x: number; on: boolean }) {
-  const b = { x: x + 0.02, y: 0.16 }, foot = at3(b.x + 0.05, b.y + 0.05, DESK_Z + 2), elbow = at3(b.x + 0.04, b.y + 0.02, DESK_Z + 13), head = at3(b.x + 0.22, b.y + 0.16, DESK_Z + 15);
+  const L = DESK_SLOTS.side.lamp, b = { x: x + L.x0, y: L.y0 }, w = L.x1 - L.x0;
+  const foot = at3(b.x + w / 2, b.y + w / 2, DESK_Z + 2), elbow = at3(b.x + w / 2, b.y + w / 2, DESK_Z + 13), head = at3(b.x - 0.1, b.y + 0.16, DESK_Z + 16);
   return (
-    <>
-      <Prism x0={b.x} y0={b.y} x1={b.x + 0.1} y1={b.y + 0.1} z0={DESK_Z} z1={DESK_Z + 2} tone="w-tone-dark" />
+    <g data-slot="lamp">
+      <Prism x0={b.x} y0={b.y} x1={b.x + w} y1={b.y + w} z0={DESK_Z} z1={DESK_Z + 2} tone="w-tone-dark" />
       <path className="w-lamp-arm" d={`M${pts(foot)} L${pts(elbow)} L${pts(head)}`} />
       <path className="w-lamp-shade" d={`M${head.x - 1.5},${head.y - 2} L${head.x + 1.5},${head.y - 2} L${head.x + 4.5},${head.y + 3.5} A4.5,1.6 0 0 1 ${head.x - 4.5},${head.y + 3.5} Z`} />
       {on && <ellipse className="w-bulb" cx={head.x} cy={head.y + 4.3} rx="2.2" ry="0.6" />}
-    </>
+    </g>
   );
 }
 
@@ -606,19 +611,19 @@ export function Night({ w, h, opacity }: { w: number; h: number; opacity: number
 
 // Waiting letters stick out of the slot, up to three, with their count beside the box.
 export function Letterbox({ f, count, shown }: { f: Fixture; count: number; shown: string }) {
-  const D = 5;
+  const D = 5, [L0, L1] = WALL_SLOTS.letterbox, up = count > 0;
   return (
-    <>
-      <WallBox f={f} u0={SLOT_X0 + 1} u1={SLOT_X0 + 18} z0={32} z1={52} d={D} tone="w-tone-brass" />
-      <g transform={wallFront(f, 52, D)}>
-        {Array.from({ length: Math.min(count, 3) }, (_, i) => <rect key={i} className="w-letter" x={SLOT_X0 + 4 + i * 3} y={-5 + i} width="9" height="8" rx="0.5" />)}
-        <rect className="w-slot" x={SLOT_X0 + 4} y="4" width="10" height="2" rx="1" />
-        <path className="w-brass-edge" d={`M${SLOT_X0 + 4},6.6 H${SLOT_X0 + 14}`} />
-        <rect className="w-flag-pole" x={SLOT_X0 + 15.4} y={count > 0 ? 8 : 12} width="0.8" height={count > 0 ? 8 : 4} />
-        <rect className="w-flag" x={SLOT_X0 + 12.2} y={count > 0 ? 8 : 15} width="3.2" height="2.4" />
-        {count > 0 && <text className="w-num w-num-tag" data-letterbox-count x={SLOT_X0 + 3} y="16">{shown}</text>}
+    <g data-slot="letterbox">
+      <WallBox f={f} u0={L0} u1={L1} z0={38} z1={56} d={D} tone="w-tone-brass" />
+      <g transform={wallFront(f, 56, D)}>
+        {Array.from({ length: Math.min(count, 3) }, (_, i) => <rect key={i} className="w-letter" x={L0 + 2.5 + i * 2.6} y={-4 + i} width="8" height="7" rx="0.5" />)}
+        <rect className="w-slot" x={L0 + 2.5} y="3.5" width="9" height="2" rx="1" />
+        <path className="w-brass-edge" d={`M${L0 + 2.5},6 H${L0 + 11.5}`} />
+        <rect className="w-flag-pole" x={L1 - 3} y={up ? 8 : 11} width="0.8" height={up ? 8 : 5} />
+        <rect className="w-flag" x={L1 - 6} y={up ? 8 : 14} width="3.2" height="2.4" />
+        {up && <text className="w-num w-num-tag" data-letterbox-count x={L0 + 2} y="15.5">{shown}</text>}
       </g>
-    </>
+    </g>
   );
 }
 
@@ -850,38 +855,41 @@ export function ShelfUnit({ tile, units, devices }: { tile: Tile; units: number;
 // The wall phone beside the door: a beige corded set until 2010, then a cordless handset in its wall base. Ringing shakes the handset.
 export const CORDLESS_YEAR = 2010;
 export function Phone({ f, ringing, cordless }: { f: Fixture; ringing: boolean; cordless: boolean }) {
-  const X = SLOT_X0 + 1;
+  const [P0, P1] = WALL_SLOTS.phone, ring = ringing ? "w-ringing" : undefined;
   return (
-    <g data-phone={ringing ? "ringing" : "idle"}>
+    <g data-slot="phone" data-phone={ringing ? "ringing" : "idle"}>
       {cordless ? (
         <>
-          <WallBox f={f} u0={X + 3} u1={X + 17} z0={34} z1={52} d={3} tone="w-tone-dark" />
-          <g className={ringing ? "w-ringing" : undefined}>
-            <WallBox f={f} u0={X + 6} u1={X + 14} z0={37} z1={56} d={5} tone="w-tone-slate" />
-            <g transform={wallFront(f, 56, 5)}>
-              <rect className="w-phone-screen" x={X + 7} y="2" width="6" height="3.4" />
-              <rect className={`w-led${ringing ? " w-led-on" : ""}`} x={X + 9.3} y="14.5" width="1.4" height="1" />
+          <WallBox f={f} u0={P0 + 2} u1={P1 - 2} z0={40} z1={58} d={3} tone="w-tone-dark" />
+          <g className={ring}>
+            <WallBox f={f} u0={P0 + 5} u1={P0 + 13} z0={43} z1={62} d={5} tone="w-tone-slate" />
+            <g transform={wallFront(f, 62, 5)}>
+              <rect className="w-phone-screen" x={P0 + 6} y="2" width="6" height="3.4" />
+              <rect className={`w-led${ringing ? " w-led-on" : ""}`} x={P0 + 8.3} y="14.5" width="1.4" height="1" />
             </g>
           </g>
         </>
       ) : (
         <>
-          <WallBox f={f} u0={X + 4} u1={X + 18} z0={32} z1={52} d={4} tone="w-tone-beige" />
-          <g transform={wallFront(f, 52, 4)}>
-            <rect className="w-phone-plate" x={X + 6} y="3" width="10" height="14" />
+          <WallBox f={f} u0={P0 + 1} u1={P1 - 1} z0={40} z1={66} d={3} tone="w-tone-beige" />
+          <WallBox f={f} u0={P0 + 2} u1={P0 + 6} z0={43} z1={45} d={4.6} tone="w-tone-slate" />
+          <WallBox f={f} u0={P0 + 2} u1={P0 + 6} z0={56.5} z1={58.5} d={4.6} tone="w-tone-slate" />
+          <WallBox f={f} u0={P0 + 10} u1={P1 - 3} z0={43} z1={54} d={4.6} tone="w-tone-beige" />
+          <g transform={wallFront(f, 54, 4.6)}>
             {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => (
               <g key={`${r}${c}`}>
-                <rect className="w-phone-key-edge" x={X + 7 + c * 2.8} y={4.2 + r * 3.2 + 0.5} width="2" height="2" />
-                <rect className="w-phone-key" x={X + 7 + c * 2.8} y={4.2 + r * 3.2} width="2" height="2" />
+                <rect className="w-phone-key-edge" x={P0 + 11.2 + c * 2.4} y={1.2 + r * 2.5 + 0.5} width="1.8" height="1.8" />
+                <rect className="w-phone-key" x={P0 + 11.2 + c * 2.4} y={1.2 + r * 2.5} width="1.8" height="1.8" />
               </g>
             )))}
           </g>
-          <g transform={wallFront(f, 52, 6)}>
-            <path className="w-phone-cord" d={`M${X + 1.5},21 C${X - 2},25 ${X + 5},28 ${X + 1.5},32 S${X - 1},37 ${X + 1.5},40`} fill="none" />
+          <g className={ring}>
+            <WallBox f={f} u0={P0 + 1.8} u1={P0 + 6.2} z0={61.5} z1={65} d={6.2} tone="w-tone-dark" />
+            <WallBox f={f} u0={P0 + 2.8} u1={P0 + 5.2} z0={48.5} z1={61.5} d={5.4} tone="w-tone-dark" />
+            <WallBox f={f} u0={P0 + 1.8} u1={P0 + 6.2} z0={45} z1={48.5} d={6.2} tone="w-tone-dark" />
           </g>
-          <g className={ringing ? "w-ringing" : undefined}>
-            <WallBox f={f} u0={X} u1={X + 3.4} z0={30} z1={54} d={6} tone="w-tone-beige" />
-            <WallBox f={f} u0={X + 3.4} u1={X + 6} z0={50} z1={53} d={5} tone="w-tone-beige" />
+          <g transform={wallFront(f, 58, 6)}>
+            <path className="w-phone-cord-wall" d={`M${P0 + 2.4},5 C${P0 - 2},7 ${P0 - 2},12 ${P0 + 1},15 S${P0 + 3},17 ${P0 + 3.4},18`} fill="none" />
           </g>
         </>
       )}

@@ -343,7 +343,7 @@ export function World() {
     // The desk runs under the scanner and the PC beside it, so the three read as one piece.
     desk: (f) => <Desk from={fx.scanner?.x ?? f.x} to={(fx.pc?.x ?? f.x) + 1} under={home && <><BeerCrate x={fx.scanner?.x ?? f.x} /><Tower x={fx.pc?.x ?? f.x} /></>} />,
     scanner: (f) => <Scanner x={f.x} />,
-    pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x} on={lights} />}</>,
+    pc: (f) => <><Monitor x={f.x} />{home && <DeskLamp x={f.x - 1} on={lights} />}</>,
     noc: (f) => <><Desk from={f.x} to={f.x + (f.w ?? 1)} y={f.y} />{Array.from({ length: f.w ?? 1 }, (_, i) => <Monitor key={i} x={f.x + i} y={f.y} />)}</>,
     shelf: (f) => <Shelf at={f} count={stored} />,
     fan: (f) => <CellarWindow f={f} fan spin={!loc.tripped && fanRuns(game, loc)} night={night} sky={sky(loc.city, game.hour)} />,
