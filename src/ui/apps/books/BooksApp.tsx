@@ -1,4 +1,4 @@
-import type { ComponentType, CSSProperties } from "react";
+import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { isUnpaid, synced } from "../../../sim/45-billing/billing";
 import { hasModule, MODULES } from "../../../sim/10-catalog/modules";
 import { licenceMail } from "../../../sim/80-business/licences";
@@ -24,7 +24,9 @@ import { RemindersTab } from "./RemindersTab";
 import { OverviewTab, StatementTab, StatisticsTab } from "./Reports";
 import { TaxTab } from "./TaxTab";
 import { Register } from "./Register";
-import { BooksSetup } from "./BooksSetup";
+import { InstallGuide } from "./guide/InstallGuide";
+import { Installer } from "./guide/Installer";
+import { setupOf } from "../../../sim/80-business/books-guide";
 import type { AppMenu } from "../../desktop/menu";
 import { useBooks } from "./view";
 import { LAYOUTS } from "./layouts";
@@ -63,6 +65,7 @@ export function BooksApp() {
   return (
     <div className="books books-link">
       <button className="btn primary" onClick={() => openApp("Browser", { kind: "url", id: booksAppUrl(v) })}>{t("books.openWeb", { program: v.program })}</button>
+      <InstallGuide />
     </div>
   );
 }
@@ -75,12 +78,17 @@ export function BooksProgram() {
   const [tab, setTab] = useSessionState("books.tab", "overview");
   const [focus, setFocus] = useSessionState<string | null>("books.focus", null);
   const [register, setRegister] = useSessionState("books.register", false);
-  const [setup, setSetup] = useSessionState("books.setup", false);
+  // The first-steps guide is the first thing an unfinished setup shows; the program opens from its button.
+  const [guide, setGuide] = useState(game.books.setupDone !== true);
+  // A program installed while the window is open shows its guide.
+  useEffect(() => { if (game.books.setupDone !== true) setGuide(true); }, [game.books.vendor, game.books.installedAt]);
+  // The sign-up of a web program runs until its plan page is closed; a program with its company already made skips it.
+  const [signedUp, setSignedUp] = useState(game.books.setupDone === true || setupOf(game).company);
   useFocus("Books", (got) => {
     const f = got.kind === "url" ? got.inner : got;
     if (!f) return;
     if (f.kind === "register") return setRegister(true);
-    if (f.kind === "setup") return setSetup(true);
+    if (f.kind === "setup" || f.kind === "guide") return setGuide(true);
     const to = f.kind === "invoice" ? (hasFeature(game, "dunning") && game.invoices.find((i) => i.id === f.id && isUnpaid(i) && i.status === "overdue") ? "reminders" : "invoices")
       : f.kind === "customer" || f.kind === "newCustomer" ? "customers" : f.kind === "quote" ? "quotes" : f.kind === "payable" ? "payables" : null;
     if (!to) return;
@@ -96,7 +104,7 @@ export function BooksProgram() {
   const pick = (id: string) => {
     const x = shown.find((y) => y.id === id)!;
     if (locked(x) && v) return openApp("Browser", { kind: "url", id: booksUrl(v) });
-    setTab(x.id); setFocus(null);
+    setTab(x.id); setFocus(null); setGuide(false);
   };
   const entries: Entry[] = shown.map((x) => ({ id: x.id, group: x.group, count: x.count(game), locked: locked(x) }));
   const Layout = LAYOUTS[v?.layout ?? "tabs"];
@@ -106,14 +114,15 @@ export function BooksProgram() {
     <div className="books" style={skin && { "--accent": skin.accent, "--bk-bar": skin.bar, "--bk-ink": skin.ink } as CSSProperties}>
       <Layout v={v!} entries={entries} active={current.id} pick={pick}>
         <div className="books-top">
-            {v?.deployment === "browser" && current.id === "overview" && <button className="btn" onClick={() => setSetup(true)}>{t("setup.title")}</button>}
+            {v && <button className="btn books-guide-open" aria-expanded={guide} onClick={() => setGuide(!guide)}>{t("bkguide.menu")}</button>}
             {importing && <button className="btn books-import" onClick={() => act(importFromShop)}>{t("shop-link.import")}{waiting ? <span className="tab-count num">{waiting}</span> : null}</button>}
             {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
         </div>
         {register && keys && <Register onClose={() => setRegister(false)} />}
         <div className="books-body">
           {v && booksOffline(game) ? <Offline v={v} />
-            : v && (setup || game.books.setupDone === false) ? <BooksSetup v={v} game={game} close={(to) => { setSetup(false); if (shown.some((x) => x.id === to)) pick(to!); }} />
+            : guide && v?.deployment === "browser" && !signedUp ? <Installer id={v.id} inline onClose={() => setSignedUp(true)} />
+            : guide ? <div className="books-guide"><InstallGuide go={pick} canGo={(tab) => shown.some((x) => x.id === tab && !locked(x))} /></div>
             : <Body key={`${current.id}:${focus}`} focus={focus} go={pick} />}
         </div>
       </Layout>
@@ -132,4 +141,6 @@ function Offline({ v }: { v: BooksVendor }) {
 }
 
 // The installed program offers the setup wizard in its app menu; the web version on its overview.
-export const booksMenus = (): AppMenu[] => [{ id: "app", title: "", items: [{ label: t("setup.title"), run: () => useStore.getState().openApp("Books", { kind: "setup", id: "" }) }] }];
+export const booksMenus = (): AppMenu[] => [{ id: "app", title: "", items: [
+  { label: t("bkguide.menu"), run: () => useStore.getState().openApp("Books", { kind: "guide", id: "" }) },
+] }];
