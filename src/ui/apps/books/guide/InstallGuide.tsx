@@ -1,11 +1,12 @@
 import { Check } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { yearOf } from "../../../../sim/00-core/time";
 import { booksVendor } from "../../../../sim/10-catalog/bookkeeping";
 import { guideOf, guideTicked, setupOf } from "../../../../sim/80-business/books-guide";
 import { acceptBooksLicence, activateBooks, backupBooks, createBooksCompany, enterBooksKey, enterOpening, linkBooksBank, setBooksTemplate } from "../../../../sim/90-actions/bookkeeping";
 import { t } from "../../../../i18n/en";
 import { useStore } from "../../../store";
+import { CompanyStep, NumberingStep } from "../../setup/SetupWizard";
 import { CompanyForm } from "./CompanyForm";
 import { guideLook } from "./looks";
 import "./guide.css";
@@ -16,7 +17,7 @@ type Result = { ok: boolean; error?: string; params?: Record<string, string | nu
 
 // The first-steps guide of the installed bookkeeping program: the sim's step table with live ticks, one action per step.
 // A finished setup shows the guide collapsed to its heading.
-export function InstallGuide({ go }: { go?: (tab: string) => void }) {
+export function InstallGuide({ go, canGo }: { go?: (tab: string) => void; canGo?: (tab: string) => boolean }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const v = booksVendor(game.books.vendor);
   const steps = guideOf(game);
@@ -24,6 +25,8 @@ export function InstallGuide({ go }: { go?: (tab: string) => void }) {
   const [key, setKey] = useState("");
   const finished = !!game.books.setupDone && steps.every((x) => x.optional || guideTicked(game, x));
   const [open, setOpen] = useState(!finished);
+  const first = useRef(true);
+  useEffect(() => { first.current = false; }, []);
   if (!v || !steps.length) return null;
   const look = guideLook(v, yearOf(game.hour)), u = setupOf(game);
   const done = steps.filter((x) => guideTicked(game, x)).length;
@@ -42,12 +45,12 @@ export function InstallGuide({ go }: { go?: (tab: string) => void }) {
         </span>
       );
       case "activate": return btn(t(v.deployment === "browser" ? "bkguide.do.confirm" : "bkguide.do.activate"), () => run(id, act(activateBooks)));
-      case "company": return <CompanyForm chart={hasChart} onCreate={(c) => run(id, act(createBooksCompany, c))} />;
+      case "company": return <><CompanyStep game={game} /><CompanyForm chart={hasChart} onCreate={(c) => run(id, act(createBooksCompany, c))} /></>;
       case "opening": return btn(t("bkguide.do.opening"), () => run(id, act(enterOpening)));
       case "bank": return btn(t("bkguide.do.bank"), () => run(id, act(linkBooksBank)));
-      case "template": return btn(t("bkguide.do.template"), () => run(id, act(setBooksTemplate)));
+      case "template": return <><NumberingStep game={game} />{btn(t("bkguide.do.template"), () => run(id, act(setBooksTemplate)))}</>;
       case "backup": return btn(t("bkguide.do.backup"), () => run(id, act(backupBooks)));
-      default: return TABS[id] && go ? btn(t(`bkguide.do.${id}`), () => go(TABS[id])) : null;
+      default: return TABS[id] && go && (!canGo || canGo(TABS[id])) ? btn(t(`bkguide.do.${id}`), () => go(TABS[id])) : null;
     }
   };
   // Chart and method are set by the company assistant; once set the step shows the chosen value.
@@ -68,7 +71,7 @@ export function InstallGuide({ go }: { go?: (tab: string) => void }) {
             const ticked = guideTicked(game, x), now = current?.id === x.id;
             const todo = v.deployment === "browser" ? ({ activate: "confirm", buy: "signup" } as Record<string, string>)[x.id] ?? x.id : x.id;
             return (
-              <li key={x.id} className={`bg-step${ticked ? " ticked" : ""}${now ? " current" : ""}`} aria-current={now ? "step" : undefined} data-step={x.id} ref={now ? (el) => el?.scrollIntoView?.({ block: "nearest" }) : undefined}>
+              <li key={x.id} className={`bg-step${ticked ? " ticked" : ""}${now ? " current" : ""}`} aria-current={now ? "step" : undefined} data-step={x.id} ref={now && !first.current ? (el) => el?.scrollIntoView?.({ block: "nearest" }) : undefined}>
                 <span className="bg-mark" role="img" aria-label={t(ticked ? "bkguide.done" : "bkguide.open")}>{ticked ? <Check aria-hidden /> : <span className="num">{i + 1}</span>}</span>
                 <div className="bg-text">
                   <strong>{t(x.labelKey)}{x.optional && <em className="bg-opt">{t("bkguide.optional")}</em>}</strong>

@@ -68,7 +68,7 @@ export function Installer({ id, onClose, inline = false }: { id: string; onClose
       body = (
         <>
           <h3>{t("bkinst.licence.title")}</h3>
-          <textarea className="bki-licence" readOnly value={t("bkinst.licence.text", p)} aria-label={t("bkinst.licence.title")} />
+          <textarea className="bki-licence" readOnly value={t(v.id === "gnucache" ? "bkinst.licence.gpl" : "bkinst.licence.text", p)} aria-label={t("bkinst.licence.title")} />
           <label className="bki-check"><input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />{t("bkinst.licence.accept")}</label>
         </>
       );
@@ -135,13 +135,15 @@ export function Installer({ id, onClose, inline = false }: { id: string; onClose
 
   const wizard = (
     <section className={`bki bki-${look}${inline ? " bki-inline" : ""}`} role="dialog" aria-label={t("bkinst.title", p)} data-look={look} data-page={page}>
-      <header className="bki-title"><span>{t("bkinst.title", p)}</span></header>
+      {!web && <header className="bki-title"><span>{t("bkinst.title", p)}</span></header>}
       <div className="bki-main">
-        <aside className="bki-banner" aria-hidden><b>{v.program}</b><ol>{pages.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "past" : ""}>{t(`bkinst.page.${x}`)}</li>)}</ol></aside>
+        {web
+          ? <ol className="bki-steps" aria-hidden>{pages.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "past" : ""}>{t(`bkinst.page.${x}`)}</li>)}</ol>
+          : <aside className="bki-banner" aria-hidden><div className="bki-art">{v.program.slice(0, 1)}</div><b className="bki-name">{v.program}</b><ol>{pages.map((x, i) => <li key={x} className={i === at ? "on" : i < at ? "past" : ""}>{t(`bkinst.page.${x}`)}</li>)}</ol></aside>}
         <div className="bki-page">{body}{err && <p className="bki-err" role="alert">{err}</p>}</div>
       </div>
       <footer className="bki-foot">
-        <button type="button" className="btn" disabled={!back} onClick={() => setAt(at - 1)}>{t("bkinst.back")}</button>
+        {(back || !web) && <button type="button" className="btn" disabled={!back} onClick={() => setAt(at - 1)}>{t("bkinst.back")}</button>}
         <button type="button" className="btn primary" disabled={!canNext} onClick={onNext}>{nextLabel}</button>
         {!web && page !== "finish" && <button type="button" className="btn" disabled={page === "progress"} onClick={onClose}>{t("bkinst.cancel")}</button>}
       </footer>

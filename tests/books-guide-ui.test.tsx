@@ -7,6 +7,7 @@ import { openAccount } from "../src/sim/46-finance/bank";
 import { newGame, type GameState } from "../src/sim/50-state";
 import { booksKey, BOOKS_GUIDE, fillSetup, guideOf, guideTicked, needsActivation, needsKey, setupOf } from "../src/sim/80-business/books-guide";
 import { acceptBooksLicence, activateBooks, buyBooks, createBooksCompany, enterBooksKey, enterOpening, installBooks } from "../src/sim/90-actions/bookkeeping";
+import { BooksProgram } from "../src/ui/apps/books/BooksApp";
 import { InstallGuide } from "../src/ui/apps/books/guide/InstallGuide";
 import { Installer } from "../src/ui/apps/books/guide/Installer";
 import { guideLook, installerLook } from "../src/ui/apps/books/guide/looks";
@@ -162,5 +163,27 @@ describe("installer", () => {
     expect(page()).toBe("plan");
     fireEvent.click(screen.getByRole("button", { name: "Get started" }));
     expect(close).toHaveBeenCalled();
+  });
+});
+
+describe("books program", () => {
+  beforeEach(() => { (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class { observe() {} unobserve() {} disconnect() {} }; });
+  it("opens on the guide until the setup is done", () => {
+    const s = game(2006);
+    own(s, "lexwear"); put(s);
+    render(<BooksProgram />);
+    expect(document.querySelector(".bg")).not.toBeNull();
+    expect(screen.queryByText("Einrichtungsassistent")).toBeNull();
+    cleanup();
+    s.books.setupDone = true; fillSetup(s); put(s);
+    render(<BooksProgram />);
+    expect(document.querySelector(".bg")).toBeNull();
+  });
+
+  it("offers no tax button where the program has no tax screen", () => {
+    const s = game(2018);
+    own(s, "lexwear"); put(s);
+    render(<InstallGuide go={() => {}} canGo={() => false} />);
+    expect(screen.queryByRole("button", { name: "Open tax data" })).toBeNull();
   });
 });

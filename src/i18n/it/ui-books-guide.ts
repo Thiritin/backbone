@@ -73,6 +73,7 @@ export default {
   "bkinst.welcome.text": (p) => `L'installazione guidata installa ${p.program} sul tuo computer. Fai clic su Avanti per continuare.`,
   "bkinst.licence.title": () => `Contratto di licenza`,
   "bkinst.licence.text": (p) => `Contratto di licenza di ${p.program}. La licenza consente di usare il programma sui computer indicati nell'ordine. Non è consentito copiarlo per altri utenti, noleggiarlo o modificarlo. Il produttore risponde solo per dolo e colpa grave.`,
+  "bkinst.licence.gpl": () => `Licenza open source (GPL, versione 2). Questo programma è software libero: puoi ridistribuirlo e modificarlo secondo i termini della licenza. È distribuito nella speranza che sia utile, ma senza alcuna garanzia.`,
   "bkinst.licence.accept": () => `Accetto i termini del contratto di licenza`,
   "bkinst.key.title": () => `Numero di serie`,
   "bkinst.key.text": () => `Inserisci il numero di serie dell'e-mail del tuo ordine.`,

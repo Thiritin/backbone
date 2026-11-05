@@ -73,6 +73,7 @@ export default {
   "bkinst.welcome.text": (p) => `The assistant installs ${p.program} on your computer. Click Next to continue.`,
   "bkinst.licence.title": () => `Licence agreement`,
   "bkinst.licence.text": (p) => `Licence agreement for ${p.program}. The licence entitles you to use the program on the computers named in your order. Copying the program for other users, renting it out or changing it is not permitted. The maker is liable only for intent and gross negligence.`,
+  "bkinst.licence.gpl": () => `Open source licence (GPL, version 2). This program is free software: you may pass it on and change it under the terms of the licence. It is distributed in the hope that it will be useful, but without any warranty.`,
   "bkinst.licence.accept": () => `I accept the terms of the licence agreement`,
   "bkinst.key.title": () => `Serial number`,
   "bkinst.key.text": () => `Enter the serial number from your order e-mail.`,
