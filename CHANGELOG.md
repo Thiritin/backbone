@@ -7,9 +7,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - A fullscreen button sits in the desktop menu bar and in the room view, and the menu item for leaving the desktop is called Logout.
 - Escape opens a pause menu with Resume, Save and main menu, Export and Report an issue, and the game stops while it is open.
 - The menu at the top left only holds game information, and deleting progress is no longer a menu item.
+- The wall phone, mailbox and light switch are drawn as solid objects with depth, the desk lamp no longer covers the monitor, and wall and desk items no longer overlap.
 - The main menu has a new red and black look with the full raid0 wordmark.
 - The room view no longer keeps drifting after you stop panning with the keys or cancel a drag.
 
+- Houses, cars, trees, bushes and buildings outside your datacenter are drawn cleaner, without stray slivers and seams, and stand squarely on the tile grid.
 - The macOS desktop app is built for Macs with Apple silicon.
 - The desktop app is also available for Windows (x86_64) and for Linux on x86_64 and arm64, and it updates itself.
 

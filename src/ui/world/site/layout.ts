@@ -47,8 +47,8 @@ export function visibleBehind(x: number, y: number, z: number, w: number, h: num
 export const M = 32;
 export const STREET = 7, KERB = 0.15, WALK = 1.8, BAY = { w: 2.5, l: 5 };
 // Real footprints of the baked cars (L x W in m), by model.
-export const CAR_SIZE: Record<string, [number, number]> = { sedan: [4.5, 1.8], hatchback: [4.0, 1.75], van: [4.9, 1.95], coupe: [4.4, 1.8], suv: [4.6, 1.85], delivery: [6.5, 2.3], pickup: [5.2, 2], bintruck: [7, 2.5] };
-const LOT_CARS = ["sedan", "hatchback", "coupe", "suv", "pickup", "van"];
+export const CAR_SIZE: Record<string, [number, number]> = { sedan: [5, 2], hatchback: [4, 2], van: [5, 2], coupe: [4, 2] };
+const LOT_CARS = ["hatchback", "coupe"];
 
 export const it = (t: ItemType, x0: number, y0: number, x1: number, y1: number, top: number, layer: Item["layer"], o: Partial<Item> = {}): Item => ({ t, x0, y0, x1, y1, top, layer, ...o });
 // A car with its near-left corner at (x, y), long side along x.
@@ -79,13 +79,12 @@ export const fenceLine = (axis: "x" | "y", fixed: number, a0: number, a1: number
 export type LotMix = "mixed" | "houses" | "warehouses" | "offices" | "farm";
 interface LotDef { t: "house" | "box" | "office"; id: string; w: number; d: number; top: number; hall?: boolean; plaster?: boolean }
 const WH: LotDef = { t: "box", id: "warehouse", w: 22, d: 10, top: 7, plaster: true };
-const HALLS: LotDef[] = [{ t: "box", id: "hall-a", w: 20, d: 12, top: 7, hall: true }, { t: "box", id: "hall-b", w: 20, d: 12, top: 7.5, hall: true }, { t: "box", id: "hall-c", w: 16, d: 18, top: 8, hall: true }];
 const LOTS: Record<LotMix, LotDef[]> = {
   houses: [{ t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }],
-  mixed: [{ t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }, { t: "house", id: "house-c", w: 10.6, d: 8.5, top: 8.5, plaster: true }, { t: "house", id: "house-k", w: 6.8, d: 7.5, top: 8.5, plaster: true }, WH],
-  farm: [{ t: "house", id: "house-c", w: 10.6, d: 8.5, top: 8.5, plaster: true }, { ...HALLS[1], hall: true }, { t: "house", id: "house-k", w: 6.8, d: 7.5, top: 8.5, plaster: true }, { ...WH }, { t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }],
-  warehouses: [WH, ...HALLS, { t: "box", id: "water-tower", w: 6.4, d: 6.2, top: 16 }],
-  offices: [{ t: "office", id: "shop-a", w: 5.5, d: 5.8, top: 8, plaster: true }, { t: "office", id: "shop-c", w: 9.9, d: 12.2, top: 10, plaster: true }, { t: "office", id: "office-f", w: 6, d: 7.3, top: 12 }, { t: "office", id: "office-tower", w: 7.6, d: 7.6, top: 16 }, { t: "office", id: "shop-a", w: 5.5, d: 5.8, top: 8, plaster: true }, { t: "office", id: "shop-c", w: 9.9, d: 12.2, top: 10, plaster: true }],
+  mixed: [{ t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }, { t: "house", id: "house-c", w: 11, d: 8, top: 8.5, plaster: true }, { t: "house", id: "house-k", w: 7, d: 8, top: 8.5, plaster: true }, WH],
+  farm: [{ t: "house", id: "house-c", w: 11, d: 8, top: 8.5, plaster: true }, { ...WH }, { t: "house", id: "house-k", w: 7, d: 8, top: 8.5, plaster: true }, { ...WH }, { t: "house", id: "house", w: 9, d: 7, top: 7, plaster: true }],
+  warehouses: [WH, { ...WH }, { t: "box", id: "water-tower", w: 6, d: 6, top: 16 }],
+  offices: [{ t: "office", id: "shop-a", w: 5, d: 6, top: 8, plaster: true }, { t: "office", id: "shop-c", w: 10, d: 12, top: 10, plaster: true }, { t: "office", id: "office-f", w: 6, d: 7, top: 12 }, { t: "office", id: "office-tower", w: 8, d: 8, top: 16 }, { t: "office", id: "shop-a", w: 5, d: 6, top: 8, plaster: true }, { t: "office", id: "shop-c", w: 10, d: 12, top: 10, plaster: true }],
 };
 const WARM = ["w-tone-hall-2", "w-tone-hall-4", "w-tone-hall-5"];
 // A row of lots along a street. The buildings come from a seeded order of the mix, so a row never repeats a model and the row on the other side carries on from where this one stops (start).
@@ -93,19 +92,19 @@ const WARM = ["w-tone-hall-2", "w-tone-hall-4", "w-tone-hall-5"];
 // plant adds the chimney of a works to the mix.
 export const DRIVE = 3;
 export const lotRow = (seed: number, tag: number, xStart: number, dir: 1 | -1, count: number, frontY: number, roadY: number, layer: Item["layer"], mix: LotMix = "mixed", start = 0, plant = false): Item[] => {
-  const out: Item[] = [], plain = mix === "houses", defs = plain ? LOTS.houses : plant ? [...LOTS[mix], { t: "box" as const, id: "chimney", w: 7.6, d: 7.6, top: 12 }] : LOTS[mix];
+  const out: Item[] = [], plain = mix === "houses", defs = plain ? LOTS.houses : plant ? [...LOTS[mix], { t: "box" as const, id: "chimney", w: 8, d: 8, top: 12 }] : LOTS[mix];
   const order = defs.map((_, i) => i).sort((a, b) => fnv1a(`${seed}:${b}`) % 977 - (fnv1a(`${seed}:${a}`) % 977));
   if (plant) order.splice(order.indexOf(defs.length - 1), 1), order.unshift(defs.length - 1);
   let cursor = xStart;
   for (let k = 0; k < count; k++) {
-    const d = defs[order[(start + k) % defs.length]], width = d.w + 4, y1 = frontY - (plain ? 0 : [0, 1.5, 3][pick(seed, tag + k + 200, 3)]);
-    const x0 = dir > 0 ? cursor : cursor - width, bx1 = x0 + d.w, dx0 = bx1 - DRIVE - 0.5;
+    const d = defs[order[(start + k) % defs.length]], width = d.w + 4, y1 = frontY - (plain ? 0 : [0, 1, 2][pick(seed, tag + k + 200, 3)]);
+    const x0 = dir > 0 ? cursor : cursor - width, bx1 = x0 + d.w, dx0 = bx1 - DRIVE - 1;
     const tone = d.hall ? WARM[pick(seed, tag + k + 40, 3)] : d.plaster ? ["w-tone-plaster-a", "w-tone-plaster-b", "w-tone-plaster-c"][pick(seed, tag + k + 40, 3)] : undefined;
     out.push(it(d.t, x0, y1 - d.d, bx1, y1, Math.round(d.top * M), layer, { tone, kind: d.id }));
     out.push(it("path", dx0, y1, dx0 + DRIVE, roadY, 0, layer, { kind: "drive" }));
     if (pick(seed, tag + k + 80, 4) > 0) {
-      const ck = plain ? "sedan" : LOT_CARS[pick(seed, tag + k + 240, LOT_CARS.length)], [cl, cw] = CAR_SIZE[ck];
-      out.push(it("car", dx0 + 0.6, y1 + 0.4, dx0 + 0.6 + cw, y1 + 0.4 + cl, Math.round(1.45 * M), layer, { tone: CAR_TONES[pick(seed, tag + k + 120, CAR_TONES.length)], dir: "y", kind: ck }));
+      const ck = LOT_CARS[pick(seed, tag + k + 240, LOT_CARS.length)], [cl, cw] = CAR_SIZE[ck];
+      out.push(it("car", dx0 + Math.floor((DRIVE - cw) / 2), y1, dx0 + Math.floor((DRIVE - cw) / 2) + cw, y1 + cl, Math.round(1.45 * M), layer, { tone: CAR_TONES[pick(seed, tag + k + 120, CAR_TONES.length)], dir: "y", kind: ck }));
     }
     if (mix === "houses" || d.t === "house") out.push(...hedgeRuns(x0, dx0 - 0.5, frontY + 1.2, seed + k, layer, 0.9), ...hedgeRuns(dx0 + DRIVE + 0.5, x0 + width, frontY + 1.2, seed + k, layer, 0.9));
     cursor += dir * (width + (plain ? 2 : 2 + pick(seed, tag + k + 220, 4)));
@@ -117,7 +116,7 @@ export const beltTrees = (seed: number, edge: number, layer: Item["layer"]): Ite
   const out: Item[] = [];
   for (let k = 0, x = -50; x < 50; k++) {
     const kind = pick(seed, 500 + k, 5) < 2 ? "oak" : "pine", r = kind === "oak" ? 2.3 : 1.8;
-    out.push(treeItem(kind, x, edge + 2.5 + r + pick(seed, 540 + k, 8) / 4, seed ^ (60 + k), layer));
+    out.push(treeItem(kind, x, edge + 2.5 + r + pick(seed, 540 + k, 8) / 2, seed ^ (60 + k), layer));
     x += 6.5 + pick(seed, 580 + k, 9) / 2;
   }
   return out;
@@ -147,12 +146,12 @@ export function siteOf(game: GameState, loc: Location, w: number, h: number): Si
       ...hedgeRuns(-12, 3.6, hedgeY, seed, "back"), ...hedgeRuns(4.8, w + 6, hedgeY, seed, "back"),
       ...lotRow(seed, 200, -28, 1, 6, -24.5, sy0, "back", "houses"),
       treeItem("oak", -4, -2.7, seed ^ 1, "back"), treeItem("pine", w + 9, -5.2, seed ^ 3, "back"),
-      carItem("sedan", -8, nearWalk - 1.85, tone(3), "back"),
+      carItem("sedan", -8, nearWalk - 2, tone(3), "back"),
       it("bin", w + 1, -3, w + 1.7, -2.3, 30, "back"), it("bin", w + 1, -4.2, w + 1.7, -3.5, 30, "back"),
-      carItem("hatchback", 0.5, nearWalk - 1.85, PLAYER_CAR, "back", { kind: "hatchback", moving: false }),
+      carItem("hatchback", 0.5, nearWalk - 2, PLAYER_CAR, "back", { kind: "hatchback", moving: false }),
       carItem("sedan", -16, sy0 + 1.4, tone(4), "back", { moving: true }),
     ];
-    return { kind: "garden", setting: "suburb", cls, seed, w, h, lift: WALL, plot: { x0: -16, y0: -34, x1: w + 14, y1: 0 }, items, bay: { x: 0.5, y: nearWalk - 1.85, dir: "x" }, seats: [], box: bounds(items, WALL, w, h) };
+    return { kind: "garden", setting: "suburb", cls, seed, w, h, lift: WALL, plot: { x0: -16, y0: -34, x1: w + 14, y1: 0 }, items, bay: { x: 0.5, y: nearWalk - 2, dir: "x" }, seats: [], box: bounds(items, WALL, w, h) };
   }
   if (loc.space === "hall" || loc.space === "office" || loc.space === "share" || loc.space === "cage" || loc.space === "suite") return buildSite(settingOf(loc, game), cls, seed, w, h, loc.space !== "hall", staff);
   return none();
