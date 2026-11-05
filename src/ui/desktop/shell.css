@@ -349,3 +349,5 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
   box-shadow: var(--shadow-win-back); backdrop-filter: blur(24px) saturate(1.4);
 }
 .device-svg .usb-hit:hover, .wr-cab .usb-hit:hover { fill: oklch(0.9 0.05 255 / 0.28); }
+
+.app-grid-item[data-guide], .fin-side .side-item[data-guide] { outline: 3px solid oklch(0.75 0.19 60); outline-offset: -3px; }

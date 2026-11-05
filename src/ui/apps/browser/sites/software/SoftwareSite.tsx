@@ -1,5 +1,5 @@
 import { t } from "../../../../../i18n/en";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { euroPrice } from "../../../../../sim/00-core/money";
 import { BINARIES, footprint, SOFTWARE, type Software } from "../../../../../sim/10-catalog/platforms";
 import { mailboxGb } from "../../../../../sim/60-infra/cluster";
@@ -94,11 +94,13 @@ function IsoButton({ id, has }: { id: OsImage; has: boolean }) {
 // The install commands with a Copy button for the real clipboard; GUI software and operating systems say where they install from.
 export function Commands({ p, year, className }: { p: Product; year: number; className?: string }) {
   const [copied, setCopied] = useState(false);
-  const media = useStore((s) => s.game.media);
+  const media = useStore((s) => s.game.media), box = useRef<HTMLDivElement>(null);
+  // An operating system's page brings its first download button into view.
+  useEffect(() => { box.current?.querySelector(".sws-iso:not(:disabled)")?.scrollIntoView?.({ block: "center" }); }, []);
   if (p.os) {
     const id = p.os.id, out = p.os.versions.filter((v) => v.from <= year).reverse();
     return (
-      <div className={className}>
+      <div className={className} ref={box}>
         <p>{t("browser-sites-2.isoHelp", { name: p.os.name })}</p>
         <table>
           <thead><tr><th>{t("browser-sites-2.release")}</th><th>{t("browser-sites-2.since")}</th><th /></tr></thead>

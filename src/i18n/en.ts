@@ -503,6 +503,7 @@ export const en: Record<string, (p: Params) => string> = {
   "guide.step.buyServer": () => "Buy a server",
   "guide.step.mountServer": () => "Mount and power it",
   "guide.step.mountRouter": () => "Cable the router",
+  "guide.step.serverLinked": () => "Cable the server",
   "guide.step.findAddress": () => "Find the server's address",
   "guide.step.shareWeb": () => "Share the web port",
   "guide.step.internet": () => "Add internet",

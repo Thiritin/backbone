@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { t } from "../../../i18n/en";
-import { modelById, modelName, wanPort } from "../../../sim/10-catalog/hardware";
+import { isOfficeRouter, modelById, modelName, wanPort } from "../../../sim/10-catalog/hardware";
+import { uplinkPort } from "../../../sim/60-infra/routers";
 import { rackUnits } from "../../../sim/20-world/datacenters";
 import type { Device, End, GameState, Rack } from "../../../sim/50-state";
-import { booting, connectError, deviceHealth, halting, heightIn, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
+import { booting, cabledOut, connectError, deviceHealth, halting, heightIn, jacked, locationOf, mountFrom, pluggedIn, portPeers } from "../../../sim/60-infra/status";
 import { present } from "../../../sim/60-infra/handwork";
 import { connect, setPortGroup } from "../../../sim/90-actions/hardware";
 import { plugStick, unplugStick } from "../../../sim/90-actions/media";
@@ -49,18 +50,19 @@ const key = (e: End) => `${e.device}:${e.port}`;
 
 // The rack close-up: the rack stands centred on the floor; a picked unit slides it left and hangs a paper tag beside it.
 // On the back a cable is dragged from port to port, or a click takes a port as the cable in hand and a click on a second port plugs it in; the hand outlives the panel.
-export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, onConnectFrom }: {
-  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void;
+export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, device, guide, onConnectFrom }: {
+  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string; guide?: "cable" | "vga" | "usb" | "link" | "mount";
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rack = game.racks.find((r) => r.id === rackId);
-  const [sel, setSel] = useState<string | null>(null);
-  const [back, setBack] = useState(!!(hand || startPort));
+  const [sel, setSel] = useState<string | null>(device ?? null);
+  const [back, setBack] = useState(!!(hand || startPort || guide === "cable" || guide === "vga" || guide === "link"));
   // The side turning away while the other turns in.
   const [turning, setTurning] = useState<boolean | null>(null);
   const [port, setPort] = useState<End | null>(startPort);
   // A carried unit opens the panel on the lowest free unit it fits.
   const [free, setFree] = useState<number | null>(null);
+  const autoPick = useRef(false);
   const [lid, setLid] = useState<string | null>(null);
   const [cart, setCart] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
@@ -227,6 +229,44 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   };
   useLayoutEffect(repin, [anchor, sel, back, zoom, game, turning, jack]);
   // A tag opened at high zoom is brought into view.
+  // The card's cabling step outlines the line jack and router uplink, the boot step the server VGA port (the console end is port 100).
+  useEffect(() => {
+    if (guide === "mount") {
+      // The card picks the first free unit at once, so the stock tile shows beside it.
+      if (free === null && !autoPick.current) { const first = document.querySelector<SVGGElement>(".wr-face .rack-free"); if (first) { autoPick.current = true; first.dispatchEvent(new MouseEvent("click", { bubbles: true })); } }
+      // The free unit to click, then the stored devices that fit it.
+      const hit = [document.querySelector(".wr-face .rack-free"), ...document.querySelectorAll("[data-free] .wp-unit button")];
+      const els = hit.filter((el): el is Element => !!el);
+      els.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => els.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    if (guide === "link") {
+      // The cabling step's second cable: the server's first free port to a free LAN port on the router.
+      const srv = game.devices.find((x) => x.id === device), router = game.devices.find((x) => !!x.rackId && isOfficeRouter(modelById(x.model)));
+      if (!srv || !router || cabledOut(game, srv.id) === null) return;
+      const rm = modelById(router.model), wan = wanPort(rm);
+      const free = (id: string, skip: (i: number) => boolean) => modelById(game.devices.find((x) => x.id === id)!.model).ports.findIndex((_, i) => !skip(i) && !portPeers(game, id)[i]);
+      const ends = [`${srv.id}:${free(srv.id, () => false)}`, `${router.id}:${free(router.id, (i) => i === wan)}`];
+      const hit = [...document.querySelectorAll("[data-end]")].filter((el) => ends.includes(el.getAttribute("data-end") ?? ""));
+      hit.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => hit.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    if (guide === "usb") {
+      const usb = [...document.querySelectorAll(".usb-hit")];
+      usb.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => usb.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    if (guide === "vga") {
+      const vga = [...document.querySelectorAll("[data-end]")].filter((el) => el.getAttribute("data-end") === `${device}:100`);
+      vga.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => vga.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    const router = guide === "cable" && game.devices.find((x) => x.id === device), jack = game.devices.find((x) => modelById(x.model).kind === "jack" && locationOf(game, x)?.id === rack?.locationId);
+    if (!router || !jack || jacked(game, router.id)) return;
+    const hit = [...document.querySelectorAll("[data-end]")].filter((el) => el.getAttribute("data-end")?.startsWith(`${jack.id}:`) || el.getAttribute("data-end") === `${router.id}:${uplinkPort(router)}`);
+    hit.forEach((el) => el.setAttribute("data-guide", ""));
+    return () => hit.forEach((el) => el.removeAttribute("data-guide"));
+  });
   useEffect(() => { tagEl.current?.scrollIntoView?.({ block: "nearest", inline: "nearest" }); }, [sel, free, port, jack, back]);
   if (!rack) return null;
 

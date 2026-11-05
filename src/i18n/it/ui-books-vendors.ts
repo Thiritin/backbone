@@ -33,6 +33,7 @@ export default {
   "books-vendors.download": () => "Scarica",
   "books-vendors.downloading": (p) => `Download ${p.pct}%`,
   "books-vendors.inDownloads": () => "In Download",
+  "books-vendors.install": () => "Installa",
   "books-vendors.supportEnded": (p) => `Fine del supporto: ${p.year}`,
   "ticket.mail.booksFeature.subject": (p) => `${p.program}: ${t(`books-editions.feature.${p.feature}`)}`,
   "ticket.mail.booksFeature.text": (p) => `${p.program} ora include ${t(`books-editions.feature.${p.feature}`)}.${Number(p.desktop) ? " La riceverà con il prossimo aggiornamento annuale." : ""}`,

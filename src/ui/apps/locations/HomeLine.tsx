@@ -1,6 +1,6 @@
 import { euro } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { RECONNECT_HOUR, STATIC_LINE_ADDRESSES } from "../../../sim/10-catalog/addresses";
+import { STATIC_LINE_ADDRESSES } from "../../../sim/10-catalog/addresses";
 import { HOME_LINES, homeLineById, type HomeLine as Line } from "../../../sim/20-world/datacenters";
 import type { GameState } from "../../../sim/50-state";
 import { homePeak } from "../../../sim/60-infra/network";
@@ -25,18 +25,16 @@ export function HomeLinePanel({ game }: { game: GameState }) {
         <span><BrandLogo brand={l.isp} size={14} />{l.isp}</span>
       </div>
       <dl className="loc-line-specs">
-        <div><dt>{t("locations-1.download")}</dt><dd className="num">{speed(l.down)}</dd></div>
-        <div><dt>{t("locations-1.upload")}</dt><dd className="num">{speed(l.up)}</dd></div>
-        <div><dt>{t("locations-1.addresses")}</dt><dd className="num">{l.staticIp ? t("locations-1.nStatic", { n: STATIC_LINE_ADDRESSES }) : t("locations-1.oneDynamic")}</dd></div>
-        <div><dt>{t("locations-1.reconnect")}</dt><dd className="num">{l.staticIp ? t("locations-1.none") : t("locations-1.daily", { time: `${String(RECONNECT_HOUR).padStart(2, "0")}:00` })}</dd></div>
-        <div><dt>{t("locations-1.installation")}</dt><dd className="num">{t("locations-1.nDays", { n: l.installDays })}</dd></div>
+        <div><dd className="num">{speed(l.down)} ↓ {speed(l.up)} ↑</dd></div>
+        <div><dd className="num">{l.staticIp ? t("locations-1.nStatic", { n: STATIC_LINE_ADDRESSES }) : t("locations-1.oneDynamic")}</dd></div>
+        {l.id !== id && <div><dd className="num">{t("locations-1.connectOn", { date: day(next?.id === l.id ? next.at : game.hour + 24 * l.installDays) })}</dd></div>}
       </dl>
       <div className="loc-line-foot">
         <strong className="num">{t("locations-1.pricePerMonth", { price: euro(l.monthly) })}</strong>
         <span className="grow" />
         {l.id === id ? <span className="pill ok">{t("locations-1.lineActive")}</span>
           : l.id === next?.id ? <>
-            <span className="pill">{t("locations-1.connects")} <span className="num">{day(next.at)}</span></span>
+            <span className="pill">{t("locations-1.connects")}</span>
             <button className="btn" onClick={() => act(orderHomeLine, id)}>{t("locations-1.cancel")}</button>
           </>
           : <button className="btn primary" onClick={() => act(orderHomeLine, l.id)}>{t("locations-1.order")}</button>}
