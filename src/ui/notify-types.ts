@@ -49,6 +49,7 @@ const GROUPS: Record<string, NotifyType[]> = {
   Research: [type("Unlocks", "trainingDone")],
   "Pear Mail": [type("New mail", "newMail", "newMailMore")],
   Shop: [type("Used market", "used*")],
+  Post: [type("Letterbox", "post")],
   News: [type("Hardware", "news.generation", "news.endOfSale", "news.gpu", "news.models", "news.shape", "news.vendor"), type("Software", "news.software", "news.swVersion", "news.autoUpdate", "news.feature", "news.desk", "news.training", "news.release", "news.licence*"), type("Internet", "news.ipv6*", "news.ripe*", "news.homeLines", "news.ports", "news.registryPrice"), type("Market", "news.design", "news.line", "news.mail", "news.gpuDemand", "news.used*", "news.freeSsl", "news.marketPrice", "news.rival*", "news.toast*")],
 };
 

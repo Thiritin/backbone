@@ -58,4 +58,6 @@ export default {
   "ticket.mail.notaryFiled.text": (p) => `Obrigado pelo pacto social assinado de ${p.name}. Vamos depositá-lo no registo comercial no prazo de ${p.days} dias úteis. O registo confirmará a inscrição por carta.`,
   "ticket.mail.officeReceived.subject": (p) => `RE: ${p.subject}`,
   "ticket.mail.officeReceived.text": (p) => `Recebemos a alteração do registo de ${p.name}. Vai receber a nossa confirmação por carta no prazo de ${p.days} dias úteis.`,
+  "event.post.title": () => "Correio novo na caixa de correio",
+  "event.post.text": (p) => `${p.location}: ${p.n}`,
 } satisfies Dict;

@@ -58,4 +58,6 @@ export default {
   "ticket.mail.notaryFiled.text": (p) => `Grazie per l'atto costitutivo firmato di ${p.name}. Lo depositeremo al registro delle imprese entro ${p.days} giorni lavorativi. Il registro confermerà l'iscrizione per lettera.`,
   "ticket.mail.officeReceived.subject": (p) => `R: ${p.subject}`,
   "ticket.mail.officeReceived.text": (p) => `Abbiamo ricevuto la variazione di iscrizione di ${p.name}. Riceverete la nostra conferma per lettera entro ${p.days} giorni lavorativi.`,
+  "event.post.title": () => "Nuova posta nella cassetta",
+  "event.post.text": (p) => `${p.location}: ${p.n}`,
 } satisfies Dict;
