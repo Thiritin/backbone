@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { vendorName } from "../../../../../../sim/80-business/vendor-shop";
+import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { euro } from "../../../../../../sim/00-core/money";
@@ -10,9 +12,10 @@ import { shopById } from "../../../../../../sim/10-catalog/shops";
 import { nextMajor, releasedAt, versionAt, versionInfo } from "../../../../../../sim/10-catalog/software-versions";
 import { displayHost } from "../../../../../../sim/80-business/browser";
 import { portalPath } from "../../../../../../sim/80-business/portal";
-import { bought } from "../../../../../../sim/80-business/licences";
+import { bought, moduleOrder, ordered } from "../../../../../../sim/80-business/licences";
+import { DocButton } from "../../shared/OrderDone";
 import { shopHost } from "../../../../../../sim/80-business/shoplink";
-import { installShop, upgradeShop } from "../../../../../../sim/90-actions/shop";
+import { installShop, upgradeFee, upgradeShop } from "../../../../../../sim/90-actions/shop";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
 import { useStore } from "../../../../../store";
 import { feeText } from "../../../../marketing/payments";
@@ -47,8 +50,8 @@ function Pricing({ game }: VendorProps) {
   const act = usePageAct(), era = shopEra(ID, game.hour), year = yearOf(game.hour);
   const modules = MODULES.filter((m) => m.vendor === "shop" && m.year <= year);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === ID ? <span className="obv-state">{t("vendor-sites.registered")}</span>
-    : bought(game, m.id, ID) ? <span className="obv-state">{t("vendor-sites.bought")}</span>
-    : <button type="button" className="obv-btn" onClick={() => act(buyShopLink, ID, m.id)}>{t("vendor-sites.buy")}</button>;
+    : bought(game, m.id, ID) ? <span className="obv-state">{t("vendor-sites.bought")} <DocButton payable={moduleOrder(game, m.id, ID)} /></span> : ordered(game, m.id, ID) ? <span className="obv-state">{t("vendor-sites.ordered")} <DocButton payable={moduleOrder(game, m.id, ID)} /></span>
+    : <PayButton className="obv-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>;
   return (
     <>
       <h1>{t("orderbocks.v.pricing")}</h1>
@@ -114,7 +117,7 @@ function MyAccount({ game }: VendorProps) {
           <tbody><tr>
             <td>{shopById(ID).name}</td><td>{t("orderbocks.v.free")}</td><td className="num">{at.version}</td>
             <td>{game.clusters.find((c) => c.id === at.clusterId)?.name ?? at.clusterId}</td><td className="num">{month(info?.updatesUntil ?? null)}</td>
-            <td>{next && <button type="button" className="obv-btn" onClick={() => act(upgradeShop)}>{t("orderbocks.v.upgradeTo", { major: next.major })}</button>}</td>
+            <td>{next && <PayButton className="obv-btn" supplier="shopVendor" name={vendorName(ID)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("orderbocks.v.upgradeTo", { major: next.major })}</PayButton>}</td>
           </tr></tbody>
         </table>
       )}

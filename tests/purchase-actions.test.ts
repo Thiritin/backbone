@@ -8,6 +8,7 @@ import { buyLicence } from "../src/sim/90-actions/licences";
 import { install } from "../src/sim/90-actions/store";
 import { addToCart, checkout } from "../src/sim/90-actions/vendor-shop";
 import { hostOf } from "../src/sim/80-business/vendor-shop";
+import { moduleOrder } from "../src/sim/80-business/licences";
 import { freeFloor, newGame, orderDetails, withCard, withServer } from "./fixtures";
 
 const CART: CartLine[] = [{ model: "g1-compute", brand: "Dwell", qty: 2 }, { model: "sw-8", brand: "Sysko", qty: 1 }];
@@ -99,16 +100,27 @@ describe("shop module", () => {
     expect(buyLicence(s, "shop-link").ok).toBe(true);
     expect(ours(s, "shopVendor")).toHaveLength(1);
   });
+
+  it("refuses a second order while the transfer is open", () => {
+    const s = bank(freeFloor({ ...newGame(1), cash: 10_000 }));
+    s.shop = { ...s.shop, variant: "modemBill" };
+    expect(buyLicence(s, "shop-link", "transfer").ok).toBe(true);
+    expect(buyLicence(s, "shop-link", "transfer")).toEqual({ ok: false, error: "error.orderOpen" });
+    expect(ours(s, "shopVendor")).toHaveLength(1);
+    expect(moduleOrder(s, "shop-link")).toBe(ours(s, "shopVendor")[0].id);
+    expect(moduleOrder(s, "debit")).toBeUndefined();
+  });
 });
 
 describe("colocation", () => {
-  it("leaves a contract document that bills the rest of the month", () => {
+  it("leaves a contract document and a cash receipt for the rest of the month", () => {
     const s = freeFloor({ ...newGame(1), cash: 1_000_000 });
     s.hour = hourOf(new Date(Date.UTC(2005, 0, 20)));
     const cash = s.cash, monthly = spacePrice(FR5, "share", 2);
     expect(addLocation(s, FR5.id, "share", 2).ok).toBe(true);
-    const [p] = ours(s, "datacenter");
-    expect(p).toMatchObject({ doc: "contract", method: "cash", name: FR5.name, paidAt: s.hour });
+    const [contract, p] = ours(s, "datacenter");
+    expect(contract).toMatchObject({ doc: "contract", method: "cash", amount: 0 });
+    expect(p).toMatchObject({ doc: "receipt", method: "cash", name: FR5.name, paidAt: s.hour });
     expect(p.amount).toBeGreaterThan(0);
     expect(p.amount).toBeLessThan(monthly);
     expect(s.cash).toBeCloseTo(cash - p.amount, 2);
@@ -117,7 +129,12 @@ describe("colocation", () => {
   it("orders on account once a bank exists", () => {
     const s = bank(freeFloor({ ...newGame(1), cash: 1_000_000 }));
     s.hour = hourOf(new Date(Date.UTC(2005, 0, 20)));
+    const cash = s.cash;
     expect(addLocation(s, FR5.id, "share", 2).ok).toBe(true);
-    expect(ours(s, "datacenter")).toMatchObject([{ doc: "contract", method: "onAccount" }]);
+    const [contract, invoice] = ours(s, "datacenter");
+    expect(contract).toMatchObject({ doc: "contract", method: "onAccount", amount: 0 });
+    expect(invoice).toMatchObject({ doc: "invoice", method: "onAccount", paidAt: null });
+    expect(invoice.amount).toBeGreaterThan(0);
+    expect(s.cash).toBe(cash);
   });
 });

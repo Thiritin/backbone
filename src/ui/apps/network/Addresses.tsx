@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { yearOf } from "../../../sim/00-core/time";
-import { freeBlock, LINE_EXTRA_V4, LIR_FEES, providerV4, transferPrice } from "../../../sim/10-catalog/addresses";
+import { freeBlock, LINE_EXTRA_V4, LIR_FEES, PROVIDER_ROUTING_SETUP, providerV4, transferPrice } from "../../../sim/10-catalog/addresses";
+import { datacenterById } from "../../../sim/20-world/datacenters";
+import { SUPPLIER_NAMES } from "../../../sim/46-finance/payables";
 import type { GameState, Location } from "../../../sim/50-state";
 import { addressesOf, dynamicLine, freeV4, lineActive, machineLocation, publicV4, publicV6, v6Offered, type Address, type AddressSource, machineAddress } from "../../../sim/60-infra/addresses";
 import { addressOf, macOf } from "../../../sim/60-infra/lan";
 import { fullTableAt } from "../../../sim/60-infra/routers";
-import { addAddress, announceBlock, assignAddress, buyAddresses, buyBlock, joinLir, releaseAddress, requestDelist } from "../../../sim/90-actions/addresses";
+import { addAddress, announceBlock, announceError, assignAddress, buyAddresses, buyBlock, joinLir, lirError, releaseAddress, requestDelist } from "../../../sim/90-actions/addresses";
 import { useStore } from "../../store";
+import { PayStep, type Purchase } from "../browser/sites/shared/PayStep";
 import { formatDay } from "../billing/format";
 import { devName } from "../hw";
 import { vmLabel } from "../products/parts";
@@ -137,22 +140,25 @@ export function Ripe({ game }: { game: GameState }) {
   const act = useStore((s) => s.act);
   const year = yearOf(game.hour), lir = game.ips.lir, dcs = game.locations.filter((l) => l.dc);
   const free = freeBlock(game.hour);
-  if (!lir) {
-    return (
-      <div className="shop-grid net-top">
-        <div className="shop-card">
-          <div className="shop-name"><strong>{t("misc.ripeMembership")}</strong><span>{t("misc.ripeText")}</span></div>
-          <dl className="shop-specs">
-            <div><dt>{t("misc.signUp")}</dt><dd className="num">{euro(LIR_FEES.signup)}</dd></div>
-            <div><dt>{t("misc.perYear2")}</dt><dd className="num">{euro(LIR_FEES.yearly)}</dd></div>
-            <div><dt>{t("misc.firstBlock")}</dt><dd className="num">{free ? t("misc.blockSize", { prefix: free.prefix, size: free.size.toLocaleString(LOCALE) }) : t("misc.none")}</dd></div>
-          </dl>
-          <div className="shop-buy"><span className="grow" /><button className="btn primary" onClick={() => act(joinLir)}>{t("misc.join")}</button></div>
-        </div>
+  const [buy, setBuy] = useState<Purchase & { key: string } | null>(null);
+  const step = buy && <PayStep key={buy.key} game={game} buy={buy} onClose={() => setBuy(null)} />;
+  const ripe = { supplier: "registry" as const, name: SUPPLIER_NAMES.registry! };
+  // Routing by the provider has a setup fee; a block announced from the own BGP router costs nothing.
+  const announce = (block: string, l: Location) => fullTableAt(game, l.id) ? act(announceBlock, block, l.id, false)
+    : setBuy({ key: `announce-${block}-${l.id}`, supplier: "network", name: datacenterById(l.dc!).name, amount: PROVIDER_ROUTING_SETUP, run: (m) => act(announceBlock, block, l.id, true, m), blocked: announceError(game, block, l.id, true) });
+  const body = !lir ? (
+    <div className="shop-grid net-top">
+      <div className="shop-card">
+        <div className="shop-name"><strong>{t("misc.ripeMembership")}</strong><span>{t("misc.ripeText")}</span></div>
+        <dl className="shop-specs">
+          <div><dt>{t("misc.signUp")}</dt><dd className="num">{euro(LIR_FEES.signup)}</dd></div>
+          <div><dt>{t("misc.perYear2")}</dt><dd className="num">{euro(LIR_FEES.yearly)}</dd></div>
+          <div><dt>{t("misc.firstBlock")}</dt><dd className="num">{free ? t("misc.blockSize", { prefix: free.prefix, size: free.size.toLocaleString(LOCALE) }) : t("misc.none")}</dd></div>
+        </dl>
+        <div className="shop-buy"><span className="grow" /><button className="btn primary" onClick={() => setBuy({ key: "lir", ...ripe, amount: LIR_FEES.signup, run: (m) => act(joinLir, m), blocked: lirError(game) })}>{t("misc.join")}</button></div>
       </div>
-    );
-  }
-  return (
+    </div>
+  ) : (
     <div className="net-addrs">
       <dl className="fin-facts">
         <div><dt>{t("misc.asNumber")}</dt><dd className="num">AS{lir.asn}</dd></div>
@@ -163,7 +169,7 @@ export function Ripe({ game }: { game: GameState }) {
         <span>{t("misc.transferMarket")}</span>
         <span className="num">{euro(256 * transferPrice(year))}</span>
         <span className="grow" />
-        <button className="btn primary" onClick={() => act(buyBlock)}>{t("misc.buy24")}</button>
+        <button className="btn primary" onClick={() => setBuy({ key: `block-${game.ips.blocks.length}`, ...ripe, amount: 256 * transferPrice(year), run: (m) => act(buyBlock, m) })}>{t("misc.buy24")}</button>
       </div>
       <table className="table fin-table">
         <thead><tr><th>{t("misc.block")}</th><th className="r">{t("misc.addresses")}</th><th className="r">{t("misc.inUse")}</th><th>{t("misc.announcedFrom")}</th></tr></thead>
@@ -175,7 +181,7 @@ export function Ripe({ game }: { game: GameState }) {
               <td className="num r">{game.ips.addresses.filter((a) => a.blockId === b.id && a.holder).length}</td>
               <td>
                 <div className="seg" role="group" aria-label={t("misc.announcedFrom")}>
-                  {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && act(announceBlock, b.id, l.id, !fullTableAt(game, l.id))}>{l.az}</button>)}
+                  {dcs.map((l) => <button key={l.id} aria-pressed={b.locationId === l.id} onClick={() => b.locationId !== l.id && announce(b.id, l)}>{l.az}</button>)}
                 </div>
                 {b.locationId && b.byProvider && <span> {t("misc.byProvider")}</span>}
               </td>
@@ -185,4 +191,6 @@ export function Ripe({ game }: { game: GameState }) {
       </table>
     </div>
   );
+  // One place for the pay step, so its outcome stays when joining switches the view.
+  return <>{body}{step && <div className="net-addrs">{step}</div>}</>;
 }

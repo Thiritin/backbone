@@ -20,7 +20,8 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 const set = (s: GameState, patch: Partial<Network>) => { s.network = { ...s.network, ...patch }; };
 const pay = (s: GameState, name: string, key: string, params: Record<string, string | number>, amount: number, method?: Method): ActionResult => {
   const lines = [{ hour: s.hour, category: "transit", key, params, amount: -amount }];
-  return placeOrder(s, { supplier: "network", name, lines, method: method ?? methodsFor(s, "network", lines, name)[0] });
+  const supplier = name === SUPPLIER_NAMES.registry ? "registry" : "network";
+  return placeOrder(s, { supplier, name, lines, method: method ?? methodsFor(s, supplier, lines, name)[0] });
 };
 
 // The location as a datacenter zone the player may buy network for, or the error why not.
@@ -121,22 +122,33 @@ export function cancelUplink(s: GameState, uplinkId: string): ActionResult {
 }
 
 // Registers your own AS number, which exchanges ask for.
+// The error registering an AS number runs into before any payment, or null.
+export const asnError = (s: GameState): string | null =>
+  !s.unlocks.includes("network") ? "error.needsNetwork" : s.network.asn ? "error.hasAsn" : null;
+
 export function registerAsn(s: GameState, method?: Method): ActionResult {
-  if (!s.unlocks.includes("network")) return fail("error.needsNetwork");
-  if (s.network.asn) return fail("error.hasAsn");
+  const no = asnError(s);
+  if (no) return fail(no);
   const asn = 20000 + Math.floor(rand(hashRng(s.seed, 0xa5)) * 40000);
-  const paid = pay(s, SUPPLIER_NAMES.network!, "ledger.asn", { asn }, ASN_FEE, method);
+  const paid = pay(s, SUPPLIER_NAMES.registry!, "ledger.asn", { asn }, ASN_FEE, method);
   if (!paid.ok) return paid;
   set(s, { asn });
   return { ok: true, id: String(asn) };
 }
 
-export function joinExchange(s: GameState, exchangeId: string, method?: Method): ActionResult {
-  if (!s.unlocks.includes("network")) return fail("error.needsNetwork");
+// The error joining an exchange runs into before any payment, or null.
+export function exchangeError(s: GameState, exchangeId: string): string | null {
+  if (!s.unlocks.includes("network")) return "error.needsNetwork";
   const x = exchangeById(exchangeId);
-  if (!x) return fail("error.noExchange");
-  if (!s.network.asn) return fail("error.needsAsn");
-  if (s.network.memberships.includes(x.id)) return fail("error.alreadyMember");
+  if (!x) return "error.noExchange";
+  if (!s.network.asn) return "error.needsAsn";
+  return s.network.memberships.includes(x.id) ? "error.alreadyMember" : null;
+}
+
+export function joinExchange(s: GameState, exchangeId: string, method?: Method): ActionResult {
+  const no = exchangeError(s, exchangeId);
+  if (no) return fail(no);
+  const x = exchangeById(exchangeId)!;
   const paid = pay(s, x.name, "ledger.exchangeJoin", { exchange: x.name }, EXCHANGE_FEES.setup, method);
   if (!paid.ok) return paid;
   set(s, { memberships: [...s.network.memberships, x.id] });

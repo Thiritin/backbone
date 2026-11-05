@@ -17,10 +17,12 @@ import {
 import { routerMbps } from "../../../sim/60-infra/routers";
 import { panelOf } from "../../../sim/60-infra/panels";
 import {
-  acceptPeering, addUplinkLink, cancelUplink, cancelZoneLink, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering,
+  acceptPeering, addUplinkLink, asnError, cancelUplink, cancelZoneLink, exchangeError, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering,
   requestPeering, setBlackhole,
 } from "../../../sim/90-actions/network";
+import { SUPPLIER_NAMES } from "../../../sim/46-finance/payables";
 import { useStore } from "../../store";
+import { PayStep, type Purchase } from "../browser/sites/shared/PayStep";
 import { formatDay } from "../billing/format";
 import { readyIn } from "../hw";
 import { AddressList } from "../network/Addresses";
@@ -284,12 +286,13 @@ function ExchangeOrder({ game, loc }: { game: GameState; loc: Location }) {
   const year = yearOf(game.hour), speeds = uplinkOffers(year);
   const [gbit, setGbit] = useState(speeds[0]);
   const [rack, setRack] = useState(firstRack(game, loc));
+  const [buy, setBuy] = useState<Purchase & { key: string } | null>(null);
   const x = exchangeAt(datacenterById(loc.dc!));
   if (!x) return null;
   const member = game.network.memberships.includes(x.id);
   let action: ReactNode;
-  if (!game.network.asn) action = <button className="btn" disabled={game.cash < ASN_FEE} onClick={() => act(registerAsn)}>{t("locations-2.registerAsn", { fee: euro(ASN_FEE) })}</button>;
-  else if (!member) action = <button className="btn primary" disabled={game.cash < EXCHANGE_FEES.setup} onClick={() => act(joinExchange, x.id)}>{t("locations-2.joinFor", { fee: euro(EXCHANGE_FEES.setup) })}</button>;
+  if (!game.network.asn) action = <button className="btn" onClick={() => setBuy({ key: "asn", supplier: "registry", name: SUPPLIER_NAMES.registry!, amount: ASN_FEE, run: (m) => act(registerAsn, m), blocked: asnError(game) })}>{t("locations-2.registerAsn", { fee: euro(ASN_FEE) })}</button>;
+  else if (!member) action = <button className="btn primary" onClick={() => setBuy({ key: "join", supplier: "network", name: x.name, amount: EXCHANGE_FEES.setup, run: (m) => act(joinExchange, x.id, m), blocked: exchangeError(game, x.id) })}>{t("locations-2.joinFor", { fee: euro(EXCHANGE_FEES.setup) })}</button>;
   else action = <button className="btn primary" onClick={() => act(orderExchangePort, rack || loc.id, gbit)}>{t("locations-2.orderPort")}</button>;
   return (
     <>
@@ -305,6 +308,7 @@ function ExchangeOrder({ game, loc }: { game: GameState; loc: Location }) {
           {member && <div className="mkt-row"><span className="mkt-label">{t("locations-2.port")}</span>
             <div className="seg" role="group" aria-label={t("locations-2.portSpeed")}>{speeds.map((g) => <button key={g} className="num" aria-pressed={gbit === g} onClick={() => setGbit(g)}>{speed(g)}</button>)}</div></div>}
           <div className="shop-buy"><span className="grow" />{action}</div>
+          {buy && <PayStep key={buy.key} game={game} buy={buy} onClose={() => setBuy(null)} />}
         </div>
       </div>
     </>

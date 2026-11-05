@@ -3,6 +3,7 @@ import { hourOf, isMonthStart } from "../src/sim/00-core/time";
 import { listingById, rentFor } from "../src/sim/20-world/properties";
 import { registrarTick } from "../src/sim/30-customers/registrar";
 import { openAccount } from "../src/sim/46-finance/bank";
+import { billDirect } from "../src/sim/46-finance/payables";
 import { visibleCandidates } from "../src/sim/47-staff/staff";
 import type { GameState } from "../src/sim/50-state";
 import { tick } from "../src/sim/88-tick/tick";
@@ -82,7 +83,7 @@ describe("network and addresses", () => {
   it("pays the AS number and the exchange join by method", () => {
     const s = net();
     ok(registerAsn(s));
-    expect(last(s)).toMatchObject({ supplier: "network", method: "cash", doc: "receipt" });
+    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE-ish NCC", method: "cash", doc: "receipt" });
     ok(joinExchange(s, "dekicks"));
     expect(keys(s)).toEqual(["ledger.exchangeJoin"]);
     expect(s.payables).toHaveLength(2);
@@ -94,13 +95,21 @@ describe("network and addresses", () => {
     expect(last(b)).toMatchObject({ method: "transfer", doc: "invoice", paidAt: null });
   });
 
+  it("bills the yearly LIR fee from the registry", () => {
+    const s = net();
+    billDirect(s, [{ hour: s.hour, category: "rent", key: "ledger.lirYearly", params: {}, amount: -1400 }]);
+    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE-ish NCC" });
+  });
+
   it("pays the LIR signup, a block and the provider routing", () => {
     const s = net();
     const loc = ok(addLocation(s, "equinox-fr5", "cage", 4));
     ok(joinLir(s));
     expect(keys(s)).toEqual(["ledger.lirSignup"]);
+    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE-ish NCC" });
     ok(buyBlock(s));
     expect(keys(s)).toEqual(["ledger.blockBought"]);
+    expect(last(s)).toMatchObject({ supplier: "registry", name: "RIPE-ish NCC" });
     s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
     ok(announceBlock(s, s.ips.blocks[0].id, loc, true));
     expect(keys(s)).toEqual(["ledger.providerRouting"]);
@@ -113,7 +122,7 @@ describe("network and addresses", () => {
     expect(joinLir(poor)).toEqual({ ok: false, error: "error.noCash" });
   });
 
-  it("bills a provider cable when it is installed", () => {
+  it("confirms a provider cable at the order and bills it when it is installed", () => {
     const s = freeFloor({ ...newGame(1), cash: 1e7 });
     s.hour = at(2010, 1, 1, 9);
     s.unlocks = ["network"];
@@ -122,7 +131,8 @@ describe("network and addresses", () => {
     const racks = locs.map((id) => s.racks.find((r) => r.locationId === id)!);
     const cash = s.cash;
     ok(orderProviderCable(s, racks[0].id, 0, racks[1].id, 0));
-    const cables = () => s.payables.filter((p) => p.supplier === "network");
+    const cables = () => s.payables.filter((p) => p.supplier === "network" && p.doc !== "contract");
+    expect(s.payables.filter((p) => p.supplier === "network")).toMatchObject([{ doc: "contract", amount: 0, name: "Equinox FR5" }]);
     expect(cables()).toHaveLength(0);
     while (!cables().length) tick(s);
     expect(last(s)).toMatchObject({ supplier: "network", method: "cash", doc: "receipt" });

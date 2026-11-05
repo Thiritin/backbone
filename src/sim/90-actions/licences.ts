@@ -1,21 +1,23 @@
 // docs/design/plans/billing-by-hand.md, lanes vendor-sites and shop-link: buying a shop module and registering its key in Books.
 import { yearOf } from "../00-core/time";
 import { hasModule, moduleById, MODULES } from "../10-catalog/modules";
-import { bought, licenceKey, licenceMail } from "../80-business/licences";
+import { bought, licenceKey, licenceMail, ordered } from "../80-business/licences";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import type { Method } from "../46-finance/payables";
 import { spend } from "./purchase";
 import { vendorName } from "../80-business/vendor-shop";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
 // A shop module sells on its maker's site with a key.
-export function buyLicence(s: GameState, id: string): ActionResult {
+export function buyLicence(s: GameState, id: string, method?: Method): ActionResult {
   const m = moduleById(id);
   if (!m || m.year > yearOf(s.hour)) return fail("error.unknownModule");
   if (bought(s, id)) return fail("error.moduleBought");
+  if (ordered(s, id)) return fail("error.orderOpen");
   if (!s.shop.variant) return fail("error.noShopSystem");
-  const placed = spend(s, { supplier: "shopVendor", name: vendorName(s.shop.variant), lines: [{ hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: { shop: s.shop.variant }, amount: -m.price }] });
+  const placed = spend(s, { supplier: "shopVendor", name: vendorName(s.shop.variant), lines: [{ hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: { shop: s.shop.variant }, amount: -m.price }], method });
   if (!placed.ok) return placed;
   return { ok: true };
 }

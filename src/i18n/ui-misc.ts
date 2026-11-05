@@ -259,7 +259,7 @@ export default {
   "misc.refuseRaise": () => "Refuse raise",
   "misc.rightOnBilling": () => "Right on billing",
   "misc.rightOnHowTo": () => "Right on how-to",
-  "misc.ripeMembership": () => "RIPE NCC membership",
+  "misc.ripeMembership": () => "RIPE-ish NCC membership",
   "misc.ripeText": () => "Members get an AS number and their own address blocks to announce from a datacenter.",
   "misc.role": () => "Role",
   "misc.roleAccountantMany": () => "Accountants",

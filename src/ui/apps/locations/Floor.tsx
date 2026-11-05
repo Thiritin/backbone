@@ -6,6 +6,8 @@ import { BASEMENT, RACK_MODELS, rackUnits as simRackUnits } from "../../../sim/2
 import type { GameState, Location, Rack } from "../../../sim/50-state";
 import { heightIn, rackPower } from "../../../sim/60-infra/status";
 import { buyRack } from "../../../sim/90-actions/hardware";
+import { HARDWARE_SHOP } from "../../../sim/46-finance/payables";
+import { PayButton } from "../browser/sites/shared/PayButton";
 import { DeviceSvg, LED } from "../../art/fronts";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
@@ -70,7 +72,8 @@ function FreeTile({ loc, position, onBought }: { loc: Location; position: number
               <strong className="num">{m.id === "shelf" ? t("rack.shelf") : `${m.units}U`}</strong>
               <span className="grow" />
               <span className="num">{euro(m.price)}</span>
-              <button className="btn primary" onClick={() => { const r = act(buyRack, loc.id, m.id, position); if (r.ok) { setOpen(false); if (r.id) onBought(r.id); } }}>{t("locations-1.buy")}</button>
+              <PayButton className="btn primary" supplier="hardware" name={HARDWARE_SHOP} amount={m.price}
+                run={(pm) => { const r = act(buyRack, loc.id, m.id, position, pm); if (r.ok && r.id) onBought(r.id); return r; }}>{t("locations-1.buy")}</PayButton>
             </div>
           ))}
         </div>

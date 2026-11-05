@@ -6,10 +6,11 @@ import { type GameState } from "../src/sim/50-state";
 import { networkBills, uplinkMbps } from "../src/sim/60-infra/network";
 import { jackRoles, panelOf } from "../src/sim/60-infra/panels";
 import { tick } from "../src/sim/88-tick/tick";
-import { cancelProviderCable, orderProviderCable } from "../src/sim/90-actions/connectivity";
+import { cancelProviderCable, orderProviderCable, providerCableError } from "../src/sim/90-actions/connectivity";
 import { addLocation, buyRack, connect, disconnect, orderCrossConnect } from "../src/sim/90-actions/hardware";
 import { addUplinkLink, orderTransit } from "../src/sim/90-actions/network";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { cableOrder } from "../src/ui/apps/locations/ProviderJack";
 import { buyDevice, freeFloor, newGame } from "./fixtures";
 import { mountDevice } from "./plugged";
 
@@ -159,6 +160,8 @@ describe("cross-connects and provider cables", () => {
     ok(mountDevice(s, sw, second, 1));
     ok(connect(s, { device: router, port: 0 }, { device: sw, port: 0 }, true));
     expect(err(orderProviderCable(s, rack, 0, second, 0))).toBe("error.cableByHand");
+    expect(providerCableError(s, rack, 0, second, 0)).toBe("error.cableByHand");
+    expect(cableOrder(s, rack, 0, second, 0)).toMatchObject({ blocked: "error.cableByHand", note: "payI.cableLater" });
     const a = shareRack(s), b = shareRack(s);
     const x = ok(buyDevice(s, "sw-8", "Sysko", 1, a.locationId)), y = ok(buyDevice(s, "sw-8", "Sysko", 1, b.locationId));
     ok(mountDevice(s, x, a.id, 1));

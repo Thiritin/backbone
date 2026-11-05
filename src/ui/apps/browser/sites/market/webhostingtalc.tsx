@@ -10,7 +10,7 @@ import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { CLASS_TREE, classLabel, inClass } from "../../../shop/filter";
 import { day } from "../../../hw";
-import { BuyBox, cpuName, Facts, facets, filtered, listingClass, listingName, listingRows, MyListings, onChannel, priceNow, queryOf, useShipTo, withQuery, type MarketProps, type MarketSort } from "./shared";
+import { Bought, BuyBox, cpuName, Facts, facets, filtered, listingClass, listingName, listingRows, MyListings, onChannel, priceNow, queryOf, useShipTo, withQuery, type MarketProps, type MarketSort } from "./shared";
 import "./webhostingtalc.css";
 
 // WebHostingTalc: vBolletin 3 tables in 2005, thread prefixes from 2008, a lighter ZenForo board from 2014.
@@ -222,7 +222,7 @@ export function WebHostingTalc({ game, path, year, go }: MarketProps) {
       </div>
       <main>
         {page === "/usercp.php" ? <UserCp game={game} />
-          : page === "/showthread.php" ? (l ? <Thread game={game} l={l} /> : <p className="wt-box wt-pad">{t("whtalc.invalid")}</p>)
+          : page === "/showthread.php" ? (l ? <Thread game={game} l={l} /> : <p className="wt-box wt-pad"><Bought is={(x) => x.replace(/\D/g, "") === tno}>{t("whtalc.invalid")}</Bought></p>)
           : <Forum game={game} path={path} go={go} look={look} />}
       </main>
       <footer>{t("whtalc.powered", { name: look === "xf" ? "ZenForo" : "vBolletin" })} · © {year} WebHostingTalc</footer>

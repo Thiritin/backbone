@@ -11,6 +11,8 @@ import type { GameState } from "../../../../../../sim/50-state";
 import { hasModule } from "../../../../../../sim/80-business/shop";
 import { shopVendorUrl } from "../../../../../../sim/80-business/shoplink";
 import { buyModule } from "../../../../../../sim/90-actions/shop";
+import { vendorName } from "../../../../../../sim/80-business/vendor-shop";
+import { PayButton } from "../../shared/PayButton";
 import { useStore } from "../../../../../store";
 import { formatDay } from "../../../../billing/format";
 import { methodName } from "../../../../marketing/payments";
@@ -38,7 +40,7 @@ export function Marketplace({ game, go, tab, terms }: { game: GameState; go: Scr
     if (installed(m)) return <PBadge tone="ok">{t(offer === "included" ? "marketing.included" : "marketing.installed")}</PBadge>;
     if (bought !== undefined) return <PBadge>{t("marketing.readyDay", { day: formatDay(bought) })}</PBadge>;
     if (offer === "unavailable" || offer === "included") return <PBadge>{t("marketing.notAvailable")}</PBadge>;
-    return <PBtn disabled={offer > 0 && game.cash < offer} onClick={() => act(buyModule, m)}>{offer ? t("marketing.buy") : t(terms === "box" ? "shop-admin.d.activate" : "marketing.integrate")}</PBtn>;
+    return <PayButton className="pt-btn" supplier="shopVendor" name={vendorName(id)} amount={offer} run={(pm) => act(buyModule, m, pm)}>{offer ? t("marketing.buy") : t(terms === "box" ? "shop-admin.d.activate" : "marketing.integrate")}</PayButton>;
   };
   const licensed = (m: (typeof MODULES)[number]) => registered(game, m.id)
     ? <PBadge tone="ok">{t("marketing.installed")}</PBadge>

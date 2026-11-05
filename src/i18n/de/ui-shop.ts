@@ -261,6 +261,6 @@ export default {
   "shop.storageIn": (p) => `${p.size} in ${p.n} ${plural(p.n, "Laufwerk", "Laufwerken")}, ${p.kind}`,
   "shop.duration": (p) => (Number(p.h) >= 48 ? `${Math.floor(Number(p.h) / 24)} Tage` : Number(p.h) >= 24 ? "1 Tag" : `${Math.max(1, Number(p.h))} Std.`),
   "shop.units": (p) => `${p.n} ${plural(p.n, "Einheit", "Einheiten")}`,
-  "shop.arrivesIn": (p) => `Ankunft in ${p.n} ${plural(p.n, "Tag", "Tage")}`,
+  "shop.arrivesIn": (p) => `Ankunft in ${p.n} ${plural(p.n, "Tag", "Tagen")}`,
   "shop.priceMonthly": (p) => `${p.price} / Monat${p.seat ? " pro Sitz" : ""}`,
 } satisfies Dict;

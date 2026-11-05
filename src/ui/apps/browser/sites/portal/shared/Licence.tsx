@@ -1,5 +1,6 @@
 import { PBtn } from "./ui";
 import { useState } from "react";
+import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
 import { euroPrice } from "../../../../../../sim/00-core/money";
 import { shopLicence } from "../../../../../../sim/10-catalog/shop-licences";
@@ -9,10 +10,10 @@ import type { GameState } from "../../../../../../sim/50-state";
 import { assignedKey, covers, licenceStatus, SHOP_MACHINE, trialOf } from "../../../../../../sim/60-infra/licence";
 import { supportOn } from "../../../../../../sim/60-infra/lifecycle";
 import { shopCount, shopUpdate, shopUpdatesFee } from "../../../../../../sim/80-business/shop";
-import { hostOf, upgradeOffer } from "../../../../../../sim/80-business/vendor-shop";
+import { hostOf, upgradeOffer, vendorName } from "../../../../../../sim/80-business/vendor-shop";
 import { shopBlock, shopTier } from "../../../../../../sim/80-business/website";
 import { activateLicence, removeLicence } from "../../../../../../sim/90-actions/licence";
-import { renewShopUpdates, updateShop, upgradeShop } from "../../../../../../sim/90-actions/shop";
+import { renewShopUpdates, updateShop, upgradeFee, upgradeShop } from "../../../../../../sim/90-actions/shop";
 import { formatDay } from "../../../../billing/format";
 import { useFieldAct, usePageAct } from "../../../pageAct";
 
@@ -70,13 +71,13 @@ export function UpdatesScreen({ game, browse }: Props) {
         {k?.updatesUntil !== undefined && <><dt>{t("shop-admin.updatesUntil")}</dt>
           <dd><span className="num">{formatDay(k.updatesUntil)}</span> {fee !== undefined && (account
             ? <PBtn type="button" onClick={account}>{t("vendor-shop.myAccount")}</PBtn>
-            : <PBtn type="button" onClick={() => act(renewShopUpdates)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</PBtn>)}</dd></>}
+            : <PayButton className="pt-btn" supplier="shopVendor" name={vendorName(id)} amount={fee ?? 0} run={(m) => act(renewShopUpdates, m)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</PayButton>)}</dd></>}
         {next && <><dt>{t("shop-admin.nextMajor")}</dt>
           <dd><span className="num">{next.version}</span> {price === undefined
-            ? <PBtn type="button" onClick={() => act(upgradeShop)}>{t("shop-admin.upgrade")}</PBtn>
+            ? <PayButton className="pt-btn" supplier="shopVendor" name={vendorName(id)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("shop-admin.upgrade")}</PayButton>
             : account
               ? <PBtn type="button" onClick={account}>{t("vendor-shop.myAccount")}</PBtn>
-              : <PBtn type="button" onClick={() => act(upgradeShop)}>{t("shop-admin.upgradeFor", { fee: euroPrice(price) })}</PBtn>}</dd></>}
+              : <PayButton className="pt-btn" supplier="shopVendor" name={vendorName(id)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("shop-admin.upgradeFor", { fee: euroPrice(price) })}</PayButton>}</dd></>}
       </dl>
     </div>
   );

@@ -3,7 +3,9 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
-- GnuCache is now a program of its own with menus, toolbar, tabs and status bar in the look of its era, an account tree, registers where you type a document number into the blank last row to book a bank line, reports, and a new-file assistant that creates the company.
+- GnuCache is now a program of its own with menus, toolbar, tabs and status bar in the look of its era, an account tree with the full chart, registers that list every booked line and take a document number in the blank last row, a balanced balance sheet, other reports, and a new-file assistant that creates the company.
+- Every purchase now asks how to pay in one step, takes cash until you open a bank account, names the reason up front when an order cannot go through, and afterwards shows Ordered or Paid with a link to the invoice or receipt.
+- A provider cable sends its order confirmation at once and its invoice after installation, the landlord bills you by letter, and flyers, trade fairs, review platforms, shop software, lease buyouts, cross connects and domains bill from their own vendor.
 - A step card opened while a rack is already on screen now turns it to the back for cabling, the guide counts the step you are on, and the free-slot outline disappears once a server is mounted.
 - Prefilled transfer amounts and registrar factors use your language's number format, the trade office has a German web address, the shop cart scrolls to the leasing offers, and German system messages address you as du.
 - Shop systems now come with a step-by-step installation guide, need a cron job to bill automatically, and ask for the config file under its real name and writable folders before the installer runs.

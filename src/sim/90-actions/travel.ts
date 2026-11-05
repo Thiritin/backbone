@@ -7,7 +7,7 @@ import type { Method } from "../46-finance/payables";
 import type { ActionResult } from "./hardware";
 import { methodsFor, placeOrder } from "./purchase";
 
-export const TRAVEL_VENDOR = "Wanderlust Reisen";
+export const TRAVEL_VENDOR = "Expedio";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
 export type TravelMode = "drive" | "fly";
