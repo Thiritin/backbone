@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { t } from "../../../i18n/en";
 import type { GameState } from "../../../sim/50-state";
-import { booksLinked, DOHLE_NAME, taxView } from "../../../sim/80-business/tax";
+import { DOHLE_NAME } from "../../../sim/80-business/tax";
 import { connectDohle, submitTaxReturn } from "../../../sim/90-actions/tax";
 import { useStore } from "../../store";
 import { OpenReturns } from "../dohle/OpenReturns";
+import { vatReturns } from "./data";
 import { useBooks } from "./view";
 
 export function BooksTax({ game, connect, submit }: { game: GameState; connect: (doc: string) => void; submit: (id: string) => void }) {
-  const certs = game.docs.filter((d) => d.kind === "cert");
+  const { available, linked, certs } = vatReturns(game);
   const [doc, setDoc] = useState(certs[0]?.id ?? "");
-  const linked = booksLinked(game);
   return (
     <div className="fin-scroll">
       <div className="fin-toolbar">
-        {!taxView(game) ? null
+        {!available ? null
           : linked ? <span>{DOHLE_NAME}: {t("ui-tax.books.connected")}</span>
           : (
             <>

@@ -2,25 +2,20 @@
 import { useEffect, useRef, useState } from "react";
 import { euro, euroCents } from "../../../sim/00-core/money";
 import { dateOf } from "../../../sim/00-core/time";
-import { cashFlow, monthKey, monthlyStats, monthStartOf, profitBetween, profitOf, REVENUE, runwayMonths, type MonthFlow } from "../../../sim/46-finance/finance";
+import { cashFlow, monthKey, monthlyStats, type MonthFlow } from "../../../sim/46-finance/finance";
 import type { GameState } from "../../../sim/50-state";
 import { currentVendor, hasFeature } from "../../../sim/80-business/bookkeeping";
 import { sells } from "../../../sim/10-catalog/bookkeeping";
-import { metrics } from "../../../sim/metrics";
 import { t } from "../../../i18n/en";
 import { LOCALE } from "../../../i18n/lang";
 import { formatDay } from "../billing/format";
 import { TrendCharts } from "../customers/TrendCharts";
 import { BooksLocked } from "./Locked";
+import { categoryLabel, ledgerYears, profitLoss, useLedger, useReports } from "./data";
 import { useBooks } from "./view";
 import "../shop/shop.css";
 import "./reports.css";
 
-const CATEGORY: Record<string, string> = {
-  payments: t("misc.catPayments"), setup: t("misc.catSetup"), sales: t("misc.catSales"), hardware: t("misc.catHardware"), rent: t("misc.catRent"), power: t("misc.catPower"), transit: t("misc.catTransit"), salaries: t("misc.catSalaries"),
-  leasing: t("misc.catLeasing"), maintenance: t("misc.catMaintenance"), moving: t("misc.catMoving"), insurance: t("misc.catInsurance"), loans: t("misc.catLoans"), tax: t("misc.catTax"), subscriptions: t("misc.catSubscriptions"), ai: t("misc.catAi"), marketing: t("misc.catMarketing"), fees: t("misc.catFees"), bankfees: t("misc.catBankFees"), interest: t("misc.catInterest"), other: t("misc.catOther"), travel: t("misc.catTravel"), licenses: t("misc.catLicenses"), domains: t("misc.catDomains"), credit: t("misc.catCredit"), vat: t("misc.catVat"), transfers: t("bank.catTransfers"), capital: t("bank.catCapital"),
-};
-export const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
 const monthLabel = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString(LOCALE, { month: "long", year: "numeric", timeZone: "UTC" });
 const monthShort = (key: string) => new Date(`${key}-01T00:00:00Z`).toLocaleDateString(LOCALE, { month: "short", timeZone: "UTC" });
 const compact = (v: number) => {
@@ -29,21 +24,20 @@ const compact = (v: number) => {
 };
 
 
+export { categoryLabel };
 export const runwayLabel = (months: number) => (Number.isFinite(months) ? t("misc.nMonthsDecimal", { n: months.toFixed(1) }) : "∞");
 
 // Cash, recurring revenue, last month's profit and runway; the cash flow chart comes with the reports.
 export function OverviewTab() {
   const game = useBooks();
-  const start = monthStartOf(game.hour);
-  const prev = monthStartOf(start - 1);
-  const lastMonth = profitBetween(game, prev, start);
+  const { mrr, prevMonth, lastMonth, runway } = useReports().overview();
   return (
     <div className="fin-scroll">
       <dl className="fin-totals fin-cards">
         <div><dt>{t("misc.cash")}</dt><dd className="num">{euroCents(game.cash)}</dd></div>
-        <div><dt>MRR</dt><dd className="num">{euroCents(metrics(game).mrr)}</dd></div>
-        <div><dt>{t("misc.profitIn", { month: monthLabel(monthKey(prev)) })}</dt><dd className={`num${lastMonth < 0 ? " fin-neg" : ""}`}>{euroCents(lastMonth)}</dd></div>
-        <div><dt>{t("misc.runway")}</dt><dd className="num">{runwayLabel(runwayMonths(game))}</dd></div>
+        <div><dt>MRR</dt><dd className="num">{euroCents(mrr)}</dd></div>
+        <div><dt>{t("misc.profitIn", { month: monthLabel(prevMonth) })}</dt><dd className={`num${lastMonth < 0 ? " fin-neg" : ""}`}>{euroCents(lastMonth)}</dd></div>
+        <div><dt>{t("misc.runway")}</dt><dd className="num">{runwayLabel(runway)}</dd></div>
       </dl>
       {hasFeature(game, "reports") && <><h3 className="fin-h">{t("misc.last12Months")}</h3><CashChart flows={cashFlow(game, 12)} /></>}
     </div>
@@ -98,22 +92,9 @@ function CustomerStats({ game }: { game: GameState }) {
 
 function ProfitLoss({ game }: { game: GameState }) {
   const current = dateOf(game.hour).getUTCFullYear();
-  const years = [...new Set([current, ...game.ledger.map((e) => dateOf(e.hour).getUTCFullYear())])].sort((a, b) => b - a);
+  const years = ledgerYears(game);
   const [year, setYear] = useState(current);
-  const last = year === current ? dateOf(game.hour).getUTCMonth() : 11;
-  const keys = Array.from({ length: last + 1 }, (_, m) => `${year}-${String(m + 1).padStart(2, "0")}`);
-  const sums = new Map<string, number[]>();
-  for (const e of game.ledger) {
-    const m = keys.indexOf(monthKey(e.hour));
-    if (m < 0) continue;
-    const row = sums.get(e.category) ?? Array<number>(keys.length).fill(0);
-    row[m] += e.category === "tax" ? e.amount : profitOf(e);
-    sums.set(e.category, row);
-  }
-  const cats = [...sums.keys()].filter((c) => c !== "tax" && sums.get(c)!.some((v) => v !== 0));
-  const total = (list: string[]) => keys.map((_, m) => list.reduce((sum, c) => sum + (sums.get(c)?.[m] ?? 0), 0));
-  const revenue = cats.filter((c) => REVENUE.includes(c)), costs = cats.filter((c) => !REVENUE.includes(c));
-  const before = total(cats), tax = total(["tax"]), net = keys.map((_, m) => before[m] + tax[m]);
+  const { keys, sums, revenue, costs, total, before, tax, net } = profitLoss(game, year);
   // Only result lines mark a loss in red; costs are negative by nature.
   const line = (label: string, values: number[], cls = "", result = false) => {
     const neg = (v: number) => (result && v < 0 ? " fin-neg" : "");
@@ -263,15 +244,8 @@ function CashChart({ flows }: { flows: MonthFlow[] }) {
 
 // Every booking on the company account with the running balance, one month or all.
 export function StatementTab() {
-  const game = useBooks();
   const [month, setMonth] = useState("");
-  let balance = game.cash;
-  const rows = game.ledger.map((e, i) => ({ e, i })).reverse().map(({ e, i }) => {
-    const row = { e, i, balance };
-    balance -= e.amount;
-    return row;
-  });
-  const months = [...new Set(rows.map((r) => monthKey(r.e.hour)))].sort().reverse();
+  const { rows, months } = useLedger();
   const shown = month ? rows.filter((r) => monthKey(r.e.hour) === month) : rows;
   return (
     <>
