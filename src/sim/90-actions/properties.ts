@@ -6,7 +6,8 @@ import { hallSize } from "../20-world/layout";
 import {
   DEPOSIT_MONTHS, FIT_POSITIONS, hallCapacity, hallMonthly, holdsDesks, isHalle, listingById, NOTICE_MONTHS, officeLineIn, priceFor, REFIT, rentFor, sectionIds, takenSections, UPKEEP_PER_SECTION, type Listing,
 } from "../20-world/properties";
-import { bill, SUPPLIER_NAMES, type Method } from "../46-finance/payables";
+import { bill, SUPPLIER_NAMES, type Bill, type Method } from "../46-finance/payables";
+import { post } from "../40-support/letters";
 import { methodsFor, placeOrder } from "./purchase";
 import { device, type GameState, type LedgerEntry, type Property, type SectionFit } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
@@ -17,14 +18,23 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 
 const LANDLORD = SUPPLIER_NAMES.landlord!;
 
+// The landlord sends every document on paper: the letter carrying it lands with the next morning post.
+const byPost = (s: GameState, id: string) => {
+  const p = s.payables.find((x) => x.id === id)!;
+  post(s, LANDLORD, "landlordDoc", { number: p.number, amount: Math.abs(p.amount) }, 1).payable = id;
+};
 // The landlord's document for a charge, a deposit or the price of a building: paid at once in cash, else by the method.
 const charge = (s: GameState, category: string, key: string, params: LedgerEntry["params"], amount: number, method?: Method): ActionResult => {
   const lines = [{ hour: s.hour, category, key, params, amount: -amount }];
-  return placeOrder(s, { supplier: "landlord", name: LANDLORD, lines, method: method ?? methodsFor(s, "landlord", lines, LANDLORD)[0] });
+  const r = placeOrder(s, { supplier: "landlord", name: LANDLORD, lines, method: method ?? methodsFor(s, "landlord", lines, LANDLORD)[0], paper: true });
+  if (r.ok && r.payable) byPost(s, r.payable);
+  return r;
 };
 // Money coming back is a credit note, settled at once.
-const credit = (s: GameState, key: string, params: LedgerEntry["params"], amount: number) =>
-  bill(s, { supplier: "landlord", name: LANDLORD, lines: [{ hour: s.hour, category: "rent", key, params, amount }], method: s.bank ? "transfer" : "cash", doc: "credit" });
+const credit = (s: GameState, key: string, params: LedgerEntry["params"], amount: number) => {
+  const b: Bill = { supplier: "landlord", name: LANDLORD, lines: [{ hour: s.hour, category: "rent", key, params, amount }], method: s.bank ? "transfer" : "cash", doc: "credit", paper: true };
+  byPost(s, bill(s, b).id);
+};
 
 // An office is a location from its first section on: the room the staff work in and the zone its server rooms form.
 const placeOffice = (s: GameState, p: Property, readyAt: number) => {
