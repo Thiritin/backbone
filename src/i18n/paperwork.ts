@@ -58,4 +58,6 @@ export const PAPERWORK_EN: Record<string, (p: Params) => string> = {
   "ticket.mail.notaryFiled.text": (p) => `Thank you for the signed articles of association of ${p.name}. We will file them with the commercial register within ${p.days} working days. The register confirms the entry by letter.`,
   "ticket.mail.officeReceived.subject": (p) => `Re: ${p.subject}`,
   "ticket.mail.officeReceived.text": (p) => `We have received the change of registration for ${p.name}. You will receive our confirmation by letter within ${p.days} working days.`,
+  "event.post.title": () => "New post in the letterbox",
+  "event.post.text": (p) => `${p.location}: ${p.n}`,
 };

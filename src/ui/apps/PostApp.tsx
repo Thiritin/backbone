@@ -33,7 +33,7 @@ export function PostApp() {
             {boxed.map((x) => (
               <div key={x.id} role="listitem" className="post-row boxed">
                 <strong>{x.from}</strong>
-                <small className="num">{paperDay(x.at)}</small>
+                <small className="num">{game.locations.find((o) => o.id === x.box)?.name} {paperDay(x.at)}</small>
               </div>
             ))}
           </div>

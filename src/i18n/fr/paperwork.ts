@@ -58,4 +58,6 @@ export default {
   "ticket.mail.notaryFiled.text": (p) => `Merci pour les statuts signés de ${p.name}. Nous les déposerons au registre du commerce sous ${p.days} jours ouvrés. Le registre confirmera l'inscription par courrier.`,
   "ticket.mail.officeReceived.subject": (p) => `RE : ${p.subject}`,
   "ticket.mail.officeReceived.text": (p) => `Nous avons reçu la modification d'immatriculation de ${p.name}. Vous recevrez notre confirmation par courrier sous ${p.days} jours ouvrés.`,
+  "event.post.title": () => "Nouveau courrier dans la boîte aux lettres",
+  "event.post.text": (p) => `${p.location}: ${p.n}`,
 } satisfies Dict;

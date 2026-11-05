@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- A notification tells you when post lands in a letterbox, and clicking it walks you to the letterbox.
 - Your figure now always appears in an office, also when your rooms are not on the ground floor, so you can no longer get stuck without it.
 - Importing a save no longer shows installer progress left over from the previous game.
 - Operating system installers, the webmail installer and the new virtual machine forms keep their progress when you switch to another window or tab.
