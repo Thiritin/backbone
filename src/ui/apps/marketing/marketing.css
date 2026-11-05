@@ -68,3 +68,4 @@
 .mkt-flat .shop-buy { margin-top: auto; }
 .mkt-roles { grid-template-columns: 1fr; }
 .mkt-roles select { width: 100%; min-width: 0; }
+.mkt-pay { padding: 12px 16px 0; }

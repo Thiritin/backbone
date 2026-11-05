@@ -1,6 +1,6 @@
 import { registrarById, tierFor } from "../10-catalog/registrars";
 import { domainOf, heldDomains, NS_MINUTES, nsActive, outCode, REGISTRIES, register, type NameServerMode } from "../30-customers/registry";
-import { beginTransfer, DOMAIN_OUT, TRANSFER_MINUTES } from "../30-customers/registrar";
+import { beginTransfer, DOMAIN_OUT, TRANSFER_MINUTES, wholesale } from "../30-customers/registrar";
 import { MINUTES } from "../40-support/tickets";
 import { deliverMail } from "../42-mail/sources";
 import { find, queue } from "./support";
@@ -10,8 +10,20 @@ import { nowMinutes, yearOf } from "../00-core/time";
 import { techsAt, OP_TASK, queueOp } from "../47-staff/technicians";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { placeOrder } from "./purchase";
+import { cents } from "../45-billing/billing";
+import type { Method } from "../46-finance/payables";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
+
+// The first month of a new domain, billed at the order when the page passes a method; without one it starts on the next
+// month-start invoice.
+function billDomain(s: GameState, name: string, method?: Method): ActionResult {
+  const amount = cents(wholesale(s, name) / 12), partner = registrarById(s.registrar!.id)!.name;
+  if (!method || amount <= 0) return { ok: true };
+  const lines = [{ hour: s.hour, category: "domains", key: "ledger.domains", params: { name: partner, count: 1 }, amount: -amount }];
+  return placeOrder(s, { supplier: "registrar", name: partner, lines, method });
+}
 
 // Signs the first contract, or switches to another partner: every domain then moves over, a hand task of TRANSFER_MINUTES each.
 export function signRegistrar(s: GameState, id: string): ActionResult {
@@ -34,12 +46,14 @@ export function companyDomainError(s: GameState, name: string): string | null {
 }
 
 // Registers the company's own domain through the registrar under contract; it joins the domains under management.
-export function registerCompanyDomain(s: GameState, input: string): ActionResult {
+export function registerCompanyDomain(s: GameState, input: string, method?: Method): ActionResult {
   const name = input.trim().toLowerCase();
   if (!s.registrar) return fail("error.needsRegistrar");
   if (s.company.domain) return fail("error.companyDomainOwned");
   const bad = companyDomainError(s, name);
   if (bad) return fail(bad);
+  const paid = billDomain(s, name, method);
+  if (!paid.ok) return paid;
   // The partner's confirmation of the first domain opens its login, where the DNS page edits the company zone.
   if (!s.domains.length) deliverMail(s, partnerOf(s).name, "registrarLogin", { name: partnerOf(s).name, domain: name, url: `${registrarUrl(s)}login` }, { source: "registrar" });
   register(s, name, null, false);
@@ -48,7 +62,7 @@ export function registerCompanyDomain(s: GameState, input: string): ActionResult
 }
 
 // The registrar site: signs that registrar when none is under contract yet, then registers the company domain.
-export function orderCompanyDomain(s: GameState, registrarId: string, input: string): ActionResult {
+export function orderCompanyDomain(s: GameState, registrarId: string, input: string, method?: Method): ActionResult {
   if (s.company.domain) return fail("error.companyDomainOwned");
   if (s.registrar && s.registrar.id !== registrarId) return fail("error.registrarOther");
   const bad = companyDomainError(s, input.trim().toLowerCase());
@@ -57,7 +71,7 @@ export function orderCompanyDomain(s: GameState, registrarId: string, input: str
     const signed = signRegistrar(s, registrarId);
     if (!signed.ok) return signed;
   }
-  return registerCompanyDomain(s, input);
+  return registerCompanyDomain(s, input, method);
 }
 
 // Moves the domains to the new partner by hand: the player is busy for TRANSFER_MINUTES a domain.
@@ -102,11 +116,13 @@ export function setDomainRenewal(s: GameState, name: string, on: boolean): Actio
 }
 
 // A further domain of the company's own, parked at the partner like any new order there; the partner bills it monthly.
-export function orderDomain(s: GameState, input: string): ActionResult {
+export function orderDomain(s: GameState, input: string, method?: Method): ActionResult {
   const name = input.trim().toLowerCase();
   if (!s.registrar) return fail("error.needsRegistrar");
   const bad = companyDomainError(s, name);
   if (bad) return fail(bad);
+  const paid = billDomain(s, name, method);
+  if (!paid.ok) return paid;
   register(s, name, null, false);
   s.domains = s.domains.map((d) => (d.name === name ? { ...d, ns: "registrar" } : d));
   return { ok: true, id: name };

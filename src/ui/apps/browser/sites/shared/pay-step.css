@@ -1,0 +1,5 @@
+.pay-step { display: grid; gap: 6px; flex-basis: 100%; }
+.pay-step .pay-methods { margin: 0; }
+.pay-step-sum { display: flex; justify-content: space-between; gap: 8px; margin: 0; }
+.pay-step-buttons { display: flex; justify-content: flex-end; gap: 6px; margin: 0; }
+:has(> .pay-step) { flex-wrap: wrap; }

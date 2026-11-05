@@ -12,7 +12,9 @@ import { removeDesk, subscribeDesk } from "../../../../../sim/90-actions/desk-in
 import { Confirm } from "../../../../desktop/Confirm";
 import { DESK } from "../../../support/desk";
 import { usePageAct } from "../../pageAct";
-import { OrderDone, useOrder } from "../shared/OrderDone";
+import { OrderDone } from "../shared/OrderDone";
+import { PayStep } from "../shared/PayStep";
+import type { Method } from "../../../../../sim/46-finance/payables";
 import { eraOf } from "../era";
 import { DomainRecords } from "./DomainRecords";
 import "./hosted.css";
@@ -73,15 +75,16 @@ function SignUp({ game, id, to }: Props) {
   const act = usePageAct(), d = deskById(id)!;
   const [company, setCompany] = useState(game.company.name), [email, setEmail] = useState(salesAddress(game)), [tenant, setTenant] = useState(defaultTenant(game));
   const suffix = tenantHost(d, "");
-  const o = useOrder(game, "services", d.name, -subscriptionEntry(game, deskItem(d)).amount);
+  const [step, setStep] = useState(false);
+  const buy = { supplier: "services" as const, name: d.name, amount: -subscriptionEntry(game, deskItem(d)).amount, run: (m: Method) => act(subscribeDesk, tenant, id, m) };
   return (
-    <form className="dv-form" onSubmit={(e) => { e.preventDefault(); if (o.place(() => act(subscribeDesk, tenant, id, o.method)).ok) to("account"); }}>
+    <form className="dv-form" onSubmit={(e) => { e.preventDefault(); setStep(true); }}>
       <h1>{t("desk-sites.nav.signup")}</h1>
       <label>{t("desk-sites.company")}<input value={company} onChange={(e) => setCompany(e.target.value)} /></label>
       <label>{t("desk-sites.email")}<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
       <label>{t("desk-sites.address")}<span className="dv-host"><input value={tenant} autoComplete="off" onChange={(e) => setTenant(e.target.value)} /><span>{suffix}</span></span></label>
-      {o.picker}
-      <button type="submit" className="dv-btn">{t("desk-sites.create")}</button>
+      {step ? <PayStep game={game} buy={buy} onClose={() => setStep(false)} onDone={() => to("account")} />
+        : <button type="submit" className="dv-btn">{t("desk-sites.create")}</button>}
     </form>
   );
 }

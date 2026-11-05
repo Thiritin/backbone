@@ -7,7 +7,7 @@ import { ownAddress } from "../../../../../sim/30-customers/addresses";
 import type { GameState, SpaceKind } from "../../../../../sim/50-state";
 import { debitAllowed, type Method } from "../../../../../sim/46-finance/payables";
 import { defaultMethod, methodsFor } from "../../../../../sim/90-actions/purchase";
-import { feeLine } from "../shared/PayButton";
+import { orderLines } from "../shared/PayStep";
 import { fits } from "../../../../../sim/60-infra/status";
 import { addLocation, joinWaitlist, type ActionResult } from "../../../../../sim/90-actions/hardware";
 import { formatDay } from "../../../billing/format";
@@ -37,7 +37,7 @@ export const fromPrice = (id: string): number => Math.min(...dcsOf(id).map((d) =
 
 // A colocation contract runs on account or by a direct debit whose mandate the order form gives; the sim's default goes first.
 function coloMethods(s: GameState, dc: Datacenter): Method[] {
-  const lines = feeLine(s, 0), on = methodsFor(s, "datacenter", lines, dc.name).filter((m) => m === "cash" || m === "onAccount");
+  const lines = orderLines(s, 0), on = methodsFor(s, "datacenter", lines, dc.name).filter((m) => m === "cash" || m === "onAccount");
   const all = s.bank && debitAllowed(dc.name) ? [...on, "debit" as const] : on;
   return all.sort((a, b) => Number(b === defaultMethod(s, dc.name, lines)) - Number(a === defaultMethod(s, dc.name, lines)));
 }

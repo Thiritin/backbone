@@ -55,7 +55,14 @@ export function syncProviderPanels(s: GameState): string[] {
   return moved;
 }
 
-// Orders a cable from a jack on one rented rack's panel to a jack on another's in the same building. It is billed on completion.
+// The provider that lays a cable from a device in its building: the datacenter, else the exchange.
+const cableVendor = (s: GameState, deviceId: string): string => {
+  const loc = s.locations.find((l) => l.id === s.racks.find((r) => r.id === s.devices.find((d) => d.id === deviceId)?.rackId)?.locationId);
+  return loc?.dc ? datacenterById(loc.dc).name : "DE-KICKS";
+};
+
+// Orders a cable from a jack on one rented rack's panel to a jack on another's in the same building. The provider confirms
+// the order at once and bills it on completion.
 export function orderProviderCable(s: GameState, rackA: string, jackA: number, rackB: string, jackB: number, method?: Method): ActionResult {
   const ra = s.racks.find((r) => r.id === rackA), rb = s.racks.find((r) => r.id === rackB);
   if (!ra || !rb) return fail("error.unknownRack");
@@ -70,6 +77,7 @@ export function orderProviderCable(s: GameState, rackA: string, jackA: number, r
   if (jackRoles(s, pa.id)[jackA] !== "free" || jackRoles(s, pb.id)[jackB] !== "free") return fail("error.jackTaken");
   const id = `pc${s.nextId++}`;
   s.providerCables = [...s.providerCables, { id, a: { device: pa.id, port: jackA }, b: { device: pb.id, port: jackB }, fee: PROVIDER_CABLE.fee, dueAt: s.hour + PROVIDER_CABLE.leadHours, method }];
+  bill(s, { supplier: "network", name: cableVendor(s, pa.id), lines: [], method: method ?? (s.bank ? "transfer" : "cash"), doc: "contract" });
   return { ok: true, id };
 }
 
@@ -87,9 +95,8 @@ export function providerCableTick(s: GameState): SimEvent[] {
   const name = (e: End) => s.devices.find((d) => d.id === e.device)?.name ?? "";
   for (const o of due) {
     s.cables = [...s.cables, { id: `cab${s.nextId++}`, a: o.a, b: o.b, kind: "provider", color: null }];
-    const loc = s.locations.find((l) => l.id === s.racks.find((r) => r.id === s.devices.find((d) => d.id === o.a.device)?.rackId)?.locationId);
     const line = { hour: s.hour, category: "rent", key: "ledger.providerCable", params: { a: name(o.a), b: name(o.b) }, amount: -o.fee };
-    bill(s, { supplier: "network", name: loc?.dc ? datacenterById(loc.dc).name : "DE-KICKS", lines: [line], method: o.method ?? (s.bank ? "transfer" : "cash") });
+    bill(s, { supplier: "network", name: cableVendor(s, o.a.device), lines: [line], method: o.method ?? (s.bank ? "transfer" : "cash") });
   }
   return due.map((o) => ({ app: "Locations", key: "event.providerCable", params: { a: name(o.a), b: name(o.b) } }));
 }

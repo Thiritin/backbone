@@ -7,9 +7,7 @@ import { salesAddress } from "../../../../../sim/80-business/mail";
 import type { ActionResult } from "../../../../../sim/90-actions/hardware";
 import { noAutofill } from "../../../../no-autofill";
 import { payOptions, type Offer } from "./PayMethods";
-import { freshDoc, OrderDone, startMethod } from "./PayButton";
-import type { Payable } from "../../../../../sim/46-finance/payables";
-import { useStore } from "../../../../store";
+import { OrderDone, startMethod, track } from "./OrderDone";
 import "./checkout.css";
 
 export type AddressValue = PostalAddress & { company?: string };
@@ -81,7 +79,7 @@ export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer
     : (fixed ?? []).map((m) => ({ ...m, off: null as string | null }));
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<{ order: string; info: Confirmation; doc?: Payable } | null>(null);
+  const [placed, setPlaced] = useState<{ order: string; info: Confirmation; doc?: string } | null>(null);
   const [first0, last0] = splitName(game.registration?.owner ?? "");
   const [first, setFirst] = useState(first0), [last, setLast] = useState(last0);
   const [email, setEmail] = useState(emails?.[0] ?? salesAddress(game));
@@ -100,7 +98,7 @@ export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer
         <table className="co-table"><tbody>{placed.info.bank.map(([k, v]) => <tr key={k}><td>{k}</td><td className="num">{v}</td></tr>)}</tbody></table>
       </>}
       <p>{placed.info.next}</p>
-      {placed.doc && <p><OrderDone doc={placed.doc} btn={btn} /></p>}
+      {placed.doc && <p><OrderDone game={game} payable={placed.doc} btn={btn} /></p>}
     </div>
   );
 
@@ -108,8 +106,8 @@ export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer
   const details: CheckoutDetails = { company: address.company ?? "", name: `${first.trim()} ${last.trim()}`.trim(), address, email, payment };
   const go = (n: number) => (e: FormEvent) => { e.preventDefault(); setError(null); setStep(n); };
   const order = () => {
-    const before = useStore.getState().game, r = place(details);
-    if (r.ok) return setPlaced({ order: r.id ?? "", info: confirm(r.id ?? "", kind), doc: freshDoc(before) });
+    const r = track(() => place(details));
+    if (r.ok) return setPlaced({ order: r.id ?? "", info: confirm(r.id ?? "", kind), doc: r.payable });
     setError(t(r.error, r.params));
     setStep(STEP_OF[r.error] ?? 2);
   };

@@ -4,7 +4,7 @@ import type { GameState } from "../50-state";
 import { BUDGETS, CAMPAIGNS, DISCOUNTS, OWNED, owns, PLATFORMS, reach, type CampaignChannel, type OwnedChannel, type PlatformId } from "../80-business/marketing";
 import { hasMarketingManager } from "../47-staff/staff";
 import { fairCost, upcomingFairs } from "../80-business/fairs";
-import { FLYER_SIZES, flyerPrice } from "../10-catalog/flyers";
+import { FLYER_NAME, FLYER_SIZES, flyerPrice } from "../10-catalog/flyers";
 import { designQuote, generationOf } from "../80-business/website";
 import { metrics } from "../metrics";
 import { TIERS, TIER_IDS, type TierId } from "../10-catalog/hosttoast";
@@ -14,9 +14,10 @@ import type { Method } from "../46-finance/payables";
 import { AGENCY_TITLE } from "../80-business/browser";
 import { methodsFor, placeOrder } from "./purchase";
 
-const order = (s: GameState, key: string, params: Record<string, string | number>, amount: number, method?: Method) => {
+// Bills a marketing purchase to its vendor: the agency, the print shop or the fair.
+const order = (s: GameState, name: string, key: string, params: Record<string, string | number>, amount: number, method?: Method) => {
   const lines = [{ hour: s.hour, category: "marketing", key, params, amount: -amount }];
-  return placeOrder(s, { supplier: "services", name: AGENCY_TITLE, lines, method: method ?? methodsFor(s, "services", lines, AGENCY_TITLE)[0] });
+  return placeOrder(s, { supplier: "services", name, lines, method: method ?? methodsFor(s, "services", lines, name)[0] });
 };
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -29,7 +30,7 @@ export function setUpChannel(s: GameState, channel: OwnedChannel, method?: Metho
   if (channel === "website" && !s.marketing.launched) return fail("error.needsLaunch");
   if (yearOf(s.hour) < def.fromYear) return fail("error.channelLater");
   const price = channel === "website" ? designQuote(s) : def.setup;
-  const paid = order(s, "ledger.marketingSetup", { channel }, price, method);
+  const paid = order(s, AGENCY_TITLE, "ledger.marketingSetup", { channel }, price, method);
   if (!paid.ok) return paid;
   s.marketing = { ...s.marketing, owned: [...s.marketing.owned, channel], ...(channel === "website" && { designYear: generationOf(yearOf(s.hour)) }) };
   return { ok: true, id: channel };
@@ -74,7 +75,7 @@ export function bookFair(s: GameState, fairId: string, employeeId: string, metho
   if (!e) return fail("error.unknownEmployee");
   if (s.fairs.some((b) => b.employeeId === e.id && b.start < next.end && next.start < b.end)) return fail("error.attendeeBusy");
   const cost = fairCost(next.fair, next.year);
-  const paid = order(s, "ledger.tradeFair", { name: next.fair.name }, cost, method);
+  const paid = order(s, next.fair.name, "ledger.tradeFair", { name: next.fair.name }, cost, method);
   if (!paid.ok) return paid;
   s.fairs = [...s.fairs, { fair: fairId, year: next.year, employeeId, start: next.start, end: next.end, attended: null, leads: 0 }];
   return { ok: true };
@@ -104,7 +105,7 @@ export function orderFlyers(s: GameState, city: string, size: number, method?: M
   if (!FLYER_SIZES.includes(size)) return fail("error.flyerSize");
   if (!s.locations.some((l) => l.city === city)) return fail("error.flyerCity");
   const cost = flyerPrice(size, yearOf(s.hour));
-  const paid = order(s, "ledger.flyers", { city, size }, cost, method);
+  const paid = order(s, FLYER_NAME, "ledger.flyers", { city, size }, cost, method);
   if (!paid.ok) return paid;
   const id = `flyer-${s.marketing.flyers.length + 1}`;
   s.marketing = { ...s.marketing, flyers: [...s.marketing.flyers, { id, city, size, orderedAt: s.hour, flyersLeft: size, leads: 0 }] };

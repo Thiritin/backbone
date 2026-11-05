@@ -3,7 +3,7 @@ import { hallOf } from "../20-world/properties";
 import { rand } from "../00-core/rng";
 import { freeRackTiles, officePlan, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
-import { billDue, CONTRACTOR, canPay, debitAllowed, HARDWARE_SHOP, type Method } from "../46-finance/payables";
+import { billDue, CONTRACTOR, canPay, debitAllowed, HARDWARE_SHOP, type Method, type SupplierId } from "../46-finance/payables";
 import { bankOf } from "../46-finance/bank";
 import { INVOICE_AFTER, paidOrders, placeOrder } from "./purchase";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
@@ -52,11 +52,12 @@ function nextName(base: string, taken: string[]): string {
   return `${base}-${String(n).padStart(2, "0")}`;
 }
 
-// Spending books a vendor document (the contractor, or the hardware shop for goods); income and own travel go straight to cash.
-const book = (s: GameState, category: string, key: string, params: Record<string, string | number>, amount: number, vendor?: string) => {
+// Spending books a vendor document (the contractor, the hardware shop for goods and leases, or the vendor given); income
+// and own travel go straight to cash.
+const book = (s: GameState, category: string, key: string, params: Record<string, string | number>, amount: number, vendor?: string, supplier?: SupplierId) => {
   if (amount < 0 && category !== "travel") {
-    const goods = category === "hardware";
-    billDue(s, goods ? "hardware" : "contractor", vendor ?? (goods ? HARDWARE_SHOP : CONTRACTOR), [{ hour: s.hour, category, key, params, amount }]);
+    const goods = category === "hardware" || category === "leasing";
+    billDue(s, supplier ?? (goods ? "hardware" : "contractor"), vendor ?? (goods ? HARDWARE_SHOP : CONTRACTOR), [{ hour: s.hour, category, key, params, amount }]);
     return;
   }
   s.cash = cents(s.cash + amount);
@@ -195,7 +196,7 @@ export function orderCrossConnect(s: GameState, contractId: string, to: string, 
   if (!canPay(s, setup)) return fail("error.noCash");
   const x = { id: newId(s, "xc"), contractId, to, monthly: dc.crossConnect, since: s.hour, jack };
   s.crossConnects = [...s.crossConnects, x];
-  book(s, "rent", "ledger.crossConnectSetup", { to: targetName(to), dc: dc.id }, -setup);
+  book(s, "rent", "ledger.crossConnectSetup", { to: targetName(to), dc: dc.id }, -setup, dc.name, "datacenter");
   return { ok: true, id: x.id };
 }
 

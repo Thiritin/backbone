@@ -11,7 +11,7 @@ import { addToCart, cancelLicence, changeEdition, checkout, removeFromCart } fro
 import { groupIban, ibanEra } from "../../../../../sim/46-finance/bank";
 import { supplierAccount, supplierCode, supplierIban } from "../../../../../sim/46-finance/payables";
 import { Checkout, type Confirmation, type PaymentKind } from "../shared/Checkout";
-import { feeLine } from "../shared/PayButton";
+import { orderLines } from "../shared/PayStep";
 import { useStore } from "../../../../store";
 import { day } from "../../../hw";
 import "./shop.css";
@@ -79,7 +79,7 @@ export function Cart({ host, btn, account }: ShopProps & { host: string; account
       <>
         <Checkout game={game} btn={btn} total={euroPrice(total)}
           lines={lines.map((l) => ({ label: lineName(l.product, l.edition, lineMajor(game, l), l.from), qty: l.qty, price: euroPrice((lineOffer(game, l)?.fee ?? 0) * l.qty) }))}
-          offer={{ supplier: "software", lines: feeLine(game, total), name: vendorName(lines[0]?.product ?? "") }}
+          offer={{ supplier: "software", lines: orderLines(game, total), name: vendorName(lines[0]?.product ?? "") }}
           emails={[defaultMailTo(game), ...ownAddresses(game).filter((x) => x !== defaultMailTo(game))]}
           place={(d) => attempt(checkout, host, { ...d, payment: d.payment.kind === "card" ? d.payment : { kind: "transfer" } }, d.payment.kind)}
           confirm={confirm} />

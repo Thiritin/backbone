@@ -7,7 +7,8 @@ import { BADGE_TRUST, TIERS, TRUST_CAP } from "../10-catalog/hosttoast";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
-import { bill as billVendor, invoice } from "../46-finance/payables";
+import { bill as billVendor, invoice, type SupplierId } from "../46-finance/payables";
+import { vendorName } from "./vendor-shop";
 import type { SimEvent } from "../88-tick/tick";
 import { AGENCY_TITLE } from "./browser";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
@@ -212,16 +213,20 @@ function bill(s: GameState): number {
     ...s.marketing.owned.filter((c) => OWNED[c].upkeep > 0).map((c) => entry("ledger.marketingUpkeep", { channel: c }, OWNED[c].upkeep)),
     ...s.marketing.campaigns.map((c) => entry("ledger.marketingCampaign", { channel: c.channel }, c.budget)),
   ];
-  const platform = s.marketing.platform && PLATFORMS[s.marketing.platform];
-  if (platform && platform.fee > 0) bills.push(entry("ledger.reviewPlatform", { name: platform.name }, platform.fee));
   if (siteHostingCost(s) > 0) bills.push(entry("ledger.siteHosting", {}, siteHostingCost(s)));
-  bills.push(...shopBills(s).map((b) => entry(b.key, b.params, b.amount)));
-  const total = bills.reduce((n, b) => n - b.amount, 0);
-  if (bills.length) {
-    if (s.bank) invoice(s, "services", AGENCY_TITLE, bills);
-    else billVendor(s, { supplier: "services", name: AGENCY_TITLE, lines: bills, method: "cash" });
-  }
-  return total;
+  // The review platform and the shop software bill their own share.
+  const platform = s.marketing.platform && PLATFORMS[s.marketing.platform];
+  const own = platform && platform.fee > 0 ? [entry("ledger.reviewPlatform", { name: platform.name }, platform.fee)] : [];
+  const cut = shopBills(s).map((b) => entry(b.key, b.params, b.amount));
+  const send = (supplier: SupplierId, name: string, lines: LedgerEntry[]) => {
+    if (!lines.length) return;
+    if (s.bank) invoice(s, supplier, name, lines);
+    else billVendor(s, { supplier, name, lines, method: "cash" });
+  };
+  send("services", AGENCY_TITLE, bills);
+  if (platform) send("services", platform.name, own);
+  if (s.shop.variant) send("shopVendor", vendorName(s.shop.variant), cut);
+  return [...bills, ...own, ...cut].reduce((n, b) => n - b.amount, 0);
 }
 
 function invite(s: GameState, events: SimEvent[]): void {
