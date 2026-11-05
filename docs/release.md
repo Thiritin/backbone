@@ -55,7 +55,7 @@ To write the notes by hand, put them in a file and add `--notes-file <path>` to 
 `.github/workflows/release.yml` runs these jobs for the release tag.
 
 1. `gate` checks that the tag is `vX.Y.Z`, runs `npm run typecheck` and `npm test` at the tagged commit, and fills the release notes from the `CHANGELOG.md` bullets added since the previous release when the release body is empty.
-2. `desktop` (`desktop.yml`) builds the macOS (arm64 and x64), Windows and Linux installers at the tagged commit, signs the update bundles, and attaches the installers, signatures and `latest.json` to the release. The release notes become the notes in `latest.json`.
+2. `desktop` (`desktop.yml`) builds the macOS (Apple silicon only), Windows and Linux installers at the tagged commit, signs the update bundles, and attaches the installers, signatures and `latest.json` to the release. The release notes become the notes in `latest.json`.
 3. `pages` (`pages.yml`) builds the site at the tagged commit and deploys it to GitHub Pages.
 4. `discord` posts the release notes to the changelog channel after the other jobs pass. It uploads a `discord-posted.txt` file to the release, and a run that finds the file does not post again.
 

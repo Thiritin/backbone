@@ -2,6 +2,10 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-05
+
+- The macOS desktop app is built for Macs with Apple silicon.
+
 ## 2026-11-04
 
 - The travel map now shows roads, railways, rivers, forests, parks and towns at every zoom between the street and the whole of Europe, with town names in your language.
