@@ -1,18 +1,20 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { euroPrice } from "../../../../../sim/00-core/money";
 import type { Method, SupplierId } from "../../../../../sim/46-finance/payables";
 import type { GameState, LedgerEntry } from "../../../../../sim/50-state";
 import type { ActionResult } from "../../../../../sim/90-actions/hardware";
+import { quietly } from "../../../../store";
 import { OrderDone, startMethod, track } from "./OrderDone";
 import { PayMethods, payOptions, type PayRow } from "./PayMethods";
 import "./pay-step.css";
 
 // A purchase waiting for its payment method: run places it with the chosen one. extra rows (lease offers) follow the
 // methods in the same list and place the order through runExtra. A cardOnly purchase takes the card or an extra row.
+// blocked is the error key of a purchase known to fail, shown in place of a confirm that would only report it.
 export interface Purchase {
   supplier: SupplierId; name: string; amount: number; run: (m: Method) => ActionResult;
-  cardOnly?: boolean; extra?: PayRow[]; runExtra?: (id: string) => ActionResult;
+  cardOnly?: boolean; extra?: PayRow[]; runExtra?: (id: string) => ActionResult; blocked?: string | null;
 }
 
 export const orderLines = (s: GameState, amount: number): LedgerEntry[] => [{ hour: s.hour, category: "", key: "", params: {}, amount: -amount }];
@@ -39,25 +41,42 @@ export function PayStep({ game, buy, onClose, onDone, onPick }: {
 }) {
   const [chosen, setChosen] = useState<string | null>(null);
   const [placed, setPlaced] = useState<{ payable?: string } | null>(null), [error, setError] = useState<string | null>(null);
+  const root = useRef<HTMLDivElement>(null), seen = useRef<string | null>(null);
+  useEffect(() => reveal(root.current), []);
   if (placed) return <div className="pay-step">{placed.payable ? <OrderDone payable={placed.payable} /> : t("purchase.done.ordered")}</div>;
   const rows = payRows(game, buy), pick = startRow(game, buy, rows, chosen);
+  // The row the player last saw selected; a later switch away from it, such as a revoked mandate, is named.
+  seen.current ??= pick;
   const extra = buy.extra?.some((r) => r.id === pick);
+  const moved = pick && !extra && seen.current !== pick ? t(`purchase.method.${pick}`) : null;
   const place = () => {
     if (!pick) return;
-    const r = track(() => (extra ? buy.runExtra!(pick) : buy.run(pick as Method)));
+    const r = quietly(() => track(() => (extra ? buy.runExtra!(pick) : buy.run(pick as Method))));
     if (!r.ok) return setError(t(r.error, r.params));
     if (onDone) onDone(r.payable);
     else setPlaced({ payable: r.payable });
   };
+  const alert = buy.blocked ? t(buy.blocked) : error;
   return (
-    <div className="pay-step">
-      <PayMethods rows={rows} value={pick} onChange={(id) => { setChosen(id); onPick?.(id); }} />
-      {error && <p className="pay-step-error" role="alert">{error}</p>}
+    <div className="pay-step" ref={root}>
+      <PayMethods rows={rows} value={pick} onChange={(id) => { seen.current = id; setChosen(id); onPick?.(id); }} />
+      {moved && <p className="pay-step-note" role="status">{t("payG.methodNow", { method: moved })}</p>}
+      {alert && <p className="pay-step-error" role="alert">{alert}</p>}
       <p className="pay-step-sum"><span>{t("checkout.total")}</span><strong>{euroPrice(buy.amount)}</strong></p>
       <p className="pay-step-buttons">
         <button type="button" className="btn" onClick={onClose}>{t("desktop.cancel")}</button>
-        <button type="button" className="btn primary" disabled={!pick} onClick={place}>{t(pick === "cash" ? "payD.pay" : "checkout.placeOrder")}</button>
+        <button type="button" className="btn primary" disabled={!pick || !!buy.blocked} onClick={place}>{t(pick === "cash" ? "payD.pay" : "checkout.placeOrder")}</button>
       </p>
     </div>
   );
+}
+
+// Scrolls the nearest scrolling ancestor just far enough to show el's bottom edge, where the confirm button sits.
+function reveal(el: HTMLElement | null) {
+  for (let p = el?.parentElement; el && p; p = p.parentElement) {
+    if (p.scrollHeight <= p.clientHeight || !/auto|scroll/.test(getComputedStyle(p).overflowY)) continue;
+    const below = el.getBoundingClientRect().bottom - p.getBoundingClientRect().bottom;
+    if (below > 0) p.scrollTop += below + 8;
+    return;
+  }
 }

@@ -8,7 +8,7 @@ import type { GameState, Location } from "../../../sim/50-state";
 import { addressesOf, dynamicLine, freeV4, lineActive, machineLocation, publicV4, publicV6, v6Offered, type Address, type AddressSource, machineAddress } from "../../../sim/60-infra/addresses";
 import { addressOf, macOf } from "../../../sim/60-infra/lan";
 import { fullTableAt } from "../../../sim/60-infra/routers";
-import { addAddress, announceBlock, assignAddress, buyAddresses, buyBlock, joinLir, releaseAddress, requestDelist } from "../../../sim/90-actions/addresses";
+import { addAddress, announceBlock, announceError, assignAddress, buyAddresses, buyBlock, joinLir, lirError, releaseAddress, requestDelist } from "../../../sim/90-actions/addresses";
 import { useStore } from "../../store";
 import { PayStep, type Purchase } from "../browser/sites/shared/PayStep";
 import { formatDay } from "../billing/format";
@@ -145,7 +145,7 @@ export function Ripe({ game }: { game: GameState }) {
   const ripe = { supplier: "registry" as const, name: SUPPLIER_NAMES.registry! };
   // Routing by the provider has a setup fee; a block announced from the own BGP router costs nothing.
   const announce = (block: string, l: Location) => fullTableAt(game, l.id) ? act(announceBlock, block, l.id, false)
-    : setBuy({ key: `announce-${block}-${l.id}`, supplier: "network", name: datacenterById(l.dc!).name, amount: PROVIDER_ROUTING_SETUP, run: (m) => act(announceBlock, block, l.id, true, m) });
+    : setBuy({ key: `announce-${block}-${l.id}`, supplier: "network", name: datacenterById(l.dc!).name, amount: PROVIDER_ROUTING_SETUP, run: (m) => act(announceBlock, block, l.id, true, m), blocked: announceError(game, block, l.id, true) });
   const body = !lir ? (
     <div className="shop-grid net-top">
       <div className="shop-card">
@@ -155,7 +155,7 @@ export function Ripe({ game }: { game: GameState }) {
           <div><dt>{t("misc.perYear2")}</dt><dd className="num">{euro(LIR_FEES.yearly)}</dd></div>
           <div><dt>{t("misc.firstBlock")}</dt><dd className="num">{free ? t("misc.blockSize", { prefix: free.prefix, size: free.size.toLocaleString(LOCALE) }) : t("misc.none")}</dd></div>
         </dl>
-        <div className="shop-buy"><span className="grow" /><button className="btn primary" onClick={() => setBuy({ key: "lir", ...ripe, amount: LIR_FEES.signup, run: (m) => act(joinLir, m) })}>{t("misc.join")}</button></div>
+        <div className="shop-buy"><span className="grow" /><button className="btn primary" onClick={() => setBuy({ key: "lir", ...ripe, amount: LIR_FEES.signup, run: (m) => act(joinLir, m), blocked: lirError(game) })}>{t("misc.join")}</button></div>
       </div>
     </div>
   ) : (

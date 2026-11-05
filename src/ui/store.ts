@@ -225,6 +225,14 @@ export const uiSound = (kind: UiSound) => {
 const pending = new Set<Sound>(), lastPlayed: Partial<Record<Sound, number>> = {};
 let lastBanner = -Infinity;
 
+// Runs fn with action failures kept off the notifications and pages, for a caller that shows the error itself.
+let quiet = false;
+export function quietly<T>(fn: () => T): T {
+  quiet = true;
+  try { return fn(); } finally { quiet = false; }
+}
+export const isQuiet = () => quiet;
+
 function loadTheme(): Theme {
   try {
     const saved = localStorage.getItem(THEME_KEY);
@@ -337,7 +345,7 @@ export const useStore = create<Store>((set, get) => ({
   },
   act: (fn, ...args) => {
     const r = get().attempt(fn, ...args);
-    if (!r.ok) {
+    if (!r.ok && !quiet) {
       lastBanner = Date.now();
       // The failure belongs to the front window's app, or in the room to the room.
       const { surface, windows, game } = get(), top = windows.filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];

@@ -17,7 +17,7 @@ import {
 import { routerMbps } from "../../../sim/60-infra/routers";
 import { panelOf } from "../../../sim/60-infra/panels";
 import {
-  acceptPeering, addUplinkLink, cancelUplink, cancelZoneLink, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering,
+  acceptPeering, addUplinkLink, asnError, cancelUplink, cancelZoneLink, exchangeError, joinExchange, orderExchangePort, orderTransit, orderZoneLink, registerAsn, rejectPeering,
   requestPeering, setBlackhole,
 } from "../../../sim/90-actions/network";
 import { SUPPLIER_NAMES } from "../../../sim/46-finance/payables";
@@ -291,8 +291,8 @@ function ExchangeOrder({ game, loc }: { game: GameState; loc: Location }) {
   if (!x) return null;
   const member = game.network.memberships.includes(x.id);
   let action: ReactNode;
-  if (!game.network.asn) action = <button className="btn" onClick={() => setBuy({ key: "asn", supplier: "registry", name: SUPPLIER_NAMES.registry!, amount: ASN_FEE, run: (m) => act(registerAsn, m) })}>{t("locations-2.registerAsn", { fee: euro(ASN_FEE) })}</button>;
-  else if (!member) action = <button className="btn primary" onClick={() => setBuy({ key: "join", supplier: "network", name: x.name, amount: EXCHANGE_FEES.setup, run: (m) => act(joinExchange, x.id, m) })}>{t("locations-2.joinFor", { fee: euro(EXCHANGE_FEES.setup) })}</button>;
+  if (!game.network.asn) action = <button className="btn" onClick={() => setBuy({ key: "asn", supplier: "registry", name: SUPPLIER_NAMES.registry!, amount: ASN_FEE, run: (m) => act(registerAsn, m), blocked: asnError(game) })}>{t("locations-2.registerAsn", { fee: euro(ASN_FEE) })}</button>;
+  else if (!member) action = <button className="btn primary" onClick={() => setBuy({ key: "join", supplier: "network", name: x.name, amount: EXCHANGE_FEES.setup, run: (m) => act(joinExchange, x.id, m), blocked: exchangeError(game, x.id) })}>{t("locations-2.joinFor", { fee: euro(EXCHANGE_FEES.setup) })}</button>;
   else action = <button className="btn primary" onClick={() => act(orderExchangePort, rack || loc.id, gbit)}>{t("locations-2.orderPort")}</button>;
   return (
     <>

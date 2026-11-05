@@ -172,6 +172,17 @@
 .shop-list { flex: 1; min-width: 0; overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; align-content: start; }
 .shop-row { border-bottom: var(--ar-bw) solid var(--line); }
 .shop-row-main { display: grid; grid-template-columns: 64px minmax(160px, 1.1fr) minmax(0, 2fr) auto; align-items: center; gap: 14px; padding: 8px 4px; }
+/* Beside the open cart the list is too narrow for one line per row: specs and price go below the picture and name. */
+.shop-list { container-type: inline-size; }
+@container (max-width: 600px) {
+  .shop-row-main { grid-template-columns: 64px minmax(0, 1fr); }
+  .shop-row-specs, .shop-row-buy { grid-column: 1 / -1; }
+  .shop-row-buy { justify-items: start; min-width: 0; }
+  .shop-row-specs div { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+  .shop-row .shop-row-specs dd { white-space: normal; overflow-wrap: anywhere; }
+  .shop-row-act, .shop-row-buy .shop-config { flex-wrap: wrap; }
+  .shop-row-buy select { min-width: 0; max-width: 100%; }
+}
 .shop-row-pic { height: 44px; display: grid; place-items: center; overflow: hidden; }
 .shop-row-name { display: grid; gap: 2px; min-width: 0; }
 .shop-row-name strong { font-weight: 650; font-size: 12.5px; }

@@ -122,9 +122,13 @@ export function cancelUplink(s: GameState, uplinkId: string): ActionResult {
 }
 
 // Registers your own AS number, which exchanges ask for.
+// The error registering an AS number runs into before any payment, or null.
+export const asnError = (s: GameState): string | null =>
+  !s.unlocks.includes("network") ? "error.needsNetwork" : s.network.asn ? "error.hasAsn" : null;
+
 export function registerAsn(s: GameState, method?: Method): ActionResult {
-  if (!s.unlocks.includes("network")) return fail("error.needsNetwork");
-  if (s.network.asn) return fail("error.hasAsn");
+  const no = asnError(s);
+  if (no) return fail(no);
   const asn = 20000 + Math.floor(rand(hashRng(s.seed, 0xa5)) * 40000);
   const paid = pay(s, SUPPLIER_NAMES.registry!, "ledger.asn", { asn }, ASN_FEE, method);
   if (!paid.ok) return paid;
@@ -132,12 +136,19 @@ export function registerAsn(s: GameState, method?: Method): ActionResult {
   return { ok: true, id: String(asn) };
 }
 
-export function joinExchange(s: GameState, exchangeId: string, method?: Method): ActionResult {
-  if (!s.unlocks.includes("network")) return fail("error.needsNetwork");
+// The error joining an exchange runs into before any payment, or null.
+export function exchangeError(s: GameState, exchangeId: string): string | null {
+  if (!s.unlocks.includes("network")) return "error.needsNetwork";
   const x = exchangeById(exchangeId);
-  if (!x) return fail("error.noExchange");
-  if (!s.network.asn) return fail("error.needsAsn");
-  if (s.network.memberships.includes(x.id)) return fail("error.alreadyMember");
+  if (!x) return "error.noExchange";
+  if (!s.network.asn) return "error.needsAsn";
+  return s.network.memberships.includes(x.id) ? "error.alreadyMember" : null;
+}
+
+export function joinExchange(s: GameState, exchangeId: string, method?: Method): ActionResult {
+  const no = exchangeError(s, exchangeId);
+  if (no) return fail(no);
+  const x = exchangeById(exchangeId)!;
   const paid = pay(s, x.name, "ledger.exchangeJoin", { exchange: x.name }, EXCHANGE_FEES.setup, method);
   if (!paid.ok) return paid;
   set(s, { memberships: [...s.network.memberships, x.id] });
