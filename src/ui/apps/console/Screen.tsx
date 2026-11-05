@@ -127,8 +127,8 @@ function DeviceScreen({ game, device: d, via, active = true, onRestart }: { game
   const devices = ["Hard Disk", ...(usb ? [`USB: ${stickName(usb)}`] : []), "Network (PXE)"];
   const dark = kind === "dark" || (via === "bmc" && d.bmcHung);
   const shown = dark ? "dark" : menu ? "menu" : kind === "setup" ? "bios" : kind;
-  // On a monitor at the rack, Ctrl+Alt+Del restarts a machine whose OS is up and has not asked for it itself.
-  const restart = via === "monitor" && (kind === "login" || kind === "desktop") && !os.keys.includes("CtrlAltDel");
+  // On a monitor at the rack, Ctrl+Alt+Del restarts a machine whose OS is up, except where the key is the OS's own: the Windoors lock and user prompts.
+  const restart = via === "monitor" && (kind === "desktop" || (kind === "login" && os.look !== "win")) && !os.keys.includes("CtrlAltDel");
   const onKey = (key: string) => {
     if (key === "CtrlAltDel" && restart) { if (act(POWER_ACTION.reboot, d.id).ok) onRestart?.(); }
     else if (shown === "post" || shown === "notFound") { if (key === "Delete" || key === "F2") act(enterSetup, d.id); else if (key === "F11") { setMenuFor(d.bootUntil ?? 0); setPick(0); } }

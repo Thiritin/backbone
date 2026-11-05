@@ -15,6 +15,11 @@ export function setPlug(id: string | null): void {
   subs.forEach((f) => f());
 }
 export const usePlug = (): string | null => useSyncExternalStore((f) => { subs.add(f); return () => { subs.delete(f); }; }, () => plugged);
+// The cable as drawn: a server that was unmounted or sold has no cable on it.
+export const useCable = (game: GameState): string | null => {
+  const id = usePlug();
+  return id && game.devices.some((d) => d.id === id && d.rackId) ? id : null;
+};
 export const getPlug = (): string | null => plugged;
 export const noteSelected = (id: string | null): void => { if (id) last = id; };
 

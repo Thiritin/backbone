@@ -22,7 +22,7 @@ import "../../apps/locations/locations.css";
 import { Slab } from "../panel/Slab";
 import { endName } from "./Cables";
 import { CrashCart } from "./CrashCart";
-import { noteSelected, setPlug, usePlug } from "./cartPlug";
+import { noteSelected, setPlug, useCable } from "./cartPlug";
 import { LidScene } from "./LidScene";
 import { jackEntries, jacksOf, jackText, ProviderPanel } from "./ProviderPanel";
 import { panelOf } from "../../../sim/60-infra/panels";
@@ -67,7 +67,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   // The provider jack whose tag hangs open.
   const [jack, setJack] = useState<number | null>(null);
   const stage = useRef<HTMLDivElement>(null), scene = useRef<HTMLDivElement>(null), tagEl = useRef<HTMLDivElement>(null);
-  const plugged = usePlug();
+  const plugged = useCable(game);
   const pick = (id: string | null) => { noteSelected(id); setSel(id); setFree(null); setLid(null); setRenaming(false); setPort(null); setJack(null); };
   const menus = useDeviceMenu(game, pick, (id) => { pick(id); setRenaming(true); }, [lid, (id) => { if (id) pick(id); setLid(id); }], true);
   const work = useHandWork();
@@ -302,7 +302,7 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
         {lid && dev && <LidScene key={lid} deviceId={lid} onClose={() => setLid(null)} />}
       </div>
       {menus.dialog}
-      {cart && game.devices.some((x) => x.id === cart) && <CrashCart deviceId={cart} onClose={() => setCart(null)} />}
+      {cart && game.devices.some((x) => x.id === cart) && <CrashCart deviceId={cart} onClose={() => setCart(null)} backLabel={t("console.back")} />}
       {work.dialog}
     </Slab>
   );

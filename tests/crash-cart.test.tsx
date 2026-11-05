@@ -47,6 +47,18 @@ describe("crash cart", () => {
     expect(renderToString(<Screen game={s} device={d} via="bmc" />)).not.toContain("Ctrl+Alt+Del");
   });
 
+  it("treats a sold or unmounted server as unplugged at once", () => {
+    const s = readyGame(5);
+    const loc = s.locations.find((l) => l.space === "basement")!;
+    s.player.at = loc.id;
+    const d = structuredClone(s.devices.find((x) => x.id === "dev3")!);
+    d.id = "dev9";
+    s.devices.push(d);
+    expect(cartTarget(s, loc.id, "dev9", null)).toBe("dev9");
+    s.devices = s.devices.filter((x) => x.id !== "dev9");
+    expect(cartTarget(s, loc.id, "dev9", null)).toBe("dev3");
+  });
+
   it("offers F11 but no restart while the machine is not up", () => {
     const s = readyGame(5);
     const d = s.devices.find((x) => x.id === "dev3")!;
