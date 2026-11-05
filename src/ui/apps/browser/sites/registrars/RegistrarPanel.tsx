@@ -82,7 +82,7 @@ export function RegistrarPanel({ game, r, page, go }: { game: GameState; r: Regi
                       <td className="num">{formatDay(d.expiresAt)}</td>
                       <td>{t(d.cancelled || !live ? "registrarPanel.off" : "registrarPanel.on")}</td>
                       <td>{t(`registrarPanel.status.${status}`)}</td>
-                      <td className="num">{t(modeKey(d.ns))}: {configured(game, d).join(", ")} <NsBadge game={game} d={d} /></td>
+                      <td className="rgp-nscell"><div>{t(modeKey(d.ns))}</div><div className="num rgp-hosts">{configured(game, d).join(", ")}</div><NsBadge game={game} d={d} /></td>
                       <td className="num">{d.code && status !== "gone" ? d.code : live && <button className="bks-btn" onClick={() => act(generateAuthCode, d.name)}>{t("registrarPanel.generate")}</button>}</td>
                       <td>{live && <button className="bks-btn" onClick={() => act(setDomainRenewal, d.name, !!d.cancelled)}>{t(d.cancelled ? "registrarPanel.renew" : "registrarPanel.cancel")}</button>}</td>
                     </tr>
@@ -122,8 +122,9 @@ function DomainPage({ game, d, owner }: { game: GameState; d: Domain; owner: (id
         </table>
       </section>
       <section className="bks-box">
-        <h2>{t("registrarPanel.nameServers")} <NsBadge game={game} d={d} /></h2>
+        <h2>{t("registrarPanel.nameServers")}</h2>
         <form className="rgp-ns" onSubmit={(e) => { e.preventDefault(); save(); }}>
+          <NsBadge game={game} d={d} />
           <label className="bks-row">
             <input type="radio" name="ns" checked={!custom} onChange={() => setCustom(false)} />
             <span>{t("registrarPanel.ns.registrar")}</span>

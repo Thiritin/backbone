@@ -39,6 +39,7 @@ export default {
   "registrarPanel.save": () => "Save",
   "registrarPanel.nsStatus.active": () => "Active",
   "registrarPanel.nsStatus.propagating": (p) => `Propagating (${p.n} min left)`,
+  "registrarPanel.nsStatus.previous": () => "Previous name servers still answer",
   "registrarPanel.nsStatus.silent": () => "Not responding",
   "registrarPanel.parkedAt": (p) => `${p.domain} is parked at ${p.name}.`,
 } satisfies Dict;

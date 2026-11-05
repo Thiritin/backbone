@@ -44,3 +44,16 @@
 .rg-parked dt { font-size: 0.85em; opacity: 0.7; }
 .rg-parked footer { font-size: 0.8em; opacity: 0.6; }
 .rg-acct { margin-left: auto; color: inherit; font-weight: bold; text-decoration: underline; white-space: nowrap; }
+.rgp-status { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: 3px; }
+.rgp-badge { display: inline-block; padding: 1px 6px 1px 5px; border: 1px solid; border-left-width: 8px; font-size: 12px; line-height: 16px; font-weight: bold; background: #fff; }
+.rgp-badge[data-ns-status="active"] { color: #14532d; border-color: #2e7d32; }
+.rgp-badge[data-ns-status="propagating"] { color: #6b3f00; border-color: #e09100; }
+.rgp-badge[data-ns-status="silent"] { color: #8a1010; border-color: #c62828; }
+.rgp-prev { font-size: 12px; color: #444; }
+.rgp-nscell { min-width: 0; max-width: 240px; }
+.rgp-hosts { overflow-wrap: anywhere; }
+.rgp-nsline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 6px 0; }
+.rgp-ns .bks-form { width: 100%; }
+.rgp-ns .bks-form label { display: flex; align-items: center; gap: 8px; }
+.rgp-ns .bks-form input { flex: 1; min-width: 0; }
+.rgp-nscell .rgp-hosts { margin: 2px 0 3px; }

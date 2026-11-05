@@ -33,7 +33,12 @@ function pick(d: Draft, list: RecordChoice[]): Draft {
 // The state of a domain's name servers.
 export function NsBadge({ game, d }: { game: GameState; d: Domain }) {
   const st = nsStatus(game, d);
-  return <span className="num" data-ns-status={st}>{t(`registrarPanel.nsStatus.${st}`, { n: nsMinutesLeft(game, d) })}</span>;
+  return (
+    <span className="rgp-status">
+      <span className="rgp-badge" data-ns-status={st}>{t(`registrarPanel.nsStatus.${st}`, { n: nsMinutesLeft(game, d) })}</span>
+      {st === "propagating" && <span className="rgp-prev">{t("registrarPanel.nsStatus.previous")}</span>}
+    </span>
+  );
 }
 
 export function RegistrarDns({ game, r }: { game: GameState; r: Registrar }) {
@@ -52,9 +57,11 @@ export function RegistrarDns({ game, r }: { game: GameState; r: Registrar }) {
     <section className="bks-box">
       <h2>{t(`registrarDns.title.${r.id}.${look}`)}{domain && `: ${domain}`}</h2>
       {dom && (
-        <p>
-          {t("registrarPanel.nameServers")}: {t(dom.ns === "custom" ? "registrarPanel.ns.custom" : "registrarPanel.ns.registrar")}, <span className="num">{nameServers(game, { ...dom, nsReadyAt: undefined }).join(", ")}</span> <NsBadge game={game} d={dom} />
-        </p>
+        <div className="rgp-nsline">
+          <span>{t("registrarPanel.nameServers")}: {t(dom.ns === "custom" ? "registrarPanel.ns.custom" : "registrarPanel.ns.registrar")}</span>
+          <span className="num rgp-hosts">{nameServers(game, { ...dom, nsReadyAt: undefined }).join(", ")}</span>
+          <NsBadge game={game} d={dom} />
+        </div>
       )}
       {domain && (
         <>
@@ -71,7 +78,7 @@ export function RegistrarDns({ game, r }: { game: GameState; r: Registrar }) {
                 return (
                   <tr key={x.id}>
                     <td>{x.type}</td><td>{x.name}</td><td className="num">{value}</td><td className="num">{priority}</td>
-                    <td>{t(`registrarDns.ttl.${x.ttl}`)}</td><td>{t(settled(x, hour) ? "registrarPanel.status.active" : "registrarDns.pending")}</td>
+                    <td>{t(`registrarDns.ttl.${x.ttl}`)}</td><td>{t(dom && nsStatus(game, dom) === "silent" ? "registrarPanel.nsStatus.silent" : settled(x, hour) ? "registrarPanel.status.active" : "registrarDns.pending")}</td>
                     <td className="r">
                       {x.managed ? t("registrarDns.managed") : (
                         <>
