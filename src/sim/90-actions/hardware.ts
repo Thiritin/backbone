@@ -103,12 +103,13 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly, endsAt: null, retainedAt: null, ...(order && { billing: { company: order.company, name: order.name, address: { street: order.address.street, zip: order.address.zip, city: order.address.city } } }) });
   if (order?.payment.kind === "debit") s.bank = { ...s.bank!, mandates: [...s.bank!.mandates.filter((x) => x !== dc.name), dc.name] };
   // The order confirmation is the contract document. The tick bills full months from the next month start, so the order
-  // pays the rest of this one pro rata: at once in cash or by debit, on a separate open invoice for an order on account.
+  // pays the rest of this one pro rata: by debit on the contract, else on its own receipt (cash) or open invoice (on account).
   const rest = cents(monthly * Math.min(1, (nextMonthStart(s.hour) - s.hour) / (DAYS_PER_MONTH * 24)));
   const rentLines = rest > 0 ? [{ hour: s.hour, category: "rent", key: "ledger.space", params: { location: dc.name, dc: dc.id }, amount: -rest }] : [];
   const method = !s.bank ? "cash" : order?.payment.kind === "debit" ? "debit" : "onAccount";
-  placeOrder(s, { supplier: "datacenter", name: dc.name, lines: method === "onAccount" ? [] : rentLines, method, doc: "contract", order: loc.id });
-  if (method === "onAccount" && rentLines.length) placeOrder(s, { supplier: "datacenter", name: dc.name, lines: rentLines, method, order: loc.id });
+  const apart = method !== "debit";
+  placeOrder(s, { supplier: "datacenter", name: dc.name, lines: apart ? [] : rentLines, method, doc: "contract", order: loc.id });
+  if (apart && rentLines.length) placeOrder(s, { supplier: "datacenter", name: dc.name, lines: rentLines, method, order: loc.id });
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;

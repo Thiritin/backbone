@@ -113,13 +113,14 @@ describe("shop module", () => {
 });
 
 describe("colocation", () => {
-  it("leaves a contract document that bills the rest of the month", () => {
+  it("leaves a contract document and a cash receipt for the rest of the month", () => {
     const s = freeFloor({ ...newGame(1), cash: 1_000_000 });
     s.hour = hourOf(new Date(Date.UTC(2005, 0, 20)));
     const cash = s.cash, monthly = spacePrice(FR5, "share", 2);
     expect(addLocation(s, FR5.id, "share", 2).ok).toBe(true);
-    const [p] = ours(s, "datacenter");
-    expect(p).toMatchObject({ doc: "contract", method: "cash", name: FR5.name, paidAt: s.hour });
+    const [contract, p] = ours(s, "datacenter");
+    expect(contract).toMatchObject({ doc: "contract", method: "cash", amount: 0 });
+    expect(p).toMatchObject({ doc: "receipt", method: "cash", name: FR5.name, paidAt: s.hour });
     expect(p.amount).toBeGreaterThan(0);
     expect(p.amount).toBeLessThan(monthly);
     expect(s.cash).toBeCloseTo(cash - p.amount, 2);
