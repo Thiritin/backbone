@@ -51,7 +51,7 @@ export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | 
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
 const WIDE = { w: 1240, h: 680 };
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
-  "Getting started": { w: 420, h: 340 }, Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
+  "Getting started": { w: 440, h: 540 }, Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
   Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Marketing: WIDE, Market: WIDE, Network: WIDE,
   Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 }, "Pear Mail": { w: 1000, h: 640 }, DocuWhere: { w: 1240, h: 820 }, DohleFormular: { w: 760, h: 420 }, FileGorilla: { w: 980, h: 680 }, Preview: { w: 640, h: 860 },
 };
