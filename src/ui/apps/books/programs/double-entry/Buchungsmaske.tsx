@@ -30,8 +30,11 @@ export function Buchungsmaske({ drafts, add }: { drafts: Draft[]; add: (d: Draft
   const [key, setKey] = useState<string | null>(null);
   const [settle, setSettle] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  const attempt = useStore((s) => s.attempt);
   const line = lines.find((l) => l.id === picked) ?? lines[0];
-  if (!line) return <div className="de-mask"><p className="de-none">{t("books.noTransfers")}</p></div>;
+  const title = <h3 className="de-h">{t("books-de.mask.title")}</h3>;
+  if (!line) return <div className="de-mask">{title}{done && <p role="status">{done}</p>}<p className="de-none">{t("books-de.mask.empty")}</p></div>;
   const bank = accounts.find((a) => a.id === "bank")!, op = opOf(accounts, line), docs = docsFor(game, line);
   const contra = accounts.find((a) => String(a.no) === counter.trim());
   const sts = key ?? (line.out ? "9" : "3"), rate = Math.round(vatRate(line.hour) * 100);
@@ -41,16 +44,24 @@ export function Buchungsmaske({ drafts, add }: { drafts: Draft[]; add: (d: Draft
     setNumber(v); setErr(null);
     if (!counter && docs.includes(v.trim())) setCounter(String(op.no));
   };
-  const book = () => {
-    if (!number.trim()) return setErr(t("books-de.mask.noNumber"));
-    if (!docs.includes(number.trim())) return setErr(t("books-screens.noDocument", { number: number.trim() }));
-    if (counter.trim() !== String(op.no)) return setErr(t("books-de.mask.wrongCounter", { no: counter.trim() || "-", number: number.trim() }));
-    add({ line: line.id, hour: line.hour, text: line.text, amount: line.amount, debit: bankDebit, number: number.trim(), counter: op.no, key: sts, settle });
+  // now posts the booking at once; otherwise it waits in the batch.
+  const book = (now: boolean) => {
+    const n = number.trim();
+    setDone(null);
+    if (!n) return setErr(t("books-de.mask.noNumber"));
+    if (!docs.includes(n)) return setErr(t("books-screens.noDocument", { number: n }));
+    if (counter.trim() !== String(op.no)) return setErr(t("books-de.mask.wrongCounter", { no: counter.trim() || "-", number: n }));
+    if (now) {
+      const r = attempt(bookByNumber, line.id, n, settle);
+      if (!r.ok) return setErr(t(r.error, r.params));
+      setDone(t("books-screens.booked", { number: n }));
+    } else add({ line: line.id, hour: line.hour, text: line.text, amount: line.amount, debit: bankDebit, number: n, counter: op.no, key: sts, settle });
     setPicked(null); setNumber(""); setCounter(""); setKey(null); setSettle(false); setErr(null);
   };
   const id = (x: string) => `de-mask-${x}`;
   return (
-    <form className="de-mask" onSubmit={(e) => { e.preventDefault(); book(); }}>
+    <form className="de-mask" onSubmit={(e) => { e.preventDefault(); book(true); }}>
+      {title}
       <div className="de-grid">
         <label htmlFor={id("line")}>{t("books-de.mask.line")}</label>
         <select id={id("line")} value={line.id} onChange={(e) => { setPicked(e.target.value); setErr(null); }}>
@@ -83,7 +94,11 @@ export function Buchungsmaske({ drafts, add }: { drafts: Draft[]; add: (d: Draft
         {!line.out && !line.back && <><span /><label className="de-check"><input type="checkbox" checked={settle} onChange={(e) => setSettle(e.target.checked)} /> {t("books-screens.settle")}</label></>}
       </div>
       {err && <p className="de-err" role="alert">{err}</p>}
-      <div className="de-actions"><button type="submit" className="btn">{t("books-de.mask.book")}</button></div>
+      {done && <p role="status">{done}</p>}
+      <div className="de-actions">
+        <button type="button" className="btn" onClick={() => book(false)}>{t("books-de.mask.book")}</button>
+        <button type="submit" className="btn">{t("books-de.mask.post")}</button>
+      </div>
     </form>
   );
 }

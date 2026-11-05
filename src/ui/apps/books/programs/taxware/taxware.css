@@ -106,14 +106,14 @@
 .txo-workflow .txo-title { font-weight: 400; height: 22px; }
 .txo-workflow .txo-menu > button:hover, .txo-workflow .txo-menu > button[aria-expanded="true"] { border-color: #99c4ea; border-radius: 2px; }
 .txo-workflow .txo-drop button:hover { outline: 1px solid #99c4ea; }
-.txo-band { display: flex; min-width: 0; overflow-x: auto; overflow-y: hidden; align-items: stretch; gap: 0; flex: none; padding: 3px 6px 0; background: linear-gradient(180deg, #fdfdfe, #e5ebf4); border-bottom: 1px solid var(--tw-line-dark); }
-.txo-group { display: flex; flex-direction: column; padding: 0 6px; border-right: 1px solid var(--tw-line); }
+.txo-band { display: flex; flex-wrap: wrap; align-items: stretch; row-gap: 2px; flex: none; padding: 3px 6px 0; background: linear-gradient(180deg, #fdfdfe, #e5ebf4); border-bottom: 1px solid var(--tw-line-dark); }
+.txo-group { flex: none; display: flex; flex-direction: column; padding: 0 6px; border-right: 1px solid var(--tw-line); }
 .txo-group-items { display: flex; gap: 2px; }
 .txo-group-items button { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 74px; padding: 3px 2px; border: 1px solid transparent; border-radius: 3px; background: none; font-size: 11px; line-height: 1.15; text-align: center; }
 .txo-group-items button:hover { background: linear-gradient(180deg, #fdf4d0, #fbe39b); border-color: #e3c36a; }
 .txo-group-items svg { width: 24px; height: 24px; color: var(--tw-accent); }
-.txo-group-name { text-align: center; color: #4d5b72; font-size: 11px; padding: 1px 0 2px; }
-.txo-search { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: #fff; border: 1px solid var(--tw-line-dark); border-radius: 2px; }
+.txo-group-name { text-align: center; color: #4d5b72; font-size: 11px; padding: 1px 0 2px; white-space: nowrap; }
+.txo-search { margin: 2px 0 2px auto; align-self: center; display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: #fff; border: 1px solid var(--tw-line-dark); border-radius: 2px; }
 .txo-search svg { width: 14px; height: 14px; color: #6b7a90; }
 .txo-search input { border: 0; outline: 0; font: inherit; width: 150px; background: none; color: inherit; }
 .txo-workflow .txo-split { gap: 0; }
@@ -182,3 +182,16 @@
 .txo-side { display: flex; flex-direction: column; gap: 12px; }
 .txo-flat .txo-panel { border-top: 3px solid var(--tw-accent); }
 .txo-service { grid-column: 1 / -1; display: flex; gap: 18px; align-items: center; padding: 10px 12px; background: #f2f4f7; }
+
+/* The band compacts with the window: narrower buttons, then smaller icons without group names. */
+.txo-workflow { container-type: inline-size; }
+@container (max-width: 1180px) {
+  .txo-group-items button { width: 60px; font-size: 10.5px; }
+  .txo-group-items svg { width: 20px; height: 20px; }
+  .txo-search input { width: 110px; }
+}
+@container (max-width: 940px) {
+  .txo-group { padding: 0 3px; }
+  .txo-group-items button { width: 54px; padding: 2px 1px; }
+  .txo-group-name { display: none; }
+}

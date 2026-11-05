@@ -4,11 +4,12 @@ import type { GameState } from "../../../../sim/50-state";
 import { setupOf } from "../../../../sim/80-business/books-guide";
 import type { Kind } from "./accounts";
 
+// Read at call time, so the label follows the language loaded after start.
 const CATEGORY: Record<string, string> = {
-  payments: t("misc.catPayments"), setup: t("misc.catSetup"), sales: t("misc.catSales"), hardware: t("misc.catHardware"), rent: t("misc.catRent"), power: t("misc.catPower"), transit: t("misc.catTransit"), salaries: t("misc.catSalaries"),
-  leasing: t("misc.catLeasing"), maintenance: t("misc.catMaintenance"), moving: t("misc.catMoving"), insurance: t("misc.catInsurance"), loans: t("misc.catLoans"), tax: t("misc.catTax"), subscriptions: t("misc.catSubscriptions"), ai: t("misc.catAi"), marketing: t("misc.catMarketing"), fees: t("misc.catFees"), bankfees: t("misc.catBankFees"), interest: t("misc.catInterest"), other: t("misc.catOther"), travel: t("misc.catTravel"), licenses: t("misc.catLicenses"), domains: t("misc.catDomains"), credit: t("misc.catCredit"), vat: t("misc.catVat"), transfers: t("bank.catTransfers"), capital: t("bank.catCapital"),
+  payments: "misc.catPayments", setup: "misc.catSetup", sales: "misc.catSales", hardware: "misc.catHardware", rent: "misc.catRent", power: "misc.catPower", transit: "misc.catTransit", salaries: "misc.catSalaries",
+  leasing: "misc.catLeasing", maintenance: "misc.catMaintenance", moving: "misc.catMoving", insurance: "misc.catInsurance", loans: "misc.catLoans", tax: "misc.catTax", subscriptions: "misc.catSubscriptions", ai: "misc.catAi", marketing: "misc.catMarketing", fees: "misc.catFees", bankfees: "misc.catBankFees", interest: "misc.catInterest", other: "misc.catOther", travel: "misc.catTravel", licenses: "misc.catLicenses", domains: "misc.catDomains", credit: "misc.catCredit", vat: "misc.catVat", transfers: "bank.catTransfers", capital: "bank.catCapital",
 };
-export const categoryLabel = (c: string) => CATEGORY[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
+export const categoryLabel = (c: string) => CATEGORY[c] ? t(CATEGORY[c]) : c.charAt(0).toUpperCase() + c.slice(1);
 
 // Account number and kind per ledger category, after the German standard chart (SKR03 style).
 export const CHART: Record<string, [number, Kind]> = {

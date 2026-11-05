@@ -13,7 +13,8 @@ import { sendInvoice } from "../src/sim/90-actions/billing";
 import { registerCompany } from "../src/sim/90-actions/company";
 import { addCustomer, addService } from "../src/sim/90-actions/customers";
 import { BooksProgram } from "../src/ui/apps/books/BooksApp";
-import { accountsOf } from "../src/ui/apps/books/data";
+import { accountsOf, categoryLabel } from "../src/ui/apps/books/data";
+import { loadLang } from "../src/i18n/lang";
 import { genOf } from "../src/ui/apps/books/programs/taxware/TaxwareProgram";
 import { useStore } from "../src/ui/store";
 import { newGame, withServer } from "./fixtures";
@@ -118,6 +119,13 @@ describe("Taxware Office", () => {
     expect(item("Dunning").getAttribute("aria-disabled")).toBeNull();
   });
 
+  it("names the accounts in the language loaded after start", async () => {
+    await loadLang("de");
+    onTestFinished(() => loadLang("en"));
+    expect([categoryLabel("power"), categoryLabel("hardware")]).not.toContain("Power");
+    expect(categoryLabel("power")).toBe("Strom");
+  });
+
   it("numbers the accounts by the chart the company chose", () => {
     const s = taxware(2006);
     expect(Object.fromEntries(accountsOf(s).map((a) => [a.id, a.no]))).toMatchObject({ bank: 1200, receivables: 1400, payables: 1600 });
@@ -164,7 +172,7 @@ describe("Taxware booking", () => {
     fireEvent.change(number, { target: { value: inv.number } });
     expect((counter as HTMLInputElement).value).toBe("1400");
     expect((within(mask).getByLabelText("Tax key") as HTMLSelectElement).value).toBe("3");
-    fireEvent.click(within(mask).getByRole("button", { name: "Post" }));
+    fireEvent.click(within(mask).getByRole("button", { name: "Add to batch" }));
     expect(within(mask).getByRole("cell", { name: inv.number })).not.toBeNull();
     expect(game().transfers[0].matchedAt).toBeNull();
     // The batch window shows the same booking; posting it books the transfer against the invoice.
@@ -176,6 +184,25 @@ describe("Taxware booking", () => {
     expect(game().invoices[0].status).toBe("paid");
     expect(within(batch).getByRole("status").textContent).toBe("Posted: 1");
     expect(within(screen.getByRole("region", { name: "Dialog posting" })).getByText("The batch is empty.")).not.toBeNull();
+  });
+
+  it("posts a bank line at once and leaves the mask empty", () => {
+    const s = owing(), inv = s.invoices[0];
+    put(s);
+    render(<BooksProgram />);
+    openFirma();
+    fireEvent.click(tool("Dialog posting"));
+    const mask = screen.getByRole("region", { name: "Dialog posting" });
+    expect(within(mask).getByRole("heading", { name: "Assign a bank line to a document" })).not.toBeNull();
+    fireEvent.change(within(mask).getByLabelText("Document no."), { target: { value: inv.number } });
+    fireEvent.click(within(mask).getByRole("button", { name: "Post" }));
+    expect(game().transfers[0].invoiceId).toBe(inv.id);
+    expect(within(mask).getByRole("status").textContent).toBe(`Booked to ${inv.number}.`);
+    expect(within(mask).getByText(/^No open bank lines\./)).not.toBeNull();
+    // The receivable is gone from the chart of accounts.
+    menu("Master data"); menu("Chart of accounts");
+    const receivables = within(screen.getByRole("region", { name: "Chart of accounts" })).getByRole("cell", { name: "1400" }).closest("tr")!;
+    expect(receivables.lastElementChild!.textContent).toMatch(/^0[.,]00/);
   });
 });
 
