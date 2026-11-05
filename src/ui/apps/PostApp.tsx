@@ -48,6 +48,7 @@ export function PostApp() {
           <div className="letter-actions">
             {l.scanned ? <span>{t("paperwork.post.scanned")}</span> : <button className="btn" onClick={() => act(scanLetter, l.id)}>{t("paperwork.post.scan")}</button>}
             {l.link && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: l.link! })}>{t("paperwork.post.open")}</button>}
+            {bill && <button className="btn" onClick={() => openApp("Preview", { kind: "payable", id: bill.id })}>{t(`purchase.doc.${bill.doc ?? "invoice"}`)}</button>}
             {bill && (bill.paidAt !== null ? <span>{t("bank.pay.paid")}</span>
               : game.bank && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: payUrl(game, bill) })}>{t("bank.pay.pay")}</button>)}
           </div>

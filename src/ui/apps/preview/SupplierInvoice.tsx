@@ -63,8 +63,10 @@ export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
   const bank = ibanEra(game)
     ? `${t("checkout.iban")} ${groupIban(supplierIban(p.supplier))}`
     : `${t("paperwork.letter.account")} ${supplierAccount(p.supplier)} · ${t("paperwork.letter.code")} ${SUPPLIER_CODE}`;
+  const doc = p.doc ?? "invoice";
   const meta: [string, string][] = [
-    [t("preview.number"), p.number], [t("preview.date"), formatDay(p.issuedAt)], [t("preview.due"), formatDay(p.dueAt)],
+    [t("preview.number"), p.number], [t("preview.date"), formatDay(p.issuedAt)], ...(doc === "invoice" ? [[t("preview.due"), formatDay(p.dueAt)] as [string, string]] : []),
+    [t("purchase.pay"), t(`purchase.method.${p.method ?? "transfer"}`)],
     ...(p.paidAt !== null ? [[t("preview.paid"), formatDay(p.paidAt)] as [string, string]] : []),
   ];
   return (
@@ -81,7 +83,7 @@ export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
           </address>
           <dl className="inv-meta">{meta.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="num">{v}</dd></div>)}</dl>
         </div>
-        <h2>{t("preview.invoice")}</h2>
+        <h2>{t(`purchase.doc.${doc}`)}</h2>
         <table>
           <thead><tr><th className="inv-pos">{t("books.col.number")}</th><th>{t("books.col.item")}</th><th className="r">{t("books.col.amount")}</th></tr></thead>
           <tbody>
@@ -89,7 +91,13 @@ export function SupplierInvoice({ game, p }: { game: GameState; p: Payable }) {
             <tr className="inv-total"><td /><td>{t("books.total")}</td><td className="r num">{euroCents(total)}</td></tr>
           </tbody>
         </table>
-        {vat > 0 && <p className="inv-vat num">{t("preview.vat", { rate: rate.toLocaleString(LOCALE, { style: "percent" }), amount: euroCents(vat) })}</p>}
+        {vat > 0 && (
+          <dl className="inv-sum num">
+            <div><dt>{t("purchase.net")}</dt><dd>{euroCents(total - vat)}</dd></div>
+            <div><dt>{t("purchase.vat", { rate: rate.toLocaleString(LOCALE, { style: "percent" }) })}</dt><dd>{euroCents(vat)}</dd></div>
+            <div><dt>{t("purchase.gross")}</dt><dd>{euroCents(total)}</dd></div>
+          </dl>
+        )}
         <footer className="inv-foot">
           <span>{p.name}</span><span>{web}</span><span>{t("paperwork.letter.bank")}: <span className="num">{bank}</span></span>
         </footer>

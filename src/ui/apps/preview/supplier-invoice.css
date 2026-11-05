@@ -14,7 +14,9 @@
 .inv h2 { color: #222; }
 .inv .inv-pos { width: 2.6em; color: #777; }
 .inv .inv-total td { font-weight: 700; border-bottom: 0; }
-.inv .inv-vat { margin: -1.5% 0 0; text-align: right; font-size: 0.8em; color: #666; }
+.inv .inv-sum { margin: -1.5% 0 0 auto; width: 45%; font-size: 0.8em; color: #666; }
+.inv .inv-sum div { display: flex; justify-content: space-between; }
+.inv .inv-sum dd { margin: 0; }
 .inv .inv-foot { padding-top: 0.6em; border-top: 1px solid #ccc; font-size: 0.7em; color: #666; gap: 0.3em 1.4em; }
 
 /* Classic: a colour bar across the top, logo left, sender right. */

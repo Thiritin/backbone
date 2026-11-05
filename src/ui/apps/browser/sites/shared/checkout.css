@@ -21,3 +21,4 @@
 .co-summary p { margin: 0 0 10px; }
 .co-buttons { display: flex; gap: 8px; }
 .co-error { color: #b00020; }
+.co-methods label:has(input:disabled) { opacity: 0.6; }
