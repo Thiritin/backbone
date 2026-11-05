@@ -7,7 +7,9 @@ import { BADGE_TRUST, TIERS, TRUST_CAP } from "../10-catalog/hosttoast";
 import type { Product, Profile } from "../30-customers/customers";
 import { profileStats } from "../40-support/tickets";
 import type { GameState, LedgerEntry } from "../50-state";
+import { bill as billVendor, invoice } from "../46-finance/payables";
 import type { SimEvent } from "../88-tick/tick";
+import { AGENCY_TITLE } from "./browser";
 import { campaignBoost, hasMarketingManager, reviewBoost } from "../47-staff/staff";
 
 export const SITE_LINES: Product[] = ["webHosting", "vps", "gameServer", "dns", "vpn", "storage", "cloud", "dedicated", "colocation", "gpu", "ssl"];
@@ -215,8 +217,10 @@ function bill(s: GameState): number {
   if (siteHostingCost(s) > 0) bills.push(entry("ledger.siteHosting", {}, siteHostingCost(s)));
   bills.push(...shopBills(s).map((b) => entry(b.key, b.params, b.amount)));
   const total = bills.reduce((n, b) => n - b.amount, 0);
-  s.cash = Math.round((s.cash - total) * 100) / 100;
-  s.ledger = [...s.ledger, ...bills];
+  if (bills.length) {
+    if (s.bank) invoice(s, "services", AGENCY_TITLE, bills);
+    else billVendor(s, { supplier: "services", name: AGENCY_TITLE, lines: bills, method: "cash" });
+  }
   return total;
 }
 

@@ -3,6 +3,7 @@ import { LEASE_FACTOR, leaseOffers, LESSORS } from "../src/sim/10-catalog/leasin
 import { nextMonthStart } from "../src/sim/00-core/time";
 import { type GameState } from "../src/sim/50-state";
 import { connectError, storageStacks } from "../src/sim/60-infra/status";
+import { openAccount } from "../src/sim/46-finance/bank";
 import { tick } from "../src/sim/88-tick/tick";
 import { buyOutLease, connect, mountStack, sellDevice, type CartLine } from "../src/sim/90-actions/hardware";
 import { buyCart, buyDevice, newGame, settle } from "./fixtures";
@@ -85,6 +86,19 @@ describe("buyCart", () => {
 });
 
 describe("lease payments", () => {
+  it("leaves one payable per month, cash before a bank exists and a direct debit after", () => {
+    const s = rich();
+    lease(s);
+    nextMonth(s);
+    const doc = () => s.payables.filter((p) => p.lines.some((l) => l.key === "ledger.lease"));
+    expect(doc()).toHaveLength(1);
+    expect(doc()[0]).toMatchObject({ method: "cash", doc: "receipt", paidAt: expect.any(Number) });
+    s.bank = { ...openAccount(s, "sparklasse"), welcomed: true };
+    nextMonth(s);
+    expect(doc()).toHaveLength(2);
+    expect(doc()[1]).toMatchObject({ method: "debit", doc: "invoice" });
+  });
+
   it("charges one payment at each month start until the term is paid, then the devices are owned", () => {
     const s = rich();
     const { offer } = lease(s);

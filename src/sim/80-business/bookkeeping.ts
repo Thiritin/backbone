@@ -2,7 +2,7 @@
 import { dateOf, hourOf, isMonthStart, yearOf } from "../00-core/time";
 import { booksVendor, editionById, featuresIn, type BooksVendor, type BooksVendorId, type Edition, type Feature } from "../10-catalog/bookkeeping";
 import { bookTransfer, cents, isUnpaid, issue, owed, payerOf, synced, type Invoice, type Transfer } from "../45-billing/billing";
-import { invoice, invoicing, lineCut } from "../46-finance/payables";
+import { bill as billVendor, invoice, invoicing, lineCut } from "../46-finance/payables";
 import { deliverMail } from "../42-mail/sources";
 import { logActivity } from "../47-staff/activity";
 import type { Employee } from "../47-staff/staff";
@@ -66,8 +66,7 @@ export const monthlyFee = (v: BooksVendor, e: Edition, seats: number): number =>
 export function bill(s: GameState, v: BooksVendor, key: string, amount: number, params: LedgerEntry["params"] = {}): void {
   const line: LedgerEntry = { hour: s.hour, category: "licenses", key, params: { program: v.program, ...params }, amount: -amount };
   if (invoicing(s)) { invoice(s, "books", v.name, [line]); return; }
-  s.cash = cents(s.cash - amount);
-  s.ledger = [...s.ledger, line];
+  billVendor(s, { supplier: "books", name: v.name, lines: [line], method: "cash" });
 }
 
 const logged = (s: GameState, inv: Invoice, key: string, by: string, minutes = 0) =>

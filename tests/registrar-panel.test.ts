@@ -91,11 +91,11 @@ describe("registrar panel", () => {
     s.cash = 1e5;
     expect(signRegistrar(s, "goDuddy").ok).toBe(true);
     expect(transferDomains(s).ok).toBe(true);
-    const ledger = s.ledger.length, payables = s.payables.length;
+    const payables = s.payables.length;
     runTo(s, s.registrar!.transfer!.doneAt! + 1);
     expect(s.registrar!.transfer).toBeNull();
     expect([d().expiresAt, domainOf(s, company)!.expiresAt]).toEqual(was.map((x) => x + YEAR));
-    const lines = [...s.ledger.slice(ledger), ...s.payables.slice(payables).flatMap((p) => p.lines)].filter((e) => e.key === "ledger.domainsMoved");
+    const lines = s.payables.slice(payables).flatMap((p) => p.lines).filter((e) => e.key === "ledger.domainsMoved");
     expect(lines).toHaveLength(1);
     expect(lines[0].amount).toBeCloseTo(-(wholesale(s, "kunde.de") + wholesale(s, company)), 2);
   });

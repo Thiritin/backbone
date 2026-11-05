@@ -7,6 +7,7 @@ import { ACTION_MINUTES, logActivity } from "./activity";
 import { storeItem } from "../10-catalog/store";
 import { bookFor, booksOffline, seated, sendDraft } from "../80-business/bookkeeping";
 import { bump, createTicket, MINUTES, rightTemplate, templatesOf, TOPIC_ACTIONS, type Ticket, type TicketKind } from "../40-support/tickets";
+import { bill } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
 import { isWorkHour } from "../00-core/workhours";
@@ -137,6 +138,9 @@ export const hourlyWage = (e: Pick<Employee, "salary">): number => e.salary / MO
 // Pay for the hours actually worked since the last payday.
 export const salaryUpToNow = (_s: GameState, e: Employee): number => cents(e.worked * hourlyWage(e));
 
+// The pun names of the job board and the course provider the company pays.
+export const JOB_BOARD = "Hirewire", COURSE_VENDOR = "Lernwerk";
+
 // Starts the next planned course: one day with a trainer of the same role and free, otherwise two days and a course fee.
 export function startTraining(s: GameState, e: Employee): void {
   if (e.training || !e.plan.length) return;
@@ -144,8 +148,8 @@ export function startTraining(s: GameState, e: Employee): void {
   const trainer = trainerFor(s, e);
   if (!trainer) {
     const price = staffPrice(COURSE_PRICE, yearOf(s.hour));
-    s.cash = cents(s.cash - price);
-    s.ledger = [...s.ledger, { hour: s.hour, category: "salaries", key: "ledger.training", params: { name: e.name, task }, amount: -price }];
+    const lines = [{ hour: s.hour, category: "salaries", key: "ledger.training", params: { name: e.name, task }, amount: -price }];
+    bill(s, { supplier: "services", name: COURSE_VENDOR, lines, method: s.bank ? "transfer" : "cash" });
   }
   e.plan = plan;
   e.training = { task, startedAt: s.hour, doneAt: s.hour + (trainer ? TRAINER_HOURS : COURSE_HOURS) };

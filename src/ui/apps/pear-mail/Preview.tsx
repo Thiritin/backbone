@@ -28,7 +28,7 @@ function Att({ game, row, att, i }: { game: GameState; row: Row; att: Attachment
       </li>
     );
   }
-  if (att.k === "invoice") return <li className="pm-att"><Receipt /><span className="pm-att-name">{t("pearMail.att.invoice")}</span><button className="btn sm" onClick={() => openApp("Preview", { kind: "payable", id: att.id })}>{t("pearMail.att.open")}</button></li>;
+  if (att.k === "invoice") return <li className="pm-att"><Receipt /><span className="pm-att-name">{t(`purchase.doc.${game.payables.find((x) => x.id === att.id)?.doc ?? "invoice"}`)}</span><button className="btn sm" onClick={() => openApp("Preview", { kind: "payable", id: att.id })}>{t("pearMail.att.open")}</button></li>;
   const doc = att.k === "doc" ? game.docs.find((d) => d.id === att.id) : undefined;
   return (
     <li className="pm-att">
