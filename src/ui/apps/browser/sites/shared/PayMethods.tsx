@@ -15,16 +15,18 @@ export interface PayRow { id: string; label: ReactNode; detail?: ReactNode; off:
 
 // Why a method is not offered; the sim's methodsFor decides, this only words it.
 function reason(s: GameState, m: Method): string {
-  if (m === "cash") return t("purchase.off.noCash");
+  if (m === "cash") return t("payE.off.noCash");
   if (m === "transfer") return t("purchase.off.noBank");
   if (m === "card") return t(cardReady(s) ? "purchase.off.cardLimit" : "purchase.off.noCard");
   if (m === "debit") return t("purchase.off.noMandate");
   return t("purchase.off.noInvoice");
 }
 
-// Every method with its label; off is the outcome text of an unavailable one. Before a bank account exists, cash is the only one.
+// Every method with its label; off is the outcome text of an unavailable one. Before a bank account exists, cash is the only
+// one, and it is off while the cash is short of the total.
 export function payOptions(s: GameState, o: Offer): PayOption[] {
-  const on = methodsFor(s, o.supplier, o.lines, o.name);
+  const short = s.cash < -o.lines.reduce((n, l) => n + l.amount, 0);
+  const on = methodsFor(s, o.supplier, o.lines, o.name).filter((m) => m !== "cash" || !short);
   return ALL_METHODS.filter((m) => (m === "cash") === !s.bank)
     .map((method) => ({ method, label: t(`purchase.method.${method}`), off: on.includes(method) ? null : reason(s, method) }));
 }

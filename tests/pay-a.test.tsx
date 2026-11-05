@@ -44,11 +44,13 @@ describe("hardware cart", () => {
     const s = banked(), total = unitPrice(SYSKO, yearOf(s.hour)), openApp = opened();
     useStore.setState({ game: s, cart: [SYSKO] });
     render(<Cart />);
-    fireEvent.click(screen.getByRole("button", { name: t("shop.buy") }));
+    fireEvent.click(screen.getByRole("button", { name: t("payE.checkout") }));
     const on = methodsFor(s, "hardware", feeLine(s, total), HARDWARE_SHOP);
     for (const m of METHODS) expect(radio(t(`purchase.method.${m}`)).disabled).toBe(!on.includes(m));
     expect(radio(t("purchase.method.transfer")).checked).toBe(true);
     expect(document.querySelector(".pay-step-sum strong")!.textContent).toBe(euroPrice(total));
+    expect(screen.queryByText(t("shop.total"), { selector: ".shop-cart-total span" })).toBeNull();
+    expect(screen.getAllByText(t("checkout.total"))).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: t("checkout.placeOrder") }));
     const doc = useStore.getState().game.payables.at(-1)!;
     expect(doc.method).toBe("transfer");
@@ -61,7 +63,7 @@ describe("hardware cart", () => {
     const s = banked(), line: CartLine = { model: "g1-compute", brand: "SuperMacro", qty: 1 };
     useStore.setState({ game: s, cart: [line] });
     render(<Cart />);
-    fireEvent.click(screen.getByRole("button", { name: t("shop.buy") }));
+    fireEvent.click(screen.getByRole("button", { name: t("payE.checkout") }));
     const card = radio(t("purchase.method.card")), transfer = radio(t("purchase.method.transfer"));
     expect(card.disabled && transfer.disabled).toBe(true);
     expect(transfer.closest("label")!.textContent).toContain(t("payA.off.cardOnly"));

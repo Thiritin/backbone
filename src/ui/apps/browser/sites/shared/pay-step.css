@@ -4,3 +4,4 @@
 .pay-step-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin: 0; }
 .pay-step .pay-methods label { flex-wrap: wrap; }
 :has(> .pay-step) { flex-wrap: wrap; }
+.pay-step-error { margin: 0; color: var(--bad-text); }

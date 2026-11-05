@@ -100,8 +100,7 @@ export function Cart() {
           </div>
         </div>
         <div className="shop-cart-total"><span>{t("shop.delivery")}</span><span className="grow" /><span className="num">{wait ? t("shop.arrivesIn", { n: wait > 24 ? Math.ceil(wait / 24) : 1 }) : t("shop.arrivesNow")}</span></div>
-        <div className="shop-cart-total"><span>{t("shop.total")}</span><span className="grow" /><strong className="num">{euro(total)}</strong></div>
-        {!step && <div className="shop-cart-foot"><button className="btn primary" onClick={() => setStep(true)}>{t("shop.buy")}</button></div>}
+        {!step && <div className="shop-cart-foot"><button className="btn primary" onClick={() => setStep(true)}>{t("payE.checkout")}</button></div>}
       </>}
       {step && <div className="shop-pay"><PayStep game={game} buy={buy} onPick={setPay} onClose={close} onDone={(p) => { close(); setDone(p ?? null); }} /></div>}
     </aside>

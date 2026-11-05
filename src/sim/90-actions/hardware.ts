@@ -391,12 +391,12 @@ const officeError = (s: GameState, modelId: string, locationId: string): string 
   isOfficeRouter(modelById(modelId)) && s.locations.find((l) => l.id === locationId)?.dc ? "error.basementOnly" : null;
 
 // Bought units go to the storage of the zone at locationId, which may not be ready yet.
-export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "part" | "vendor"> = {}): ActionResult {
+export function buyDevice(s: GameState, modelId: string, brand: string, qty: number, locationId: string, rest: Pick<CartLine, "extras" | "part" | "vendor"> = {}, method?: Method): ActionResult {
   const line = { model: modelId, brand, qty, ...rest };
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);
   if (error) return fail(error);
-  const placed = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines: [hardwareEntry(s, line)], method: s.bank ? "transfer" : "cash" });
+  const placed = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines: [hardwareEntry(s, line)], method: method ?? (s.bank ? "transfer" : "cash") });
   if (!placed.ok) return placed;
   return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])) };
 }

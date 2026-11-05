@@ -113,14 +113,14 @@ export function upgradeShop(s: GameState, method?: Method): ActionResult {
   return { ok: true, id: next.version };
 }
 
-export function buyModule(s: GameState, module: string): ActionResult {
+export function buyModule(s: GameState, module: string, method?: Method): ActionResult {
   if (!MODULE_IDS.includes(module)) return fail("error.unknownModule");
   if (hasModule(s, module) || s.shop.modules[module] !== undefined) return fail("error.moduleOwned");
   const v = s.shop.variant && shopById(s.shop.variant);
   if (!v) return fail("error.needsShop");
   if (v.extra === null || v.lacks?.includes(module)) return fail("error.moduleNotSold");
   const price = v.extra;
-  const placed = pay(s, v.id, price, "marketing", "ledger.shopModule", { module });
+  const placed = pay(s, v.id, price, "marketing", "ledger.shopModule", { module }, method);
   if (!placed.ok) return placed;
   s.shop = { ...s.shop, modules: { ...s.shop.modules, [module]: s.hour + (v.extraHours ?? 0) } };
   return { ok: true, id: module };

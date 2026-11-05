@@ -9,7 +9,8 @@ import { BUDGET_RANGE } from "../../../sim/30-market/sales";
 import { demand, lostReasons, segmentsOf, studied, studyCost } from "../../../sim/30-market/research";
 import { profileStats } from "../../../sim/40-support/tickets";
 import { PROFILE_IDS } from "../../../sim/80-business/marketing";
-import { buyStudy } from "../../../sim/90-actions/market";
+import { buyStudy, STUDY_VENDOR } from "../../../sim/90-actions/market";
+import { PayButton } from "../browser/sites/shared/PayButton";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
 import { AUDIENCE } from "../marketing/MarketingApp";
@@ -127,7 +128,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
         </dl>
         <div className="shop-buy">
           <span className="grow" />
-          <button className="btn primary" disabled={game.cash < cost} onClick={() => act(buyStudy, profile)}>{t("misc1.market.buyStudy")}</button>
+          <PayButton className="btn primary" supplier="services" name={STUDY_VENDOR} amount={cost} run={(m) => act(buyStudy, profile, m)}>{t("misc1.market.buyStudy")}</PayButton>
         </div>
       </div>
     );

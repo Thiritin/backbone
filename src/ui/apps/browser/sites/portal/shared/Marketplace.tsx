@@ -11,6 +11,8 @@ import type { GameState } from "../../../../../../sim/50-state";
 import { hasModule } from "../../../../../../sim/80-business/shop";
 import { shopVendorUrl } from "../../../../../../sim/80-business/shoplink";
 import { buyModule } from "../../../../../../sim/90-actions/shop";
+import { vendorName } from "../../../../../../sim/80-business/vendor-shop";
+import { PayButton } from "../../shared/PayButton";
 import { useStore } from "../../../../../store";
 import { formatDay } from "../../../../billing/format";
 import { methodName } from "../../../../marketing/payments";
@@ -34,7 +36,7 @@ export function Marketplace({ game }: { game: GameState }) {
     if (hasModule(game, m)) return <Pill ok>{t("marketing.installed")}</Pill>;
     if (bought !== undefined) return <Pill>{t("marketing.readyDay", { day: formatDay(bought) })}</Pill>;
     if (offer === "unavailable") return <Pill>{t("marketing.notAvailable")}</Pill>;
-    return <button className="btn" disabled={offer > 0 && game.cash < offer} onClick={() => act(buyModule, m)}>{offer ? <>{t("marketing.buy")} <span className="num">{euro(offer)}</span></> : t("marketing.integrate")}</button>;
+    return <PayButton className="btn" supplier="shopVendor" name={vendorName(id)} amount={offer} run={(pm) => act(buyModule, m, pm)}>{offer ? <>{t("marketing.buy")} <span className="num">{euro(offer)}</span></> : t("marketing.integrate")}</PayButton>;
   };
   const licensed = (m: (typeof MODULES)[number]) => registered(game, m.id)
     ? <Pill ok>{t("marketing.installed")}</Pill>

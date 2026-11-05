@@ -38,20 +38,21 @@ export function PayStep({ game, buy, onClose, onDone, onPick }: {
   game: GameState; buy: Purchase; onClose: () => void; onDone?: (payable?: string) => void; onPick?: (id: string) => void;
 }) {
   const [chosen, setChosen] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<{ payable?: string } | null>(null);
+  const [placed, setPlaced] = useState<{ payable?: string } | null>(null), [error, setError] = useState<string | null>(null);
   if (placed) return <div className="pay-step">{placed.payable ? <OrderDone payable={placed.payable} /> : t("purchase.done.ordered")}</div>;
   const rows = payRows(game, buy), pick = startRow(game, buy, rows, chosen);
   const extra = buy.extra?.some((r) => r.id === pick);
   const place = () => {
     if (!pick) return;
     const r = track(() => (extra ? buy.runExtra!(pick) : buy.run(pick as Method)));
-    if (!r.ok) return;
+    if (!r.ok) return setError(t(r.error, r.params));
     if (onDone) onDone(r.payable);
     else setPlaced({ payable: r.payable });
   };
   return (
     <div className="pay-step">
       <PayMethods rows={rows} value={pick} onChange={(id) => { setChosen(id); onPick?.(id); }} />
+      {error && <p className="pay-step-error" role="alert">{error}</p>}
       <p className="pay-step-sum"><span>{t("checkout.total")}</span><strong>{euroPrice(buy.amount)}</strong></p>
       <p className="pay-step-buttons">
         <button type="button" className="btn" onClick={onClose}>{t("desktop.cancel")}</button>
