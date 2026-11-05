@@ -3,7 +3,7 @@
 export type BooksVendorId = "lexwear" | "wizo" | "saga" | "orgamin" | "collmix" | "sevdeck" | "lexoffize" | "gnucache";
 export type Feature = "quotes" | "monthly-run" | "match-by-reference" | "hbci" | "tax" | "reports" | "helpdesk-link" | "statistics" | "dunning";
 // The layout family the Books window draws the program in.
-export type Layout = "tree" | "icons" | "menus" | "tabs" | "web" | "flat" | "gtk";
+export type Layout = "tree" | "icons" | "menus" | "tabs" | "web" | "flat";
 
 export interface Edition {
   id: string; name: string; price: number;
@@ -78,7 +78,7 @@ export const BOOKS_VENDORS: BooksVendor[] = [
       ed("l", "L", 44, ["quotes", "monthly-run", "match-by-reference", "hbci", "tax", "reports", "statistics", "dunning"], { seat: 6 })],
     ships: { dunning: 2017 },
     skin: { bar: "#43a047", ink: "#ffffff", accent: "#2e7d32" } },
-  { id: "gnucache", name: "GnuCache", program: "GnuCache", from: 2005, deployment: "desktop", setupMb: 25, layout: "gtk",
+  { id: "gnucache", name: "GnuCache", program: "GnuCache", from: 2005, deployment: "desktop", setupMb: 25, layout: "flat",
     editions: [ed("free", "GnuCache", 0, ["quotes", "reports"])],
     skin: { bar: "#dcdad5", ink: "#2e3436", accent: "#4a90d9" } },
 ];

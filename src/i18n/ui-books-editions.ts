@@ -44,5 +44,4 @@ export default {
   "books-editions.group.sales": () => "Sales",
   "books-editions.group.payments": () => "Payments",
   "books-editions.group.reports": () => "Reports",
-  "books-editions.accounts": () => "Accounts",
 } satisfies Dict;

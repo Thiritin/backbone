@@ -11,7 +11,6 @@ import type { GameState } from "../../../sim/50-state";
 import { t } from "../../../i18n/en";
 import { useSessionState } from "../../session";
 import { useFocus, useStore } from "../../store";
-import { AccountTree } from "./AccountTree";
 import { BankTab } from "./BankTab";
 import { BookingTab } from "./BookingTab";
 import { ChartTab } from "./ChartTab";
@@ -28,6 +27,7 @@ import { InstallGuide } from "./guide/InstallGuide";
 import { Installer } from "./guide/Installer";
 import { setupOf } from "../../../sim/80-business/books-guide";
 import type { AppMenu } from "../../desktop/menu";
+import { GnuCache } from "./programs/gnucache/GnuCache";
 import { useBooks } from "./view";
 import { Rexoffice } from "./programs/saas/rexoffice/Rexoffice";
 import { LAYOUTS } from "./layouts";
@@ -44,7 +44,6 @@ export const late = (s: GameState) => s.invoices.filter((i) => i.status === "ove
 // Each tab: id, label key, dock count and body. The selection a tab opens on comes from the focus id; go switches tab.
 // only: the one program that has the tab.
 const TABS: { id: string; group: Group; count: (s: GameState) => number; body: ComponentType<{ focus: string | null; go: (tab: string) => void }>; features?: Feature[]; only?: BooksVendorId }[] = [
-  { id: "accounts", group: "reports", count: () => 0, body: AccountTree, only: "gnucache" },
   { id: "overview", group: "reports", count: () => 0, body: OverviewTab },
   { id: "customers", group: "sales", count: (s) => s.customers.filter((c) => c.churnedAt === null && !c.sponsor).length, body: CustomersTab },
   { id: "quotes", group: "sales", count: (s) => s.quotes.filter((q) => q.status === "accepted").length, body: QuotesTab, features: ["quotes"] },
@@ -62,6 +61,7 @@ const TABS: { id: string; group: Group; count: (s: GameState) => number; body: C
 // A browser program runs in the Browser at the vendor's site; Books only links there.
 export function BooksApp() {
   const game = useBooks(), openApp = useStore((s) => s.openApp), v = currentVendor(game);
+  if (v?.id === "gnucache") return <GnuCache />;
   if (v?.deployment !== "browser") return <BooksProgram />;
   return (
     <div className="books books-link">

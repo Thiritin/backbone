@@ -27,17 +27,6 @@
 .bk-match td.bk-feed-text > * { display: block; }
 
 /* GnuCache: notebook pages over the account tree. */
-.bk-gnu { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.bk-gnu-pages { display: flex; gap: 2px; padding: 4px 4px 0; border-bottom: 1px solid var(--line-strong); background: var(--win-side); flex: none; }
-.bk-gnu-pages > * { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid var(--line-strong); border-bottom: 0; border-radius: 3px 3px 0 0; background: var(--hover); color: var(--text); font: inherit; }
-.bk-gnu-pages > [aria-selected="true"] { background: var(--win); margin-bottom: -1px; }
-.bk-gnu-close { display: grid; place-items: center; padding: 0; border: 0; background: none; color: inherit; }
-.bk-gnu-close svg { width: 12px; height: 12px; }
-.bk-gnu-tools { padding: 4px 6px; flex: none; }
-.bk-gnu-parent { cursor: pointer; font-weight: 600; }
-.bk-gnu-parent td:first-child::before { content: "\25BE"; display: inline-block; width: 14px; color: var(--text-2); }
-.bk-gnu-parent[aria-expanded="false"] td:first-child::before { content: "\25B8"; }
-.bk-gnu-leaf { padding-left: 30px !important; }
 
 /* Thyme: the chart of accounts over the selected account's sheet. */
 .bk-chart { flex: 1; min-height: 0; display: flex; flex-direction: column; }
