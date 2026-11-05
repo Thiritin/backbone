@@ -91,7 +91,7 @@ describe("pay step in properties, network and desk screens", () => {
     shareRack(s);
     show(s, Ripe, {});
     fireEvent.click(screen.getByRole("button", { name: t("misc.join") }));
-    payWith("network", SUPPLIER_NAMES.network!, LIR_FEES.signup, "onAccount");
+    payWith("registry", SUPPLIER_NAMES.registry!, LIR_FEES.signup, "onAccount");
     expect(g().ips.lir).toBeTruthy();
     expect(opensDoc()).toMatchObject({ method: "onAccount", paidAt: null });
   });
@@ -100,7 +100,7 @@ describe("pay step in properties, network and desk screens", () => {
     const s = game(), r = shareRack(s);
     show(s, NetworkTab, { loc: s.locations.find((l) => l.id === r.locationId)! });
     fireEvent.click(screen.getByRole("button", { name: t("locations-2.registerAsn", { fee: euro(ASN_FEE) }) }));
-    payWith("network", SUPPLIER_NAMES.network!, ASN_FEE, "transfer");
+    payWith("registry", SUPPLIER_NAMES.registry!, ASN_FEE, "transfer");
     expect(g().network.asn).toBeTruthy();
     expect(opensDoc()).toMatchObject({ method: "transfer" });
   });

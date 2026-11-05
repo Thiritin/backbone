@@ -13,7 +13,8 @@ import { methodsFor, placeOrder } from "./purchase";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const pay = (s: GameState, name: string, key: string, params: Record<string, string | number>, amount: number, method?: Method): ActionResult => {
   const lines = [{ hour: s.hour, category: "rent", key, params, amount: -amount }];
-  return placeOrder(s, { supplier: "network", name, lines, method: method ?? methodsFor(s, "network", lines, name)[0] });
+  const supplier = name === SUPPLIER_NAMES.registry ? "registry" : "network";
+  return placeOrder(s, { supplier, name, lines, method: method ?? methodsFor(s, supplier, lines, name)[0] });
 };
 
 // Rents more addresses from a datacenter's provider, billed monthly; the home line brings its own.
@@ -79,7 +80,7 @@ export function requestDelist(s: GameState, id: string): ActionResult {
 export function joinLir(s: GameState, method?: Method): ActionResult {
   if (s.ips.lir) return fail("error.alreadyLir");
   if (!s.locations.some((l) => l.dc)) return fail("error.lirNeedsDatacenter");
-  const paid = pay(s, SUPPLIER_NAMES.network!, "ledger.lirSignup", {}, LIR_FEES.signup, method);
+  const paid = pay(s, SUPPLIER_NAMES.registry!, "ledger.lirSignup", {}, LIR_FEES.signup, method);
   if (!paid.ok) return paid;
   // A LIR assigns itself an AS number unless the company already registered one.
   const asn = s.network.asn ?? 20000 + Math.floor(rand(hashRng(s.seed, 0xa5)) * 40000);
@@ -94,7 +95,7 @@ export function joinLir(s: GameState, method?: Method): ActionResult {
 export function buyBlock(s: GameState, method?: Method): ActionResult {
   if (!s.ips.lir) return fail("error.needsLir");
   const price = 256 * transferPrice(yearOf(s.hour));
-  const paid = pay(s, SUPPLIER_NAMES.network!, "ledger.blockBought", { size: 256 }, price, method);
+  const paid = pay(s, SUPPLIER_NAMES.registry!, "ledger.blockBought", { size: 256 }, price, method);
   if (!paid.ok) return paid;
   addBlock(s, 256, 24);
   return { ok: true };

@@ -20,7 +20,8 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 const set = (s: GameState, patch: Partial<Network>) => { s.network = { ...s.network, ...patch }; };
 const pay = (s: GameState, name: string, key: string, params: Record<string, string | number>, amount: number, method?: Method): ActionResult => {
   const lines = [{ hour: s.hour, category: "transit", key, params, amount: -amount }];
-  return placeOrder(s, { supplier: "network", name, lines, method: method ?? methodsFor(s, "network", lines, name)[0] });
+  const supplier = name === SUPPLIER_NAMES.registry ? "registry" : "network";
+  return placeOrder(s, { supplier, name, lines, method: method ?? methodsFor(s, supplier, lines, name)[0] });
 };
 
 // The location as a datacenter zone the player may buy network for, or the error why not.
@@ -125,7 +126,7 @@ export function registerAsn(s: GameState, method?: Method): ActionResult {
   if (!s.unlocks.includes("network")) return fail("error.needsNetwork");
   if (s.network.asn) return fail("error.hasAsn");
   const asn = 20000 + Math.floor(rand(hashRng(s.seed, 0xa5)) * 40000);
-  const paid = pay(s, SUPPLIER_NAMES.network!, "ledger.asn", { asn }, ASN_FEE, method);
+  const paid = pay(s, SUPPLIER_NAMES.registry!, "ledger.asn", { asn }, ASN_FEE, method);
   if (!paid.ok) return paid;
   set(s, { asn });
   return { ok: true, id: String(asn) };

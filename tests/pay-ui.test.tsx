@@ -26,7 +26,7 @@ const banked = (): GameState => {
 describe("document kinds", () => {
   it.each([["cash", "receipt", -100], ["transfer", "invoice", -100], ["transfer", "credit", 100], ["transfer", "contract", 0]] as const)("renders %s %s", (method, doc, amount) => {
     const s = method === "cash" ? newGame(1) : banked();
-    const r = placeOrder(s, { supplier: "landlord", name: "Dwell Immobilien", lines: [line(amount)], method, doc });
+    const r = placeOrder(s, { supplier: "landlord", name: "Engel & Vogel", lines: [line(amount)], method, doc });
     expect(r.ok).toBe(true);
     render(<SupplierInvoice game={s} p={s.payables[0]} />);
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(t(`purchase.doc.${doc}`));
@@ -38,7 +38,7 @@ describe("document kinds", () => {
 
   it("shows net, VAT and gross", () => {
     const s = banked();
-    placeOrder(s, { supplier: "landlord", name: "Dwell Immobilien", lines: [line(-119)], method: "transfer" });
+    placeOrder(s, { supplier: "landlord", name: "Engel & Vogel", lines: [line(-119)], method: "transfer" });
     render(<SupplierInvoice game={s} p={s.payables[0]} />);
     expect(screen.getByText(t("purchase.net"))).toBeTruthy();
     expect(screen.getByText(t("purchase.gross"))).toBeTruthy();

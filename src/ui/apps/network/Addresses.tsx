@@ -142,7 +142,7 @@ export function Ripe({ game }: { game: GameState }) {
   const free = freeBlock(game.hour);
   const [buy, setBuy] = useState<Purchase & { key: string } | null>(null);
   const step = buy && <PayStep key={buy.key} game={game} buy={buy} onClose={() => setBuy(null)} />;
-  const ripe = { supplier: "network" as const, name: SUPPLIER_NAMES.network! };
+  const ripe = { supplier: "registry" as const, name: SUPPLIER_NAMES.registry! };
   // Routing by the provider has a setup fee; a block announced from the own BGP router costs nothing.
   const announce = (block: string, l: Location) => fullTableAt(game, l.id) ? act(announceBlock, block, l.id, false)
     : setBuy({ key: `announce-${block}-${l.id}`, supplier: "network", name: datacenterById(l.dc!).name, amount: PROVIDER_ROUTING_SETUP, run: (m) => act(announceBlock, block, l.id, true, m) });

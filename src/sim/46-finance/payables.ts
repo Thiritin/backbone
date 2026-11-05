@@ -9,7 +9,7 @@ import type { GameState, LedgerEntry } from "../50-state";
 import { ALL_DATACENTERS as DATACENTERS, COUNTRY, datacenterById } from "../20-world/datacenters";
 import { cardReady, cardSpent, groupIban, iban, ibanEra } from "./bank";
 
-export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software" | "landlord" | "shopVendor" | "network" | "services" | "contractor" | "marketplace";
+export type SupplierId = "upstream" | "power" | "datacenter" | "pear" | "registrar" | "hardware" | "card" | "office" | "notary" | "register" | "chamber" | "books" | "tax" | "software" | "landlord" | "shopVendor" | "network" | "services" | "contractor" | "marketplace" | "registry";
 // throttle slows the home line, cut takes it off the internet, dark switches the locations' power off, licence stops the Pear
 // subscriptions, domains lets the domains lapse, noShip stops hardware orders, card blocks the credit card.
 export type Effect = "throttle" | "cut" | "dark" | "licence" | "domains" | "noShip" | "card";
@@ -28,10 +28,10 @@ export const CONSEQUENCES: Record<SupplierId, { days: number; effect: Effect }[]
   books: [],
   // An unpaid licence order just never sends its keys.
   software: [],
-  landlord: [], shopVendor: [], network: [], services: [], contractor: [], marketplace: [],
+  landlord: [], shopVendor: [], network: [], services: [], contractor: [], marketplace: [], registry: [],
 };
 // The pun name each new supplier trades under unless the order names another.
-export const SUPPLIER_NAMES: Partial<Record<SupplierId, string>> = { landlord: "Dwell Immobilien", shopVendor: "Taxware", network: "DE-KICKS", services: "Pear" };
+export const SUPPLIER_NAMES: Partial<Record<SupplierId, string>> = { landlord: "Engel & Vogel", shopVendor: "Taxware", network: "DE-KICKS", registry: "RIPE NCC", services: "Pear" };
 export const PAY_DAYS = 14;
 export const THROTTLE = 0.25;
 // The bank code every supplier banks at; each supplier's account comes from its id.
@@ -173,8 +173,8 @@ export const HARDWARE_SHOP = "Alternatte";
 // The month's lines no supplier invoices (leases, addresses, properties, modules): one document per payee, debited from the
 // bank or paid in cash before there is one.
 const LANDLORD = new Set(["ledger.officeRent", "ledger.officeLine", "ledger.upkeep", "ledger.hallUpkeep"]);
-const NETWORK = new Set(["ledger.addresses", "ledger.lirYearly"]);
-const DIRECT_SUPPLIER = (key: string): SupplierId => (key === "ledger.lease" ? "hardware" : LANDLORD.has(key) ? "landlord" : NETWORK.has(key) ? "network" : "services");
+const NETWORK = new Set(["ledger.addresses"]);
+const DIRECT_SUPPLIER = (key: string): SupplierId => (key === "ledger.lease" ? "hardware" : LANDLORD.has(key) ? "landlord" : NETWORK.has(key) ? "network" : key === "ledger.lirYearly" ? "registry" : "services");
 export function billDirect(s: GameState, lines: LedgerEntry[]): void {
   const by = new Map<string, { supplier: SupplierId; name: string; lines: LedgerEntry[] }>();
   for (const l of lines) {
