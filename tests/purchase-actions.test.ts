@@ -117,7 +117,12 @@ describe("colocation", () => {
   it("orders on account once a bank exists", () => {
     const s = bank(freeFloor({ ...newGame(1), cash: 1_000_000 }));
     s.hour = hourOf(new Date(Date.UTC(2005, 0, 20)));
+    const cash = s.cash;
     expect(addLocation(s, FR5.id, "share", 2).ok).toBe(true);
-    expect(ours(s, "datacenter")).toMatchObject([{ doc: "contract", method: "onAccount" }]);
+    const [contract, invoice] = ours(s, "datacenter");
+    expect(contract).toMatchObject({ doc: "contract", method: "onAccount", amount: 0 });
+    expect(invoice).toMatchObject({ doc: "invoice", method: "onAccount", paidAt: null });
+    expect(invoice.amount).toBeGreaterThan(0);
+    expect(s.cash).toBe(cash);
   });
 });
