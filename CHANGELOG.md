@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-05
 - A step card opened while a rack is already on screen now turns it to the back for cabling, the guide counts the step you are on, and the free-slot outline disappears once a server is mounted.
 - Prefilled transfer amounts and registrar factors use your language's number format, the trade office has a German web address, and the shop cart scrolls to the leasing offers.
+- Every bookkeeping program now installs through its own setup pages, with licence, serial number and sign-up, and a first-steps guide in the style of its era opens on first launch and ticks off each step until the books are ready.
+- Each accounting software vendor now has its own website look in every era, with a download section, system requirements and an installation guide link.
 - Selecting a device in a rack now hangs a paper asset tag on it with its name, model, rack unit and inventory number, and the router password is read from the sticker on the router.
 - The letterbox panel now lays the first letter on top with the later ones stacked beside it, letters you have read no longer come back when you open the box again, and the scan corner sits at the bottom of the page.
 - Letters from the trade office, tax office and other authorities are now the bill itself, with the same letterhead everywhere and a stamp once paid.

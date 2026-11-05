@@ -24,6 +24,7 @@ import { Switcher } from "./Switcher";
 import { UpdateSheet } from "./UpdateSheet";
 import { OsUpdateSheet } from "./OsUpdateSheet";
 import { ConfirmHost } from "./Confirm";
+import { InstallerHost } from "../apps/books/guide/Installer";
 import { watchUpdates } from "../update";
 import { Travel } from "../travel/Travel";
 import { useTrip } from "../travel/route";
@@ -126,6 +127,7 @@ function Shell() {
         <>
           <MenuBar onBell={toggleCenter} />
           <ConfirmHost />
+          <InstallerHost />
           <DesktopIcons />
           <Widgets />
           <div className="windows">{windows.map((w) => <AppWindow key={w.id} win={w} front={!w.minimized && w.z === frontZ} />)}</div>

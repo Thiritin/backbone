@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { hourOfMonth } from "../src/sim/00-core/time";
 import { newGame } from "../src/sim/50-state";
 import { SevdeckSite } from "../src/ui/apps/browser/sites/books/SevdeckSite";
+import { BOOKS_GUIDE_ROUTE } from "../src/ui/apps/browser/sites/books/guide-route";
 
 const page = (month: string, path = "/") => {
   const s = newGame(13);
@@ -11,14 +12,34 @@ const page = (month: string, path = "/") => {
 };
 
 describe("EightDesk site", () => {
-  it("shows a pricing table from 2013 and rebrands in 2020", () => {
-    const early = page("2013-06");
-    expect(early).toContain("bv-table");
-    expect(early).toContain("sd-flat");
-    expect(early).not.toContain("sd-brand");
-    const late = page("2021-03");
-    expect(late).toContain("bv-table");
-    expect(late).toContain("sd-brand");
+  it("wears a different structure in each era", () => {
+    const flat = page("2013-06"), dash = page("2019-03"), v2 = page("2024-06");
+    expect(flat).toContain("ed-flat");
+    expect(flat).toContain("ed-sheet");
+    expect(flat).not.toContain("ed-window");
+    expect(dash).toContain("ed-dash");
+    expect(dash).toContain("ed-window");
+    expect(dash).not.toContain("ed-bento");
+    expect(v2).toContain("ed-v2");
+    expect(v2).toContain("ed-bento");
+    expect(v2).not.toContain("ed-sheet");
+  });
+
+  it("shows the pricing table with buy buttons in every era", () => {
+    for (const m of ["2013-06", "2019-03", "2024-06"]) {
+      const html = page(m);
+      expect(html).toContain("bv-table");
+      expect(html).toContain("bv-buy");
+    }
+  });
+
+  it("links the install guide and lists system requirements in every era", () => {
+    for (const m of ["2013-06", "2019-03", "2024-06"]) {
+      const html = page(m);
+      expect(html).toContain(`href="${BOOKS_GUIDE_ROUTE}"`);
+      expect(html).toContain("Installation guide");
+      expect(html).toContain("System requirements");
+    }
   });
 
   it("shows one edition on its edition path", () => {

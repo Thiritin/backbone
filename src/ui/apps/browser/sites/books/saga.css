@@ -1,45 +1,91 @@
-/* Thyme: a corporate business-software group's site, green on white. */
-.sg { min-height: 100%; background: #dde3df; color: #333; font: 11px/1.5 Verdana, Arial, sans-serif; padding: 10px 0 24px; }
-.sg a { color: #00704a; }
-.sg-page { background: #fff; margin: 0 auto; }
-.sg-head { display: flex; align-items: flex-end; gap: 14px; }
-.sg-logo { color: #00704a; font: bold 30px/1 Arial, Helvetica, sans-serif; letter-spacing: -1px; }
-.sg-tag { color: #666; }
-.sg-nav a { text-decoration: none; }
-.sg-main h1 { color: #00704a; margin: 0 0 10px; }
-.sg-main h2 { font-size: 12px; margin: 0 0 2px; }
-.sg-main p { margin: 0 0 6px; }
-.sg-foot { color: #888; font-size: 10px; }
+/* Thyme: a software group's site. Boxed corporate page (2005), grey and green tiles (2010), dark hero with a neon button (2016). */
+.sg { min-height: 100%; color: #222; }
+.sg a { color: inherit; }
+.sg p { margin: 0 0 8px; }
+.sg-logo { display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
+.sg-mark-stem { stroke: #fff; stroke-width: 1.6; fill: none; }
+.sg-mark-leaf { fill: #fff; }
+.sg-util span + span::before { content: "·"; margin: 0 8px; }
+.sg-nav { display: flex; }
+.sg-nav a, .sg-nav span { text-decoration: none; }
+.sg-guide { font-weight: bold; }
+.sg-foot span { margin-left: 14px; }
+.sg-art { position: relative; min-height: 220px; }
 
-/* 2005 to 2009: a fixed 760px page with a solid green nav bar and plain bullet lists. */
-.sg-classic .sg-page { width: 760px; max-width: 100%; border: 1px solid #b9c4bd; }
-.sg-classic .sg-head { padding: 14px 16px 10px; }
-.sg-classic .sg-nav { background: #00704a; border-bottom: 3px solid #8dc63f; padding: 0 16px; }
-.sg-classic .sg-nav a { display: inline-block; color: #fff; font-weight: bold; padding: 5px 12px 5px 0; }
-.sg-classic .sg-nav a[aria-current="page"] { text-decoration: underline; }
-.sg-classic .sg-main { padding: 14px 16px 6px; }
-.sg-classic .sg-main h1 { font: bold 16px Arial, Helvetica, sans-serif; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-.sg-classic .bv-edition { margin: 0 0 16px; }
-.sg-classic .bv-edition ul { margin: 2px 0 6px; padding-left: 22px; }
-.sg-classic .bv-buy { background: #00704a; color: #fff; border: 1px outset #4a9b78; border-radius: 0; padding: 2px 12px; font: bold 11px Verdana, Arial, sans-serif; }
-.sg-classic .sg-foot { border-top: 1px solid #ccc; margin: 0 16px; padding: 8px 0 12px; }
+/* Header-heavy single column: a tall dark green band with the nav inside, teaser cards in a row, the product list full width, a link bar at the bottom. */
+.sg-classic { --bv-brand: #00704a; --bv-ink: #fff; --bv-font: Verdana, Arial, sans-serif; background: #fff; font: 12px/1.5 Verdana, Arial, sans-serif; }
+.sg-classic .sg-util { padding: 3px 24px; background: #e3e8e3; font-size: 10px; color: #444; text-align: right; }
+.sg-classic .sg-head { padding: 28px 24px 0; background: linear-gradient(#00402a, #00583a); color: #fff; }
+.sg-classic .sg-brand { display: flex; align-items: baseline; gap: 22px; padding-bottom: 26px; }
+.sg-classic .sg-logo { font: bold 44px/1 Georgia, "Times New Roman", serif; gap: 12px; }
+.sg-classic .sg-mark { width: 52px; height: 52px; }
+.sg-classic .sg-mark-bg { fill: #00704a; stroke: #7fc7a5; stroke-width: 1; }
+.sg-classic .sg-tag { color: #cfeadc; font-style: italic; font-size: 14px; }
+.sg-classic .sg-nav { gap: 2px; }
+.sg-classic .sg-nav a, .sg-classic .sg-nav span { padding: 8px 20px; color: #fff; font-weight: bold; background: #00704a; border: 1px solid #3f9a76; border-bottom: 0; }
+.sg-classic .sg-nav a[aria-current] { background: #fff; color: #00704a; border-color: #fff; }
+.sg-classic .sg-cards { display: flex; gap: 12px; padding: 16px 24px 0; }
+.sg-classic .sg-card { flex: 1; padding: 10px 12px; border: 1px solid #b7c9bf; border-top: 3px solid #00704a; background: #f6faf7; }
+.sg-classic .sg-main { padding: 14px 24px 18px; }
+.sg-classic h1 { font: bold 20px Georgia, serif; color: #00704a; margin: 0 0 10px; }
+.sg-classic h2 { font: bold 12px Verdana; margin: 0 0 3px; color: #00402a; }
+.sg-classic h3 { font: bold 11px Verdana; margin: 0 0 4px; }
+.sg-classic .sg-dl { margin-top: 14px; padding: 8px 10px; border: 1px solid #b7c9bf; background: #f6faf7; }
+.sg-classic .bv-editions { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
+.sg-classic .bv-edition { padding: 6px 0 2px; border-top: 1px solid #cfdcd5; }
+.sg-classic .sg-links { padding: 8px 24px; background: #00583a; color: #fff; font-size: 11px; }
+.sg-classic .sg-links span + span::before { content: "|"; margin: 0 10px; color: #7fc7a5; }
+.sg-classic .sg-foot { padding: 8px 24px; background: #e3e8e3; color: #555; font-size: 10px; }
 
-/* From 2010: a wide flat page, white header, green band nav and the editions compared side by side. */
-.sg-modern { background: #f2f4f3; font: 13px/1.5 Arial, Helvetica, sans-serif; padding-top: 0; }
-.sg-modern .sg-page { max-width: 940px; }
-.sg-modern .sg-head { padding: 22px 24px 14px; }
-.sg-modern .sg-logo { font-size: 36px; }
-.sg-modern .sg-nav { background: linear-gradient(#0a8a5c, #00704a); padding: 0 24px; }
-.sg-modern .sg-nav a { display: inline-block; color: #fff; padding: 9px 16px 9px 0; }
-.sg-modern .sg-nav a[aria-current="page"] { font-weight: bold; }
-.sg-modern .sg-main { padding: 20px 24px 10px; }
-.sg-modern .sg-main h1 { font-size: 24px; font-weight: normal; }
-.sg-modern .bv-table { border-collapse: collapse; width: 100%; border: 1px solid #d5ddd8; }
-.sg-modern .bv-table th, .sg-modern .bv-table td { padding: 8px 12px; border-bottom: 1px solid #e3e8e5; text-align: center; }
-.sg-modern .bv-table thead th { background: #00704a; color: #fff; font-size: 14px; }
-.sg-modern .bv-table th[scope="row"] { text-align: left; font-weight: normal; }
-.sg-modern .bv-table tbody tr:nth-child(even) { background: #f6f8f7; }
-.sg-modern .bv-table .bv-price td { font-size: 18px; font-weight: bold; color: #00704a; }
-.sg-modern .bv-table .bv-price small { display: block; font-size: 11px; font-weight: normal; color: #666; }
-.sg-modern .bv-buy { background: #8dc63f; color: #fff; border: 0; border-radius: 3px; padding: 6px 18px; font: bold 13px Arial, Helvetica, sans-serif; }
-.sg-modern .sg-foot { background: #333; color: #bbb; padding: 12px 24px; }
+/* Wide page: grey bar, white header with the nav at the right, three colour tiles. */
+.sg-modern { --bv-brand: #4c9a2a; --bv-ink: #fff; --bv-font: Arial, Helvetica, sans-serif; background: #fff; font: 13px/1.5 Arial, Helvetica, sans-serif; }
+.sg-modern .sg-util { padding: 6px 40px; background: #4a4d4a; color: #d8d8d8; font-size: 11px; text-align: right; }
+.sg-modern .sg-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 4px solid #4c9a2a; }
+.sg-modern .sg-logo { font: 32px/1 "Trebuchet MS", Arial, sans-serif; color: #4c9a2a; }
+.sg-modern .sg-mark-bg { fill: #4c9a2a; }
+.sg-modern .sg-nav a, .sg-modern .sg-nav span { padding: 6px 16px; font-weight: bold; color: #4a4d4a; }
+.sg-modern .sg-nav a[aria-current] { color: #3a7a1e; }
+.sg-modern .sg-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px 40px 0; background: linear-gradient(#f0f0f0, #f0f0f0) top / 100% 100% no-repeat; margin-top: 4px; }
+.sg-modern .sg-tile { padding: 22px 20px; color: #fff; min-height: 150px; }
+.sg-modern .sg-tile-0 { background: #3a7a1e; } .sg-modern .sg-tile-1 { background: #5c5f5c; } .sg-modern .sg-tile-2 { background: #2c5c19; }
+.sg-modern .sg-tile h2 { font-size: 22px; margin: 0 0 8px; font-weight: normal; color: #fff; }
+.sg-modern .sg-tile a { display: inline-block; margin-top: 6px; padding: 6px 16px; background: #fff; color: #333; font-weight: bold; text-decoration: none; border-radius: 2px; }
+.sg-modern .sg-cols { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 32px; padding: 28px 40px; }
+.sg-modern .sg-side { display: flex; flex-direction: column; gap: 16px; }
+.sg-modern .sg-box { padding: 16px; background: #f0f0f0; border-top: 4px solid #4c9a2a; }
+.sg-modern .sg-box h3 { color: #2c5c19; font-size: 16px; }
+.sg-modern h1 { font: 26px "Trebuchet MS", Arial; color: #4a4d4a; margin: 0 0 14px; }
+.sg-modern h2 { font-size: 18px; color: #3a7a1e; margin: 22px 0 6px; }
+.sg-modern h3 { font-size: 14px; margin: 0 0 4px; }
+.sg-modern .bv-table { border-top: 4px solid #4c9a2a; } .sg-modern .bv-table thead th { background: #f0f0f0; }
+.sg-modern .bv-buy { border-radius: 2px; padding: 6px 16px; font-size: 12px; }
+.sg-modern .sg-dl { padding: 12px 16px; background: #f0f0f0; border-left: 5px solid #4c9a2a; }
+.sg-modern .sg-foot { padding: 20px 40px; background: #4a4d4a; color: #ccc; font-size: 11px; }
+
+/* Flat page: dark green hero with a neon button, three feature columns, spacious table. */
+.sg-flat { --bv-brand: #00d639; --bv-ink: #062b1a; --bv-font: "Segoe UI", system-ui, sans-serif; background: #fff; font: 16px/1.6 "Segoe UI", system-ui, sans-serif; color: #062b1a; }
+.sg-flat .sg-head { display: flex; align-items: center; gap: 36px; padding: 14px 48px; background: #fff; position: sticky; top: 0; z-index: 3; border-bottom: 1px solid #e3e8e3; }
+.sg-flat .sg-logo { font: 700 26px/1 "Segoe UI", sans-serif; letter-spacing: -1px; }
+.sg-flat .sg-mark-bg { fill: #062b1a; } .sg-flat .sg-mark-leaf { fill: #00d639; } .sg-flat .sg-mark-stem { stroke: #00d639; }
+.sg-flat .sg-nav { flex: 1; gap: 28px; font-weight: 600; }
+.sg-flat .sg-nav a[aria-current] { box-shadow: 0 2px #00d639; }
+.sg-flat .sg-cta { display: inline-block; padding: 10px 26px; border-radius: 999px; background: #00d639; color: #062b1a; font-weight: 700; text-decoration: none; }
+.sg-flat .sg-hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; padding: 72px 48px; background: #062b1a; color: #fff; overflow: hidden; }
+.sg-flat h1 { font-size: 52px; line-height: 1.05; font-weight: 700; margin: 0 0 18px; letter-spacing: -1.5px; }
+.sg-flat .sg-hero p { font-size: 19px; color: #b5e8cb; max-width: 520px; }
+.sg-flat .sg-art i { position: absolute; border-radius: 50%; }
+.sg-flat .sg-art i:nth-child(1) { width: 230px; height: 230px; right: 40px; top: 0; background: #00d639; }
+.sg-flat .sg-art i:nth-child(2) { width: 150px; height: 150px; right: 190px; top: 120px; background: #0e5c36; }
+.sg-flat .sg-art i:nth-child(3) { width: 70px; height: 70px; right: 20px; top: 190px; background: #fff; }
+.sg-flat .sg-feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; padding: 56px 48px; }
+.sg-flat .sg-feats h2 { font-size: 21px; margin: 0 0 6px; }
+.sg-flat .sg-main { padding: 0 48px 56px; max-width: 1100px; margin: 0 auto; }
+.sg-flat h2 { font-size: 30px; font-weight: 700; margin: 8px 0 18px; letter-spacing: -0.5px; }
+.sg-flat h3 { font-size: 16px; margin: 0 0 4px; }
+.sg-flat .bv-table { border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px #d4e3da; }
+.sg-flat .bv-table thead th { background: #062b1a; color: #fff; padding: 14px; }
+.sg-flat .bv-table th, .sg-flat .bv-table td { padding: 12px 14px; }
+.sg-flat .bv-buy { border: 0; border-radius: 999px; padding: 9px 22px; font-size: 14px; }
+.sg-flat .sg-dl { margin-top: 36px; padding: 24px 28px; border-radius: 12px; background: #eaf8ef; }
+.sg-flat .sg-foot { padding: 28px 48px; background: #062b1a; color: #8fc9a8; font-size: 13px; }
+@media (max-width: 720px) { .sg-flat .sg-hero, .sg-flat .sg-feats, .sg-modern .sg-tiles { grid-template-columns: 1fr; } .sg-classic .sg-cards { flex-direction: column; } .sg-modern .sg-cols { grid-template-columns: 1fr; } }

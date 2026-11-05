@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { useInstaller as useBooksInstaller } from "../src/ui/apps/books/guide/Installer";
 import { afterEach, describe, expect, it } from "vitest";
 import { t } from "../src/i18n/en";
 import { tick } from "../src/sim/88-tick/tick";
@@ -87,7 +88,7 @@ describe("automatic install", () => {
 });
 
 describe("accounting download", () => {
-  it("installs the books from the vendor page once the download is ready", () => {
+  it("opens the installer from the vendor page once the download is ready", () => {
     const s = newGame(31);
     s.hour = hourOf(new Date(Date.UTC(2005, 2, 10, 10)));
     s.cash = 50_000;
@@ -101,7 +102,7 @@ describe("accounting download", () => {
     cleanup();
     render(view());
     fireEvent.click(screen.getAllByText(t("books-vendors.install"))[0]);
-    expect(useStore.getState().game.books.vendor).toBe("lexwear");
+    expect(useBooksInstaller.getState().id).toBe("lexwear");
   });
 
   it("shows the card in the room, and a chip brings it back once it is closed", () => {
