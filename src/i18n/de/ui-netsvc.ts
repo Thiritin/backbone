@@ -53,6 +53,7 @@ export default {
   "error.recordIp": () => "IP-Adresse ungültig",
   "error.recordPriority": () => "Priorität fehlt",
   "error.recordHost": () => "Host ungültig",
+  "error.recordExists": () => "Eintrag existiert bereits",
   "error.managedRecord": () => "Dieser Eintrag wird automatisch verwaltet.",
   "error.unknownZone": () => "Diese Zone gibt es nicht mehr.",
   "ticket.howTo.dnsChange.subject": () => "Bitte ändert unseren DNS-Eintrag",

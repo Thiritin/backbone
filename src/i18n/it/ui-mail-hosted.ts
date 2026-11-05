@@ -110,6 +110,7 @@ export default {
   "ionose.domain.registrar": () => "Apri le impostazioni DNS presso il registrar",
   "ionose.domain.autoSet": () => "Imposta i record automaticamente",
   "ionose.domain.autoSetDone": () => "Record impostati",
+  "ionose.domain.notFound": () => "Record non ancora trovati",
   "ionose.switch.create": () => "Crea le caselle presso il nuovo provider.",
   "ionose.switch.mx": () => "Punta i record MX del dominio al nuovo provider.",
   "ionose.switch.import": () => "Importa le e-mail di ogni casella presso il nuovo provider.",

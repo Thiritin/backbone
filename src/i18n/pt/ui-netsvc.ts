@@ -53,6 +53,7 @@ export default {
   "error.recordIp": () => "Endereço IP inválido",
   "error.recordPriority": () => "Prioridade em falta",
   "error.recordHost": () => "Anfitrião inválido",
+  "error.recordExists": () => "Este registo já existe",
   "error.managedRecord": () => "Este registo é gerido automaticamente.",
   "error.unknownZone": () => "Esta zona já não existe.",
   "ticket.howTo.dnsChange.subject": () => "Alterem o nosso registo DNS, por favor",

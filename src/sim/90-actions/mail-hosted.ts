@@ -22,7 +22,9 @@ export function setIonoseRecords(s: GameState, tenantId: string): ActionResult {
   const wanted = [...mxSetAt("ionose", t.domain, s.hour).map(([p, h]) => ({ type: "MX" as const, data: `${p} ${h}` })), { type: "TXT" as const, data: IONOSE_SPF }];
   for (const w of wanted) {
     if (zoneRecords(s).some((r) => r.type === w.type && r.name === "@" && r.data.replace(/"/g, "") === w.data)) continue;
-    const r = setCompanyRecord(s, { ...w, name: "@", ttl: 3600 });
+    // A hand-made SPF record is replaced, since two of them make the check fail.
+    const spf = w.type === "TXT" ? s.company.zone.find((r) => !r.gone && r.type === "TXT" && r.name === "@" && r.data.replace(/"/g, "").startsWith("v=spf1")) : undefined;
+    const r = setCompanyRecord(s, { ...w, name: "@", ttl: 3600, id: spf?.id });
     if (!r.ok) return r;
   }
   return { ok: true };

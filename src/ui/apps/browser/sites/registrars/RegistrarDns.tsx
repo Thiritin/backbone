@@ -2,7 +2,7 @@ import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { nowHours, yearOf } from "../../../../../sim/00-core/time";
 import type { Registrar } from "../../../../../sim/10-catalog/registrars";
-import { nameServers, nsMinutesLeft, nsStatus, domainOf, type Domain } from "../../../../../sim/30-customers/registry";
+import { nameServers, nsMinutesLeft, registering, nsStatus, domainOf, type Domain } from "../../../../../sim/30-customers/registry";
 import { settled, zoneRecords, type CompanyRecord } from "../../../../../sim/60-infra/company-zone";
 import { TTLS, type DnsType } from "../../../../../sim/60-infra/netsvc-dns";
 import { recordChoices, type RecordChoice } from "../../../../../sim/60-infra/zone-choices";
@@ -32,7 +32,8 @@ function pick(d: Draft, list: RecordChoice[]): Draft {
 // The DNS page for the company domain: its records with Edit and Delete and a form to add or change one, titled as the partner named it.
 // The state of a domain's name servers.
 export function NsBadge({ game, d }: { game: GameState; d: Domain }) {
-  const st = nsStatus(game, d);
+  const st = nsStatus(game, d), pending = registering(game, d);
+  if (pending) return <span className="rgp-status"><span className="rgp-badge" data-ns-status="propagating">{t("registrarPanel.status.registering")}</span></span>;
   return (
     <span className="rgp-status">
       <span className="rgp-badge" data-ns-status={st}>{t(`registrarPanel.nsStatus.${st}`, { n: nsMinutesLeft(game, d) })}</span>

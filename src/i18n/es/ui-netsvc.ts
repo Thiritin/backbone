@@ -53,6 +53,7 @@ export default {
   "error.recordIp": () => "Dirección IP no válida",
   "error.recordPriority": () => "Falta la prioridad",
   "error.recordHost": () => "Host no válido",
+  "error.recordExists": () => "Este registro ya existe",
   "error.managedRecord": () => "Este registro se gestiona automáticamente.",
   "error.unknownZone": () => "Esta zona ya no existe.",
   "ticket.howTo.dnsChange.subject": () => "Cambiad nuestro registro DNS, por favor",

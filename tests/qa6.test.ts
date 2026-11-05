@@ -49,4 +49,17 @@ describe("qa6 registrar and Ionose", () => {
     expect(checkIonoseDomain(s, id).ok).toBe(true);
     expect(setIonoseRecords(s, id).ok && zoneRecords(s)).toHaveLength(z.length);
   });
+
+  it("refuses an identical record and replaces a hand-made SPF record", () => {
+    const s = readyGame(65);
+    s.company = { ...s.company, zone: [] };
+    s.registrar = { ...s.registrar!, id: "nameCheep" };
+    const a = { type: "A" as const, name: "@", ttl: 3600, data: "10.0.0.1" };
+    expect(setCompanyRecord(s, a).ok).toBe(true);
+    expect(setCompanyRecord(s, a)).toEqual({ ok: false, error: "error.recordExists" });
+    setCompanyRecord(s, { type: "TXT", name: "@", ttl: 3600, data: "v=spf1 a ~all" });
+    const id = s.mail.tenants.find((x) => x.host === "ionose")!.id;
+    expect(setIonoseRecords(s, id).ok).toBe(true);
+    expect(zoneRecords(s).filter((r) => r.type === "TXT").map((r) => r.data)).toEqual(["v=spf1 include:_spf.ionose.de ~all"]);
+  });
 });

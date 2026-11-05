@@ -110,6 +110,7 @@ export default {
   "ionose.domain.registrar": () => "DNS-Einstellungen beim Registrar öffnen",
   "ionose.domain.autoSet": () => "Einträge automatisch setzen",
   "ionose.domain.autoSetDone": () => "Einträge gesetzt",
+  "ionose.domain.notFound": () => "Einträge noch nicht gefunden",
   "ionose.switch.create": () => "Legen Sie die Postfächer beim neuen Anbieter an.",
   "ionose.switch.mx": () => "Richten Sie die MX-Einträge der Domain auf den neuen Anbieter.",
   "ionose.switch.import": () => "Importieren Sie die E-Mails jedes Postfachs beim neuen Anbieter.",

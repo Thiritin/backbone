@@ -110,6 +110,7 @@ export default {
   "ionose.domain.registrar": () => "Abrir la configuración DNS en el registrador",
   "ionose.domain.autoSet": () => "Configurar registros automáticamente",
   "ionose.domain.autoSetDone": () => "Registros configurados",
+  "ionose.domain.notFound": () => "Registros aún no encontrados",
   "ionose.switch.create": () => "Cree los buzones en el nuevo proveedor.",
   "ionose.switch.mx": () => "Apunte los registros MX del dominio al nuevo proveedor.",
   "ionose.switch.import": () => "Importe los correos de cada buzón en el nuevo proveedor.",
