@@ -1,3 +1,5 @@
+import { Children } from "react";
+import { t } from "../../../../../../i18n/en";
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TableHTMLAttributes } from "react";
 
 // Plain elements with .pt-* classes: each skin's CSS gives them the look of its own era, so no desktop control styles reach a shop page.
@@ -11,4 +13,9 @@ export const PBadge = ({ tone, children }: { tone?: "ok" | "warn" | "bad"; child
 export const PTable = ({ className = "", ...p }: TableHTMLAttributes<HTMLTableElement>) => <table {...p} className={`pt-table ${className}`.trim()} />;
 export const PBox = ({ title, children, ...p }: HTMLAttributes<HTMLElement> & { title: string }) => (
   <section {...p} className="pt-box"><h3 className="pt-box-h">{title}</h3><div className="pt-box-b">{children}</div></section>
+);
+
+// A table body that shows the empty row of the real products when there is nothing to list.
+export const PBody = ({ children }: { children?: ReactNode }) => (
+  <tbody>{Children.toArray(children).length ? children : <tr className="pt-empty"><td colSpan={99}>{t("shop-admin.d.empty")}</td></tr>}</tbody>
 );

@@ -1,6 +1,6 @@
 import { useStore } from "../../../../../store";
 import { finishShopSetup } from "../../../../../../sim/90-actions/portal";
-import { Dashboard } from "./Dashboard";
+import { Dashboard, type DashKind } from "./Dashboard";
 import { PBtn } from "./ui";
 import { t } from "../../../../../../i18n/en";
 import type { Screen, ScreenName, ScreenProps } from "./nav";
@@ -25,7 +25,7 @@ export const SCREEN_LABEL: Partial<Record<ScreenName, string>> = {
 };
 
 // The admin screen an address names; every shop system shows the same functions under its own navigation.
-export function AdminScreen({ screen, wizard, ...props }: ScreenProps & { screen: Screen; wizard?: boolean }) {
+export function AdminScreen({ screen, wizard, dash, label, ...props }: ScreenProps & { screen: Screen; wizard?: boolean; dash?: DashKind; label?: (n: ScreenName) => string }) {
   if (screen.name === "setup") return <ShopSetup screen={screen} {...props} />;
   switch (screen.name) {
     case "products": return <Products {...props} />;
@@ -46,7 +46,7 @@ export function AdminScreen({ screen, wizard, ...props }: ScreenProps & { screen
     case "emails": return <Emails {...props} />;
     case "licence": return <LicenceScreen {...props} />;
     case "updates": return <UpdatesScreen {...props} />;
-    default: return <><SetupPanel {...props} show={!!wizard} /><Dashboard {...props} /></>;
+    default: return <><SetupPanel {...props} show={!!wizard} /><Dashboard {...props} dash={dash} label={label} /></>;
   }
 }
 
@@ -56,9 +56,12 @@ function SetupPanel({ game, go, show }: ScreenProps & { show: boolean }) {
   if (!show || game.shop.setupDone !== false) return null;
   return (
     <div className="pt-wizard" role="region" aria-label={t("setup.title")}>
-      <strong>{t("setup.title")}</strong>
+      <strong>{t("shop-admin.d.wizardText")}</strong>
       <PBtn primary onClick={() => go({ name: "setup" })}>{t("setup.title")}</PBtn>
       <PBtn onClick={() => act(finishShopSetup)}>{t("shop-admin.d.dismiss")}</PBtn>
     </div>
   );
 }
+
+// The title of a create page, which sits under its list in the menu.
+export const titleOf = (s: Screen): string | undefined => (s.name === "product" && s.id === "new" ? t("shop-admin.createProduct") : s.name === "product" && s.id === "new-group" ? t("shop-admin.createGroup") : undefined);

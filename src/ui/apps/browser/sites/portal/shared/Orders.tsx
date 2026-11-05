@@ -1,4 +1,4 @@
-import { PSelect, PBtn } from "./ui";
+import { PBody, PBtn, PSelect } from "./ui";
 import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
@@ -31,7 +31,7 @@ export function Orders({ game, go }: ScreenProps) {
       </div>
       <table className="pt-table">
         <thead><tr><th>{t("shop-orders.number")}</th><th>{t("shop-admin.date")}</th><th>{t("shop-admin.client")}</th><th>{t("shop-admin.total")}</th><th>{t("shop-orders.payment")}</th><th>{t("shop-admin.status")}</th></tr></thead>
-        <tbody>
+        <PBody>
           {list.map((o) => {
             const inv = invoiceOf(game, o);
             return (
@@ -45,7 +45,7 @@ export function Orders({ game, go }: ScreenProps) {
               </tr>
             );
           })}
-        </tbody>
+        </PBody>
       </table>
     </div>
   );
@@ -71,7 +71,7 @@ export function OrderDetail({ game, go, id }: ScreenProps & { id: string }) {
       </dl>
       <table className="pt-table">
         <thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-store.cycle")}</th><th>{t("shop-admin.total")}</th><th>{t("shop-admin.status")}</th></tr></thead>
-        <tbody>
+        <PBody>
           {o.items.map((i) => (
             <tr key={i.requestId}>
               <td>{i.serviceId ? <a href="#" onClick={(e) => { e.preventDefault(); go({ name: "service", id: i.serviceId! }); }}>{service(i.serviceId)?.label || i.name}</a> : i.name}</td>
@@ -80,7 +80,7 @@ export function OrderDetail({ game, go, id }: ScreenProps & { id: string }) {
               <td>{orderStatusLabel(game.shop.variant, i.serviceId ? "active" : o.status)}</td>
             </tr>
           ))}
-        </tbody>
+        </PBody>
         <tfoot><tr><td colSpan={2} /><td className="num">{euroCents(orderTotal(o))}</td><td /></tr></tfoot>
       </table>
       {error ? <p className="pt-error" role="alert">{t(error)}</p> : failed && !failed.ok && <p className="pt-error" role="alert">{t(failed.error, failed.params)}</p>}

@@ -1,4 +1,4 @@
-import { PBtn, PInput, PSelect, PTable } from "./ui";
+import { PBody, PBtn, PInput, PSelect, PTable } from "./ui";
 import { useState, type FormEvent } from "react";
 import { t } from "../../../../../../i18n/en";
 import { SITE_LINES } from "../../../../../../sim/80-business/website";
@@ -30,7 +30,7 @@ export function Products({ game, go }: ScreenProps) {
           <h3 className="pt-group-h">{g.name}</h3>
           <PTable>
             <thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-admin.type")}</th><th>{t("shop-admin.payType")}</th><th>{t("shop-admin.stock")}</th><th /></tr></thead>
-            <tbody>
+            <PBody>
               {game.shop.products.filter((p) => p.groupId === g.id).map((p) => (
                 <tr key={p.id}>
                   <td><a href="#" onClick={(e) => { e.preventDefault(); go({ name: "product", id: p.id, tab: "details" }); }}>{p.name}</a></td>
@@ -40,7 +40,7 @@ export function Products({ game, go }: ScreenProps) {
                   <td><PBtn onClick={() => act(deleteProduct, p.id)}>{t("marketing.delete")}</PBtn></td>
                 </tr>
               ))}
-            </tbody>
+            </PBody>
           </PTable>
           {!game.shop.products.some((p) => p.groupId === g.id) && <PBtn onClick={() => act(deleteProductGroup, g.id)}>{t("shop-admin.deleteGroup")}</PBtn>}
         </section>

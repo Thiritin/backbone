@@ -15,12 +15,12 @@ import { useStore } from "../../../../../store";
 import { formatDay } from "../../../../billing/format";
 import { methodName } from "../../../../marketing/payments";
 import type { ScreenProps } from "./nav";
-import { PBadge, PBtn, PTable } from "./ui";
+import { PBadge, PBody, PBtn, PTable } from "./ui";
 
 const HARDWARE_NAME: Record<(typeof HARDWARE_MODULES)[number], string> = { registrar: t("marketing.hwDomains"), ssl: t("marketing.hwCertificates"), dedicated: t("marketing.hwDedicated"), colo: t("marketing.hwColo") };
-const Row = ({ name, children }: { name: string; children: ReactNode }) => <tr><td>{name}</td><td className="pt-act">{children}</td></tr>;
+const Row = ({ name, price, children }: { name: string; price?: number; children: ReactNode }) => <tr><td>{name}</td><td className="num">{price ? euro(price) : ""}</td><td className="pt-act">{children}</td></tr>;
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="pt-group"><h3 className="pt-group-h">{title}</h3><PTable><tbody>{children}</tbody></PTable></section>
+  <section className="pt-group"><h3 className="pt-group-h">{title}</h3><PTable><thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-admin.price")}</th><th>{t("shop-admin.status")}</th></tr></thead><PBody>{children}</PBody></PTable></section>
 );
 
 // Modules and payment gateways in two tabs: what a module costs and what the shop already has. Gateways and the Books link are
@@ -37,11 +37,11 @@ export function Marketplace({ game, go, tab }: { game: GameState; go: ScreenProp
     if (installed(m)) return <PBadge tone="ok">{t(offer === "included" ? "marketing.included" : "marketing.installed")}</PBadge>;
     if (bought !== undefined) return <PBadge>{t("marketing.readyDay", { day: formatDay(bought) })}</PBadge>;
     if (offer === "unavailable" || offer === "included") return <PBadge>{t("marketing.notAvailable")}</PBadge>;
-    return <PBtn disabled={offer > 0 && game.cash < offer} onClick={() => act(buyModule, m)}>{offer ? <>{t("marketing.buy")} <span className="num">{euro(offer)}</span></> : t("marketing.integrate")}</PBtn>;
+    return <PBtn disabled={offer > 0 && game.cash < offer} onClick={() => act(buyModule, m)}>{offer ? t("marketing.buy") : t("marketing.integrate")}</PBtn>;
   };
   const licensed = (m: (typeof MODULES)[number]) => registered(game, m.id)
     ? <PBadge tone="ok">{t("marketing.installed")}</PBadge>
-    : <PBtn onClick={() => openApp("Browser", { kind: "url", id: shopVendorUrl(id) })}><span className="num">{euro(m.price)}</span> {t("vendor-sites.viewModule")}</PBtn>;
+    : <PBtn onClick={() => openApp("Browser", { kind: "url", id: shopVendorUrl(id) })}>{t("vendor-sites.viewModule")}</PBtn>;
   const sold = MODULES.filter((m) => m.year <= year);
   const mods = MODULE_IDS.filter(released), name = (m: string) => (HARDWARE_NAME as Record<string, string>)[m] ?? moduleName(m);
   const link = sold.filter((m) => m.id === "shop-link");
@@ -51,11 +51,11 @@ export function Marketplace({ game, go, tab }: { game: GameState; go: ScreenProp
         {(["modules", "gateways"] as const).map((k) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => go({ name: "marketplace", tab: k })}>{t(k === "modules" ? "shop-admin.d.modules" : "shop-market.gateways")}</button>)}
       </div>
       {tab === "modules" && <>
-        <Section title={t("marketing.installed")}>{mods.filter(installed).map((m) => <Row key={m} name={name(m)}>{provisioning(m)}</Row>)}</Section>
-        <Section title={t("shop-admin.d.available")}>{mods.filter((m) => !installed(m)).map((m) => <Row key={m} name={name(m)}>{provisioning(m)}</Row>)}</Section>
-        {link.length > 0 && <Section title={t("shop-market.integrations")}>{link.map((m) => <Row key={m.id} name={t("vendor-sites.module.shop-link")}>{licensed(m)}</Row>)}</Section>}
+        <Section title={t("marketing.installed")}>{mods.filter(installed).map((m) => <Row key={m} name={name(m)} price={typeof moduleOffer(v, m, year) === "number" ? (moduleOffer(v, m, year) as number) : 0}>{provisioning(m)}</Row>)}</Section>
+        <Section title={t("shop-admin.d.available")}>{mods.filter((m) => !installed(m)).map((m) => <Row key={m} name={name(m)} price={typeof moduleOffer(v, m, year) === "number" ? (moduleOffer(v, m, year) as number) : 0}>{provisioning(m)}</Row>)}</Section>
+        {link.length > 0 && <Section title={t("shop-market.integrations")}>{link.map((m) => <Row key={m.id} name={t("vendor-sites.module.shop-link")} price={m.price}>{licensed(m)}</Row>)}</Section>}
       </>}
-      {tab === "gateways" && <Section title={t("shop-market.gateways")}>{sold.filter((m) => m.id !== "shop-link").map((m) => <Row key={m.id} name={methodName(m.id as MethodId)}>{licensed(m)}</Row>)}</Section>}
+      {tab === "gateways" && <Section title={t("shop-market.gateways")}>{sold.filter((m) => m.id !== "shop-link").map((m) => <Row key={m.id} name={methodName(m.id as MethodId)} price={m.price}>{licensed(m)}</Row>)}</Section>}
     </div>
   );
 }

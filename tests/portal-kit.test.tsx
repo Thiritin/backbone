@@ -20,6 +20,8 @@ describe("portal kit", () => {
         const html = renderToString(<Admin game={s} variant={id} route={parsePortal(id, portalPath(id, "admin", {}, q))!} open={() => {}} version="" major="" browse={() => {}} />);
         const classes = [...html.matchAll(/class="([^"]*)"/g)].flatMap((m) => m[1].split(/\s+/)).filter((c) => DESKTOP.has(c) || c.startsWith("mkt-"));
         if (q.s === "products") expect(html).toContain("pt-btn");
+        const raw = html.replace(/<[^>]+>/g, "\n").split("\n").map((x) => x.trim()).filter((x) => /^[a-z][\w-]*(\.[\w-]+)+$/.test(x) && !/\.(de|com|net|org)$/.test(x));
+        expect(raw, `raw keys ${id} ${JSON.stringify(q)}`).toEqual([]);
         expect(classes, `${id} ${JSON.stringify(q)}`).toEqual([]);
       }
     }

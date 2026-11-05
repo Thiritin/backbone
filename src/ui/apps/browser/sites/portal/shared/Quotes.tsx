@@ -1,4 +1,4 @@
-import { PSelect, PBtn } from "./ui";
+import { PBody, PBtn, PSelect } from "./ui";
 import { useState } from "react";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
@@ -48,7 +48,7 @@ export function Quotes({ game, id }: ScreenProps & { id?: string }) {
       {asked && <p>{t(asked.key, asked.params)}</p>}
       <table className="pt-table">
         <thead><tr><th>{t("books.col.number")}</th><th>{t("shop-admin.client")}</th><th>{t("shop-admin.date")}</th><th>{t("shop-admin.total")}</th><th>{t("shop-admin.status")}</th></tr></thead>
-        <tbody>
+        <PBody>
           {list.map((x) => (
             <tr key={x.id} className={x.id === selected ? "on" : undefined}>
               <td className="num"><a href="#" onClick={(e) => { e.preventDefault(); setSelected(x.id); }}>{x.number}</a></td>
@@ -58,7 +58,7 @@ export function Quotes({ game, id }: ScreenProps & { id?: string }) {
               <td><QuotePill q={x} /></td>
             </tr>
           ))}
-        </tbody>
+        </PBody>
       </table>
       {q && <QuoteEdit key={q.id} game={game} q={q} onGone={() => setSelected(null)} />}
     </div>

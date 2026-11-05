@@ -71,3 +71,6 @@
 .portal .pt-tabs button { font: inherit; cursor: pointer; }
 .portal .num { font-family: inherit; font-variant-numeric: tabular-nums; }
 :where(.portal) .pt-version { padding: 8px 16px; font-size: 11px; color: #777; }
+:where(.portal) .pt-select { appearance: none; -webkit-appearance: none; padding-right: 22px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E") no-repeat right 7px center; }
+.pt-empty td { text-align: center; color: #777; font-style: italic; padding: 10px; }
+.pt-none { margin: 0; color: #777; }

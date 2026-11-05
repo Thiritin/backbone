@@ -1,4 +1,4 @@
-import { PBtn } from "./ui";
+import { PBody, PBtn } from "./ui";
 import { t } from "../../../../../../i18n/en";
 import { euroCents } from "../../../../../../sim/00-core/money";
 import { holdReason } from "../../../../../../sim/45-billing/billing";
@@ -17,7 +17,7 @@ export function Clients({ game, go }: ScreenProps) {
     <div className="pt-screen">
       <table className="pt-table">
         <thead><tr><th>{t("shop-admin.client")}</th><th>{t("shop-admin.services")}</th><th>{t("shop-admin.since")}</th></tr></thead>
-        <tbody>
+        <PBody>
           {clients.map((c) => (
             <tr key={c.id}>
               <td><a href="#" onClick={(e) => { e.preventDefault(); go({ name: "client", id: c.id }); }}>{c.name}</a></td>
@@ -25,7 +25,7 @@ export function Clients({ game, go }: ScreenProps) {
               <td className="num">{formatDay(c.since)}</td>
             </tr>
           ))}
-        </tbody>
+        </PBody>
       </table>
     </div>
   );
@@ -43,7 +43,7 @@ export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { i
       <h3>{servicesLabel(game.shop.variant)}</h3>
       <table className="pt-table">
         <thead><tr><th>{t("shop-admin.product")}</th><th>{t("shop-admin.price")}</th><th /></tr></thead>
-        <tbody>
+        <PBody>
           {game.services.filter((v) => v.customerId === c.id && v.endedAt === null).map((v) => {
             const held = !!holdReason(game, v);
             return (
@@ -57,7 +57,7 @@ export function ClientSummary({ game, go, id, tab, toClient }: ScreenProps & { i
               </tr>
             );
           })}
-        </tbody>
+        </PBody>
       </table>
       <h3>{t("shop-mail.emails")}</h3>
       <EmailLog game={game} customerId={c.id} />
