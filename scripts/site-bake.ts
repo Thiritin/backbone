@@ -10,7 +10,7 @@ import pc from "polygon-clipping";
 type V3 = [number, number, number];
 type Tri = { p: [V3, V3, V3]; rgb: string; mat: string; cell: string };
 // A colour rule: the first one whose ranges (OKLCH, hue in degrees) and material name all hold gives the material.
-interface Rule { m: string; name?: string; cell?: string[]; L?: [number, number]; C?: [number, number]; H?: [number, number] }
+interface Rule { m: string; name?: string; cell?: string[]; Z?: [number, number]; L?: [number, number]; C?: [number, number]; H?: [number, number] }
 interface Cfg {
   kits: Record<string, { rules: Rule[] }>;
   models: { id: string; kit: string; src: string; yaw: number; size: [number, number, number]; dirs: ("x" | "y")[]; rules?: Rule[]; bare?: boolean }[];
@@ -83,9 +83,11 @@ export function place(tris: Tri[], yaw: number, size: V3, dir: "x" | "y"): Tri[]
   const T = tris.map((t) => ({ ...t, p: t.p.map(w) as Tri["p"] }));
   const all = T.flatMap((t) => t.p);
   const lo = [0, 1, 2].map((i) => Math.min(...all.map((p) => p[i]))), hi = [0, 1, 2].map((i) => Math.max(...all.map((p) => p[i])));
-  // A zero length or width means: scale uniformly to the given height.
-  const k = [0, 1, 2].map((i) => (size[i] ? size[i] : size[2]) / (size[i] ? hi[i] - lo[i] : hi[2] - lo[2]));
-  if (!size[0]) size = [(hi[0] - lo[0]) * k[0], (hi[1] - lo[1]) * k[1], size[2]];
+  // A zero length or width means: scale uniformly to the given height. A footprint within 15% of a whole tile count snaps to it, so the base sits on the grid.
+  const nat = [0, 1, 2].map((i) => hi[i] - lo[i]);
+  size = size.map((v, i) => (v || (nat[i] * size[2]) / nat[2])) as V3;
+  size = size.map((v, i) => (i < 2 && Math.abs(Math.max(1, Math.round(v)) - v) / v <= 0.15 ? Math.max(1, Math.round(v)) : v)) as V3;
+  const k = [0, 1, 2].map((i) => size[i] / nat[i]);
   const sc = (p: V3): V3 => [(p[0] - lo[0]) * k[0], (p[1] - lo[1]) * k[1], (p[2] - lo[2]) * k[2]];
   // Facing y is a quarter turn about z (x, y) -> (W - y, x), which keeps the origin at the footprint's near-left corner.
   const q = (p: V3): V3 => (dir === "x" ? p : [size[1] - p[1], p[0], p[2]]);
@@ -131,7 +133,7 @@ function clipZ(poly: V3[], zc: number, side: 1 | -1): V3[] {
 const MATERIALS = new Set(["paint", "glass", "tyre", "rim", "trim", "lamp", "leaf", "shrub", "needle", "trunk", "wall", "roof", "window", "door", "frame", "metal", "concrete", "brick", "solar"]);
 
 const cellRgb = new Map<string, string>();
-export interface BakedModel { id: string; w: number; h: number; ox: number; oy: number; paths: [string, string][] }
+export interface BakedModel { id: string; w: number; h: number; ox: number; oy: number; fp: [number, number]; paths: [string, string][] }
 
 function oklch(hex: string): [number, number, number] {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
@@ -140,9 +142,9 @@ function oklch(hex: string): [number, number, number] {
   return [L, Math.hypot(A, B), ((Math.atan2(B, A) * 180) / Math.PI + 360) % 360];
 }
 const within = (v: number, r?: [number, number]) => !r || (r[0] <= r[1] ? v >= r[0] && v <= r[1] : v >= r[0] || v <= r[1]);
-function material(rules: Rule[], t: Tri): string {
-  const [L, C, H] = oklch(t.rgb);
-  for (const r of rules) if ((!r.name || r.name === t.mat) && (!r.cell || r.cell.includes(t.cell)) && within(L, r.L) && within(C, r.C) && within(H, r.H)) return r.m;
+function material(rules: Rule[], t: Tri, top = 1): string {
+  const [L, C, H] = oklch(t.rgb), z = Math.max(...t.p.map((q) => q[2])) / top;
+  for (const r of rules) if ((!r.name || r.name === t.mat) && (!r.cell || r.cell.includes(t.cell)) && within(z, r.Z) && within(L, r.L) && within(C, r.C) && within(H, r.H)) return r.m;
   return "?";
 }
 
@@ -180,11 +182,23 @@ function branches(id: string, tris: Tri[]): Tri[] {
   return out;
 }
 
+// The part of a convex ring left (-1) or right (1) of the vertical line x = cx.
+function cutX(ring: Ring, cx: number, side: 1 | -1): Ring {
+  const out: Ring = [];
+  ring.forEach((p, i) => {
+    const q = ring[(i + 1) % ring.length], dp = (p[0] - cx) * side, dq = (q[0] - cx) * side;
+    if (dp >= 0) out.push(p);
+    if (dp * dq < 0) { const k = dp / (dp - dq); out.push([p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k]); }
+  });
+  return out;
+}
+
 function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: boolean, bare: boolean) {
   const placed = place(loadGlb(path.join(artDir, m.src)), m.yaw, m.size, dir);
   const top = Math.max(...placed.flatMap((t) => t.p.map((p) => p[2])));
-  const tris = bare ? [...placed.filter((t) => material(rules, t) === "trunk"), ...branches(m.id, placed)] : placed;
-  type Item = { d: number; poly: Ring; key: string; rgb: string };
+  const midX = (Math.max(...placed.flatMap((t) => t.p.map((p) => p[0] - p[1]))) + Math.min(...placed.flatMap((t) => t.p.map((p) => p[0] - p[1])))) / 2;
+  const tris = bare ? [...placed.filter((t) => material(rules, t, top) === "trunk"), ...branches(m.id, placed)] : placed;
+  type Item = { poly: Ring; key: string; nn: V3; c: number; bb: [number, number, number, number] };
   const items: Item[] = [];
   cellRgb.clear();
   for (const t of tris) {
@@ -192,8 +206,10 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
     const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], ln = Math.hypot(n[0], n[1], n[2]) || 1;
     const nn = n.map((q) => q / ln);
     if (nn[0] + nn[1] + nn[2] <= 0) continue;
-    const face = nn[2] > 0.6 ? "t" : nn[1] >= nn[0] ? "l" : "r";
-    const mat = inspect ? (t.cell || t.mat) : material(rules, t), d = -(a[0] + a[1] + a[2] + b[0] + b[1] + b[2] + c[0] + c[1] + c[2]);
+    const mat = inspect ? (t.cell || t.mat) : material(rules, t, top);
+    // Crowns are faceted, so splitting left and right by the facet normal gives a ragged seam; split them at the model's centre line instead.
+    const rounded = !inspect && (mat === "leaf" || mat === "needle" || mat === "shrub");
+    const face = nn[2] > (rounded ? 0.5 : 0.6) ? "t" : rounded ? "s" : nn[1] >= nn[0] ? "l" : "r";
     // Snow lies on the upward-leaning part of these materials: the whole face when it faces up, the upper part of a steep one.
     if (mat === "drop" || (mat === "needle" && face === "t" && Math.max(a[2], b[2], c[2]) < top * 0.12)) continue;
     const flat = !inspect && !bare && nn[2] > 0.9 && Math.min(a[2], b[2], c[2]) > top * 0.3 && !NOSNOW.has(mat), crown = mat === "leaf" || mat === "needle", snowy = flat || !inspect && !bare && SNOW.has(mat) && nn[2] > (crown ? 0.04 : 0.25) && (!crown || Math.max(a[2], b[2], c[2]) > top * 0.25);
@@ -201,30 +217,88 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
     const pieces: [V3[], string][] = !snowy ? [[t.p, ""]] : face === "t" || mat === "roof" || mat === "paint" || mat === "metal" || mat === "concrete" || mat === "brick" ? [[t.p, "|s"]] : [[clipZ(t.p, zc, 1), "|s"], [clipZ(t.p, zc, -1), ""]];
     for (const [pp, sn] of pieces) {
       if (pp.length < 3) continue;
-      const poly = pp.map(proj).map(([x, y]) => [Math.round(x * 8) / 8, Math.round(y * 8) / 8]) as Ring;
-      if (Math.abs(area(poly)) < 0.6) continue;
-      items.push({ d, poly: [...poly, poly[0]], key: `${mat}|${face}${sn}`, rgb: t.rgb });
+      // Rounding can merge neighbouring corners; repeated points make the clipper recurse without end.
+      const poly = (pp.map(proj).map(([x, y]) => [Math.round(x * 8) / 8, Math.round(y * 8) / 8]) as Ring).filter((q, i, r) => { const o = r[(i + r.length - 1) % r.length]; return q[0] !== o[0] || q[1] !== o[1]; });
+      if (poly.length < 3 || Math.abs(area(poly)) < 1.2) continue;
+      // A crown's side faces split at its centre line into left and right, so the seam is straight.
+      const halves: [Ring, string][] = face === "s" ? [[cutX(poly, midX * 32, -1), "l"], [cutX(poly, midX * 32, 1), "r"]] : [[poly, face]];
+      for (const [hp, hf] of halves) {
+        if (hp.length < 3 || Math.abs(area(hp)) < 0.3) continue;
+        const ring: Ring = [...hp, hp[0]], xs = hp.map((q) => q[0]), ys = hp.map((q) => q[1]);
+        items.push({ poly: ring, key: `${mat}|${hf}${sn}`, nn: nn as V3, c: nn[0] * a[0] + nn[1] * a[1] + nn[2] * a[2], bb: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] });
+      }
     }
     cellRgb.set(t.cell || t.mat, t.rgb);
   }
-  items.sort((p, q) => p.d - q.d);
-  // polygon-clipping throws on some degenerate meetings; retry with a tiny deterministic nudge, then give the face up.
+  // Exact visibility: pieces are ordered nearest first by comparing depth over each overlap, then each loses what the pieces ahead of it cover.
+  // The view direction is (1,1,1); depth = x+y+z, larger is nearer, and it is affine in the projected point.
+  const depth = (it: Item, sx: number, sy: number) => {
+    const u = sx / 32, w = sy / 16, [nx, ny, nz] = it.nn, s = (it.c - ((nx - ny) * u) / 2 + (nz * w) / 2) / ((nx + ny + nz) / 2);
+    return s + (s - w) / 2;
+  };
+  // The part of a convex ring where f >= 0, for f given at its vertices.
+  const keepPos = (ring: Ring, f: number[]): Ring => {
+    const out: Ring = [];
+    ring.forEach((p, i) => {
+      const q = ring[(i + 1) % ring.length], fp = f[i], fq = f[(i + 1) % ring.length];
+      if (fp >= 0) out.push(p);
+      if (fp * fq < 0) { const k = fp / (fp - fq); out.push([p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k]); }
+    });
+    return out;
+  };
+  // Convex polygon clipped by a convex polygon.
+  const clipConvex = (subj: Ring, clip: Ring): Ring => {
+    const sg = area(clip) >= 0 ? 1 : -1;
+    let out = subj;
+    for (let i = 0; i < clip.length && out.length; i++) {
+      const a = clip[i], b = clip[(i + 1) % clip.length], side = (p: [number, number]) => sg * ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]));
+      out = keepPos(out, out.map(side));
+    }
+    return out;
+  };
+  const EPS = 1e-5;
   const attempt = <T,>(f: (nudge: number) => T): T | null => {
-    for (const n of [0, 0.011, -0.017, 0.029]) { try { return f(n); } catch { /* retry */ } }
+    for (const n of [0, 0.011, -0.017, 0.029, 0.043, -0.061, 0.097, -0.13]) { try { return f(n); } catch { /* retry */ } }
     return null;
   };
-  const nudged = (r: Ring, n: number): pc.Polygon => [r.map(([x, y], i) => [x + (i % 2 ? n : -n), y + (i % 3 ? n : 0)] as pc.Pair)];
-  let covered: pc.MultiPolygon = [];
+  const nudged = (r: Ring, n: number): pc.Polygon => [r.slice(0, -1).map(([x, y], i) => [x + (n && i % 2 ? n : 0), y + (n && i % 3 ? n : 0)] as pc.Pair)];
+  // Nearest-first order: A goes before B when A is nearer over (most of) their overlap, then a topological sort, ties by mean depth.
+  const n = items.length, before: number[][] = items.map(() => []), indeg = new Array(n).fill(0);
+  const mean = items.map((it) => { const [x, y] = it.poly.reduce((a, q) => [a[0] + q[0], a[1] + q[1]], [0, 0]); return depth(it, x / it.poly.length, y / it.poly.length); });
+  for (let ia = 0; ia < n; ia++) for (let ib = ia + 1; ib < n; ib++) {
+    const A = items[ia], B = items[ib];
+    if (B.bb[0] >= A.bb[2] || B.bb[2] <= A.bb[0] || B.bb[1] >= A.bb[3] || B.bb[3] <= A.bb[1]) continue;
+    const ring = clipConvex(A.poly.slice(0, -1), B.poly.slice(0, -1));
+    if (ring.length < 3 || Math.abs(area(ring)) < 1e-3) continue;
+    // Signed area-weighted depth gap over the overlap; the sample at each vertex and the centroid is exact for affine depth.
+    const f = ring.map(([x, y]) => depth(A, x, y) - depth(B, x, y)), g = f.reduce((s2, v) => s2 + v, 0);
+    if (Math.abs(g) < EPS * f.length) continue;
+    const [u, v] = g > 0 ? [ia, ib] : [ib, ia];
+    before[u].push(v); indeg[v]++;
+  }
+  const order: number[] = [], done = new Array(n).fill(false);
+  while (order.length < n) {
+    let pick = -1;
+    for (let k = 0; k < n; k++) if (!done[k] && indeg[k] === 0 && (pick < 0 || mean[k] > mean[pick])) pick = k;
+    // A cycle: take the nearest remaining piece.
+    if (pick < 0) for (let k = 0; k < n; k++) if (!done[k] && (pick < 0 || mean[k] > mean[pick])) pick = k;
+    done[pick] = true; order.push(pick);
+    for (const v of before[pick]) indeg[v]--;
+  }
+  // Each piece loses the pieces ahead of it in the order; the clips are the original grid-aligned pieces, so no float noise builds up.
   const parts = new Map<string, pc.MultiPolygon[]>();
   let lost = 0;
-  for (const it of items) {
-    const vis = covered.length ? attempt((n) => pc.difference(nudged(it.poly, n), covered)) : [nudged(it.poly, 0)];
-    if (vis === null) { lost++; continue; }
-    if (!vis.length) continue;
-    (parts.get(it.key) ?? parts.set(it.key, []).get(it.key)!).push(vis);
-    const next = covered.length ? attempt((n) => pc.union(covered, nudged(it.poly, n))) : [nudged(it.poly, 0)];
-    if (next) covered = next; else lost++;
-  }
+  order.forEach((k, pos) => {
+    const it = items[k], clips: pc.Polygon[] = [];
+    for (let q = 0; q < pos; q++) {
+      const b = items[order[q]];
+      if (b.bb[0] >= it.bb[2] || b.bb[2] <= it.bb[0] || b.bb[1] >= it.bb[3] || b.bb[3] <= it.bb[1]) continue;
+      clips.push([b.poly.slice(0, -1)] as pc.Polygon);
+    }
+    const vis = clips.length ? attempt((nu) => pc.difference([it.poly.slice(0, -1).map(([x, y], i) => [x + (nu && i % 2 ? nu : 0), y + (nu && i % 3 ? nu : 0)] as pc.Pair)], ...clips)) : [nudged(it.poly, 0)];
+    if (vis === null) { lost++; return; }
+    if (vis.length) (parts.get(it.key) ?? parts.set(it.key, []).get(it.key)!).push(vis);
+  });
   if (lost) console.warn(m.id, dir, "faces dropped:", lost);
   const paths: [string, string][] = [];
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -233,8 +307,11 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
     let d = "";
     for (const poly of merged) {
       for (const ring of poly) {
-        const r = simplify(ring as Ring, 0.35);
-        if (Math.abs(area(r)) < 0.5) continue;
+        const r = simplify(ring as Ring, 0.02);
+        // Rings under 0.5 px wide on average are slivers left where faces meet.
+        const per = r.slice(1).reduce((a, q, i) => a + Math.hypot(q[0] - r[i][0], q[1] - r[i][1]), 0);
+        // Lone triangles under 20 px2 are leftovers of mesh corners, not detail.
+        if (Math.abs(area(r)) < 0.5 || (Math.abs(area(r)) * 2) / (per || 1) < 0.5 || (r.length === 4 && Math.abs(area(r)) < 20)) continue;
         for (const [x, y] of r) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
         d += "M" + r.slice(0, -1).map(([x, y]) => `${+x.toFixed(1)} ${+y.toFixed(1)}`).join(" ") + "Z";
       }
@@ -244,13 +321,15 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
     if (!inspect && !MATERIALS.has(mat)) throw new Error(`${m.id}: colour rule missing, material ${mat}`);
     paths.push([inspect ? `${mat}|${face}` : `m-${mat} f-${face}${bare ? " bare" : tag ? " snow" : ""}`, d]);
   }
-  return { paths, x0, y0, x1, y1 };
+  // Footprint in whole tiles: the extent of the placed model from its near-left ground corner.
+  const fp: [number, number] = [0, 1].map((i) => Math.max(1, Math.ceil(Math.max(...placed.flatMap((t) => t.p.map((p) => p[i]))) - 0.01))) as [number, number];
+  return { paths, x0, y0, x1, y1, fp };
 }
 
 export function bakeOne(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect = false): BakedModel {
   const main = pass(m, dir, rules, inspect, false), bare = m.bare && !inspect ? pass(m, dir, rules, false, true) : null;
   const [x0, y0, x1, y1] = [Math.min(main.x0, bare?.x0 ?? Infinity), Math.min(main.y0, bare?.y0 ?? Infinity), Math.max(main.x1, bare?.x1 ?? -Infinity), Math.max(main.y1, bare?.y1 ?? -Infinity)];
-  return { id: dir === "x" && m.dirs.length === 1 ? m.id : `${m.id}-${dir}`, w: Math.ceil(x1 - x0), h: Math.ceil(y1 - y0), ox: Math.floor(x0), oy: Math.floor(y0), paths: [...main.paths, ...(bare?.paths ?? [])] };
+  return { id: dir === "x" && m.dirs.length === 1 ? m.id : `${m.id}-${dir}`, w: Math.ceil(x1 - x0), h: Math.ceil(y1 - y0), ox: Math.floor(x0), oy: Math.floor(y0), fp: main.fp, paths: [...main.paths, ...(bare?.paths ?? [])] };
 }
 
 export const bakeConfig = cfg;
@@ -285,8 +364,8 @@ if (!import.meta.main) {
     const rules = kitRules(m);
     for (const dir of m.dirs) { const t0 = Date.now(); const b = bakeOne(m, dir, rules); out.push(b); console.log(b.id, b.paths.length, "paths", Date.now() - t0, "ms"); }
   }
-  const body = JSON.stringify(out.map((b) => ({ id: b.id, w: b.w, h: b.h, ox: b.ox, oy: b.oy, paths: b.paths })), null, 0).replace(/\},\{"id"/g, "},\n{\"id\"");
+  const body = JSON.stringify(out.map((b) => ({ id: b.id, w: b.w, h: b.h, ox: b.ox, oy: b.oy, fp: b.fp, paths: b.paths })), null, 0).replace(/\},\{"id"/g, "},\n{\"id\"");
   const file = path.join(root, "src/ui/world/site/models.gen.ts");
-  fs.writeFileSync(file, `// Generated by scripts/site-bake.ts from art/site; do not edit. Models by Kenney (CC0).\nexport interface BakedModel { id: string; w: number; h: number; ox: number; oy: number; paths: [string, string][] }\nexport const MODELS: BakedModel[] = ${body};\nexport const BAKE_HASH = "${createHash("sha256").update(body).digest("hex").slice(0, 12)}";\n`);
+  fs.writeFileSync(file, `// Generated by scripts/site-bake.ts from art/site; do not edit. Models by Kenney (CC0).\nexport interface BakedModel { id: string; w: number; h: number; ox: number; oy: number; fp: [number, number]; paths: [string, string][] }\nexport const MODELS: BakedModel[] = ${body};\nexport const BAKE_HASH = "${createHash("sha256").update(body).digest("hex").slice(0, 12)}";\n`);
   console.log("wrote", file);
 }

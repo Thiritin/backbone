@@ -1,3 +1,4 @@
+import { GRID_DEBUG, GridDebug } from "./gridDebug";
 import "./site.css";
 import { memo } from "react";
 import { t } from "../../../i18n/en";
@@ -36,7 +37,7 @@ function PlayerCar({ i, drive }: { i: Item; drive: Drive }) {
 }
 
 // Body shapes by era: boxy until 2011, rounder after. Footprints stay close, so bays still fit.
-const eraKind = (kind: string, year: number): string => (year < 2012 ? ({ coupe: "sedan", suv: "hatchback" } as Record<string, string>)[kind] : ({ sedan: "coupe", hatchback: "suv" } as Record<string, string>)[kind]) ?? kind;
+const eraKind = (kind: string, year: number): string => (year < 2012 ? ({ coupe: "sedan" } as Record<string, string>)[kind] : ({ sedan: "coupe" } as Record<string, string>)[kind]) ?? kind;
 
 function One({ i, s, name, band, year, drive }: { i: Item; s: SiteSpec; name: string; band: string; year: number; drive?: Drive }) {
   switch (i.t) {
@@ -85,6 +86,7 @@ const sorted = (items: Item[]) => [...items].sort((a, b) => flatFirst(a) - flatF
 const Layer = ({ s, layer, name, band, year, drive }: { s: SiteSpec; layer: Item["layer"]; name: string; band: string; year: number; drive?: Drive }) => (
   <g className="w-site" pointerEvents="none" transform={layer === "back" && s.lift ? `translate(0 ${-s.lift})` : undefined}>
     {sorted(s.items.filter((i) => i.layer === layer)).map((i, k) => <One key={k} i={i} s={s} name={name} band={band} year={year} drive={drive ?? PARKED} />)}
+    {GRID_DEBUG && <GridDebug s={s} layer={layer} />}
   </g>
 );
 

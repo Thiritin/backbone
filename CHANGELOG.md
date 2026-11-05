@@ -7,6 +7,7 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 - The main menu has a new red and black look with the full raid0 wordmark.
 - The room view no longer keeps drifting after you stop panning with the keys or cancel a drag.
 
+- Houses, cars, trees, bushes and buildings outside your datacenter are drawn cleaner, without stray slivers and seams, and stand squarely on the tile grid.
 - The macOS desktop app is built for Macs with Apple silicon.
 - The desktop app is also available for Windows (x86_64) and for Linux on x86_64 and arm64, and it updates itself.
 
