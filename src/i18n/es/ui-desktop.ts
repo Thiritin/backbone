@@ -135,4 +135,7 @@ export default {
   "desktop.immersive.start": () => "Iniciar modo inmersivo",
   "desktop.menu.logout": () => "Cerrar sesión",
   "desktop.switcher": () => "Cambiar de ventana",
+  "desktop.icon.exit": () => "Salir",
+  "desktop.fullscreen.enter": () => "Pantalla completa",
+  "desktop.fullscreen.exit": () => "Salir de pantalla completa",
 } satisfies Dict;

@@ -276,3 +276,7 @@
 .w-alert-chip ~ .w-orders, body:has(.w-alert-chip) .w-orders { top: 92px; }
 @keyframes w-alert-pulse { 50% { border-color: oklch(0.8 0.16 75 / 0.25); } }
 @media (prefers-reduced-motion: reduce) { .w-alert-chip { animation: none; } }
+
+.world-fs { position: absolute; top: 8px; right: 8px; z-index: 5; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--line, oklch(0 0 0 / 0.3)); border-radius: var(--r-ctl, 0); background: var(--surface, oklch(0.97 0 0)); color: var(--ink, oklch(0.2 0 0)); cursor: pointer; }
+.world-fs svg { width: 16px; height: 16px; }
+.world-fs:hover { background: color-mix(in oklch, var(--surface, white) 85%, var(--ink, black)); }

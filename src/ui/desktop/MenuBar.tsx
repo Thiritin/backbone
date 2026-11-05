@@ -13,12 +13,11 @@ import { sky } from "../../sim/20-world/weather";
 import { SkyIcon } from "../apps/weather/SkyIcon";
 import { daylight } from "../world/draw";
 import { degrees } from "../apps/weather/WeatherApp";
-import { roomOf } from "../world/World";
 import { DISCORD_URL, uiSound, useStore, type Win } from "../store";
 import { appFor, appTitle } from "../apps/registry";
 import { EMBEDDED } from "../embedded";
 import { exportSave } from "../export-save";
-import { leaveImmersive, useImmersive } from "./immersive";
+import { FullscreenButton } from "../FullscreenButton";
 import { openMenu } from "./ContextMenu";
 import type { MenuEntry } from "./menu";
 
@@ -49,7 +48,6 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   const [menu, setMenu] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [intro, setIntro] = useState(false);
-  const immersive = useImmersive();
   const here = playerAt(game);
   const front = [...windows].filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
 
@@ -100,7 +98,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
 
   return (
     <header className="menubar" role="menubar">
-      {item("raid0", "raid0", [[t("world.standUp"), () => setSurface("world")], [t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/raid0", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/raid0/issues/new?body=${encodeURIComponent(`\n\nBuild: ${__BUILD_ID__}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)], ...(immersive ? [[t("desktop.menu.logout"), () => { leaveImmersive(); toMenu(); }] as [string, () => void]] : [])], <span className="mb-pear"><PearMark /></span>, "mb-logo")}
+      {item("raid0", "raid0", [[t("desktop.menu.logout"), () => setSurface("world")], [t("desktop.menu.intro"), () => setIntro(true)], [t("desktop.menu.github"), () => window.open("https://github.com/Thiritin/raid0", "_blank", "noopener")], [t("desktop.menu.discord"), () => window.open(DISCORD_URL, "_blank", "noopener")], [t("desktop.menu.report"), () => window.open(`https://github.com/Thiritin/raid0/issues/new?body=${encodeURIComponent(`\n\nBuild: ${__BUILD_ID__}`)}`, "_blank", "noopener")], [t("desktop.icon.newNote"), () => newNote()], ...(guideGone ? [[t("desktop.menu.restoreGuide"), () => act(restoreGuide)] as [string, () => void]] : []), [t("desktop.menu.whatsNew"), () => openNews(EMBEDDED)], [t("desktop.menu.export"), () => exportSave(game)], [t("desktop.menu.mainMenu"), toMenu], [t("desktop.menu.delete"), () => setConfirm(true)]], <span className="mb-pear"><PearMark /></span>, "mb-logo")}
       {front ? (extra.some((m) => m.id === "app") ? panel("app", appName(front), appList, "mb-app") : item("app", appName(front), appMenu(front), appName(front), "mb-app")) : <span className="mb-item mb-app">raid0</span>}
       {extra.filter((m) => m.id !== "window" && m.id !== "app").map((m) => panel(m.id, m.title, () => fresh(m.id)))}
       {panel("window", t("desktop.menu.window"), windowList)}
@@ -109,7 +107,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         <SkyIcon kind={sky(here.city, game.hour)} night={daylight(dateOf(game.hour).getUTCHours() + game.minute / 60, dateOf(game.hour).getUTCMonth()) < 0.5} />{degrees(here.city, game.hour)} {here.name}
       </button>
       <span className="mb-sep" />
-      <button className="mb-item" onClick={() => setSurface("world")}>{roomOf(game).name}</button>
+      <button className="mb-item" onClick={() => setSurface("world")}>{t("desktop.icon.exit")}</button>
       <span className="mb-sep" />
       <SpeedControl speed={speed} setSpeed={setSpeed} />
       <span className="mb-sep" />
@@ -121,6 +119,7 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
         {unseen > 0 && <span key={unseen} className="count plop">{unseen > 99 ? "99+" : unseen}</span>}
       </button>
       <button className="mb-item" aria-label={t("desktop.menu.darkMode")} onClick={onTheme}>{theme === "dark" ? <Sun /> : <Moon />}</button>
+      <FullscreenButton className="mb-item" />
       {intro && <Intro onClose={() => setIntro(false)} />}
       {confirm && (
         <Confirm

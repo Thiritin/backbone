@@ -133,6 +133,9 @@ export default {
   "desktop.immersive.browsers": () => "Öffne das Spiel auf einem Computer in Chrome, Edge, Opera oder Brave, um den immersiven Modus zu nutzen.",
   "desktop.immersive.leave": () => "Um den immersiven Modus zu verlassen, wähle Abmelden im Menü oben links oder halte Esc gedrückt.",
   "desktop.immersive.start": () => "Immersiven Modus starten",
-  "desktop.menu.logout": () => "Abmelden",
+  "desktop.menu.logout": () => "Logout",
   "desktop.switcher": () => "Fenster wechseln",
+  "desktop.icon.exit": () => "Verlassen",
+  "desktop.fullscreen.enter": () => "Vollbild",
+  "desktop.fullscreen.exit": () => "Vollbild beenden",
 } satisfies Dict;

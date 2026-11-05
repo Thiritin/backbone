@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { FullscreenButton } from "../FullscreenButton";
 import { floodedDevice } from "../../sim/60-infra/network";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
@@ -423,6 +424,7 @@ export function World() {
 
   return (
     <div className="world" aria-label={loc.name}>
+      <FullscreenButton className="world-fs" />
       <svg ref={svg} className={`world-svg ${seasons}${night ? " w-night" : ""}`} style={leaf}
         viewBox={`${o.x} ${o.y} ${size.w / zoom} ${size.h / zoom}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>

@@ -1,7 +1,6 @@
 import type { Dict } from "../lang";
 
 export default {
-  "world.standUp": () => "Levantar-se",
   "world.obj.pc": () => "Computador",
   "world.obj.desk": () => "Secretária",
   "world.obj.scanner": () => "Scanner",

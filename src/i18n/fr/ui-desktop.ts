@@ -133,6 +133,9 @@ export default {
   "desktop.immersive.browsers": () => "Ouvre le jeu dans Chrome, Edge, Opera ou Brave sur un ordinateur pour utiliser le mode immersif.",
   "desktop.immersive.leave": () => "Pour quitter le mode immersif, choisis Se déconnecter dans le menu en haut à gauche ou maintiens Échap enfoncée.",
   "desktop.immersive.start": () => "Lancer le mode immersif",
-  "desktop.menu.logout": () => "Se déconnecter",
+  "desktop.menu.logout": () => "Déconnexion",
   "desktop.switcher": () => "Changer de fenêtre",
+  "desktop.icon.exit": () => "Sortir",
+  "desktop.fullscreen.enter": () => "Plein écran",
+  "desktop.fullscreen.exit": () => "Quitter le plein écran",
 } satisfies Dict;
