@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
 import { euro, euroPrice } from "../../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../../sim/00-core/time";
@@ -13,7 +14,7 @@ import { keyExpired, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence
 import { displayHost } from "../../../../../../sim/80-business/browser";
 import { bought } from "../../../../../../sim/80-business/licences";
 import { shopUpdatesFee } from "../../../../../../sim/80-business/shop";
-import { keysOf, upgradeOffers } from "../../../../../../sim/80-business/vendor-shop";
+import { keysOf, upgradeOffers, vendorName } from "../../../../../../sim/80-business/vendor-shop";
 import { companyDomain } from "../../../../../../sim/30-customers/domains";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
 import { renewShopUpdates } from "../../../../../../sim/90-actions/shop";
@@ -174,7 +175,7 @@ function Account({ game, to }: { game: GameState; to: (p: Page) => void }) {
     const c = k.covers, up = c.kind === "version" ? ups.find((o) => o.from === c.major) : undefined;
     return (
       <>
-        {fee !== undefined && <button type="button" className="bv-btn bv-small" onClick={() => act(renewShopUpdates)}>{t("blessta.v.renew", { fee: euroPrice(fee) })}</button>}
+        {fee !== undefined && <PayButton className="bv-btn bv-small" supplier="shopVendor" name={vendorName(ID)} amount={fee ?? 0} run={(m) => act(renewShopUpdates, m)}>{t("blessta.v.renew", { fee: euroPrice(fee) })}</PayButton>}
         {up && <button type="button" className="bv-btn bv-small" onClick={() => { if (act(addToCart, ID, null, up.from).ok) to("cart"); }}>{t("blessta.v.upgrade", { major: up.to, fee: euroPrice(up.fee) })}</button>}
         {k.covers.kind === "term" && k.renewsAt !== null && !keyExpired(game, k) && <button type="button" className="bv-btn bv-ghost bv-small" onClick={() => act(cancelLicence, k.id)}>{t("vendor-shop.cancel")}</button>}
       </>

@@ -5,7 +5,9 @@ import type { Look } from "../../../../../sim/10-catalog/sites";
 import { DATACENTERS, LEAD_DAYS, NOTICE_MONTHS, SPACE_SIZES, spacePrice, type Datacenter, type Provider } from "../../../../../sim/20-world/datacenters";
 import { ownAddress } from "../../../../../sim/30-customers/addresses";
 import type { GameState, SpaceKind } from "../../../../../sim/50-state";
-import { debitAllowed } from "../../../../../sim/46-finance/payables";
+import { debitAllowed, type Method } from "../../../../../sim/46-finance/payables";
+import { defaultMethod, methodsFor } from "../../../../../sim/90-actions/purchase";
+import { feeLine } from "../shared/PayButton";
 import { fits } from "../../../../../sim/60-infra/status";
 import { addLocation, joinWaitlist, type ActionResult } from "../../../../../sim/90-actions/hardware";
 import { formatDay } from "../../../billing/format";
@@ -32,6 +34,13 @@ export const dcsOf = (id: string): Datacenter[] => DATACENTERS.filter((d) => d.p
 export const citiesOf = (id: string): string[] => [...new Set(dcsOf(id).map((d) => d.city))];
 // The cheapest space the provider rents, for a "from" price.
 export const fromPrice = (id: string): number => Math.min(...dcsOf(id).map((d) => spacePrice(d, "share", 8)));
+
+// A colocation contract runs on account or by a direct debit whose mandate the order form gives; the sim's default goes first.
+function coloMethods(s: GameState, dc: Datacenter): Method[] {
+  const lines = feeLine(s, 0), on = methodsFor(s, "datacenter", lines, dc.name).filter((m) => m === "cash" || m === "onAccount");
+  const all = s.bank && debitAllowed(dc.name) ? [...on, "debit" as const] : on;
+  return all.sort((a, b) => Number(b === defaultMethod(s, dc.name, lines)) - Number(a === defaultMethod(s, dc.name, lines)));
+}
 
 export function routeOf(id: string, path: string): Route {
   const [base, query = ""] = path.split("?"), [top, sub] = base.split("/").filter(Boolean);
@@ -163,7 +172,7 @@ export function OrderForm({ game, p, route, className }: { game: GameState; p: P
     };
     return wrap(
       <Checkout game={game} btn="ps-btn pri" facts={[...summary, [t("providers.ready"), ready]]} onBack={() => setStep("space")}
-        methods={[...(game.bank && debitAllowed(dc.name) ? [{ kind: "debit" as const, label: t("bank.supplier.mandate") }] : []), { kind: "transfer", label: t("providers.byInvoice") }]}
+        methods={coloMethods(game, dc).map((m) => ({ kind: m, label: t(m === "debit" ? "bank.supplier.mandate" : m === "onAccount" ? "providers.byInvoice" : `purchase.method.${m}`) }))}
         place={place} confirm={() => ({ bank: null, next: t("providers.orderNext", { day: ready }) })} />,
     );
   }

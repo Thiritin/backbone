@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
 import { euro, euroPrice } from "../../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../../sim/00-core/time";
@@ -14,8 +15,8 @@ import { covers, keyExpired, SHOP_MACHINE } from "../../../../../../sim/60-infra
 import { displayHost } from "../../../../../../sim/80-business/browser";
 import { bought } from "../../../../../../sim/80-business/licences";
 import { shopUpdatesFee } from "../../../../../../sim/80-business/shop";
-import { keysOf, offers, upgradeOffer, upgradeOffers } from "../../../../../../sim/80-business/vendor-shop";
-import { renewShopUpdates, upgradeShop } from "../../../../../../sim/90-actions/shop";
+import { keysOf, offers, upgradeOffer, upgradeOffers, vendorName } from "../../../../../../sim/80-business/vendor-shop";
+import { renewShopUpdates, upgradeFee, upgradeShop } from "../../../../../../sim/90-actions/shop";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
 import { addToCart, cancelLicence } from "../../../../../../sim/90-actions/vendor-shop";
 import { formatDay } from "../../../../billing/format";
@@ -114,10 +115,10 @@ function Account({ game, host, cart }: { game: GameState; host: string; cart: ()
   const actions = (k: Licence) => {
     const mine = k.machineId === SHOP_MACHINE && !!installed, out = [];
     const fee = mine && k.updatesUntil !== undefined ? shopUpdatesFee(game, k) : undefined;
-    if (fee !== undefined) out.push(<button key="renew" type="button" className="cxv-btn" onClick={() => act(renewShopUpdates)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</button>);
+    if (fee !== undefined) out.push(<PayButton key="renew" className="cxv-btn" supplier="shopVendor" name={vendorName(ID)} amount={fee ?? 0} run={(m) => act(renewShopUpdates, m)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</PayButton>);
     if (mine && next) {
       const price = covers(k, next.version) ? null : k.covers.kind === "version" ? upgradeOffer(game, ID, k.covers.major)?.fee : undefined;
-      if (price !== undefined) out.push(<button key="up" type="button" className="cxv-btn" onClick={() => act(upgradeShop)}>{price === null ? t("cexit.v.upgradeFree", { major: next.major }) : t("cexit.v.upgradeTo", { major: next.major, fee: euroPrice(price) })}</button>);
+      if (price !== undefined) out.push(<PayButton key="up" className="cxv-btn" supplier="shopVendor" name={vendorName(ID)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{price === null ? t("cexit.v.upgradeFree", { major: next.major }) : t("cexit.v.upgradeTo", { major: next.major, fee: euroPrice(price) })}</PayButton>);
     } else if (!mine && k.covers.kind === "version") {
       const from = k.covers.major, u = upgradeOffers(game, ID).find((x) => x.from === from);
       if (u) out.push(<button key="up" type="button" className="cxv-btn" onClick={() => act(addToCart, ID, null, from).ok && cart()}>{t("cexit.v.upgradeTo", { major: u.to, fee: euroPrice(u.fee) })}</button>);

@@ -25,10 +25,10 @@ import { shopBlock } from "../src/sim/80-business/website";
 import { renewKeys } from "../src/sim/85-products/products";
 import { activateLicence } from "../src/sim/90-actions/licence";
 import { setUpChannel } from "../src/sim/90-actions/marketing";
-import { installShop, renewShopUpdates, updateShop, upgradeShop } from "../src/sim/90-actions/shop";
+import { installShop, renewShopUpdates, updateShop, upgradeFee, upgradeShop } from "../src/sim/90-actions/shop";
 import { deserialize, serialize } from "../src/sim/91-save/save";
 import type { ActionResult } from "../src/sim/90-actions/hardware";
-import { readyGame, installWithKey, mailsAbout } from "./fixtures";
+import { readyGame, installWithKey, mailsAbout, withCard } from "./fixtures";
 
 // readyGame's FreePanel VM is the first panel host.
 const panelHost = (s: GameState) => s.clusters.find((c) => c.kind === "panel")!;
@@ -138,6 +138,16 @@ describe("shop updates", () => {
     expect(key(s).updatesUntil).toBe(yearAfter(s.hour));
     // Version 4.0 is a new major the key does not cover.
     expect(shopUpdate(s)).toBeNull();
+  });
+
+  it("pays the upgrade and the updates renewal by the method the player chose", () => {
+    const s = chosen("2008-04", "whmCache", true);
+    s.hour = hourOfMonth("2009-08");
+    withCard(s);
+    expect(upgradeFee(s)).toBeGreaterThan(0);
+    ok(upgradeShop(s, "onAccount"));
+    ok(renewShopUpdates(s, "card"));
+    expect(s.payables.slice(-2).map((p) => p.method)).toEqual(["onAccount", "card"]);
   });
 
   it("upgrade to the next major at the vendor's price for a key of the new major", () => {

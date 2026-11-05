@@ -4,7 +4,7 @@ import { cents } from "../45-billing/billing";
 import type { GameState, PostalAddress } from "../50-state";
 import { cardDetails, cardReady, cardSpent } from "../46-finance/bank";
 import { orderError } from "./company";
-import { payMethod } from "../46-finance/payables";
+import { payMethod, type Method } from "../46-finance/payables";
 import { placeOrder } from "./purchase";
 import { updateKey } from "../60-infra/licence";
 import { ownAddresses } from "../42-mail/sources";
@@ -58,7 +58,7 @@ function cardMatches(s: GameState, p: { number: string; expiry: string; cvc: str
 // Places the site's cart lines as one order. A card pays at once and the keys come with the order email; a transfer gets an
 // invoice, and the keys come once the money arrives. A one-time licence costs its price; a term licence pays its first term
 // for one unit; an upgrade is a key for the next major.
-export function checkout(s: GameState, host: string, details: OrderDetails): ActionResult {
+export function checkout(s: GameState, host: string, details: OrderDetails, chosen?: Method): ActionResult {
   const lines = cartOf(s, host);
   if (!lines.length) return fail("error.cartEmpty");
   const fees = lines.map((l) => lineOffer(s, l)?.fee);
@@ -80,12 +80,13 @@ export function checkout(s: GameState, host: string, details: OrderDetails): Act
   s.cart = s.cart.filter((l) => !lines.includes(l));
   // A free order, such as an edition change on a term key, needs no payment.
   if (total === 0) { sendKeys(s, vendor, order, keys, total, false, mailTo); return { ok: true, id: order }; }
-  const method = payment.kind === "card" ? "card" : payMethod(s, vendor) === "debit" ? "debit" : "transfer";
+  const method: Method = payment.kind === "card" ? "card" : chosen && chosen !== "card" ? chosen : payMethod(s, vendor) === "debit" ? "debit" : "transfer";
   const placed = placeOrder(s, { supplier: "software", name: vendor, lines: [entry], method, order });
   if (!placed.ok) return placed;
   const p = s.payables.find((x) => x.id === placed.payable)!;
-  // A card or a direct debit pays as the order is placed; a transfer sends the keys once the money arrives.
-  if (p.paidAt !== null) sendKeys(s, vendor, order, keys, total, method === "card", mailTo);
+  // A card or a direct debit pays as the order is placed and an order on account ships at once; a transfer sends the keys
+  // once the money arrives.
+  if (p.paidAt !== null || method === "onAccount") sendKeys(s, vendor, order, keys, total, method === "card", mailTo);
   else s.payables = s.payables.map((x) => (x.id === p.id ? { ...x, keys: { order, lines: keys, mailTo } } : x));
   return { ok: true, id: order };
 }

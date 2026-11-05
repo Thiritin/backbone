@@ -11,14 +11,15 @@ import { groupKind, groupOf, hasModule, installable, newShop, shopUpdate, shopUp
 import { SERVES } from "../10-catalog/platforms";
 import { t } from "../../i18n/en";
 import type { ActionResult } from "./hardware";
+import type { Method } from "../46-finance/payables";
 import { spend } from "./purchase";
 import { vendorName } from "../80-business/vendor-shop";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
 // One vendor document for a shop system purchase; a free one books nothing.
-const pay = (s: GameState, id: string, amount: number, category: string, key: string, params: Record<string, string | number>) =>
-  spend(s, { supplier: "shopVendor", name: vendorName(id), lines: [{ hour: s.hour, category, key, params, amount: -amount }] });
+const pay = (s: GameState, id: string, amount: number, category: string, key: string, params: Record<string, string | number>, method?: Method) =>
+  spend(s, { supplier: "shopVendor", name: vendorName(id), lines: [{ hour: s.hour, category, key, params, amount: -amount }], method });
 
 // docs/design/plans/shop-software.md: why the shop system cannot go into a web space of the panel host, which counts against
 // the panel's licence. version is the release whose files the installer runs, else the newest the key may install; a typed
@@ -74,29 +75,37 @@ export function updateShop(s: GameState): ActionResult {
 
 // Pays the yearly updates fee of the shop's one-time key: its updates run a year past their end, or from now once ended.
 // A vendor no longer selling keys charges the fee of the era the key was bought in.
-export function renewShopUpdates(s: GameState): ActionResult {
+export function renewShopUpdates(s: GameState, method?: Method): ActionResult {
   const id = s.shop.variant, k = id ? assignedKey(s, SHOP_MACHINE, id) : undefined;
   if (!id || !k || k.updatesUntil === undefined) return fail("error.noUpdates");
   const fee = shopUpdatesFee(s, k);
   if (fee === undefined) return fail("error.notForSale");
-  const placed = pay(s, id, fee, "licenses", "ledger.shopUpdates", { name: shopById(id).name });
+  const placed = pay(s, id, fee, "licenses", "ledger.shopUpdates", { name: shopById(id).name }, method);
   if (!placed.ok) return placed;
   updateKey(s, k.id, { updatesUntil: yearAfter(Math.max(k.updatesUntil, s.hour)) });
   return { ok: true, id: k.id };
 }
 
+// What the upgrade to the next major costs: 0 when the assigned key covers it or there is none, undefined when the vendor sells
+// no upgrade for the key.
+export function upgradeFee(s: GameState): number | undefined {
+  const id = s.shop.variant, at = s.shop.install, next = id && at ? nextMajor(id, at.version, s.hour) : undefined;
+  const k = id ? assignedKey(s, SHOP_MACHINE, id) : undefined;
+  if (!id || !next || !k || covers(k, next.version)) return 0;
+  return k.covers.kind === "version" ? upgradeOffer(s, id, k.covers.major)?.fee : undefined;
+}
+
 // Moves the shop to the newest release of the next major. A key for an older major is replaced by a key for the new one at
 // the vendor's upgrade price; the old key goes back unassigned.
-export function upgradeShop(s: GameState): ActionResult {
+export function upgradeShop(s: GameState, method?: Method): ActionResult {
   const id = s.shop.variant, at = s.shop.install;
   if (!id || !at) return fail("error.shopNotInstalled");
   const next = nextMajor(id, at.version, s.hour);
   if (!next) return fail("error.noMajorUpgrade");
-  const k = assignedKey(s, SHOP_MACHINE, id);
+  const k = assignedKey(s, SHOP_MACHINE, id), fee = upgradeFee(s);
+  if (fee === undefined) return fail("error.notForSale");
   if (k && !covers(k, next.version)) {
-    const offer = k.covers.kind === "version" ? upgradeOffer(s, id, k.covers.major) : null;
-    if (!offer) return fail("error.notForSale");
-    const placed = pay(s, id, offer.fee, "licenses", "ledger.shopUpgrade", { name: shopById(id).name, major: next.major });
+    const placed = pay(s, id, fee, "licenses", "ledger.shopUpgrade", { name: shopById(id).name, major: next.major }, method);
     if (!placed.ok) return placed;
     assignKey(s, issueKey(s, id, null, undefined, next.major).id, SHOP_MACHINE);
   }

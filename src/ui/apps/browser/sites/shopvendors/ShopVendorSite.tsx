@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { PayButton } from "../shared/PayButton";
+import { vendorName } from "../../../../../sim/80-business/vendor-shop";
 import { t } from "../../../../../i18n/en";
 import { euro } from "../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../sim/00-core/time";
@@ -23,7 +25,7 @@ export function VendorPage({ game, id, className, mark }: VendorProps & { id: Sh
   const modules = MODULES.filter((m) => m.vendor === "shop" && m.year <= year);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === id ? <span className="sv-state">{t("vendor-sites.registered")}</span>
     : bought(game, m.id, id) ? <span className="sv-state">{t("vendor-sites.bought")}</span>
-    : <button type="button" className="sv-buy" onClick={() => act(buyShopLink, id, m.id)}>{t("vendor-sites.buy")}</button>;
+    : <PayButton className="sv-buy" supplier="shopVendor" name={vendorName(id)} amount={m.price} run={(pm) => act(buyShopLink, id, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>;
   return (
     <div className={`sv ${className}`}>
       <div className="sv-page">

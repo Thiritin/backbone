@@ -3,6 +3,7 @@ import { isAvailable, SKILLS, skillById } from "../10-catalog/research";
 import { storeItem, subscriptionEntry } from "../10-catalog/store";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import type { Method } from "../46-finance/payables";
 import { spend } from "./purchase";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -37,13 +38,13 @@ export function storeBlocker(s: GameState, id: string): string | null {
 }
 
 // Installing pays the first month right away; the tick bills every later month start.
-export function install(s: GameState, id: string): ActionResult {
+export function install(s: GameState, id: string, method?: Method): ActionResult {
   const item = storeItem(id);
   if (!item) return fail("error.unknownStoreItem");
   const blocked = storeBlocker(s, id);
   if (blocked) return fail(blocked);
   if (s.installed.includes(id)) return fail("error.installed");
-  const placed = spend(s, { supplier: "pear", name: "Pear", lines: [subscriptionEntry(s, item)] });
+  const placed = spend(s, { supplier: "pear", name: "Pear", lines: [subscriptionEntry(s, item)], method });
   if (!placed.ok) return placed;
   s.installed = [...s.installed, id];
   return { ok: true };

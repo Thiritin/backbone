@@ -7,8 +7,11 @@ import { skuById } from "../../../sim/10-catalog/cpus";
 import { VENDOR_NAME } from "../../../sim/10-catalog/cpus";
 import { leaseOffers } from "../../../sim/10-catalog/leasing";
 import { REGIONS } from "../../../sim/20-world/datacenters";
-import { buyCart, cardOnly, deliveryWait, INVOICE_AFTER, paidOrders, PREPAY_HOURS, unitPrice, type Payment } from "../../../sim/90-actions/hardware";
-import { bankOf, cardReady, cardSpent } from "../../../sim/46-finance/bank";
+import { buyCart, cardOnly, deliveryWait, PREPAY_HOURS, unitPrice, type Payment } from "../../../sim/90-actions/hardware";
+import { bankOf } from "../../../sim/46-finance/bank";
+import { HARDWARE_SHOP, type Method, type Payable } from "../../../sim/46-finance/payables";
+import { payOptions } from "../browser/sites/shared/PayMethods";
+import { feeLine, freshDoc, OrderDone, startMethod } from "../browser/sites/shared/PayButton";
 import { TRANSFER_HOURS } from "../../../sim/10-catalog/banks";
 import { Isometric } from "../../art/Isometric";
 import { Logo } from "../../art/logos";
@@ -32,23 +35,31 @@ export function Cart() {
   const cart = useStore((s) => s.cart), setCartQty = useStore((s) => s.setCartQty), clearCart = useStore((s) => s.clearCart);
   const act = useStore((s) => s.act), notify = useStore((s) => s.notify);
   const game = useStore((s) => s.game);
-  const [pick, setPay] = useState("prepay");
+  const [pick, setPay] = useState<string | null>(null);
+  const [done, setDone] = useState<Payable | null>(null);
   const openLoc = useStore((s) => s.openLoc);
   const [to, setTo] = useState<string | null>(null);
   const dest = game.locations.find((l) => l.id === (to ?? openLoc)) ?? game.locations[0];
-  const onlyCard = cardOnly(cart), card = cardReady(game) && cardSpent(game) + cart.reduce((n, l) => n + unitPrice(l, yearOf(game.hour)) * l.qty, 0) <= game.bank!.card!.limit;
-  const pay = onlyCard && (pick === "prepay") ? "card" : pick;
-  const base = deliveryWait(game, cart);
-  const wait = pay === "prepay" && base ? base + PREPAY_HOURS + TRANSFER_HOURS[bankOf(game)?.speed ?? "nextDay"] : base, year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
+  const year = yearOf(game.hour), total = cart.reduce((n, l) => n + unitPrice(l, year) * l.qty, 0), units = cart.reduce((n, l) => n + l.qty, 0);
+  const order = { supplier: "hardware" as const, lines: feeLine(game, total), name: HARDWARE_SHOP }, onlyCard = cardOnly(cart);
+  // A cart with a brand sold abroad pays by card or lease only.
+  const methods = payOptions(game, order).map((o) => (onlyCard && o.method !== "card" && !o.off ? { ...o, off: t("payA.off.cardOnly") } : o));
   const offers = total ? leaseOffers(game, total) : [];
+  const usable = (id: string | null) => !!id && (methods.some((m) => m.method === id && !m.off) || offers.some((o) => o.id === id));
+  const start = onlyCard ? (usable("card") ? "card" : offers[0]?.id ?? null) : startMethod(game, order);
+  const pay = usable(pick) ? pick : start;
+  const base = deliveryWait(game, cart);
+  const wait = pay === "transfer" && base ? base + PREPAY_HOURS + TRANSFER_HOURS[bankOf(game)?.speed ?? "nextDay"] : base;
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
   const checkout = () => {
-    const payment: Payment = offer ? { kind: "lease", offerId: offer.id } : { kind: pay === "card" ? "card" : pay === "invoice" ? "onAccount" : game.bank ? "transfer" : "cash" };
-    const r = act(buyCart, cart, payment, dest.id);
+    if (!pay) return;
+    const payment: Payment = offer ? { kind: "lease", offerId: offer.id } : { kind: pay as Method };
+    const before = useStore.getState().game, r = act(buyCart, cart, payment, dest.id);
     if (!r.ok) return;
+    setDone(freshDoc(before) ?? null);
     clearCart();
-    setPay("prepay");
+    setPay(null);
     notify("Shop", wait ? t("shop.orderedFor", { az: dest.name }) : t("shop.addedToStorage", { az: dest.name }), t("shop.units", { n: units }));
   };
 
@@ -73,6 +84,7 @@ export function Cart() {
           );
         })}
         {!cart.length && <div className="shop-none">{t("shop.empty")}</div>}
+        {!cart.length && done && <div className="shop-cart-foot"><OrderDone doc={done} btn="btn" /></div>}
       </div>
       {cart.length > 0 && <>
         <div className="shop-dest" role="group" aria-label={t("shop.deliverTo")}>
@@ -88,15 +100,11 @@ export function Cart() {
         <div className="shop-cart-total"><span>{t("shop.delivery")}</span><span className="grow" /><span className="num">{wait ? t("shop.arrivesIn", { n: wait > 24 ? Math.ceil(wait / 24) : 1 }) : t("shop.arrivesNow")}</span></div>
         <div className="shop-cart-total"><span>{t("shop.total")}</span><span className="grow" /><strong className="num">{euro(total)}</strong></div>
         <div className="shop-pay" role="radiogroup" aria-label={t("shop.payment")}>
-          {!onlyCard && <button role="radio" aria-checked={pay === "prepay"} className="shop-offer" onClick={() => setPay("prepay")}>
-            <strong>{t("bank.shop.prepay")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
-          </button>}
-          {!onlyCard && paidOrders(game) >= INVOICE_AFTER && <button role="radio" aria-checked={pay === "invoice"} className="shop-offer" onClick={() => setPay("invoice")}>
-            <strong>{t("bank.shop.invoice")}</strong><span className="grow" /><span className="num">{euro(total)}</span>
-          </button>}
-          <button role="radio" aria-checked={pay === "card"} className="shop-offer" disabled={!card} onClick={() => setPay("card")}>
-            <strong>{t("bank.shop.card")}</strong><span className="grow" /><span className="num">{card ? euro(total) : cardReady(game) ? t("shop.cardLimit", { limit: euro(game.bank!.card!.limit) }) : t("shop.noCard")}</span>
-          </button>
+          {methods.map((m) => (
+            <button key={m.method} role="radio" aria-checked={pay === m.method} className="shop-offer" disabled={!!m.off} onClick={() => setPay(m.method)}>
+              <strong>{m.label}</strong><span className="grow" /><span className="num">{m.off ?? euro(total)}</span>
+            </button>
+          ))}
           {offers.length > 0 && <strong className="shop-pay-h">{t("shop.leasing")}</strong>}
           {offers.map((o) => (
             <button key={o.id} role="radio" aria-checked={offer?.id === o.id} className="shop-offer" onClick={() => setPay(o.id)}>
@@ -115,7 +123,7 @@ export function Cart() {
           ))}
         </div>
         <div className="shop-cart-foot">
-          <button className="btn primary" disabled={pay === "card" && !card} onClick={checkout}>{offer ? t("shop.leaseFor", { price: euro(offer.monthly) }) : t("shop.pay", { price: euro(total) })}</button>
+          <button className="btn primary" disabled={!pay} onClick={checkout}>{offer ? t("shop.leaseFor", { price: euro(offer.monthly) }) : t("shop.pay", { price: euro(total) })}</button>
         </div>
       </>}
     </aside>

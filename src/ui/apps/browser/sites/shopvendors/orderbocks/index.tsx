@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { vendorName } from "../../../../../../sim/80-business/vendor-shop";
+import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
 import { LOCALE } from "../../../../../../i18n/lang";
 import { euro } from "../../../../../../sim/00-core/money";
@@ -12,7 +14,7 @@ import { displayHost } from "../../../../../../sim/80-business/browser";
 import { portalPath } from "../../../../../../sim/80-business/portal";
 import { bought } from "../../../../../../sim/80-business/licences";
 import { shopHost } from "../../../../../../sim/80-business/shoplink";
-import { installShop, upgradeShop } from "../../../../../../sim/90-actions/shop";
+import { installShop, upgradeFee, upgradeShop } from "../../../../../../sim/90-actions/shop";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
 import { useStore } from "../../../../../store";
 import { feeText } from "../../../../marketing/payments";
@@ -114,7 +116,7 @@ function MyAccount({ game }: VendorProps) {
           <tbody><tr>
             <td>{shopById(ID).name}</td><td>{t("orderbocks.v.free")}</td><td className="num">{at.version}</td>
             <td>{game.clusters.find((c) => c.id === at.clusterId)?.name ?? at.clusterId}</td><td className="num">{month(info?.updatesUntil ?? null)}</td>
-            <td>{next && <button type="button" className="obv-btn" onClick={() => act(upgradeShop)}>{t("orderbocks.v.upgradeTo", { major: next.major })}</button>}</td>
+            <td>{next && <PayButton className="obv-btn" supplier="shopVendor" name={vendorName(ID)} amount={upgradeFee(game) ?? 0} run={(m) => act(upgradeShop, m)}>{t("orderbocks.v.upgradeTo", { major: next.major })}</PayButton>}</td>
           </tr></tbody>
         </table>
       )}

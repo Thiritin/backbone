@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { PayButton } from "../../shared/PayButton";
 import { t } from "../../../../../../i18n/en";
 import { euro, euroPrice } from "../../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../../sim/00-core/time";
@@ -13,7 +14,7 @@ import { keyExpired, SHOP_MACHINE } from "../../../../../../sim/60-infra/licence
 import { displayHost } from "../../../../../../sim/80-business/browser";
 import { bought } from "../../../../../../sim/80-business/licences";
 import { shopUpdatesFee } from "../../../../../../sim/80-business/shop";
-import { keysOf, offers, upgradeOffers, type Offer } from "../../../../../../sim/80-business/vendor-shop";
+import { keysOf, offers, upgradeOffers, type Offer, vendorName } from "../../../../../../sim/80-business/vendor-shop";
 import { renewShopUpdates } from "../../../../../../sim/90-actions/shop";
 import { buyShopLink } from "../../../../../../sim/90-actions/shoplink";
 import { addToCart, cancelLicence } from "../../../../../../sim/90-actions/vendor-shop";
@@ -220,7 +221,7 @@ function Account({ game, go }: { game: GameState; go: Go }) {
             <td className="wcv-key">{k.key}</td>
             <td>{expired ? t("vendor-shop.expired") : t("shop-whmCache.active")}</td>
             <td className="wcv-acts">
-              {fee !== undefined && <button type="button" className="wcv-btn" disabled={!installed(k)} onClick={() => act(renewShopUpdates)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</button>}
+              {fee !== undefined && <PayButton className="wcv-btn" supplier="shopVendor" name={vendorName(ID)} amount={fee ?? 0} disabled={!installed(k)} run={(m) => act(renewShopUpdates, m)}>{t("shop-admin.renewUpdates", { fee: euroPrice(fee) })}</PayButton>}
               {up && <button type="button" className="wcv-btn wcv-primary" onClick={() => { if (act(addToCart, ID, null, up.from).ok) go("cart"); }}>{t("shop-whmCache.upgradeFor", { to: up.to, fee: euroPrice(up.fee) })}</button>}
               {k.covers.kind === "term" && k.renewsAt !== null && !expired && <button type="button" className="wcv-btn" onClick={() => act(cancelLicence, k.id)}>{t("vendor-shop.cancel")}</button>}
               <button type="button" className="wcv-btn" onClick={() => copy(k)}>{copied === k.id ? t("shop-whmCache.copied") : t("shop-whmCache.copyKey")}</button>
