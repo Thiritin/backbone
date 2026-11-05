@@ -104,8 +104,9 @@ describe("network and addresses", () => {
     s.locations = s.locations.map((l) => ({ ...l, readyAt: 0 }));
     ok(announceBlock(s, s.ips.blocks[0].id, loc, true));
     expect(keys(s)).toEqual(["ledger.providerRouting"]);
-    expect(s.payables).toHaveLength(3);
-    expect(s.payables.every((p) => p.method === "cash" && p.doc === "receipt")).toBe(true);
+    const receipts = s.payables.filter((p) => p.supplier !== "datacenter");
+    expect(receipts).toHaveLength(3);
+    expect(receipts.every((p) => p.method === "cash" && p.doc === "receipt")).toBe(true);
     const poor = net();
     ok(addLocation(poor, "equinox-fr5", "cage", 4));
     poor.cash = 1;
@@ -121,8 +122,9 @@ describe("network and addresses", () => {
     const racks = locs.map((id) => s.racks.find((r) => r.locationId === id)!);
     const cash = s.cash;
     ok(orderProviderCable(s, racks[0].id, 0, racks[1].id, 0));
-    expect(s.payables).toHaveLength(0);
-    while (!s.payables.length) tick(s);
+    const cables = () => s.payables.filter((p) => p.supplier === "network");
+    expect(cables()).toHaveLength(0);
+    while (!cables().length) tick(s);
     expect(last(s)).toMatchObject({ supplier: "network", method: "cash", doc: "receipt" });
     expect(keys(s)).toEqual(["ledger.providerCable"]);
     expect(s.cash).toBeLessThan(cash);
