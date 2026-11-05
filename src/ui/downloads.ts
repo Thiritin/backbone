@@ -57,6 +57,16 @@ export function startUpload(workloadId: string, folder: string, file: string, ov
   return r;
 }
 
+// The game hour the first running download or upload ends, or null with none running.
+export function nextTransferEnd(): number | null {
+  const g = useStore.getState().game, now = nowHours(g), book = g.books.download;
+  const ends = [
+    ...[...Object.values(useDownloads.getState()), ...Object.values(useUploads.getState())].filter((x): x is Transfer => !!x).map((x) => x.start + x.hours),
+    ...Object.values(g.installers).map((x) => x.readyAt), ...(book ? [book.readyAt] : []),
+  ].filter((e) => e > now);
+  return ends.length ? Math.min(...ends) : null;
+}
+
 const share = (d: Transfer | undefined, now: number): number | null => (d ? Math.min(1, (now - d.start) / d.hours) : null);
 
 // The share of the download done, from 0 to 1, moving with game time.

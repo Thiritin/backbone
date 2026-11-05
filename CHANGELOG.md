@@ -4,6 +4,10 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-05
 - Your own mail server now works with its IP address or mail.<your domain> in Pear Mail, and the Mailboxes page of the web panel opens a working webmail with a welcome mail in every new mailbox.
+- Your figure walks back to its seat a few seconds after visiting the letterbox, a shelf or a rack, once nothing is open.
+- The empty storage shelf no longer opens a blank view, and the job label on the back of a rack no longer covers the cable markers.
+- Skipping to the next event now also stops when a download or upload finishes, and the Internet step on the corkboard only ticks once you have your own line.
+- Letters waiting in the letterbox have a button that takes you there, the installer leaves Downloads after it is installed, and small hardware pictures in the shop list no longer break.
 - The registrar page now shows which name servers a domain uses, the registrar's or your own, with a status that reads Active, Propagating or Not responding; your own name servers only answer while you run a DNS server.
 - Used hardware, hall fittings, remote hands, training, market studies, certificates and monthly network charges now come with a receipt or an invoice, and a company with a bank account no longer needs cash on hand to order them.
 - Your GMix mailbox is set up for you when you register your company, so Pear Mail fetches your mail right away and the GMix site opens your inbox without a password reset.

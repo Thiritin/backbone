@@ -121,7 +121,7 @@ export default {
   "ledger.circuit": () => "Circuito doméstico adicional",
   "ledger.secondPsu": (p) => `Segunda fuente de alimentación para ${p.device}`,
   "event.workDone.title": () => "Trabajo manual terminado",
-  "event.workDone.text": (p) => `El trabajo en ${p.device} ha terminado.`,
+  "event.workDone.text": (p) => `Terminado: ${p.work}.`,
   "event.componentFailed.title": () => "Componente averiado",
   "event.componentFailed.text": (p) => `Avería en ${p.device}: ${COMPONENT_LABELS[String(p.component)] ?? p.component}.`,
   "event.rackArrived.title": () => "Rack recibido",

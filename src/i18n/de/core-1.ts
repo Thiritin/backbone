@@ -121,7 +121,7 @@ export default {
   "ledger.circuit": () => "Zusätzlicher Haushaltsstromkreis",
   "ledger.secondPsu": (p) => `Zweites Netzteil für ${p.device}`,
   "event.workDone.title": () => "Handarbeit erledigt",
-  "event.workDone.text": (p) => `Die Arbeit an ${p.device} ist abgeschlossen.`,
+  "event.workDone.text": (p) => `Abgeschlossen: ${p.work}.`,
   "event.componentFailed.title": () => "Komponente ausgefallen",
   "event.componentFailed.text": (p) => `Ausfall in ${p.device}: ${COMPONENT_LABELS[String(p.component)] ?? p.component}.`,
   "event.rackArrived.title": () => "Rack angekommen",
