@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "books-site-collmix.guide": () => "Installationsanleitung",
-  "books-site-collmix.download": () => "Download und Systemvoraussetzungen",
+  "books-site-collmix.download": () => "Registrierung und Systemvoraussetzungen",
   "books-site-collmix.req": () => "Systemvoraussetzungen",
   "books-site-collmix.prices": () => "Preise",
   "books-site-collmix.imprint": () => "Impressum",
@@ -14,7 +14,7 @@ export default {
   "books-site-collmix.nav.features": () => "Funktionen",
   "books-site-collmix.nav.trial": () => "Kostenlos testen",
   "books-site-collmix.nav.refs": () => "Referenzen",
-  "books-site-collmix.nav.download": () => "Download",
+  "books-site-collmix.nav.download": () => "Registrieren",
   "books-site-collmix.nav.contact": () => "Kontakt",
   "books-site-collmix.plain.h1": () => "Kontomix: Buchhaltung online für kleine Unternehmen",
   "books-site-collmix.plain.intro": () => "Kontomix ist die Buchhaltung im Internet für Selbstständige, Vereine und kleine Firmen. Sie brauchen nur einen Internetzugang und einen Browser. Es gibt nichts zu installieren, keine Updates und keine Datensicherung.",

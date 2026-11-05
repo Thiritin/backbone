@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "books-site-collmix.guide": () => "Guía de instalación",
-  "books-site-collmix.download": () => "Descarga y requisitos del sistema",
+  "books-site-collmix.download": () => "Registro y requisitos del sistema",
   "books-site-collmix.req": () => "Requisitos del sistema",
   "books-site-collmix.prices": () => "Precios",
   "books-site-collmix.imprint": () => "Aviso legal",
@@ -14,7 +14,7 @@ export default {
   "books-site-collmix.nav.features": () => "Funciones",
   "books-site-collmix.nav.trial": () => "Probar gratis",
   "books-site-collmix.nav.refs": () => "Referencias",
-  "books-site-collmix.nav.download": () => "Descarga",
+  "books-site-collmix.nav.download": () => "Registrarse",
   "books-site-collmix.nav.contact": () => "Contacto",
   "books-site-collmix.plain.h1": () => "Kontomix: contabilidad online para pequeñas empresas",
   "books-site-collmix.plain.intro": () => "Kontomix es contabilidad en internet para autónomos, asociaciones y pequeñas empresas. Solo necesitas una conexión a internet y un navegador. No hay nada que instalar, ni actualizaciones, ni copias de seguridad.",

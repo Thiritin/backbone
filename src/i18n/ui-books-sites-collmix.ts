@@ -3,7 +3,7 @@ import type { Dict } from "./lang";
 // The marketing copy of the Kontomix site in its three looks.
 export default {
   "books-site-collmix.guide": () => "Installation guide",
-  "books-site-collmix.download": () => "Download and system requirements",
+  "books-site-collmix.download": () => "Sign-up and system requirements",
   "books-site-collmix.req": () => "System requirements",
   "books-site-collmix.prices": () => "Prices",
   "books-site-collmix.imprint": () => "Imprint",
@@ -15,7 +15,7 @@ export default {
   "books-site-collmix.nav.features": () => "Features",
   "books-site-collmix.nav.trial": () => "Try for free",
   "books-site-collmix.nav.refs": () => "References",
-  "books-site-collmix.nav.download": () => "Download",
+  "books-site-collmix.nav.download": () => "Sign up",
   "books-site-collmix.nav.contact": () => "Contact",
   "books-site-collmix.plain.h1": () => "Kontomix: online bookkeeping for small businesses",
   "books-site-collmix.plain.intro": () => "Kontomix is bookkeeping on the internet for freelancers, clubs and small companies. All you need is an internet connection and a browser. There is nothing to install, no updates and no backups to make.",
