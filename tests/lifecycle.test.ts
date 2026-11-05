@@ -104,41 +104,36 @@ describe("hardware lifecycle", () => {
     expect(rate(2015)).toBeCloseTo(rate(2010), 12);
   });
 
-  it("doubles the swap time and charges the grey market out of support", () => {
+  it("charges the grey market out of support", () => {
     const swap = (year: number) => {
       const s = rich(year), d = dev(s, "dev3"), fan = d.components.find((c) => c.kind === "fan")!;
       s.devices = s.devices.map((x) => (x.id === "dev3" ? failComponents(s, x, [fan.id]) : x));
       ok(buyDevice(s, "part-fan", "Generic", 1, "loc1"));
       const cash = s.cash;
       ok(replaceComponent(s, "dev3", fan.id));
-      const hours = s.orders.find((o) => o.worker === "player" && !o.applied)!.workMin;
       settle(s);
-      return { hours, paid: cash - s.cash, grey: s.ledger.filter((e) => e.key === "ledger.greyMarket") };
+      return { paid: cash - s.cash, grey: s.ledger.filter((e) => e.key === "ledger.greyMarket") };
     };
     const inside = swap(2015), past = swap(2016);
-    expect(inside).toEqual({ hours: inside.hours, paid: 0, grey: [] });
-    expect(past.hours).toBe(2 * inside.hours);
+    expect(inside).toEqual({ paid: 0, grey: [] });
     expect(past.paid).toBe(12.5);
     expect(past.grey).toMatchObject([{ amount: -12.5, params: { component: "fan" } }]);
   });
 
-  it("doubles the time to install and remove a part out of support", () => {
+  it("charges the grey market for parts out of support", () => {
     const work = (year: number) => {
       const s = rich(year), d = dev(s, "dev3"), ram = d.components.find((c) => c.kind === "ram")!;
       d.on = false;
       ok(removePart(s, "dev3", ram.id));
-      const remove = s.orders.find((o) => o.worker === "player" && !o.applied)!.workMin;
       settle(s);
       const part = ok(buyDevice(s, "part-ram", "Generic", 1, "loc1"));
       const cash = s.cash;
       ok(installPart(s, "dev3", part));
-      const install = s.orders.find((o) => o.worker === "player" && !o.applied)!.workMin;
       settle(s);
-      return { remove, install, paid: cash - s.cash };
+      return { paid: cash - s.cash };
     };
     const inside = work(2015), past = work(2016);
     expect(inside.paid).toBe(0);
-    expect(past).toMatchObject({ remove: 2 * inside.remove, install: 2 * inside.install });
     expect(past.paid).toBeGreaterThan(0);
   });
 });

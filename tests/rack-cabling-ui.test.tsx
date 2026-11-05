@@ -41,25 +41,25 @@ describe("rack back cabling", () => {
     fireEvent(window, new MouseEvent("pointermove", { clientX: x - dist, clientY: y }));
     fireEvent(window, new MouseEvent("pointerup", { clientX: x - dist, clientY: y }));
   };
-  // Unplugging queues a hand job as an order.
-  const orders = () => useStore.getState().game.orders.length;
+  // Unplugging takes effect at once: no order, the cord is out.
+  const plugs = () => useStore.getState().game.devices.find((d) => d.id === "dev3")!.components.filter((x) => x.kind === "psu" && x.plugged).length;
 
   it("keeps the cord seated when the plug is pulled less than the threshold", () => {
-    const c = seated(), n = orders();
+    const c = seated(), n = plugs();
     pull(c, 5);
-    expect(orders()).toBe(n);
+    expect(plugs()).toBe(n);
   });
 
   it("unplugs the cord when the plug is pulled past the threshold", () => {
-    const c = seated(), n = orders();
+    const c = seated(), n = plugs();
     pull(c, 40);
-    expect(orders()).toBe(n + 1);
+    expect(plugs()).toBe(n - 1);
   });
 
   it("unplugs from the keyboard with Delete on a focused cord", () => {
-    const c = seated(), n = orders();
+    const c = seated(), n = plugs();
     fireEvent.keyDown(c.querySelector(".rack-seated")!, { key: "Delete" });
-    expect(orders()).toBe(n + 1);
+    expect(plugs()).toBe(n - 1);
   });
 
   it("takes a data port as the cable in hand with Enter", () => {

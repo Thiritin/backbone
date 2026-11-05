@@ -3,6 +3,7 @@
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
 ## 2026-11-05
+- Racking a server, plugging cables and power cords, swapping parts and plugging in the stick happen at once when you stand at the device, with no waiting and no timer.
 - Shop admin pages use their own buttons and tabs instead of the desktop ones, the start page shows order, ticket, invoice and income widgets, and there are new Accounts, Domains, Reports and Network pages.
 - Products and payment gateways have their own pages, invoices filter by status, the setup wizard of WHMCache 7 and later and Blessta is a panel you can dismiss, and importing existing customers sits under Import.
 - The power button on a rack server now works: a press starts it or shuts it down, holding it for two seconds cuts the power, the recessed reset button reboots it hard, the router has a rocker switch on its back, the UPS a front button, and the rack floor reports what happened.
