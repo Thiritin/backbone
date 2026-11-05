@@ -1,4 +1,4 @@
-import type { ComponentType, CSSProperties } from "react";
+import { useState, type ComponentType, type CSSProperties } from "react";
 import { isUnpaid, synced } from "../../../sim/45-billing/billing";
 import { hasModule, MODULES } from "../../../sim/10-catalog/modules";
 import { licenceMail } from "../../../sim/80-business/licences";
@@ -81,7 +81,8 @@ export function BooksProgram() {
   const [register, setRegister] = useSessionState("books.register", false);
   const [setup, setSetup] = useSessionState("books.setup", false);
   const [guide, setGuide] = useSessionState("books.guide", false);
-  const [signup, setSignup] = useSessionState("books.signup", game.books.setupDone === false && !setupOf(game).company);
+  // The sign-up of a web program runs until its plan page is closed; a program with its company already made skips it.
+  const [signedUp, setSignedUp] = useState(setupOf(game).company);
   useFocus("Books", (got) => {
     const f = got.kind === "url" ? got.inner : got;
     if (!f) return;
@@ -119,10 +120,10 @@ export function BooksProgram() {
             {keys && <button className="btn books-register-open" aria-expanded={register} onClick={() => setRegister(!register)}>{t("vendor-sites.register")}</button>}
         </div>
         {register && keys && <Register onClose={() => setRegister(false)} />}
-        {guide && <div className="books-guide"><InstallGuide go={pick} /></div>}
         <div className="books-body">
           {v && booksOffline(game) ? <Offline v={v} />
-            : v?.deployment === "browser" && signup ? <Installer id={v.id} inline onClose={() => setSignup(false)} />
+            : guide ? <div className="books-guide"><InstallGuide go={(tab) => { setGuide(false); pick(tab); }} /></div>
+            : v?.deployment === "browser" && game.books.setupDone === false && !signedUp ? <Installer id={v.id} inline onClose={() => setSignedUp(true)} />
             : v && (setup || game.books.setupDone === false) ? <BooksSetup v={v} game={game} close={(to) => { setSetup(false); if (shown.some((x) => x.id === to)) pick(to!); }} />
             : <Body key={`${current.id}:${focus}`} focus={focus} go={pick} />}
         </div>

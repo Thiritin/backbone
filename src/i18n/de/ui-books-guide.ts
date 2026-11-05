@@ -36,6 +36,7 @@ export default {
   "bkguide.do.cert": () => `Zertifikat öffnen`,
   "bkguide.do.vat": () => `Umsatzsteuer öffnen`,
   "bkguide.todo.buy": () => `Bestellen Sie das Programm auf der Seite des Herstellers.`,
+  "bkguide.todo.signup": () => `Legen Sie Ihr Konto auf der Seite des Herstellers an.`,
   "bkguide.todo.download": () => `Warten Sie, bis das Installationsprogramm geladen ist.`,
   "bkguide.todo.install": () => `Starten Sie das Installationsprogramm und folgen Sie seinen Seiten.`,
   "bkguide.todo.licence": () => `Lesen Sie die Lizenzvereinbarung und nehmen Sie sie an.`,

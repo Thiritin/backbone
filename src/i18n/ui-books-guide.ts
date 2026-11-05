@@ -36,6 +36,7 @@ export default {
   "bkguide.do.cert": () => `Open certificate`,
   "bkguide.do.vat": () => `Open VAT return`,
   "bkguide.todo.buy": () => `Order the program on the vendor's site.`,
+  "bkguide.todo.signup": () => `Create your account on the vendor's site.`,
   "bkguide.todo.download": () => `Wait until the installer has finished downloading.`,
   "bkguide.todo.install": () => `Start the installer and follow its pages.`,
   "bkguide.todo.licence": () => `Read the licence agreement and accept it.`,

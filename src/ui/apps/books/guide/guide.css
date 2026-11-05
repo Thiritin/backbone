@@ -1,5 +1,5 @@
 /* Install guide: one structure, four looks (booklet, help article, onboarding checklist, manual chapter). */
-.books-guide { max-height: 55%; overflow: auto; border-bottom: var(--ar-bw, 1px) solid var(--line, #bbb); }
+.books-guide { flex: 1; min-height: 0; overflow: auto; }
 .bg { --bg-ink: var(--text, #222); --bg-paper: var(--win, #fff); --bg-line: #c9c9c9; --bg-ok: oklch(0.55 0.14 150); padding: 14px 18px; color: var(--bg-ink); background: var(--bg-paper); }
 .bg-head { display: flex; align-items: baseline; gap: 12px; }
 .bg-head h2 { margin: 0; font-size: 1.15em; flex: 1; }
@@ -87,8 +87,10 @@
 .bki-inno .bki-bar i { background: #3a7bd5; }
 
 /* Sign-up of a web program, drawn inline in the program's page */
-.bki-signup { width: min(520px, 100%); margin: 24px auto; background: var(--win, #fff); border: 0; border-radius: 12px; box-shadow: 0 1px 8px rgb(0 0 0 / 0.2); font-family: system-ui, sans-serif; }
+.bki-signup { width: min(520px, 100%); margin: 10px auto; background: var(--win, #fff); border: 0; border-radius: 12px; box-shadow: 0 1px 8px rgb(0 0 0 / 0.2); font-family: system-ui, sans-serif; }
 .bki-signup .bki-title { background: var(--bk-bar, var(--accent, #1170d0)); color: var(--bk-ink, #fff); border-radius: 12px 12px 0 0; padding: 8px 14px; }
 .bki-signup .bki-banner { width: 130px; background: color-mix(in oklch, var(--accent, #1170d0) 12%, transparent); color: inherit; }
 .bki-signup .bki-foot { border-top: 0; }
 .bki-inline.bki-signup { position: static; }
+.bki-signup .bki-main { min-height: 170px; }
+.bki-inline { flex: none; }

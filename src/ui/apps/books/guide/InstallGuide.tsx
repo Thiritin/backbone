@@ -66,9 +66,9 @@ export function InstallGuide({ go }: { go?: (tab: string) => void }) {
         <ol className="bg-steps">
           {steps.map((x, i) => {
             const ticked = guideTicked(game, x), now = current?.id === x.id;
-            const todo = x.id === "activate" && v.deployment === "browser" ? "confirm" : x.id;
+            const todo = v.deployment === "browser" ? ({ activate: "confirm", buy: "signup" } as Record<string, string>)[x.id] ?? x.id : x.id;
             return (
-              <li key={x.id} className={`bg-step${ticked ? " ticked" : ""}${now ? " current" : ""}`} aria-current={now ? "step" : undefined} data-step={x.id}>
+              <li key={x.id} className={`bg-step${ticked ? " ticked" : ""}${now ? " current" : ""}`} aria-current={now ? "step" : undefined} data-step={x.id} ref={now ? (el) => el?.scrollIntoView?.({ block: "nearest" }) : undefined}>
                 <span className="bg-mark" role="img" aria-label={t(ticked ? "bkguide.done" : "bkguide.open")}>{ticked ? <Check aria-hidden /> : <span className="num">{i + 1}</span>}</span>
                 <div className="bg-text">
                   <strong>{t(x.labelKey)}{x.optional && <em className="bg-opt">{t("bkguide.optional")}</em>}</strong>

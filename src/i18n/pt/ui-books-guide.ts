@@ -36,6 +36,7 @@ export default {
   "bkguide.do.cert": () => `Abrir certificado`,
   "bkguide.do.vat": () => `Abrir declaração de IVA`,
   "bkguide.todo.buy": () => `Encomende o programa no site do fabricante.`,
+  "bkguide.todo.signup": () => `Crie a sua conta no site do fabricante.`,
   "bkguide.todo.download": () => `Aguarde até o instalador terminar de ser transferido.`,
   "bkguide.todo.install": () => `Inicie o instalador e siga as suas páginas.`,
   "bkguide.todo.licence": () => `Leia o contrato de licença e aceite-o.`,
