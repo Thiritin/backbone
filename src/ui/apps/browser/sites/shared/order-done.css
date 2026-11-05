@@ -1,0 +1,3 @@
+.order-done { display: inline-flex; align-items: center; gap: 6px; }
+.pay-row .pay-methods { grid-auto-flow: column; justify-content: start; gap: 4px 14px; }
+.pay-row .pay-methods small { margin-left: 4px; }

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { t } from "../../../../../i18n/en";
 import { cardReady } from "../../../../../sim/46-finance/bank";
 import type { Method, SupplierId } from "../../../../../sim/46-finance/payables";
@@ -30,12 +31,13 @@ export function payOptions(s: GameState, o: Offer): PayOption[] {
 export function PayMethods({ game, supplier, lines, name, value, onChange }: {
   game: GameState; supplier: SupplierId; lines: LedgerEntry[]; name?: string; value: Method | null; onChange: (m: Method) => void;
 }) {
+  const group = useId();
   return (
     <fieldset className="pay-methods">
       <legend>{t("checkout.paymentMethod")}</legend>
       {payOptions(game, { supplier, lines, name }).map((o) => (
         <label key={o.method} className={o.off ? "off" : undefined}>
-          <input type="radio" name="pay-method" checked={value === o.method} disabled={!!o.off} onChange={() => onChange(o.method)} />
+          <input type="radio" name={group} checked={value === o.method} disabled={!!o.off} onChange={() => onChange(o.method)} />
           <span>{o.label}</span>{o.off && <small>{o.off}</small>}
         </label>
       ))}
