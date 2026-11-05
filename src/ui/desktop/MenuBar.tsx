@@ -52,8 +52,10 @@ export function MenuBar({ theme, onTheme, onBell }: Props) {
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
     window.addEventListener("pointerdown", close);
-    return () => window.removeEventListener("pointerdown", close);
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("pointerdown", close); window.removeEventListener("keydown", key); };
   }, [menu]);
 
   // The front window's menu: what the app offers, then the window controls.
