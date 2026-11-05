@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { floodedDevice } from "../../sim/60-infra/network";
 import { t } from "../../i18n/en";
 import { LOCALE } from "../../i18n/lang";
@@ -70,7 +70,7 @@ const looked: Record<string, { zoom: number | null; org: Pt | null; lights: bool
 export const roomOf = (game: GameState): Location =>
   game.locations.find((l) => l.id === game.player.at) ?? game.locations.find((l) => l.space === "basement") ?? game.locations[0];
 
-export function World() {
+export const World = memo(function World() {
   // Fast-forward ticks arrive every frame; the room redraws on them only every quarter hour of game time.
   const shownGame = useRef<GameState | null>(null);
   const game = useStore((s) => {
@@ -149,11 +149,33 @@ export function World() {
   const staffHere = game.staff.length;
   const site = useMemo(() => siteOf(game, loc, w, h), [loc.id, game.properties, staffHere, w, h]);
   const fitSite = Math.min(size.w * 0.98 / site.box.w, size.h * 0.98 / site.box.h) * (site.kind === "plot" ? (site.setting === "nowhere" ? 1 : 1.3) : 1);
-  view.current = { zoom, o, fit: Math.min(fit, fitSite) };
+  // While a pan or zoom gesture runs, the view lives in this ref and the transform is written straight to the svg; state catches up at rest.
+  const dirty = useRef(false), restTimer = useRef(0);
+  if (dirty.current) view.current.fit = Math.min(fit, fitSite); else view.current = { zoom, o, fit: Math.min(fit, fitSite) };
   // The svg is drawn larger than the window and panned by a transform, so a pan repaints nothing; the viewBox moves only when the pan outgrows the margin.
   const panBase = useRef({ x: o.x, y: o.y, zoom, w: size.w, h: size.h });
   if (panBase.current.zoom !== zoom || panBase.current.w !== size.w || panBase.current.h !== size.h || Math.abs(o.x - panBase.current.x) * zoom > PAN_MARGIN / 2 || Math.abs(o.y - panBase.current.y) * zoom > PAN_MARGIN / 2) panBase.current = { x: o.x, y: o.y, zoom, w: size.w, h: size.h };
   const bs = panBase.current, pad = PAN_MARGIN / zoom;
+  const paint = () => {
+    const el = svg.current, v = view.current, b = panBase.current;
+    if (!el) return;
+    el.style.transform = `translate3d(${(b.x - v.o.x) * v.zoom}px, ${(b.y - v.o.y) * v.zoom}px, 0) scale(${v.zoom / b.zoom})`;
+    frame.current?.setAttribute("data-origin", `${v.o.x} ${v.o.y}`);
+  };
+  const commit = () => { clearTimeout(restTimer.current); if (!dirty.current) return; dirty.current = false; setZoom(view.current.zoom); setOrg(view.current.o); };
+  const nudge = (z: number, no: Pt) => {
+    const b = panBase.current;
+    view.current = { ...view.current, zoom: z, o: no }; dirty.current = true;
+    if (svg.current) svg.current.style.willChange = "transform";
+    paint();
+    const far = Math.abs(no.x - b.x) * z > PAN_MARGIN * 0.8 || Math.abs(no.y - b.y) * z > PAN_MARGIN * 0.8 || z / b.zoom > 1.6 || z / b.zoom < 0.6;
+    clearTimeout(restTimer.current);
+    if (far) commit(); else restTimer.current = window.setTimeout(commit, 150);
+  };
+  const nudgeRef = useRef(nudge); nudgeRef.current = nudge;
+  const commitRef = useRef(commit); commitRef.current = commit;
+  useLayoutEffect(() => { if (!dirty.current) { paint(); if (svg.current) svg.current.style.willChange = ""; } });
+  useEffect(() => () => clearTimeout(restTimer.current), []);
   const port = { x: bs.x - pad, y: bs.y - pad, w: size.w / zoom + 2 * pad, h: size.h / zoom + 2 * pad };
   const zoomed = zoom >= 2;
   const hallRect = loc.space === "hall" ? siteAreas(game, loc).find((a) => a.id === "hall")?.rect : undefined;
@@ -174,7 +196,7 @@ export function World() {
       const dir = held.current.reduce<[number, number]>((a, k) => [a[0] + KEYS[k][0], a[1] + KEYS[k][1]], [0, 0]);
       if ((dir[0] || dir[1]) && last) {
         const { zoom, o } = view.current, step = PAN_PX_S * Math.min(0.05, (now - last) / 1000) / zoom;
-        setOrg({ x: o.x + dir[0] * step, y: o.y + dir[1] * step });
+        nudgeRef.current(zoom, { x: o.x + dir[0] * step, y: o.y + dir[1] * step });
       }
       last = now;
       raf = requestAnimationFrame(frame);
@@ -222,8 +244,7 @@ export function World() {
       const z1 = Math.min(ZOOM_MAX, Math.max(Math.min(fit, ZOOM_MIN), z0 * Math.exp(-e.deltaY * 0.002)));
       if (z1 === z0) return;
       const r = el.getBoundingClientRect(), sx = e.clientX - r.left, sy = e.clientY - r.top;
-      setZoom(z1);
-      setOrg({ x: o.x + sx / z0 - sx / z1, y: o.y + sy / z0 - sy / z1 });
+      nudgeRef.current(z1, { x: o.x + sx / z0 - sx / z1, y: o.y + sy / z0 - sy / z1 });
     };
     el.addEventListener("wheel", wheel, { passive: false });
     return () => el.removeEventListener("wheel", wheel);
@@ -231,9 +252,9 @@ export function World() {
 
   // Drag pans; a press that moved is no click.
   const drag = useRef<{ x: number; y: number; o: Pt } | null>(null), dragged = useRef(false);
-  const down = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY, o }; dragged.current = false; };
+  const down = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY, o: view.current.o }; dragged.current = false; };
   const move = (e: React.PointerEvent) => {
-    const r = frame.current!.getBoundingClientRect(), p = { x: o.x + (e.clientX - r.left) / zoom, y: o.y + (e.clientY - r.top) / zoom };
+    const r = frame.current!.getBoundingClientRect(), v = view.current, p = { x: v.o.x + (e.clientX - r.left) / v.zoom, y: v.o.y + (e.clientY - r.top) / v.zoom };
     if (link.current) { setLinkAt(p); return; }
     const d = drag.current;
     if (!d) return;
@@ -242,12 +263,12 @@ export function World() {
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (!dragged.current && Math.hypot(dx, dy) < 4) return;
     dragged.current = true;
-    setOrg({ x: d.o.x - dx / zoom, y: d.o.y - dy / zoom });
+    nudge(view.current.zoom, { x: d.o.x - dx / view.current.zoom, y: d.o.y - dy / view.current.zoom });
   };
 
   // A press on a rack that lets go on another opens both backs.
   const up = (e: React.PointerEvent) => {
-    drag.current = null;
+    drag.current = null; commit();
     const a = link.current;
     link.current = null;
     setLinkAt(null);
@@ -435,7 +456,7 @@ export function World() {
 
   return (
     <div ref={frame} className="world" aria-label={loc.name} data-origin={`${o.x} ${o.y}`}>
-      <svg ref={svg} className={`world-svg ${seasons}${night ? " w-night" : ""}`} style={{ ...leaf, left: -PAN_MARGIN, top: -PAN_MARGIN, width: size.w + 2 * PAN_MARGIN, height: size.h + 2 * PAN_MARGIN, transform: `translate3d(${-(o.x - bs.x) * zoom}px, ${-(o.y - bs.y) * zoom}px, 0)` }}
+      <svg ref={svg} className={`world-svg ${seasons}${night ? " w-night" : ""}`} style={{ ...leaf, left: -PAN_MARGIN, top: -PAN_MARGIN, width: size.w + 2 * PAN_MARGIN, height: size.h + 2 * PAN_MARGIN, transformOrigin: `${PAN_MARGIN}px ${PAN_MARGIN}px` }}
         viewBox={`${port.x} ${port.y} ${port.w} ${port.h}`} preserveAspectRatio="xMinYMin meet"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={() => { drag.current = null; link.current = null; setLinkAt(null); }}>
         <GroundRect view={port} kind={site.kind} />
@@ -482,7 +503,7 @@ export function World() {
       {pair && <PairPanel key={`${pair.a} ${pair.b}`} a={pair.a} b={pair.b} from={pair.from} onClose={() => setPair(null)} />}
     </div>
   );
-}
+});
 
 // Parcels drawn per stack before the count takes over.
 const PARCEL_STACK = 3;

@@ -15,7 +15,7 @@
   user-select: none;
 }
 .world { overflow: hidden; }
-.world-svg { position: absolute; will-change: transform; display: block; cursor: grab; touch-action: none; }
+.world-svg { position: absolute; display: block; cursor: grab; touch-action: none; }
 .world-svg:active { cursor: grabbing; }
 
 .w-floor { fill: var(--w-floor); pointer-events: none; }
