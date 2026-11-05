@@ -29,7 +29,7 @@ export function Dock() {
 
   return (
     <nav className="dock" aria-label={t("desktop.dock.apps")}>
-      {APPS.filter((a) => listed(game, a) && (!game.undocked.includes(a.name) || windows.some((w) => w.app === a.name))).map((a, i) => {
+      {APPS.filter((a) => listed(game, a) && (!game.undocked.includes(a.name) || windows.some((w) => w.app === a.name))).sort((a, b) => game.installed.indexOf(a.name) - game.installed.indexOf(b.name)).map((a, i) => {
         const win = windows.find((w) => w.app === a.name);
         const badge = a.badge?.(game) ?? 0;
         const shown = appFor(game, a.name);

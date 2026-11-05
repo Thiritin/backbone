@@ -5,6 +5,9 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-05
 - Each Getting started card now opens its exact next step: the shop on the sorted server list, the domain search, the website builder, the Debiant download, and the rack in the room, with a counter on multi-part cards.
 - The Debiant boot menu offers an automatic installation, the accounting vendor page installs the download with one button, the bank offers the TAN list at the TAN field, the Terminal types the login for you, and internet lines show speeds, prices and connection dates.
+- The Exit icon leaves the desktop with one click, the dark mode button is gone from the menu bar, the Browser opens smaller, new apps join the end of the dock, windows no longer cascade off screen, and the notification panel pauses the clock while it is open.
+- The menu bar shows a dash instead of 0 € until you have a bank account.
+- The rack tag marks the key your current step needs, a first restart with no customers needs one click, and pressing F11 early opens the boot menu on the next start.
 - Mail that arrives on the full hour, such as the first order, now reaches Pear Mail at the next check.
 - Getting started is now a small card with the next step, a progress bar and one button, and the corkboard shows the same ten steps with the current one highlighted.
 - A new game starts on Monday morning at 08:00 with the clock running, and the first web hosting order arrives within three days of going online.

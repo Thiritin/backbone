@@ -11,6 +11,12 @@ import { POWER } from "../src/ui/apps/locations/Inspector";
 import { POWER_LABEL } from "../src/ui/apps/locations/power";
 import { newGame, readyGame, withServer } from "./fixtures";
 
+let forced: string | null = null;
+vi.mock("../src/sim/checklist", async (orig) => {
+  const m = await orig<typeof import("../src/sim/checklist")>();
+  return { ...m, nextGoal: (g: never, c: never) => forced ?? m.nextGoal(g, c), cardBoard: (g: never) => ({ ...m.cardBoard(g), current: forced ? { id: "x", goals: [forced], chapter: 1 } : m.cardBoard(g).current }) };
+});
+
 function Harness({ id }: { id: string }) {
   const game = useStore((s) => s.game);
   const menus = useDeviceMenu(game, () => {}, () => {}, undefined, true);
@@ -116,5 +122,26 @@ describe("unit tag", () => {
     const d3 = ready.devices.find((d) => modelById(d.model).kind === "server" && d.rackId && d.on && working(ready, d.id));
     expect(d3).toBeDefined();
     expect(restart(mount(ready, d3!.id).view).disabled).toBe(false);
+  });
+  it("marks the key the current guide card needs", () => {
+    const g = readyGame(1);
+    const d = g.devices.find((x) => modelById(x.model).kind === "server" && x.rackId && x.on && working(g, x.id))!;
+    const marks = (goal: string | null) => { forced = goal; const { view } = mount(g, d.id); const r = [...view.container.querySelectorAll("[data-guide]")].map((e) => e.getAttribute("data-key") ?? (e.hasAttribute("data-cart") ? "console" : "")); cleanup(); return r; };
+    expect(marks(null)).toEqual([]);
+    expect(marks("bootUsb")).toEqual([POWER_LABEL.reboot.replace(/(\.\.\.|…)$/, "")]);
+    expect(marks("installOs")).toEqual(["console"]);
+    forced = null;
+  });
+
+  it("reboots at once with no customers and asks on a slip when customers exist", () => {
+    for (const customers of [0, 1]) {
+      const g = readyGame(1);
+      const d = g.devices.find((x) => modelById(x.model).kind === "server" && x.rackId && x.on && working(g, x.id))!;
+      g.customers = customers ? [{} as never] : [];
+      const { view } = mount(g, d.id);
+      fireEvent.click(view.container.querySelector<HTMLElement>(`[data-key="${POWER_LABEL.reboot}"]`)!);
+      expect(view.container.querySelector("[data-slip=offline]") !== null).toBe(customers === 1);
+      cleanup();
+    }
   });
 });

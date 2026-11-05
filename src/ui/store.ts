@@ -53,7 +53,7 @@ export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<str
 const WIDE = { w: 1240, h: 680 };
 export const GUIDE_W = 440;
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
-  "Getting started": { w: GUIDE_W, h: 250 }, Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
+  "Getting started": { w: GUIDE_W, h: 250 }, Security: { w: 900, h: 560 }, Browser: { w: 1000, h: 640 }, News: { w: 520, h: 640 },
   Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Marketing: WIDE, Market: WIDE, Network: WIDE,
   Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 }, "Pear Mail": { w: 1000, h: 640 }, DocuWhere: { w: 1240, h: 820 }, DohleFormular: { w: 760, h: 420 }, FileGorilla: { w: 980, h: 680 }, Preview: { w: 640, h: 860 },
 };
@@ -147,6 +147,10 @@ export interface Store {
   pause: boolean;
   pauseResume: Speed;
   setPause: (open: boolean) => void;
+  // The notification panel; the game is paused while it is open, unless the player had paused already.
+  bell: boolean;
+  bellResume: Speed | null;
+  setBell: (open: boolean) => void;
   surface: Surface;
   setSurface: (surface: Surface) => void;
   // The location whose letterbox the world walks to next.
@@ -299,6 +303,9 @@ export const useStore = create<Store>((set, get) => ({
   setOpenLoc: (openLoc) => set({ openLoc }),
   pause: false,
   pauseResume: 0 as Speed,
+  bell: false,
+  bellResume: null,
+  setBell: (open) => set(({ bell, speed, bellResume, alert, pause, resume }) => open ? (bell ? {} : { bell: true, bellResume: speed || null, speed: 0 as Speed }) : !bell ? {} : { bell: false, bellResume: null, ...(speed !== 0 || !bellResume || pause ? {} : alert ? { resume: resume || bellResume } : { speed: bellResume }) }),
   setPause: (open) => set(({ pause, speed, pauseResume }) => open ? (pause ? {} : { pause: true, pauseResume: speed, speed: 0 as Speed }) : pause ? { pause: false, speed: pauseResume } : {}),
   surface: "world",
   setSurface: (surface) => set({ surface }),
@@ -383,7 +390,7 @@ export const useStore = create<Store>((set, get) => ({
     const open = fresh ? undefined : ws.filter((w) => w.app === app && !w.draft).sort((a, b) => b.z - a.z)[0];
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
-    const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
+    const n = ws.length % 5, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
     const sw = globalThis.innerWidth ?? Infinity, sh = globalThis.innerHeight ?? Infinity;
     // The guide card docks at the right edge below the exit icon; other windows keep clear of it while it is open.
     const guide = app === "Getting started", card = ws.some((x) => x.app === "Getting started" && !x.minimized) ? GUIDE_W + 32 : 16;
@@ -391,12 +398,12 @@ export const useStore = create<Store>((set, get) => ({
     // Leaves room for the dock on small screens.
     const w = Math.min(size.w, sw - x - (guide ? 16 : card)), h = Math.min(size.h, sh - y - 110);
     uiSound("open");
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 480), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 320), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openConsole: (deviceId) => {
     const ws = get().windows, open = ws.find((w) => w.console === deviceId);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
-    const n = ws.length % 8, x = 140 + n * 32, y = 80 + n * 28;
+    const n = ws.length % 5, x = 140 + n * 32, y = 80 + n * 28;
     uiSound("open");
     set({ windows: [...ws, { id: `console-${deviceId}-${Date.now()}`, app: "Console", console: deviceId, x, y, w: 720, h: 620, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
