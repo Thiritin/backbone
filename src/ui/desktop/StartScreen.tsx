@@ -9,6 +9,7 @@ import { versionLabel } from "../changelog";
 import { EMBEDDED } from "../embedded";
 import { isNew, loadSeen, markRead, saveSeen } from "../news-seen";
 import { DISCORD_URL, uiSound, useStore, type Theme } from "../store";
+import { Wordmark } from "../art/Wordmark";
 import { Intro } from "./Intro";
 import { canImmerse, immerse, useImmersive } from "./immersive";
 import { MenuBackdrop } from "./MenuBackdrop";
@@ -98,7 +99,7 @@ export function StartScreen() {
   return (
     <main className="menu">
       <MenuBackdrop />
-      <h1 className="menu-title"><img className="menu-logo" src="favicon.svg" alt="" width={56} height={56} />raid0</h1>
+      <h1 className="menu-title"><Wordmark /></h1>
       {page === "settings" ? <SettingsPage onBack={() => setPage("main")} /> :
         page === "immersive" ? <ImmersivePage onBack={() => setPage("main")} onPlay={() => immerse().catch(() => {}).then(canContinue ? continueGame : startGame)} /> :
         <nav className="menu-bars">
