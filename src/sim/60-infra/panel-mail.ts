@@ -1,6 +1,7 @@
 // The mail of the panel mailboxes (cPanel-like Mailboxes page): the messages by address and the webmail sign-in.
 import { t } from "../../i18n/en";
 import { nowMinutes } from "../00-core/time";
+import { serviceHeld } from "../45-billing/billing";
 import type { GameState } from "../50-state";
 import { webspaceOf, type Mailbox } from "./webspace";
 
@@ -18,11 +19,25 @@ export function panelMailbox(s: GameState, address: string): { workloadId: strin
   return null;
 }
 
-// The mailbox a webmail sign-in opens, null for a wrong address or password.
-export const panelLogin = (s: GameState, address: string, password: string): Mailbox | null => {
-  const m = panelMailbox(s, address)?.mailbox;
-  return m && m.password === password ? m : null;
-};
+// The address a webmail sign-in means: a bare local part belongs to the page's domain.
+export const panelAddress = (name: string, domain: string | null): string => (name.includes("@") || !domain ? lower(name) : `${lower(name)}@${domain}`);
+
+// Whether the web space of a mailbox is suspended or ended, which locks its mailboxes.
+export function panelLocked(s: GameState, workloadId: string): boolean {
+  const w = s.workloads.find((x) => x.id === workloadId), v = w && s.services.find((x) => x.id === w.serviceId);
+  return !!v && (v.endedAt !== null || serviceHeld(s, v));
+}
+
+// The mailbox a webmail sign-in opens, null for a wrong address or password; "locked" for a suspended web space.
+export function panelLogin(s: GameState, address: string, password: string): Mailbox | null {
+  const hit = panelMailbox(s, address);
+  return hit && hit.mailbox.password === password && !panelLocked(s, hit.workloadId) ? hit.mailbox : null;
+}
+export function panelLoginError(s: GameState, address: string, password: string): string | null {
+  const hit = panelMailbox(s, address);
+  if (!hit || hit.mailbox.password !== password) return "panelmail.error.login";
+  return panelLocked(s, hit.workloadId) ? "panelmail.error.locked" : null;
+}
 
 export const panelMessages = (s: GameState, address: string): PanelMessage[] => s.panelMail[lower(address)] ?? [];
 

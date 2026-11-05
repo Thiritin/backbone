@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { GameState } from "../../../../../sim/50-state";
-import { panelBody, panelLogin, panelMessages, panelSubject, type PanelMessage } from "../../../../../sim/60-infra/panel-mail";
+import { panelAddress, panelBody, panelLogin, panelLoginError, panelMessages, panelSubject, type PanelMessage } from "../../../../../sim/60-infra/panel-mail";
 import { readPanelMail, sendPanelMail } from "../../../../../sim/90-actions/panel-mail";
 import { t } from "../../../../../i18n/en";
 import { useSessionState } from "../../../../session";
@@ -19,7 +19,10 @@ export function PanelWebmail({ game, domain }: { game: GameState; domain: string
 
 function Login({ game, domain, signIn }: { game: GameState; domain: string | null; signIn: (a: string, p: string) => void }) {
   const [name, setName] = useState(""), [pass, setPass] = useState(""), [error, setError] = useState<string | null>(null);
-  const submit = () => (panelLogin(game, name, pass) ? signIn(name.trim().toLowerCase(), pass) : setError(t("panelmail.error.login")));
+  const submit = () => {
+    const a = panelAddress(name, domain), e = panelLoginError(game, a, pass);
+    if (e) setError(t(e)); else signIn(a, pass);
+  };
   return (
     <div className="scw scw-login">
       <Logo />

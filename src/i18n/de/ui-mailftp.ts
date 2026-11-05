@@ -132,6 +132,7 @@ export default {
   "panelmail.welcome.body": (p) => `Ihr Postfach ${p.address} ist eingerichtet. Im Webmail können Sie E-Mails lesen und senden.`,
   "panelmail.error.login": () => "Anmeldung fehlgeschlagen",
   "panelmail.error.undeliverable": () => "Zustellung fehlgeschlagen",
+  "panelmail.error.locked": () => "Postfach gesperrt",
   "panelmail.error.address": () => "Ungültige Adresse",
   "panelmail.address": () => "E-Mail-Adresse",
   "panelmail.password": () => "Passwort",

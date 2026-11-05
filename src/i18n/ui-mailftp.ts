@@ -132,6 +132,7 @@ export default {
   "panelmail.welcome.body": (p) => `Your mailbox ${p.address} is ready. You can read and send mail in webmail.`,
   "panelmail.error.login": () => "Login failed",
   "panelmail.error.undeliverable": () => "Delivery failed",
+  "panelmail.error.locked": () => "Mailbox locked",
   "panelmail.error.address": () => "Invalid address",
   "panelmail.address": () => "Email address",
   "panelmail.password": () => "Password",

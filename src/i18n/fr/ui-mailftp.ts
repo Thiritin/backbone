@@ -132,6 +132,7 @@ export default {
   "panelmail.welcome.body": (p) => `Votre boîte ${p.address} est prête. Vous pouvez lire et envoyer des e-mails dans le webmail.`,
   "panelmail.error.login": () => "Échec de la connexion",
   "panelmail.error.undeliverable": () => "Échec de la distribution",
+  "panelmail.error.locked": () => "Boîte verrouillée",
   "panelmail.error.address": () => "Adresse non valide",
   "panelmail.address": () => "Adresse e-mail",
   "panelmail.password": () => "Mot de passe",

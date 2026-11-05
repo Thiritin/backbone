@@ -5,7 +5,7 @@ import { clientError } from "../src/sim/43-pear-mail/check";
 import { clientAccount } from "../src/sim/43-pear-mail/state";
 import { mailAddress } from "../src/sim/60-infra/addresses";
 import { mailClusterAtHost, namesOf } from "../src/sim/60-infra/mail-host";
-import { BOX_CAP, panelBody, panelLogin, panelMessages, panelSubject } from "../src/sim/60-infra/panel-mail";
+import { panelAddress, panelLoginError, BOX_CAP, panelBody, panelLogin, panelMessages, panelSubject } from "../src/sim/60-infra/panel-mail";
 import { panelMachine } from "../src/sim/60-infra/licence";
 import { resolve } from "../src/sim/80-business/browser";
 import { mailClusterAt } from "../src/sim/80-business/webmail";
@@ -58,6 +58,18 @@ describe("panel mailboxes", () => {
     expect(panelMessages(s, "anna@sockenshop.de").some((m) => m.folder === "sent" && m.to === "bob@sockenshop.de")).toBe(true);
     expect(sendPanelMail(s, "anna@sockenshop.de", "secret1", "nonsense", "x", "y").ok).toBe(false);
     expect(sendPanelMail(s, "anna@sockenshop.de", "bad", "bob@sockenshop.de", "x", "y").ok).toBe(false);
+  });
+
+  it("takes a bare local part for the page's domain and locks the mailboxes of a suspended space", () => {
+    const { s, id } = account();
+    createMailbox(s, id, "anna", "sockenshop.de", "secret1", 100);
+    expect(panelAddress("Anna", "sockenshop.de")).toBe("anna@sockenshop.de");
+    expect(panelAddress("anna@other.de", "sockenshop.de")).toBe("anna@other.de");
+    expect(panelLoginError(s, panelAddress("anna", "sockenshop.de"), "secret1")).toBeNull();
+    expect(panelLoginError(s, "anna@sockenshop.de", "bad")).toBe("panelmail.error.login");
+    s.services.find((v) => v.domain === "sockenshop.de")!.endedAt = s.hour;
+    expect(panelLoginError(s, "anna@sockenshop.de", "secret1")).toBe("panelmail.error.locked");
+    expect(panelLogin(s, "anna@sockenshop.de", "secret1")).toBeNull();
   });
 
   it("bounces mail to a domain that does not exist", () => {

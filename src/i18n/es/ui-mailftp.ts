@@ -132,6 +132,7 @@ export default {
   "panelmail.welcome.body": (p) => `Tu buzón ${p.address} está listo. Puedes leer y enviar correo en el webmail.`,
   "panelmail.error.login": () => "Error de inicio de sesión",
   "panelmail.error.undeliverable": () => "Error de entrega",
+  "panelmail.error.locked": () => "Buzón bloqueado",
   "panelmail.error.address": () => "Dirección no válida",
   "panelmail.address": () => "Dirección de correo",
   "panelmail.password": () => "Contraseña",
