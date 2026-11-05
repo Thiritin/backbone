@@ -7,6 +7,7 @@ import { fillMail } from "./mail";
 import { fillPearMail } from "./pear-mail";
 import { provisionStarterMail } from "../43-pear-mail/setup";
 import { migrateBooks } from "./books";
+import { newSetup } from "../80-business/books-guide";
 import { fillShop, installSavedShop, ownShopWebspace } from "./shop";
 import { brandsOf, fillCpus, isOfficeRouter, MODELS, modelById, RENAMED_MODELS, wanPort } from "../10-catalog/hardware";
 import { freeSlots } from "../60-infra/status";
@@ -314,7 +315,7 @@ export function deserialize(raw: string): GameState {
   s.media = { images: [...new Set(media.images.map((x) => asImage(x, year)))], files: media.files ?? [], dumps: media.dumps ?? {}, stick: { ...media.stick, os: media.stick.os && asImage(media.stick.os, year) } };
   s.arrived = data.arrived ?? [];
   // Saves from before the Bookkeeping category run Taxware Office when they have Books.
-  if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] };
+  if (!data.books) s.books = { vendor: data.installed?.some((id: string) => id === "Books" || id === "Billing") ? "lexwear" : null, installedAt: 0, edition: null, seats: 0, download: null, addons: [], setup: newSetup() };
   s.books = { ...s.books, download: s.books.download ?? null, addons: s.books.addons ?? [] };
   migrateBooks(s);
   s.tax = data.tax ? { ...base.tax, ...data.tax } : s.registration ? legacyTax(s) : base.tax;
