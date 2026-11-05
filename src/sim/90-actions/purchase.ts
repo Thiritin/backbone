@@ -1,7 +1,11 @@
 import { cardReady, cardSpent } from "../46-finance/bank";
-import { bill, debitAllowed, shopBlocked, type Method, type Payable, type SupplierId } from "../46-finance/payables";
+import { bill, debitAllowed, payMethod, shopBlocked, type Method, type Payable, type SupplierId } from "../46-finance/payables";
 import type { LedgerEntry, GameState } from "../50-state";
-import { INVOICE_AFTER, paidOrders, type ActionResult } from "./hardware";
+import type { ActionResult } from "./hardware";
+
+// The hardware shop sends an invoice to customers with three paid orders.
+export const INVOICE_AFTER = 3;
+export const paidOrders = (s: GameState): number => s.payables.filter((p) => p.supplier === "hardware" && p.paidAt !== null && p.amount > 0 && p.doc !== "contract").length;
 
 const total = (lines: LedgerEntry[]) => -lines.reduce((n, e) => n + e.amount, 0);
 const room = (s: GameState, lines: LedgerEntry[]) => cardReady(s) && cardSpent(s) + total(lines) <= s.bank!.card!.limit;
@@ -33,4 +37,18 @@ export function placeOrder(s: GameState, o: { supplier: SupplierId; name: string
   }
   const p = bill(s, o);
   return { ok: true, id: p.id, payable: p.id };
+}
+
+// The method an action uses when its caller names none: cash before the company banks, then the supplier's direct debit or
+// card (when it has room), else a transfer.
+export function defaultMethod(s: GameState, name: string, lines: LedgerEntry[]): Method {
+  if (!s.bank) return "cash";
+  const m = payMethod(s, name);
+  return m === "card" && !room(s, lines) ? "transfer" : m;
+}
+
+// placeOrder for an action that spends on its own: the method defaults, and a free order books nothing.
+export function spend(s: GameState, o: Omit<Parameters<typeof placeOrder>[1], "method"> & { method?: Method }): ActionResult & { payable?: string } {
+  if (total(o.lines) <= 0) return { ok: true };
+  return placeOrder(s, { ...o, method: o.method ?? defaultMethod(s, o.name, o.lines) });
 }

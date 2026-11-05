@@ -44,7 +44,7 @@ export function Cart() {
   const offer = offers.find((o) => o.id === pay);
   const best = Math.min(...offers.map((o) => o.total));
   const checkout = () => {
-    const payment: Payment = offer ? { kind: "lease", offerId: offer.id } : { kind: pay === "card" || pay === "invoice" ? pay : "prepay" };
+    const payment: Payment = offer ? { kind: "lease", offerId: offer.id } : { kind: pay === "card" ? "card" : pay === "invoice" ? "onAccount" : game.bank ? "transfer" : "cash" };
     const r = act(buyCart, cart, payment, dest.id);
     if (!r.ok) return;
     clearCart();

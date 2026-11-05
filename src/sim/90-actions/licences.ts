@@ -1,10 +1,11 @@
 // docs/design/plans/billing-by-hand.md, lanes vendor-sites and shop-link: buying a shop module and registering its key in Books.
 import { yearOf } from "../00-core/time";
 import { hasModule, moduleById, MODULES } from "../10-catalog/modules";
-import { cents } from "../45-billing/billing";
 import { bought, licenceKey, licenceMail } from "../80-business/licences";
 import type { GameState } from "../50-state";
 import type { ActionResult } from "./hardware";
+import { spend } from "./purchase";
+import { vendorName } from "../80-business/vendor-shop";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -14,9 +15,8 @@ export function buyLicence(s: GameState, id: string): ActionResult {
   if (!m || m.year > yearOf(s.hour)) return fail("error.unknownModule");
   if (bought(s, id)) return fail("error.moduleBought");
   if (!s.shop.variant) return fail("error.noShopSystem");
-  if (s.cash < m.price) return fail("error.noCash");
-  s.cash = cents(s.cash - m.price);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: { shop: s.shop.variant }, amount: -m.price }];
+  const placed = spend(s, { supplier: "shopVendor", name: vendorName(s.shop.variant), lines: [{ hour: s.hour, category: "licenses", key: `ledger.module.${id}`, params: { shop: s.shop.variant }, amount: -m.price }] });
+  if (!placed.ok) return placed;
   return { ok: true };
 }
 

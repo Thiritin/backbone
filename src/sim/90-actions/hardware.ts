@@ -3,10 +3,11 @@ import { hallOf } from "../20-world/properties";
 import { rand } from "../00-core/rng";
 import { freeRackTiles, officePlan, rackTiles } from "../20-world/layout";
 import { releaseGone } from "../60-infra/licence";
-import { debitAllowed, HARDWARE_SHOP, invoice, shopBlocked } from "../46-finance/payables";
-import { bankOf, cardReady, cardSpent, spendable } from "../46-finance/bank";
+import { billDue, CONTRACTOR, canPay, debitAllowed, HARDWARE_SHOP, type Method } from "../46-finance/payables";
+import { bankOf } from "../46-finance/bank";
+import { INVOICE_AFTER, paidOrders, placeOrder } from "./purchase";
 import { TRANSFER_HOURS } from "../10-catalog/banks";
-import { hourOf, dateOf, monthIndexOf, yearOf } from "../00-core/time";
+import { DAYS_PER_MONTH, hourOf, dateOf, monthIndexOf, nextMonthStart, yearOf } from "../00-core/time";
 import { freeJack, isProviderPanel } from "../60-infra/panels";
 import { syncProviderPanels } from "./connectivity";
 import { boardVendor, modelName, manufacturerByName, brandOnSale, brandsOf, cpuOptions, offersPart, isOfficeRouter, COMPONENT_KINDS, COMPONENTS, componentParts, deliveryHours, leadFactor, dualPsuModel, fits as chassisFits, genOf, hasBmc, isDriveKind, modelById, oobPortOf, partOffers, priceOf, samePart, shopModels, specOf, SWITCH_BRAND, slotsOf, vendorsOf, type ComponentKind, type DeviceModel, type FormFactor, type PartSpec } from "../10-catalog/hardware";
@@ -51,7 +52,13 @@ function nextName(base: string, taken: string[]): string {
   return `${base}-${String(n).padStart(2, "0")}`;
 }
 
-const book = (s: GameState, category: string, key: string, params: Record<string, string | number>, amount: number) => {
+// Spending books a vendor document (the contractor, or the hardware shop for goods); income and own travel go straight to cash.
+const book = (s: GameState, category: string, key: string, params: Record<string, string | number>, amount: number, vendor?: string) => {
+  if (amount < 0 && category !== "travel") {
+    const goods = category === "hardware";
+    billDue(s, goods ? "hardware" : "contractor", vendor ?? (goods ? HARDWARE_SHOP : CONTRACTOR), [{ hour: s.hour, category, key, params, amount }]);
+    return;
+  }
   s.cash = cents(s.cash + amount);
   s.ledger.push({ hour: s.hour, category, key, params, amount });
 };
@@ -86,6 +93,10 @@ export function addLocation(s: GameState, dcId: string, space: "share" | "cage" 
   s.locations.push(loc);
   s.contracts.push({ id: newId(s, "contract"), provider: dc.provider, dc: dc.id, locationId: loc.id, space, positions: size, since: s.hour, monthly, endsAt: null, retainedAt: null, ...(order && { billing: { company: order.company, name: order.name, address: { street: order.address.street, zip: order.address.zip, city: order.address.city } } }) });
   if (order?.payment.kind === "debit") s.bank = { ...s.bank!, mandates: [...s.bank!.mandates.filter((x) => x !== dc.name), dc.name] };
+  // The order confirmation is the contract document. The tick bills full months from the next month start, so the order
+  // pays the rest of this one pro rata, at once.
+  const rest = cents(monthly * Math.min(1, (nextMonthStart(s.hour) - s.hour) / (DAYS_PER_MONTH * 24)));
+  placeOrder(s, { supplier: "datacenter", name: dc.name, lines: rest > 0 ? [{ hour: s.hour, category: "rent", key: "ledger.space", params: { location: dc.name, dc: dc.id }, amount: -rest }] : [], method: !s.bank ? "cash" : order?.payment.kind === "debit" ? "debit" : "onAccount", doc: "contract", order: loc.id });
   const name = nextName(`${prefix(s, loc.id)}-gw`, s.devices.map((d) => d.name));
   s.devices.push({ id: newId(s, "dev"), model: "handoff", brand: SWITCH_BRAND, rackId: null, slot: 0, panel: loc.id, name, bond: "none", groups: [], price: 0, boughtAt: s.hour, lease: null, store: null, transitTo: null, arriveAt: null, ...deviceDefaults("handoff", s.hour) });
   const shareRack = space === "share" && SHARE_RACKS.find((m) => m.size === size)!;
@@ -181,7 +192,7 @@ export function orderCrossConnect(s: GameState, contractId: string, to: string, 
   const jack = racks.map((r) => freeJack(s, r.id)).find(Boolean);
   if (!jack) return fail("error.noFreeJack");
   const setup = crossConnectSetup(dc);
-  if (s.cash < setup) return fail("error.noCash");
+  if (!canPay(s, setup)) return fail("error.noCash");
   const x = { id: newId(s, "xc"), contractId, to, monthly: dc.crossConnect, since: s.hour, jack };
   s.crossConnects = [...s.crossConnects, x];
   book(s, "rent", "ledger.crossConnectSetup", { to: targetName(to), dc: dc.id }, -setup);
@@ -210,7 +221,7 @@ function placeError(s: GameState, locationId: string, model: RackModel, position
 export function buyRackError(s: GameState, locationId: string, model: RackModel, position: number): string | null {
   const spec = RACK_MODELS.find((m) => m.id === model);
   if (!spec) return "error.unknownRackModel";
-  return placeError(s, locationId, model, position) ?? (s.cash < spec.price ? "error.noCash" : null);
+  return placeError(s, locationId, model, position) ?? (!canPay(s, spec.price) ? "error.noCash" : null);
 }
 
 export function buyRack(s: GameState, locationId: string, model: RackModel, position: number): ActionResult {
@@ -239,7 +250,7 @@ export function moveRack(s: GameState, rackId: string, toLocationId: string, pos
   const from = s.locations.find((l) => l.id === rack.locationId)!;
   if (to.az !== from.az && (s.workloads.some((w) => w.rackId === rackId) || s.devices.some((d) => d.rackId === rackId && serverTaken(s, d.id)))) return fail("error.rackInUse");
   const move = moveCost(s, rackId, toLocationId);
-  if (s.cash < move.price) return fail("error.noCash");
+  if (!canPay(s, move.price)) return fail("error.noCash");
   // A small-office router stays behind in the basement's storage.
   const left = s.devices.filter((d) => d.rackId === rackId && to.dc && isOfficeRouter(modelById(d.model)));
   for (const d of left) Object.assign(d, { rackId: null, slot: 0, store: from.id });
@@ -357,14 +368,9 @@ const families = (line: CartLine): string[] => { const m = modelById(line.model)
 export const deliveryWait = (s: GameState, lines: CartLine[]): number => (s.devices.some((d) => modelById(d.model).kind === "server")
   ? Math.round(deliveryHours(yearOf(s.hour)) * Math.max(1, ...lines.flatMap(families).map((f) => leadFactor(f, s.hour)))) : 0);
 
-// A card purchase books nothing yet: the card bill at the month start charges it. An invoiced one books when it is paid.
-function buyLine(s: GameState, line: CartLine, locationId: string, wait: number, pay: "now" | "card" | "later" = "now"): { id: string; entry: LedgerEntry } {
-  const ids = landed(s, stock(s, line, null, locationId, wait));
-  const entry = { hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: modelName(modelById(line.model), line.brand), qty: line.qty }, amount: -lineTotal(s, line) };
-  if (pay === "card") s.bank = { ...s.bank!, card: { ...s.bank!.card!, spent: [...s.bank!.card!.spent, entry] } };
-  else if (pay === "now") book(s, entry.category, entry.key, entry.params, entry.amount);
-  return { id: ids[0], entry };
-}
+const hardwareEntry = (s: GameState, line: CartLine): LedgerEntry => ({ hour: s.hour, category: "hardware", key: "ledger.hardware", params: { model: modelName(modelById(line.model), line.brand), qty: line.qty }, amount: -lineTotal(s, line) });
+// Stocks one cart line; the order's one document is issued by the caller.
+const buyLine = (s: GameState, line: CartLine, locationId: string, wait: number): string => landed(s, stock(s, line, null, locationId, wait))[0];
 
 // A small-office router only fits the basement's carrier panel.
 const officeError = (s: GameState, modelId: string, locationId: string): string | null =>
@@ -376,53 +382,39 @@ export function buyDevice(s: GameState, modelId: string, brand: string, qty: num
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   const error = lineError(s, line) ?? officeError(s, modelId, locationId);
   if (error) return fail(error);
-  if (s.cash < lineTotal(s, line)) return fail("error.noCash");
-  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])).id };
+  const placed = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines: [hardwareEntry(s, line)], method: s.bank ? "transfer" : "cash" });
+  if (!placed.ok) return placed;
+  return { ok: true, id: buyLine(s, line, locationId, deliveryWait(s, [line])) };
 }
 
-export type Payment = { kind: "cash" } | { kind: "prepay" } | { kind: "card" } | { kind: "invoice" } | { kind: "lease"; offerId: string };
-// The hardware shop sends an invoice to customers with three paid orders.
-export const INVOICE_AFTER = 3;
-export const paidOrders = (s: GameState): number => new Set(s.ledger.filter((e) => e.key === "ledger.hardware").map((e) => e.hour)).size;
+export type Payment = { kind: Method } | { kind: "lease"; offerId: string };
+export { INVOICE_AFTER, paidOrders };
 // A shop abroad takes only a card for the cart.
 export const cardOnly = (lines: CartLine[]): boolean => lines.some((l) => manufacturerByName(l.brand)?.cardOnly);
 
-// Pays now, by prepaid transfer (ships once the money arrives), by card, or leases the whole cart; the lease offer must be one
-// leaseOffers makes for the cart total right now.
+// Pays by one of the shop's methods or leases the whole cart; the lease offer must be one leaseOffers makes for the cart total
+// right now. A transfer ships the day after the money reaches the shop. Either way the order leaves one document.
 export function buyCart(s: GameState, lines: CartLine[], payment: Payment, locationId: string): ActionResult {
   if (!s.locations.some((l) => l.id === locationId)) return fail("error.unknownLocation");
   if (!lines.length) return fail("error.emptyCart");
   const error = lines.map((l) => lineError(s, l) ?? officeError(s, l.model, locationId)).find((e) => e);
   if (error) return fail(error);
   const total = lines.reduce((sum, l) => sum + lineTotal(s, l), 0);
-  if (payment.kind !== "lease" && shopBlocked(s)) return fail("error.shopUnpaid");
-  if (cardOnly(lines) && payment.kind !== "card" && payment.kind !== "lease") return fail("error.cardOnly");
-  if (payment.kind === "invoice") {
-    if (paidOrders(s) < INVOICE_AFTER) return fail("error.noInvoice");
-    const wait = deliveryWait(s, lines), bought = lines.map((l) => buyLine(s, l, locationId, wait, "later"));
-    invoice(s, "hardware", HARDWARE_SHOP, bought.map((b) => b.entry));
-    return { ok: true, id: bought[0].id };
-  }
-  if (payment.kind === "card") {
-    if (!cardReady(s)) return fail("error.noCard");
-    if (cardSpent(s) + total > s.bank!.card!.limit) return fail("error.cardLimit");
-    const wait = deliveryWait(s, lines);
-    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait, "card"))[0].id };
-  }
-  if (payment.kind === "cash" || payment.kind === "prepay") {
-    if (spendable(s) < total) return fail("error.noCash");
-    const wait = deliveryWait(s, lines);
-    // A prepaid order ships the day after the transfer reaches the shop.
-    const paid = payment.kind === "prepay" && wait ? PREPAY_HOURS + TRANSFER_HOURS[bankOf(s)?.speed ?? "nextDay"] : 0;
-    return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait + paid))[0].id };
-  }
-  const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
-  if (!offer) return fail("error.offerExpired");
   const wait = deliveryWait(s, lines);
-  const lease = { id: newId(s, "lease"), lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: s.hour, paid: 0, devices: [] as string[] };
-  lease.devices = lines.flatMap((l) => landed(s, stock(s, l, lease.id, locationId, wait)));
-  s.leases = [...s.leases, lease];
-  return { ok: true, id: lease.devices[0] };
+  if (payment.kind === "lease") {
+    const offer = leaseOffers(s, total).find((o) => o.id === payment.offerId);
+    if (!offer) return fail("error.offerExpired");
+    placeOrder(s, { supplier: "hardware", name: lessorName(offer.lessor), lines: [], method: "onAccount", doc: "contract" });
+    const lease = { id: newId(s, "lease"), lessor: offer.lessor, monthly: offer.monthly, months: offer.months, startedAt: s.hour, paid: 0, devices: [] as string[] };
+    lease.devices = lines.flatMap((l) => landed(s, stock(s, l, lease.id, locationId, wait)));
+    s.leases = [...s.leases, lease];
+    return { ok: true, id: lease.devices[0] };
+  }
+  if (cardOnly(lines) && payment.kind !== "card") return fail("error.cardOnly");
+  const placed = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines: lines.map((l) => hardwareEntry(s, l)), method: payment.kind });
+  if (!placed.ok) return placed;
+  const delay = payment.kind === "transfer" && wait ? PREPAY_HOURS + TRANSFER_HOURS[bankOf(s)?.speed ?? "nextDay"] : 0;
+  return { ok: true, id: lines.map((l) => buyLine(s, l, locationId, wait + delay))[0] };
 }
 
 // Pays the remaining payments at once; the devices become owned.
@@ -430,9 +422,9 @@ export function buyOutLease(s: GameState, leaseId: string): ActionResult {
   const lease = s.leases.find((l) => l.id === leaseId);
   if (!lease) return fail("error.unknownLease");
   const rest = cents((lease.months - lease.paid) * lease.monthly);
-  if (s.cash < rest) return fail("error.noCash");
+  if (!canPay(s, rest)) return fail("error.noCash");
   endLease(s, lease.id);
-  book(s, "leasing", "ledger.leaseBuyout", { lessor: lessorName(lease.lessor) }, -rest);
+  book(s, "leasing", "ledger.leaseBuyout", { lessor: lessorName(lease.lessor) }, -rest, lessorName(lease.lessor));
   return { ok: true };
 }
 
@@ -486,7 +478,7 @@ function rackWork(s: GameState, devices: Device[], locationId: string, how: How 
   const work = devices.reduce((n, d) => n + mountHours(d.model), 0);
   const job = handJob(s, devices.map((d) => d.label ?? d.name).join(", "), loc, how, work);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   return () => {
     const doneAt = s.hour + job.commit();
     if (doneAt > s.hour) for (const d of devices) d.maintenance = { componentId: "", partId: "", doneAt, mount: true };
@@ -670,7 +662,7 @@ export function moveServer(s: GameState, deviceIds: string | string[], locationI
       transit = drive(from.city, to.city)?.hours ?? ship.hours;
     }
   }
-  if (s.cash < price + job.cost) return fail("error.noCash");
+  if (!canPay(s, price + job.cost)) return fail("error.noCash");
   const hours = Math.max(transit + work, job.commit());
   const told = new Set(ids.filter((id) => plannedFor(s, s.services.find((v) => v.id === id)!, hours)));
   if (ids.some((id) => !told.has(id))) for (const d of servers) announceNow(s, { kind: "device", id: d.id }, hours);
@@ -857,7 +849,7 @@ export function pullPower(s: GameState, deviceId: string, how: How | boolean = f
   if (pduOf(s, d) || !loc?.dc || onSite(how)) return setPower(s, deviceId, false);
   const job = handJob(s, d.label ?? d.name, loc, how, 0);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   d.hands = { kind: "pull", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
@@ -893,7 +885,7 @@ export function atServer(s: GameState, deviceId: string, op: FrontOp, how: How |
   if (op === "plug" && cords.every(isPlugged)) return fail("error.plugged");
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, 0);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   // d.hands only finishes in the hourly power tick, so work without a wait applies now.
   const wait = job.commit();
   if (wait > 0) d.hands = { kind: op, doneAt: s.hour + wait };
@@ -909,7 +901,7 @@ export function resetBmc(s: GameState, deviceId: string, how: How | boolean = fa
   if (d.hands) return fail("error.handsBusy");
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, BMC_RESET_HOURS * workFactor(d.model, s.hour), 1);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   d.hands = { kind: "bmcreset", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
@@ -1008,7 +1000,7 @@ export function replaceComponent(s: GameState, deviceId: string, componentId: st
   const swap = SWAP_HOURS * spares.length * workFactor(d.model, s.hour), grey = spares.reduce((n, x) => n + greyMarket(s, d, x), 0);
   const job = handJob(s, d.label ?? d.name, loc, how, swap);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost + grey) return fail("error.noCash");
+  if (!canPay(s, job.cost + grey)) return fail("error.noCash");
   const wait = job.commit();
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: c.kind }, -grey);
   s.devices = s.devices.filter((x) => !spares.includes(x));
@@ -1088,7 +1080,7 @@ export function buyCircuit(s: GameState, locationId: string): ActionResult {
   if (!loc) return fail("error.unknownLocation");
   if (loc.space !== "basement") return fail("error.notBasement");
   if (loc.extraCircuit) return fail("error.alreadyBought");
-  if (s.cash < CIRCUIT_PRICE) return fail("error.noCash");
+  if (!canPay(s, CIRCUIT_PRICE)) return fail("error.noCash");
   loc.extraCircuit = true;
   book(s, "hardware", "ledger.circuit", {}, -CIRCUIT_PRICE);
   return { ok: true };
@@ -1103,7 +1095,7 @@ export function addSecondPsu(s: GameState, deviceId: string): ActionResult {
   const to = dualPsuModel(d.model);
   if (!to) return fail("error.noSecondPsu");
   const price = priceOf(to, d.brand) - priceOf(modelById(d.model), d.brand);
-  if (s.cash < price) return fail("error.noCash");
+  if (!canPay(s, price)) return fail("error.noCash");
   const zone = d.rackId ? locationOf(s, d)?.id : d.store;
   if (!zone) return fail("error.inTransit");
   const spare = stock(s, { model: "part-psu", brand: "Generic", qty: 1 }, null, zone)[0];
@@ -1129,7 +1121,7 @@ function handsOn(s: GameState, d: Device, hot: boolean, how: How | boolean): { e
   const loc = s.locations.find((l) => l.id === rack.locationId)!;
   const job = handJob(s, d.label ?? d.name, loc, how, (hot ? 0 : INSTALL_HOURS) * workFactor(d.model, s.hour));
   if ("error" in job) return job;
-  return s.cash < job.cost ? { error: "error.noCash" } : job;
+  return !canPay(s, job.cost) ? { error: "error.noCash" } : job;
 }
 function startWork(s: GameState, d: Device, partId: string, job: HandJob) {
   const wait = job.commit();
@@ -1171,7 +1163,7 @@ export function installPart(s: GameState, deviceId: string, partId: string, slot
   const w = handsOn(s, d, hotKind(d, kind), h);
   if ("error" in w) return fail(w.error);
   const grey = set.reduce((n, x) => n + greyMarket(s, d, x), 0);
-  if (s.cash < w.cost + grey) return fail("error.noCash");
+  if (!canPay(s, w.cost + grey)) return fail("error.noCash");
   startWork(s, d, partId, w);
   if (grey) book(s, "maintenance", "ledger.greyMarket", { device: d.label ?? d.name, component: kind }, -grey);
   s.devices = s.devices.filter((x) => !set.includes(x));

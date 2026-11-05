@@ -9,7 +9,9 @@ import {
 import { pushLog } from "../60-infra/power";
 import { loadSaved } from "../60-infra/switches";
 import { locationOf, working } from "../60-infra/status";
+import { canPay, HARDWARE_SHOP, type Method } from "../46-finance/payables";
 import type { ActionResult } from "./hardware";
+import { methodsFor, placeOrder } from "./purchase";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -27,7 +29,7 @@ export function continueBoot(s: GameState, deviceId: string, how: How | boolean 
   }
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, CONTINUE_HOURS, 1);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   d.hands = { kind: "continue", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
@@ -48,7 +50,7 @@ export function recoverGear(s: GameState, deviceId: string, how: How | boolean =
   }
   const job = handJob(s, d.label ?? d.name, locationOf(s, d), how, GEAR_RECOVER_HOURS, 1);
   if ("error" in job) return fail(job.error);
-  if (s.cash < job.cost) return fail("error.noCash");
+  if (!canPay(s, job.cost)) return fail("error.noCash");
   d.hands = { kind: "recover", doneAt: s.hour + job.commit() };
   return { ok: true };
 }
@@ -70,15 +72,15 @@ export function updateFirmware(s: GameState, deviceId: string): ActionResult {
 }
 
 // Fits an ATX power adapter so a console-only KVM can switch the server's power.
-export function fitAtx(s: GameState, deviceId: string): ActionResult {
+export function fitAtx(s: GameState, deviceId: string, method?: Method): ActionResult {
   const d = s.devices.find((x) => x.id === deviceId);
   if (!d) return fail("error.unknownDevice");
   if (modelById(d.model).kind !== "server") return fail("error.notServer");
   if (d.atx) return fail("error.atxFitted");
-  if (s.cash < ATX_PRICE) return fail("error.noCash");
+  const lines = [{ hour: s.hour, category: "hardware", key: "ledger.atxAdapter", params: { device: d.label ?? d.name }, amount: -ATX_PRICE }];
+  const paid = placeOrder(s, { supplier: "hardware", name: HARDWARE_SHOP, lines, method: method ?? methodsFor(s, "hardware", lines, HARDWARE_SHOP)[0] });
+  if (!paid.ok) return paid;
   d.atx = true;
-  s.cash = Math.round((s.cash - ATX_PRICE) * 100) / 100;
-  s.ledger.push({ hour: s.hour, category: "hardware", key: "ledger.atxAdapter", params: { device: d.label ?? d.name }, amount: -ATX_PRICE });
   return { ok: true };
 }
 

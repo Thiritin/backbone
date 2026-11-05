@@ -68,7 +68,7 @@ describe("Pear Mail Add Account", () => {
     expect(verify(s, input(s, a, "pop", { host: "pop.ionose.de" }))).toBe("error.mailNoBox");
     expect(verify(s, input(s, a, "pop", { address: `nobody-${a.local}@${a.domain}` }))).toBe("error.mailNoBox");
     a.external = false;
-    expect(verify(s, input(s, a, "pop"))).toBe("error.mailExternal");
+    expect(verify(s, input(s, a, "pop"))).toBe("error.mailExternalOff");
   });
 
   it("reports the own server off and a domain whose mail does not reach the provider", () => {
@@ -92,7 +92,7 @@ describe("Pear Mail Add Account", () => {
     expect(c.checkEvery).toBeGreaterThanOrEqual(15);
     expect(clientFolder(s, c, "inbox").length).toBeGreaterThan(0);
     expect(listFolder(s, a.id, "inbox")).toHaveLength(0);
-    expect(checkDone(s, "pearMail")).toBe(true);
+    expect(checkDone(s, "mail")).toBe(true);
     s.minute += 1;
     const id = deliver(s, { to: addressOf(a), from: "n:Dwell", kind: "order", topic: "x" }).id!;
     s.hour += 1;
@@ -121,8 +121,8 @@ describe("Pear Mail Add Account", () => {
     const { s, a } = gmix();
     a.external = false;
     expect(setupClientAccount(s, input(s, a, "pop")).ok).toBe(true);
-    expect(clientError(s, s.pearMail.accounts[0])).toBe("error.mailExternal");
-    expect(s.pearMail.activity.at(-1)?.error).toBe("error.mailExternal");
+    expect(clientError(s, s.pearMail.accounts[0])).toBe("error.mailExternalOff");
+    expect(s.pearMail.activity.at(-1)?.error).toBe("error.mailExternalOff");
     expect(err(setupClientAccount(s, input(s, a, "pop", { address: addressOf(a).toUpperCase() })))).toBe("error.mailDuplicate");
     expect(s.pearMail.accounts).toHaveLength(1);
   });

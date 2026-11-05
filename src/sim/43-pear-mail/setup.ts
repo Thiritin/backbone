@@ -3,6 +3,7 @@ import { nowMinutes, yearOf } from "../00-core/time";
 import { mailServersOf } from "../10-catalog/mail-providers";
 import { accountByAddress, tenantOf } from "../42-mail/address";
 import { capsOf } from "../42-mail/caps";
+import { GMIX_DOMAIN } from "../42-mail/new";
 import type { GameState } from "../50-state";
 import { clientAccount, type ClientAccount } from "./state";
 
@@ -40,4 +41,18 @@ export function draftClient(s: GameState, id: string, i: AccountInput): ClientAc
     checkEvery: CHECK_EVERY.find((m) => m >= gap) ?? CHECK_EVERY.at(-1)!,
     checkedAt: NEVER, syncedAt: NEVER,
   };
+}
+
+// Registering the company opens the free GMix box to mail programs, stores its login for the browser and sets it up in Pear Mail.
+// Safe to run again: each part is skipped once it exists.
+export function provisionStarterMail(s: GameState): void {
+  const a = s.mail.accounts.find((x) => x.id === s.mail.primary);
+  if (!a || a.domain !== GMIX_DOMAIN) return;
+  const address = `${a.local}@${a.domain}`, key = `mail:${address}`;
+  if (a.external !== true) s.mail = { ...s.mail, accounts: s.mail.accounts.map((x) => (x.id === a.id ? { ...x, external: true } : x)) };
+  if (!s.logins[key]) s.logins = { ...s.logins, [key]: [address, a.password] };
+  if (s.pearMail.accounts.some((c) => c.address === address)) return;
+  const caps = capsOf(s, a), protocol = caps.imap ? "imap" : "pop", servers = mailServersOf("gmix", a.domain, yearOf(s.hour));
+  const draft = draftClient(s, `cl${s.nextId++}`, { fullName: a.title, address, password: a.password, protocol, host: servers[protocol]?.host, smtp: servers.smtp?.host });
+  s.pearMail = { ...s.pearMail, accounts: [...s.pearMail.accounts, { ...draft, popRemove: "never" }] };
 }

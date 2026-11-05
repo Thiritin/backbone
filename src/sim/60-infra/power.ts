@@ -1,4 +1,5 @@
 // GDD, Racks, hardware and cabling (Remote management, Hangs and pulled plugs). Numbers in economy/hardware-power-and-failures.md, Hardware, power and failures.
+import { billDue } from "../46-finance/payables";
 import { nowHours } from "../00-core/time";
 import { hashRng, rand } from "../00-core/rng";
 import { hasBmc, modelById } from "../10-catalog/hardware";
@@ -186,8 +187,7 @@ export function breakerTick(s: GameState): SimEvent[] {
       if (!loc.dc) continue;
       const hands = datacenterById(loc.dc).remoteHands;
       if (now < (loc.trippedAt ?? now) + hands.responseHours) continue;
-      s.cash = Math.round((s.cash - hands.perHour) * 100) / 100;
-      s.ledger.push({ hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device: loc.name, hours: 1, dc: loc.dc, done: s.hour }, amount: -hands.perHour });
+      billDue(s, "contractor", loc.dc, [{ hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device: loc.name, hours: 1, dc: loc.dc, done: s.hour }, amount: -hands.perHour }]);
       closeBreaker(s, loc);
       events.push({ app: "Locations", key: "event.breakerReset", params: { location: loc.name, fee: hands.perHour } });
     } else if (!over.has(loc.id)) {

@@ -10,10 +10,18 @@ import { metrics } from "../metrics";
 import { TIERS, TIER_IDS, type TierId } from "../10-catalog/hosttoast";
 import { tierRefusal } from "../80-business/hosttoast";
 import type { ActionResult } from "./hardware";
+import type { Method } from "../46-finance/payables";
+import { AGENCY_TITLE } from "../80-business/browser";
+import { methodsFor, placeOrder } from "./purchase";
+
+const order = (s: GameState, key: string, params: Record<string, string | number>, amount: number, method?: Method) => {
+  const lines = [{ hour: s.hour, category: "marketing", key, params, amount: -amount }];
+  return placeOrder(s, { supplier: "services", name: AGENCY_TITLE, lines, method: method ?? methodsFor(s, "services", lines, AGENCY_TITLE)[0] });
+};
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
-export function setUpChannel(s: GameState, channel: OwnedChannel): ActionResult {
+export function setUpChannel(s: GameState, channel: OwnedChannel, method?: Method): ActionResult {
   const def = OWNED[channel];
   if (!def) return fail("error.unknownChannel");
   if (owns(s, channel)) return fail("error.channelOwned");
@@ -21,9 +29,8 @@ export function setUpChannel(s: GameState, channel: OwnedChannel): ActionResult 
   if (channel === "website" && !s.marketing.launched) return fail("error.needsLaunch");
   if (yearOf(s.hour) < def.fromYear) return fail("error.channelLater");
   const price = channel === "website" ? designQuote(s) : def.setup;
-  if (s.cash < price) return fail("error.noCash");
-  s.cash = Math.round((s.cash - price) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.marketingSetup", params: { channel }, amount: -price }];
+  const paid = order(s, "ledger.marketingSetup", { channel }, price, method);
+  if (!paid.ok) return paid;
   s.marketing = { ...s.marketing, owned: [...s.marketing.owned, channel], ...(channel === "website" && { designYear: generationOf(yearOf(s.hour)) }) };
   return { ok: true, id: channel };
 }
@@ -57,7 +64,7 @@ export function setReviewPlatform(s: GameState, platform: PlatformId | null): Ac
 }
 
 // Books the next run of a fair and sends one employee, who is away for its days.
-export function bookFair(s: GameState, fairId: string, employeeId: string): ActionResult {
+export function bookFair(s: GameState, fairId: string, employeeId: string, method?: Method): ActionResult {
   const next = upcomingFairs(s).find((d) => d.fair.id === fairId);
   if (!next) return fail("error.unknownFair");
   if (next.booking) return fail("error.fairBooked");
@@ -67,9 +74,8 @@ export function bookFair(s: GameState, fairId: string, employeeId: string): Acti
   if (!e) return fail("error.unknownEmployee");
   if (s.fairs.some((b) => b.employeeId === e.id && b.start < next.end && next.start < b.end)) return fail("error.attendeeBusy");
   const cost = fairCost(next.fair, next.year);
-  if (s.cash < cost) return fail("error.noCash");
-  s.cash = Math.round((s.cash - cost) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.tradeFair", params: { name: next.fair.name }, amount: -cost }];
+  const paid = order(s, "ledger.tradeFair", { name: next.fair.name }, cost, method);
+  if (!paid.ok) return paid;
   s.fairs = [...s.fairs, { fair: fairId, year: next.year, employeeId, start: next.start, end: next.end, attended: null, leads: 0 }];
   return { ok: true };
 }
@@ -94,14 +100,13 @@ export function setHostToastTier(s: GameState, tier: TierId): ActionResult {
 }
 
 // Orders a flyer run for one of your cities; delivery and hand-out follow in the tick.
-export function orderFlyers(s: GameState, city: string, size: number): ActionResult {
+export function orderFlyers(s: GameState, city: string, size: number, method?: Method): ActionResult {
   if (!FLYER_SIZES.includes(size)) return fail("error.flyerSize");
   if (!s.locations.some((l) => l.city === city)) return fail("error.flyerCity");
   const cost = flyerPrice(size, yearOf(s.hour));
-  if (s.cash < cost) return fail("error.noCash");
+  const paid = order(s, "ledger.flyers", { city, size }, cost, method);
+  if (!paid.ok) return paid;
   const id = `flyer-${s.marketing.flyers.length + 1}`;
-  s.cash = Math.round((s.cash - cost) * 100) / 100;
-  s.ledger = [...s.ledger, { hour: s.hour, category: "marketing", key: "ledger.flyers", params: { city, size }, amount: -cost }];
   s.marketing = { ...s.marketing, flyers: [...s.marketing.flyers, { id, city, size, orderedAt: s.hour, flyersLeft: size, leads: 0 }] };
   return { ok: true, id };
 }

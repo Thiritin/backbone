@@ -1,5 +1,5 @@
 import { addressBills, addressTick } from "../60-infra/addresses";
-import { billSuppliers, invoicing, payablesTick } from "../46-finance/payables";
+import { HARDWARE_SHOP, bill, billDirect, billSuppliers, invoicing, payablesTick } from "../46-finance/payables";
 import { lettersTick } from "../40-support/letters";
 import { paperworkTick } from "../80-business/paperwork";
 import { taxTick } from "../80-business/tax";
@@ -244,8 +244,7 @@ export function failComponents(s: GameState, d: Device, ids: string[], events: S
   if (broke.some(isDrive) && arrayLost(next)) Object.assign(next, { dataLost: s.hour, rebuild: null });
   if (broke.some((c) => c.kind === "psu") && !next.components.some((c) => c.kind === "psu" && c.failedAt === null)) loadSaved(next);
   if (d.refund && s.hour < d.refund.until) {
-    s.cash = Math.round((s.cash + d.refund.amount) * 100) / 100;
-    s.ledger = [...s.ledger, { hour: s.hour, category: "hardware", key: "ledger.usedRefund", params: { device: d.label ?? d.name }, amount: d.refund.amount }];
+    bill(s, { supplier: "hardware", name: HARDWARE_SHOP, method: "cash", doc: "credit", lines: [{ hour: s.hour, category: "hardware", key: "ledger.usedRefund", params: { device: d.label ?? d.name }, amount: d.refund.amount }] });
     events.push({ app: "Locations", key: "event.usedRefund", params: { device: d.label ?? d.name, amount: d.refund.amount } });
     next.refund = null;
   }
@@ -419,10 +418,9 @@ export function tick(state: GameState): SimEvent[] {
     const rent = bills.filter((b) => b.category === "rent").reduce((sum, b) => sum - b.amount, 0);
     const leasing = bills.filter((b) => b.category === "leasing").reduce((sum, b) => sum - b.amount, 0);
     const subscriptions = cents(bills.filter((b) => b.category === "subscriptions").reduce((sum, b) => sum - b.amount, 0));
-    state.cash = cents(state.cash + direct.reduce((n, b) => n + b.amount, 0));
+    billDirect(state, direct);
     state.powerDue = 0;
     state.powerUse = {};
-    state.ledger = [...state.ledger, ...direct];
     if (bills.length) events.push({ app: "Books", key: "event.bills", params: { power, rent, leasing: cents(leasing), subscriptions, total: cents(power + rent + leasing + subscriptions) } });
     state.knowHow = cents(state.knowHow + knowHowPerMonth(state));
   }
@@ -477,7 +475,7 @@ export function tick(state: GameState): SimEvent[] {
   deliverPaidOrders(state);
   paperworkTick(state);
   taxTick(state);
-  lettersTick(state);
+  events.push(...lettersTick(state));
   events.push(...payablesTick(state));
   events.push(...staffTick(state));
   events.push(...techTick(state));

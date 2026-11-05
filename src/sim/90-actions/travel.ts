@@ -3,8 +3,11 @@ import { COUNTRY, datacenterById } from "../20-world/datacenters";
 import { PLACES, placeOf, type LatLon } from "../20-world/places";
 import type { GameState } from "../50-state";
 import { BOOKED_HOURS, playerAt, trip } from "../60-infra/handwork";
+import type { Method } from "../46-finance/payables";
 import type { ActionResult } from "./hardware";
+import { methodsFor, placeOrder } from "./purchase";
 
+export const TRAVEL_VENDOR = "Wanderlust Reisen";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
 export type TravelMode = "drive" | "fly";
@@ -37,7 +40,7 @@ export function drive(s: GameState, locationId: string): { hours: number; fee: n
   return { hours: t.hours + booked, fee: t.fee, by: "drive" };
 }
 
-export function travelTo(s: GameState, locationId: string): ActionResult {
+export function travelTo(s: GameState, locationId: string, method?: Method): ActionResult {
   const loc = s.locations.find((l) => l.id === locationId);
   if (!loc) return fail("error.noLocation");
   if (s.player.until > s.hour) return fail("error.away");
@@ -45,9 +48,9 @@ export function travelTo(s: GameState, locationId: string): ActionResult {
   if (loc.readyAt > s.hour) return fail("error.locationNotReady");
   const d = drive(s, loc.id);
   if (!d) return fail("error.tooFar");
-  if (s.cash < d.fee) return fail("error.noCash");
-  s.cash = Math.round((s.cash - d.fee) * 100) / 100;
-  s.ledger.push({ hour: s.hour, category: "travel", key: d.by === "fly" ? "ledger.fly" : "ledger.drive", params: { place: loc.name }, amount: -d.fee });
+  const lines = [{ hour: s.hour, category: "travel", key: d.by === "fly" ? "ledger.fly" : "ledger.drive", params: { place: loc.name }, amount: -d.fee }];
+  const paid = placeOrder(s, { supplier: "services", name: TRAVEL_VENDOR, lines, method: method ?? methodsFor(s, "services", lines, TRAVEL_VENDOR)[0] });
+  if (!paid.ok) return paid;
   s.player = { ...s.player, at: loc.id, until: s.hour + d.hours, doing: "travel", by: d.by };
   return { ok: true };
 }

@@ -6,6 +6,7 @@ import type { GameState, PostalAddress } from "../../../../../sim/50-state";
 import { salesAddress } from "../../../../../sim/80-business/mail";
 import type { ActionResult } from "../../../../../sim/90-actions/hardware";
 import { noAutofill } from "../../../../no-autofill";
+import { payOptions, type Offer } from "./PayMethods";
 import "./checkout.css";
 
 export type AddressValue = PostalAddress & { company?: string };
@@ -42,7 +43,7 @@ export function AddressFields({ id, value, set, autofill, error }: {
 
 export type Payment =
   | { kind: "card"; number: string; expiry: string; cvc: string; holder: string }
-  | { kind: "transfer" }
+  | { kind: "transfer" } | { kind: "cash" } | { kind: "onAccount" }
   | { kind: "debit"; iban: string; holder: string };
 export type PaymentKind = Payment["kind"];
 export interface CheckoutDetails { company: string; name: string; address: PostalAddress; email: string; payment: Payment }
@@ -65,12 +66,16 @@ const STEP_OF: Record<string, number> = { "error.orderName": 0, "error.orderAddr
 // A web shop's order form in three steps and its confirmation; the site puts it in its own page and passes its button class.
 // The review lists the cart lines, or facts for an order of one thing; onBack leaves the first step. emails makes the email a
 // choice of the company's own addresses, the first preselected.
-export function Checkout({ game, btn, lines, total, facts, methods, place, confirm, onBack, emails }: {
+export function Checkout({ game, btn, lines, total, facts, methods: fixed, offer, place, confirm, onBack, emails }: {
   game: GameState; btn: string; lines?: CheckoutLine[]; total?: string; facts?: [string, string][]; onBack?: () => void; emails?: string[];
-  methods: { kind: PaymentKind; label: string }[];
+  methods?: { kind: PaymentKind; label: string }[];
+  // The order's supplier and lines: the methods then follow the sim's rules, an unavailable one stays listed with its reason.
+  offer?: Offer;
   place: (d: CheckoutDetails) => ActionResult;
   confirm: (order: string, kind: PaymentKind) => Confirmation;
 }) {
+  const methods = offer ? payOptions(game, offer).map((o) => ({ kind: o.method as PaymentKind, label: o.label, off: o.off }))
+    : (fixed ?? []).map((m) => ({ ...m, off: null as string | null }));
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<{ order: string; info: Confirmation } | null>(null);
@@ -78,7 +83,7 @@ export function Checkout({ game, btn, lines, total, facts, methods, place, confi
   const [first, setFirst] = useState(first0), [last, setLast] = useState(last0);
   const [email, setEmail] = useState(emails?.[0] ?? salesAddress(game));
   const [address, setAddress] = useState<AddressValue>({ company: game.company.name, street: "", zip: "", city: "" });
-  const [kind, setKind] = useState<PaymentKind>(methods[0].kind);
+  const [kind, setKind] = useState<PaymentKind>((methods.find((m) => !m.off) ?? methods[0]).kind);
   const [card, setCard] = useState({ number: "", expiry: "", cvc: "", holder: "" });
   const [debit, setDebit] = useState({ iban: game.bank ? (ibanEra(game) ? groupIban(ownIban(game)) : game.bank.number) : "", holder: game.company.name });
   const autofill = game.company.address && { company: game.company.name, ...officeAddress(game) };
@@ -143,7 +148,7 @@ export function Checkout({ game, btn, lines, total, facts, methods, place, confi
         <form onSubmit={go(2)}>
           <fieldset className="co-methods">
             <legend>{t("checkout.paymentMethod")}</legend>
-            {methods.map((m) => <label key={m.kind}><input type="radio" name="co-pay" checked={kind === m.kind} onChange={() => setKind(m.kind)} /> {m.label}</label>)}
+            {methods.map((m) => <label key={m.kind}><input type="radio" name="co-pay" checked={kind === m.kind} disabled={!!m.off} onChange={() => setKind(m.kind)} /> {m.label}{m.off && <small> {m.off}</small>}</label>)}
           </fieldset>
           {kind === "card" && <table className="co-fields"><tbody>
             {input("number", t("checkout.cardNumber"), card.number, (number) => setCard({ ...card, number }), { inputMode: "numeric", maxLength: 23 })}

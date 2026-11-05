@@ -4,7 +4,8 @@ import { cents } from "../45-billing/billing";
 import type { GameState, PostalAddress } from "../50-state";
 import { cardDetails, cardReady, cardSpent } from "../46-finance/bank";
 import { orderError } from "./company";
-import { invoice } from "../46-finance/payables";
+import { payMethod } from "../46-finance/payables";
+import { placeOrder } from "./purchase";
 import { updateKey } from "../60-infra/licence";
 import { ownAddresses } from "../42-mail/sources";
 import { cartOf, editionChange, lineBlock, lineMajor, lineOffer, sendKeys, vendorName, type CartLine, type KeyLine } from "../80-business/vendor-shop";
@@ -79,14 +80,12 @@ export function checkout(s: GameState, host: string, details: OrderDetails): Act
   s.cart = s.cart.filter((l) => !lines.includes(l));
   // A free order, such as an edition change on a term key, needs no payment.
   if (total === 0) { sendKeys(s, vendor, order, keys, total, false, mailTo); return { ok: true, id: order }; }
-  if (payment.kind === "card") {
-    s.bank = { ...s.bank!, card: { ...s.bank!.card!, spent: [...s.bank!.card!.spent, entry] } };
-    sendKeys(s, vendor, order, keys, total, true, mailTo);
-    return { ok: true, id: order };
-  }
-  const p = invoice(s, "software", vendor, [entry]);
-  // A direct debit mandate pays the invoice as it is issued.
-  if (p.paidAt !== null) sendKeys(s, vendor, order, keys, total, false, mailTo);
+  const method = payment.kind === "card" ? "card" : payMethod(s, vendor) === "debit" ? "debit" : "transfer";
+  const placed = placeOrder(s, { supplier: "software", name: vendor, lines: [entry], method, order });
+  if (!placed.ok) return placed;
+  const p = s.payables.find((x) => x.id === placed.payable)!;
+  // A card or a direct debit pays as the order is placed; a transfer sends the keys once the money arrives.
+  if (p.paidAt !== null) sendKeys(s, vendor, order, keys, total, method === "card", mailTo);
   else s.payables = s.payables.map((x) => (x.id === p.id ? { ...x, keys: { order, lines: keys, mailTo } } : x));
   return { ok: true, id: order };
 }

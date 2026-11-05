@@ -49,6 +49,7 @@ export function clientError(s: GameState, c: ClientAccount, gapMin?: number): st
   const tenant = a && tenantOf(s, a), at = owner === "self" ? mailClusterAtHost(s, c.server!.host) : null;
   if (!a || (owner && tenant?.host !== owner) || (at && tenant?.clusterId !== at.id)) return "error.mailNoBox";
   const st = serverStatus(s, a.id, c.protocol, c.password, gapMin);
+  if (st === "external" && capsOf(s, a)[c.protocol] && tenantOf(s, a)?.host === "gmix") return "error.mailExternalOff";
   return st === "external" && !capsOf(s, a)[c.protocol] ? "error.mailProtocol" : ERRORS[st];
 }
 

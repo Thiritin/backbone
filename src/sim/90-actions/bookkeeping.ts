@@ -3,9 +3,8 @@
 import { yearOf } from "../00-core/time";
 import { booksVendor, editionById, type BooksVendor, type Edition, type Feature } from "../10-catalog/bookkeeping";
 import { MS_PER_HOUR } from "../00-core/time";
-import { cents } from "../45-billing/billing";
 import { downloadMbps } from "./media";
-import { invoicing } from "../46-finance/payables";
+import { bill as billVendor, invoicing } from "../46-finance/payables";
 import type { GameState } from "../50-state";
 import { bill, currentEdition, currentVendor, hasFeature, HBCI_KEY, LICENCE_KEY, licencePrice, matchByReference, monthlyFee, monthlyRun, MONTHLY_KEY, SEAT_KEY, updateOpen, works } from "../80-business/bookkeeping";
 import type { ActionResult } from "./hardware";
@@ -17,8 +16,7 @@ const fail = (error: string): ActionResult => ({ ok: false, error });
 // A licence and a desktop seat are paid at once, off the account.
 function pay(s: GameState, v: BooksVendor, key: string, amount: number, e: Edition): void {
   if (!amount) return;
-  s.cash = cents(s.cash - amount);
-  s.ledger = [...s.ledger, { hour: s.hour, category: "licenses", key, params: { program: v.program, edition: e.name }, amount: -amount }];
+  billVendor(s, { supplier: "books", name: v.name, method: s.bank ? "debit" : "cash", lines: [{ hour: s.hour, category: "licenses", key, params: { program: v.program, edition: e.name }, amount: -amount }] });
 }
 
 function take(s: GameState, v: BooksVendor, e: Edition, seats: number): ActionResult {

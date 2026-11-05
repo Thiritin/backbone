@@ -4,6 +4,13 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-05
 - Your own mail server now works with its IP address or mail.<your domain> in Pear Mail, and the Mailboxes page of the web panel opens a working webmail with a welcome mail in every new mailbox.
+- The registrar page now shows which name servers a domain uses, the registrar's or your own, with a status that reads Active, Propagating or Not responding; your own name servers only answer while you run a DNS server.
+- Used hardware, hall fittings, remote hands, training, market studies, certificates and monthly network charges now come with a receipt or an invoice, and a company with a bank account no longer needs cash on hand to order them.
+- Your GMix mailbox is set up for you when you register your company, so Pear Mail fetches your mail right away and the GMix site opens your inbox without a password reset.
+- Hardware, software licences, Pear apps, shop modules and new datacenter space now come with an invoice or receipt, and renting space pays the rest of the first month at once.
+- Receipts, credit notes and order confirmations open like invoices, show the payment method with net, VAT and gross, and the payables list in Books has a document and payment method column.
+- Rent deposits, buildings, provider cables, network and domain fees, marketing, the website agency and other purchases now come with a receipt or an invoice, and refunds come with a credit note.
+- A notification tells you when post lands in a letterbox, and clicking it walks you to the letterbox.
 - Your figure now always appears in an office, also when your rooms are not on the ground floor, so you can no longer get stuck without it.
 - Importing a save no longer shows installer progress left over from the previous game.
 - Operating system installers, the webmail installer and the new virtual machine forms keep their progress when you switch to another window or tab.

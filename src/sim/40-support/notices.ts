@@ -145,6 +145,7 @@ export function applyNoticeWork(s: GameState, t: Ticket, c: Customer | undefined
       const amount = Math.round(monthlyValue(s.services, c.id) * 100) / 100;
       bump(c, HAPPINESS.refund);
       if (amount > 0) {
+        // A credit to a customer is a refund, not a vendor purchase.
         s.cash = Math.round((s.cash - amount) * 100) / 100;
         s.ledger = [...s.ledger, { hour: s.hour, category: "credit", key: "ledger.refund", params: { customer: c.name }, amount: -amount }];
       }

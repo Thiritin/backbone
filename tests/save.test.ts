@@ -16,7 +16,7 @@ describe("tick", () => {
     const s = registered(newGame(1));
     const events = [];
     for (let h = 0; h < 24 * 31; h++) events.push(...tick(s));
-    expect(events.filter((e) => e.app !== "News").map((e) => e.key)).toEqual(["event.monthStart"]);
+    expect(events.filter((e) => e.app !== "News" && e.app !== "Post").map((e) => e.key)).toEqual(["event.monthStart"]);
     expect(events.find((e) => e.app === "Books")).toEqual({ app: "Books", key: "event.monthStart", params: { month: 1, year: 2005 } });
   });
 });
@@ -61,7 +61,7 @@ describe("save", () => {
     // An old save keeps the DSL line it started with and lists no line it cannot deliver; the new basement's router stands on
     // its shelf uncabled, so the line has no address yet.
     expect(s).toEqual({
-      ...fresh, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)], registration: legacyRegistration(4),
+      ...fresh, nextId: fresh.nextId + 1, logins: { "mail:basement-hosting@gmix.com": expect.any(Array) }, rng: { s: 77 }, hour: 5000, cash: 1234, ledger, powerDue: 3.5, installed: [...STARTER_APPS, "Chat", ...WIDGETS.map(([id]) => id)], registration: legacyRegistration(4),
       marketing: { ...fresh.marketing, lines: [] }, homeLine: { id: "dsl-16", next: null },
       // The company domain and the NameCheep contract come with the load.
       registrar: { id: "nameCheep", since: 5000, tier: 0, billed: true, transfer: null }, company: { ...fresh.company, domain: "basement-hosting.de" },

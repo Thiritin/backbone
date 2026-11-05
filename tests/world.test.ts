@@ -246,7 +246,7 @@ describe("world", () => {
     expect(inLetterbox(s)).toHaveLength(2);
     useStore.setState({ game: s, speed: 0, surface: "world" });
     render(createElement(World));
-    fireEvent.click(screen.getByRole("button", { name: t("world.obj.letterbox") }));
+    fireEvent.click(screen.getByRole("button", { name: `${t("world.obj.letterbox")} 2` }));
     const panel = screen.getByRole("dialog", { name: t("world.obj.letterbox") });
     const first = panel.querySelector("[data-letter]")!.getAttribute("data-letter");
     fireEvent.click(screen.getByRole("button", { name: t("world.nextLetter") }));
@@ -383,7 +383,7 @@ describe("corkboard", () => {
     expect(cards()[0].getAttribute("data-done")).toBe("true");
     expect(boardOf(g()).current).toBe("register");
     // A room step's line closes the close-up and lights the object it names.
-    act(() => { useStore.setState({ game: { ...g(), checklist: [...g().checklist, "register"] } }); });
+    act(() => { useStore.setState({ game: { ...g(), checklist: [...g().checklist, "register", "mail"] } }); });
     expect(boardOf(g()).current).toBe("payBill");
     fireEvent.click(screen.getByRole("dialog").querySelector('[data-go="letterbox"]')!);
     expect(screen.queryByRole("dialog")).toBeNull();

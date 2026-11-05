@@ -43,7 +43,8 @@ export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | 
   p.ticketId !== undefined ? { kind: "ticket", id: String(p.ticketId) } :
   p.deviceId !== undefined ? { kind: "device", id: String(p.deviceId) } :
   p.serviceId !== undefined ? { kind: "site", id: String(p.serviceId) } :
-  p.messageId !== undefined ? { kind: "message", id: String(p.messageId) } : undefined;
+  p.messageId !== undefined ? { kind: "message", id: String(p.messageId) } :
+  p.locationId !== undefined ? { kind: "letterbox", id: String(p.locationId) } : undefined;
 // Older prefs also carry a banners flag, which is ignored: an allowed app shows banners and fills the notification centre.
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
@@ -145,6 +146,9 @@ export interface Store {
   setPause: (open: boolean) => void;
   surface: Surface;
   setSurface: (surface: Surface) => void;
+  // The location whose letterbox the world walks to next.
+  seek: string | null;
+  setSeek: (id: string | null) => void;
 }
 
 export type Surface = "desktop" | "world";
@@ -295,6 +299,8 @@ export const useStore = create<Store>((set, get) => ({
   setPause: (open) => set(({ pause, speed, pauseResume }) => open ? (pause ? {} : { pause: true, pauseResume: speed, speed: 0 as Speed }) : pause ? { pause: false, speed: pauseResume } : {}),
   surface: "world",
   setSurface: (surface) => set({ surface }),
+  seek: null,
+  setSeek: (seek) => set({ seek }),
 
   // Steps game minutes, so hours may be fractional; the hourly tick runs on every sixtieth.
   advance: (hours) => {
@@ -349,6 +355,8 @@ export const useStore = create<Store>((set, get) => ({
 
   openApp: (app, target, fresh) => {
     if (app === "Chat") return void window.open(DISCORD_URL, "_blank", "noopener");
+    // A letterbox notification walks the player to the box when they are at that location.
+    if (app === "Post" && target?.kind === "letterbox" && playerAt(get().game).id === target.id) return set({ surface: "world", seek: target.id });
     // A quote request sent through the shop is answered in the shop admin.
     const asked = app === "Support" && target?.kind === "ticket" && shopAsk(get().game, target.id);
     if (asked) return get().openApp("Browser", { kind: "url", id: shopAdminUrl(get().game, { s: "quotes" }) });

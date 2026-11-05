@@ -58,4 +58,6 @@ export default {
   "ticket.mail.notaryFiled.text": (p) => `Danke für den unterschriebenen Gesellschaftsvertrag von ${p.name}. Wir reichen ihn innerhalb von ${p.days} Werktagen beim Handelsregister ein. Das Register bestätigt die Eintragung per Brief.`,
   "ticket.mail.officeReceived.subject": (p) => `AW: ${p.subject}`,
   "ticket.mail.officeReceived.text": (p) => `Wir haben die Gewerbeummeldung für ${p.name} erhalten. Unsere Bestätigung erhalten Sie innerhalb von ${p.days} Werktagen per Brief.`,
+  "event.post.title": () => "Neue Post im Briefkasten",
+  "event.post.text": (p) => `${p.location}: ${p.n}`,
 } satisfies Dict;
