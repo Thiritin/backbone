@@ -13,6 +13,7 @@ import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById } from "../../../sim/10-catalog/server-os";
 import { registrarById } from "../../../sim/10-catalog/registrars";
 import { reduced } from "../../desktop/motion";
+import { FILE_ICON } from "../../art/era-icon";
 import { menuOn, type MenuEntry } from "../../desktop/ContextMenu";
 import { companyFolder, type IndexRow } from "../../../sim/80-business/index";
 import { nowHours } from "../../../sim/00-core/time";
@@ -240,15 +241,19 @@ export function DownloadsButton({ game }: { game: GameState }) {
   const running = useDownloads(), now = nowHours(game);
   const name = (id: string) => (imageExists(id) ? isoFile(id as OsImage) : id);
   const live = [
-    ...Object.entries(running).filter(([, d]) => d).map(([id, d]) => ({ file: name(id), ...d! })),
-    ...softwareDownloads(game).map((d) => ({ file: d.file, start: d.start, hours: d.hours })),
+    ...Object.entries(running).filter(([, d]) => d).map(([id, d]) => ({ file: name(id), icon: imageExists(id) ? FILE_ICON.iso : FILE_ICON.archive, ...d! })),
+    ...softwareDownloads(game).map((d) => ({ file: d.file, icon: FILE_ICON.installer, start: d.start, hours: d.hours })),
   ].filter((d) => now - d.start < d.hours), first = live[0];
   const done = (d: { start: number; hours: number }) => Math.floor(Math.min(1, (now - d.start) / d.hours) * 100);
-  const finished = [...game.media.images.map(isoFile), ...game.media.files, ...softwareDownloads(game).filter((d) => now - d.start >= d.hours).map((d) => d.file)];
+  const finished = [
+    ...game.media.images.map((id) => ({ file: isoFile(id), icon: FILE_ICON.iso })),
+    ...game.media.files.map((file) => ({ file, icon: FILE_ICON.archive })),
+    ...softwareDownloads(game).filter((d) => now - d.start >= d.hours).map((d) => ({ file: d.file, icon: FILE_ICON.installer })),
+  ];
   return (
     <button className="btn icon ghost br-dl" aria-label={t("misc1.browser.downloads")} onClick={menuOn(() => [
-      ...live.map((d) => ({ label: `${d.file}, ${done(d)}%`, disabled: true })),
-      ...finished.map((file) => ({ label: file, run: showDownloads })),
+      ...live.map((d) => ({ label: `${d.file}, ${done(d)}%`, icon: d.icon, disabled: true })),
+      ...finished.map(({ file, icon }) => ({ label: `${file}, ${t("misc1.browser.done")}`, icon, run: showDownloads })),
       !finished.length && !live.length && { label: t("misc1.browser.noDownloads"), disabled: true },
       null,
       { label: t("misc1.browser.showInFinder"), run: showDownloads },
