@@ -201,6 +201,7 @@ describe("installing from the UI", () => {
     for (let i = 0; i < 24 * 60 && s.orders.some((o) => !o.applied); i++) events.push(...tickMinute(s));
     expect(cpus(s, "dev3")).toHaveLength(sockets);
     expect(events.map((e) => e.key)).toContain("event.workDone");
+    expect(events.find((e) => e.key === "event.workDone")!.params.work).toBe("Parts");
   });
 });
 

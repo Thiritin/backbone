@@ -30,6 +30,7 @@ export default {
   "paperwork.post.empty": () => "Sem cartas",
   "paperwork.post.box": () => "Na caixa do correio",
   "paperwork.post.scan": () => "Digitalizar",
+  "paperwork.post.toBox": () => "Para a caixa de correio",
   "paperwork.post.scanned": () => "Digitalizada",
   "paperwork.letter.office": () => "Repartição de atividades comerciais",
   "paperwork.letter.register": () => "Tribunal de comarca, registo comercial",

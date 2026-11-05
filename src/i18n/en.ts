@@ -186,7 +186,7 @@ export const en: Record<string, (p: Params) => string> = {
   "ledger.circuit": () => "Extra household circuit",
   "ledger.secondPsu": (p) => `Second power supply for ${p.device}`,
   "event.workDone.title": () => "Hand work done",
-  "event.workDone.text": (p) => `The work on ${p.device} is finished.`,
+  "event.workDone.text": (p) => `Finished: ${p.work}.`,
   "event.componentFailed.title": () => "Component failed",
   "event.componentFailed.text": (p) => `A ${COMPONENT_LABELS[String(p.component)] ?? p.component} failed in ${p.device}.`,
   "event.rackArrived.title": () => "Rack arrived",

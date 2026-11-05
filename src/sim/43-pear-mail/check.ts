@@ -10,6 +10,7 @@ import { boxOf, isRead } from "../42-mail/model";
 import type { Message } from "../42-mail/types";
 import type { GameState } from "../50-state";
 import type { SimEvent } from "../88-tick/tick";
+import { mailClusterAtHost } from "../60-infra/mail-host";
 import { clientFolder } from "./view";
 import { ACTIVITY_KEEP, localFolder, type ActivityLine, type ClientAccount, type PopRemove } from "./state";
 
@@ -31,7 +32,7 @@ const ERRORS: Record<ServerStatus, string | null> = {
 // The provider whose server answers to a typed host name for the protocol, "self" for mail.<company domain>.
 export function hostOwner(s: GameState, host: string, protocol: MailProtocol): string | null {
   const h = host.trim().toLowerCase(), d = companyDomain(s), year = yearOf(s.hour);
-  return MAIL_HOSTS.find((x) => mailServersOf(x.id, d, year)[protocol]?.host === h)?.id ?? null;
+  return MAIL_HOSTS.find((x) => mailServersOf(x.id, d, year)[protocol]?.host === h)?.id ?? (mailClusterAtHost(s, h) ? "self" : null);
 }
 
 // The server names the account assistant lists for a protocol: every provider's host this year.
@@ -45,7 +46,8 @@ export function clientError(s: GameState, c: ClientAccount, gapMin?: number): st
   const owner = c.server && hostOwner(s, c.server.host, c.protocol);
   if (c.server && !owner) return "error.mailServer";
   const a = s.mail.accounts.find((x) => x.id === c.accountId);
-  if (!a || (owner && tenantOf(s, a)?.host !== owner)) return "error.mailNoBox";
+  const tenant = a && tenantOf(s, a), at = owner === "self" ? mailClusterAtHost(s, c.server!.host) : null;
+  if (!a || (owner && tenant?.host !== owner) || (at && tenant?.clusterId !== at.id)) return "error.mailNoBox";
   const st = serverStatus(s, a.id, c.protocol, c.password, gapMin);
   if (st === "external" && capsOf(s, a)[c.protocol] && tenantOf(s, a)?.host === "gmix") return "error.mailExternalOff";
   return st === "external" && !capsOf(s, a)[c.protocol] ? "error.mailProtocol" : ERRORS[st];

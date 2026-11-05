@@ -2,14 +2,14 @@ import { useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { nowHours, yearOf } from "../../../../../sim/00-core/time";
 import type { Registrar } from "../../../../../sim/10-catalog/registrars";
-import { nameServers, nsMinutesLeft, nsStatus, domainOf, type Domain } from "../../../../../sim/30-customers/registry";
+import { nameServers, nsMinutesLeft, registering, nsStatus, domainOf, type Domain } from "../../../../../sim/30-customers/registry";
 import { settled, zoneRecords, type CompanyRecord } from "../../../../../sim/60-infra/company-zone";
 import { TTLS, type DnsType } from "../../../../../sim/60-infra/netsvc-dns";
 import { recordChoices, type RecordChoice } from "../../../../../sim/60-infra/zone-choices";
 import type { GameState } from "../../../../../sim/50-state";
 import { removeCompanyRecord, setCompanyRecord } from "../../../../../sim/90-actions/domains";
 import { eraOf } from "../era";
-import { usePageAct } from "../../pageAct";
+import { useFormAct, usePageAct } from "../../pageAct";
 import { REGISTRAR_ERAS } from "./RegistrarPage";
 
 const TYPES: DnsType[] = ["A", "AAAA", "CNAME", "MX", "TXT"];
@@ -32,7 +32,8 @@ function pick(d: Draft, list: RecordChoice[]): Draft {
 // The DNS page for the company domain: its records with Edit and Delete and a form to add or change one, titled as the partner named it.
 // The state of a domain's name servers.
 export function NsBadge({ game, d }: { game: GameState; d: Domain }) {
-  const st = nsStatus(game, d);
+  const st = nsStatus(game, d), pending = registering(game, d);
+  if (pending) return <span className="rgp-status"><span className="rgp-badge" data-ns-status="propagating">{t("registrarPanel.status.registering")}</span></span>;
   return (
     <span className="rgp-status">
       <span className="rgp-badge" data-ns-status={st}>{t(`registrarPanel.nsStatus.${st}`, { n: nsMinutesLeft(game, d) })}</span>
@@ -42,7 +43,7 @@ export function NsBadge({ game, d }: { game: GameState; d: Domain }) {
 }
 
 export function RegistrarDns({ game, r }: { game: GameState; r: Registrar }) {
-  const act = usePageAct(), [draft, setDraft] = useState<Draft | null>(null), hour = nowHours(game);
+  const act = usePageAct(), [save1, saveError] = useFormAct(), [draft, setDraft] = useState<Draft | null>(null), hour = nowHours(game);
   const look = eraOf(REGISTRAR_ERAS[r.id], yearOf(game.hour)), domain = game.company.domain, dom = domain ? domainOf(game, domain) : undefined;
   const choices = (type: DnsType) => recordChoices(game, type);
   // A record being edited keeps its value in the list even when nothing the company runs has it any more.
@@ -50,7 +51,7 @@ export function RegistrarDns({ game, r }: { game: GameState; r: Registrar }) {
     ? [...(draft.value && !choices(draft.type).some((c) => c.value === draft.value) ? [{ value: draft.value, label: draft.value }] : []), ...choices(draft.type)]
     : [];
   const save = (d: Draft) => {
-    const res = act(setCompanyRecord, { id: d.id, type: d.type, name: d.name, ttl: d.ttl, data: d.type === "MX" ? `${d.priority.trim()} ${d.value.trim()}` : d.value });
+    const res = save1(setCompanyRecord, { id: d.id, type: d.type, name: d.name, ttl: d.ttl, data: d.type === "MX" ? `${d.priority.trim()} ${d.value.trim()}` : d.value });
     if (res.ok) setDraft(null);
   };
   return (
@@ -107,7 +108,7 @@ export function RegistrarDns({ game, r }: { game: GameState; r: Registrar }) {
                 </select></label>
               )}
               <label>{t("netsvc.ttl")}<select value={draft.ttl} onChange={(e) => setDraft({ ...draft, ttl: Number(e.target.value) })}>{TTLS.map((x) => <option key={x} value={x}>{t(`registrarDns.ttl.${x}`)}</option>)}</select></label>
-              <div className="bks-row"><button className="bks-btn primary" type="submit">{t("netsvc.save")}</button> <button className="bks-btn" type="button" onClick={() => setDraft(null)}>{t("netsvc.cancel")}</button></div>
+              <div className="bks-row"><button className="bks-btn primary" type="submit">{t("netsvc.save")}</button> <button className="bks-btn" type="button" onClick={() => setDraft(null)}>{t("netsvc.cancel")}</button>{saveError && <span role="alert" style={{ color: "var(--bad, #b00)", whiteSpace: "nowrap" }}> {saveError}</span>}</div>
             </form>
           ) : <p><button className="bks-btn" onClick={() => setDraft(pick(blank, choices(blank.type)))}>{t("netsvc.addRecord")}</button></p>}
         </>

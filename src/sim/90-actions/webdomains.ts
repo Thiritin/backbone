@@ -3,7 +3,7 @@ import type { GameState } from "../50-state";
 import { putZone, syncZone } from "../60-infra/netsvc-dns";
 import { webspaceOf, type Webspace } from "../60-infra/webspace";
 import { parseSchedule, scheduleHours, webZone, zoneNames } from "../60-infra/webzone";
-import { cleanRecord, type RecordDraft } from "./netsvc-dns";
+import { cleanRecord, recordError, type RecordDraft } from "./netsvc-dns";
 import type { ActionResult } from "./hardware";
 import { createCron } from "./webspace";
 
@@ -23,7 +23,7 @@ export function saveWebRecord(s: GameState, workloadId: string, zone: string, re
   if (isFail(ws)) return ws;
   if (!zoneNames(ws).includes(zone)) return fail("error.unknownZone");
   const clean = cleanRecord(zone, rec);
-  if (!clean) return fail("error.badRecord");
+  if (!clean) return fail(recordError(zone, rec));
   const z = webZone(s, ws, zone), id = rec.id ?? `r${s.nextId++}`;
   if (rec.id && !z.records.some((r) => r.id === rec.id)) return fail("error.badRecord");
   const next = { id, ...clean };

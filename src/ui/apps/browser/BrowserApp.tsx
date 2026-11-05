@@ -68,6 +68,7 @@ import { LookoutSite, lookoutTitle } from "./sites/mail/lookout/LookoutSite";
 import { HostToastSite } from "./sites/hosttoast/HostToastSite";
 import { HOSTTOAST } from "../../../sim/10-catalog/hosttoast";
 import { WikiSite } from "./sites/wiki/WikiSite";
+import { PanelWebmail } from "./consoles/squarecube/PanelWebmail";
 import { SoftwarePage } from "./sites/software/registry";
 import { RegistrarSite } from "./sites/registrars";
 import { ParkedPage } from "./sites/registrars/Parked";
@@ -99,6 +100,7 @@ function titleOf(game: GameState, r: Resolved): string {
     case "company": return game.company.name;
     case "customer": return customerSite(game, p.serviceId)?.title ?? r.host;
     case "webspace": return siteTitle(p.body) || r.host;
+    case "panelMail": return "Squarecube Webmail";
     case "vendor": return MANUFACTURERS.find((m) => m.id === p.maker)?.name ?? r.host;
     case "provider": return dcProvider(p.id).name;
     case "registrar": return registrarById(p.id)?.name ?? r.host;
@@ -203,6 +205,7 @@ function Viewport({ game, r, go }: { game: GameState; r: Resolved; go: (url: str
     : p.id === "lookout" || p.id === "lookout-admin" ? <LookoutSite game={game} host={r.host} path={r.path} go={go} />
     : p.id === "goggle" ? <GoggleSite game={game} host={r.host} path={r.path} go={go} />
     : p.id === "gmial" ? <Gmial game={game} path={r.path} go={go} /> : <GmixSite game={game} path={r.path} go={go} />;
+  else if (p.kind === "panelMail") body = <PanelWebmail game={game} domain={p.domain} />;
   else if (p.kind === "hosttoast") body = <HostToastSite game={game} path={r.path} go={go} />;
   else if (p.kind === "wiki") body = <WikiSite game={game} path={r.path} go={go} />;
   else if (p.kind === "index") body = <IndexSite game={game} path={r.path} go={go} />;
@@ -260,7 +263,7 @@ export function BrowserApp() {
   const tab = tabs.find((x) => x.id === active) ?? tabs[0];
   const url = tab.history[tab.at];
   const r = resolve(game, url);
-  const [addr, setAddr] = useState(url);
+  const [addr, setAddr] = useState(url), field = useRef<HTMLInputElement>(null);
   useEffect(() => setAddr(url), [url, tab.id]);
 
   const patch = (id: number, f: (t: Tab) => Tab) => setTabs(tabs.map((x) => (x.id === id ? f(x) : x)));
@@ -349,7 +352,7 @@ export function BrowserApp() {
   const toggleMark = () => setMarks(marked ? marks.filter((m) => m.url !== url) : [...marks, { title: titleOf(game, r), url }]);
 
   return (
-    <div className="br" ref={root} onDragOver={(e) => carried && carried.win !== win.id && e.preventDefault()} onDrop={take}>
+    <div className="br" ref={root} onKeyDown={(e) => { if (e.key === "l" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); field.current?.focus(); field.current?.select(); } }} onDragOver={(e) => carried && carried.win !== win.id && e.preventDefault()} onDrop={take}>
       <div className="br-tabs" role="tablist">
         {tabs.map((x, i) => {
           const rx = resolve(game, x.history[x.at]);
@@ -375,7 +378,7 @@ export function BrowserApp() {
         <button className="btn icon ghost" aria-label={t("misc1.browser.home")} onClick={() => go(homeUrl())}><House aria-hidden /></button>
         <form className="br-addr" onSubmit={(e) => { e.preventDefault(); if (addr.trim()) go(addr); }}>
           <Favicon game={game} r={r} />
-          <input aria-label={t("misc1.browser.address")} value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} />
+          <input ref={field} aria-label={t("misc1.browser.address")} value={addr} spellCheck={false} autoCapitalize="off" onChange={(e) => setAddr(e.target.value)} onFocus={(e) => e.currentTarget.select()} onMouseDown={(e) => { e.preventDefault(); e.currentTarget.focus(); e.currentTarget.select(); }} />
           <button type="button" className="br-star" aria-label={t("misc1.browser.bookmark")} aria-pressed={marked} disabled={isDefault} onClick={toggleMark}><Star aria-hidden /></button>
         </form>
         <DownloadsButton game={game} />

@@ -137,7 +137,7 @@ function finish(s: GameState, o: WorkOrder, events: SimEvent[]): void {
   }
   if (!o.action) return;
   if (!runHands(s, o.action.name as HandsAction, o.action.args).ok) return;
-  if (o.worker === "player") events.push({ app: "Locations", key: "event.workDone", params: { device } });
+  if (o.worker === "player") events.push({ app: "Locations", key: "event.workDone", params: { device, work: t(`orders.kind.${jobKind(o.action.name as HandsAction)}`) } });
   if (o.worker !== "provider") return;
   const fee = o.fee ?? 0, dc = s.locations.find((l) => l.id === o.locationId)?.dc ?? "";
   billDue(s, "contractor", dc, [{ hour: s.hour, category: "maintenance", key: "ledger.remoteHands", params: { device, hours, dc, done: Math.floor(doneAt(o) / 60) }, amount: -fee }]);

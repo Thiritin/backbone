@@ -153,9 +153,9 @@ export function RackFront({ units, shelf = false, items, links = [], remotes = [
       if (moving && moving.to !== moving.from) out.push(<rect key="slide" x={pad - 2} y={dev + dy - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke={fitsAt(it, moving.to) ? "var(--ok)" : "var(--bad)"} strokeWidth="2" pointerEvents="none" />);
       if (it.badge) {
         const bw = it.badge.length * fs * 0.62 + 8;
-        // The badge stays clear of the ports on the back and of the power button and lamps on the front.
+        // The badge stays clear of the ports and their cable markers on the back and of the power button and lamps on the front.
         const first = back ? Math.min(...[...portSpots(it.model, it.name, side, w, h)].map(([, sp]) => sp.x)) : Infinity;
-        const bx = !it.badgeFault ? pad + w * 0.48 - bw / 2 : Number.isFinite(first) && first - bw - 6 > 0 ? pad + first - bw - 6 : pad + (back ? w : w * 0.82) - bw - 2;
+        const bx = !it.badgeFault && !back ? pad + w * 0.48 - bw / 2 : !it.badgeFault ? pad + Math.max(2, (Number.isFinite(first) ? first : w) - bw - 12) : Number.isFinite(first) && first - bw - 6 > 0 ? pad + first - bw - 6 : pad + (back ? w : w * 0.82) - bw - 2;
         out.push(<g key={`b${it.id}`} className="rack-badge" pointerEvents="none"><rect x={bx} y={it.badgeFault ? dev + 2 : dev - fs - 6} width={bw} height={fs + 4} rx="2" fill={it.badgeFault ? "var(--bad)" : "oklch(0.32 0.01 255)"} stroke={it.badgeFault ? undefined : "oklch(0.6 0.01 255)"} strokeWidth="0.6" /><text x={bx + bw / 2} y={it.badgeFault ? dev + fs + 2 : dev - 4} textAnchor="middle" fontFamily={MONO} fontSize={fs} fill="var(--on-accent, #fff)">{it.badge}</text></g>);
       }
       if (it.id === selected) out.push(<rect key="sel" x={pad - 2} y={dev - 1.5} width={w + 4} height={h + 3} rx="3" fill="none" stroke="var(--accent)" strokeWidth="2" pointerEvents="none" />);

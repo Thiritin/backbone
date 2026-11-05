@@ -3,7 +3,7 @@ import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import { registrarHost, type Registrar } from "../../../../../sim/10-catalog/registrars";
 import { wholesale } from "../../../../../sim/30-customers/registrar";
-import { domainOf, domainStatus, nameServers, registryOf, type Domain, type NameServerMode } from "../../../../../sim/30-customers/registry";
+import { domainOf, nameServers, shownStatus, registryOf, type Domain, type NameServerMode } from "../../../../../sim/30-customers/registry";
 import type { GameState } from "../../../../../sim/50-state";
 import { generateAuthCode, setDomainRenewal, setNameServers } from "../../../../../sim/90-actions/registrar";
 import { euroCents } from "../../../../../sim/00-core/money";
@@ -74,7 +74,7 @@ export function RegistrarPanel({ game, r, page, go }: { game: GameState; r: Regi
               </thead>
               <tbody>
                 {[...game.domains].sort((a, b) => a.name.localeCompare(b.name)).map((d) => {
-                  const status = domainStatus(d), live = status === "active" || status === "cancelled";
+                  const status = shownStatus(game, d), live = status === "active" || status === "cancelled";
                   return (
                     <tr key={d.name}>
                       <td><a href={`#/domain/${d.name}`} onClick={open({ domain: d.name })}>{d.name}</a></td>
@@ -117,7 +117,7 @@ function DomainPage({ game, d, owner }: { game: GameState; d: Domain; owner: (id
             {fact(t("registrarPanel.expiresOn"), formatDay(d.expiresAt))}
             {fact(t("registrarPanel.wholesale"), euroCents(wholesale(game, d.name)))}
             {fact(t("registrarPanel.owner"), owner(d.customerId))}
-            {fact(t("registrarPanel.status"), t(`registrarPanel.status.${domainStatus(d)}`))}
+            {fact(t("registrarPanel.status"), t(`registrarPanel.status.${shownStatus(game, d)}`))}
           </tbody>
         </table>
       </section>

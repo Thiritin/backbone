@@ -1,3 +1,4 @@
+import { t } from "../../i18n/en";
 import { addressBills, addressTick } from "../60-infra/addresses";
 import { HARDWARE_SHOP, bill, billDirect, billSuppliers, invoicing, payablesTick } from "../46-finance/payables";
 import { lettersTick } from "../40-support/letters";
@@ -47,6 +48,7 @@ import { registrarTick } from "../30-customers/registrar";
 import { mailTick } from "../80-business/mail";
 import { mailProviderTick } from "../80-business/mail-provider";
 import { mailDeliveryTick } from "../42-mail/deliver";
+import { panelMailTick } from "../60-infra/panel-mail";
 import { syncTicketMail } from "../42-mail/tickets";
 import { fetchTick } from "../42-mail/fetch";
 import { importTick } from "../42-mail/imports";
@@ -269,7 +271,7 @@ function service(s: GameState, events: SimEvent[]) {
   s.devices = s.devices.map((d) => {
     let next = d;
     if (d.maintenance && d.maintenance.doneAt <= s.hour) {
-      events.push({ app: "Locations", key: "event.workDone", params: { device: d.label ?? d.name } });
+      events.push({ app: "Locations", key: "event.workDone", params: { device: d.label ?? d.name, work: t("orders.kind.parts") } });
       const old = d.components.find((c) => c.id === d.maintenance!.componentId);
       // Installing or removing a part changed the device when it started; the work only keeps it busy.
       if (!old) next = { ...d, maintenance: null };
@@ -455,6 +457,7 @@ export function tick(state: GameState): SimEvent[] {
   mailProviderTick(state);
   mailTick(state);
   mailDeliveryTick(state);
+  panelMailTick(state);
   fetchTick(state);
   importTick(state);
   events.push(...pearMailTick(state));

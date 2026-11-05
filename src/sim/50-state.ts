@@ -1,6 +1,7 @@
 import type { OveruseChoice } from "./80-business/overuse";
 import type { Tile } from "./20-world/layout";
 import type { OwnWebspace, WebspaceOverlay } from "./60-infra/webspace";
+import type { PanelMessage } from "./60-infra/panel-mail";
 import type { SqlDump } from "./60-infra/webdb";
 import { createRng, type Rng } from "./00-core/rng";
 import { componentParts, hasFirmware, homeLan, isManaged, isOfficeRouter, modelById, type ComponentKind, type FormFactor, type PartSpec } from "./10-catalog/hardware";
@@ -431,6 +432,8 @@ export interface GameState {
   files: Record<string, HostFiles>;
   // What the player changed in each web space, by workload id; the rest is derived (60-infra/webspace.ts).
   webspaces: Record<string, WebspaceOverlay>;
+  // The mail in the panel mailboxes, by address (60-infra/panel-mail.ts).
+  panelMail: Record<string, PanelMessage[]>;
   // The company's own accounts on panel hosts, by id; their contents are in webspaces like a customer's.
   ownWebspaces: OwnWebspace[];
   // Desktop program installers in Downloads by program id: the hour the download started and the hour it is complete.
@@ -554,7 +557,7 @@ export const newGame = (seed: number): GameState => ({
   devices: [device("dev5", "home-router", "AVN", "rack2", 5, null, "fra1-gw-01", 0), device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
   ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, powerUse: {}, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerCables: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
-  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, ownWebspaces: [], installers: {},
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, panelMail: {}, ownWebspaces: [], installers: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0, numbering: "year" }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,

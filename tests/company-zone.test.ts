@@ -49,8 +49,8 @@ describe("company zone", () => {
 
   it("refuses bad records and a zone without a domain", () => {
     const s = readyGame(8);
-    expect(setCompanyRecord(s, { type: "MX", name: "@", ttl: 3600, data: "mail.gmix.net" })).toEqual({ ok: false, error: "error.badRecord" });
-    expect(setCompanyRecord(s, { type: "A", name: "www.other.org.", ttl: 3600, data: "1.2.3.4" })).toEqual({ ok: false, error: "error.badRecord" });
+    expect(setCompanyRecord(s, { type: "MX", name: "@", ttl: 3600, data: "mail.gmix.net" })).toEqual({ ok: false, error: "error.recordPriority" });
+    expect(setCompanyRecord(s, { type: "A", name: "www.other.org.", ttl: 3600, data: "1.2.3.4" })).toEqual({ ok: false, error: "error.recordName" });
     expect(setCompanyRecord(s, { type: "A", name: "@", ttl: 120, data: "1.2.3.4" })).toEqual({ ok: false, error: "error.badRecord" });
     const fresh = newGame(8);
     expect(setCompanyRecord(fresh, { type: "A", name: "@", ttl: 3600, data: "1.2.3.4" })).toEqual({ ok: false, error: "error.needsDomain" });

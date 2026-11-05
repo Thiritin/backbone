@@ -38,12 +38,14 @@ export type NsStatus = "active" | "propagating" | "silent";
 export const nsStatus = (s: GameState, d: Domain): NsStatus => (nsPropagating(s, d) ? "propagating" : nsActive(s, d).ns === "custom" && !ownDnsUp(s) ? "silent" : "active");
 // The registrar's name servers show the parking page; own ones that do not answer leave the domain unreachable.
 export const parked = (s: GameState, d: Domain): boolean => { const a = nsActive(s, d); return a.ns === "registrar" || (a.ns === "custom" && !ownDnsUp(s)); };
-export type DomainStatus = "active" | "transfer" | "cancelled" | "gone";
+export type DomainStatus = "registering" | "active" | "transfer" | "cancelled" | "gone";
 export const domainStatus = (d: Domain): DomainStatus => (d.lapsed ? "gone" : d.leavesAt !== undefined ? "transfer" : d.cancelled ? "cancelled" : "active");
 // The domains the partner holds and bills.
 export const heldDomains = (s: GameState): Domain[] => s.domains.filter((d) => !d.lapsed);
 export const REGISTER_MINUTES = 2;
 export const registering = (s: GameState, d: Domain): boolean => (d.readyAt ?? 0) > nowMinutes(s);
+// The status both registrar views show: a domain the registry has not answered for yet is still registering.
+export const shownStatus = (s: GameState, d: Domain): DomainStatus => { const x = domainStatus(d); return x === "active" && registering(s, d) ? "registering" : x; };
 
 export const YEAR = 8760, DAY = 24;
 // What the registry charges per year, in 2005 and from 2026 on; linear in between. A registry with steps charges the last

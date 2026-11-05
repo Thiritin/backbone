@@ -7,6 +7,7 @@ import { tick } from "../src/sim/88-tick/tick";
 import { readLetter } from "../src/sim/90-actions/paperwork";
 import { fetchPost, scanLetter } from "../src/sim/90-actions/post";
 import { deserialize, serialize } from "../src/sim/91-save/save";
+import { stepOf } from "../src/ui/apps/guide";
 import { newGame } from "./fixtures";
 
 const run = (s: ReturnType<typeof newGame>, days: number) => { for (let i = 0; i < days * 24; i++) tick(s); };
@@ -21,6 +22,11 @@ function withPost() {
 }
 
 describe("post in the letterbox", () => {
+  it("points the pay-a-bill step at the letterbox while the letter waits there", () => {
+    const s = withPost();
+    expect(stepOf(s, "payBill").focus).toEqual({ kind: "letterbox", id: "loc1" });
+  });
+
   it("lands new letters in the basement letterbox, unreadable until fetched", () => {
     const s = withPost();
     expect(inLetterbox(s)).toHaveLength(2);
