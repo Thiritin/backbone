@@ -42,6 +42,7 @@ export default {
   "paperwork.letter.greeting": () => "Estimados señores:",
   "paperwork.letter.closing": () => "Atentamente,",
   "paperwork.letter.machine": () => "Este escrito se ha generado automáticamente y es válido sin firma.",
+  "paperwork.letter.paid": () => "Pago recibido",
   "paperwork.letter.bank": () => "Datos bancarios",
   "paperwork.letter.account": () => "Cuenta",
   "paperwork.letter.code": () => "Código bancario",

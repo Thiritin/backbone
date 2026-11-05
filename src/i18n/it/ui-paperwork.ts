@@ -42,6 +42,7 @@ export default {
   "paperwork.letter.greeting": () => "Gentili Signori,",
   "paperwork.letter.closing": () => "Distinti saluti",
   "paperwork.letter.machine": () => "Questa lettera è stata generata automaticamente ed è valida senza firma.",
+  "paperwork.letter.paid": () => "Pagamento ricevuto",
   "paperwork.letter.bank": () => "Coordinate bancarie",
   "paperwork.letter.account": () => "Conto",
   "paperwork.letter.code": () => "Codice banca",

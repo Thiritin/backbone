@@ -63,9 +63,7 @@ describe("presence", () => {
     const id = ok(buyDevice(s, "sw-8", "Sysko", 1, loc));
     s.player = { ...s.player, at: loc };
     ok(mountDevice(s, id, rack, 10));
-    expect(dev(s, id).rackId).toBeNull();
-    expect(s.orders).toMatchObject([{ worker: "player", workMin: JOB_HOURS.mount * 60 }]);
-    settle(s);
+    expect(s.orders).toEqual([]);
     expect(dev(s, id).rackId).toBe(rack);
     expect(handsJobs(s)).toEqual([]);
   });

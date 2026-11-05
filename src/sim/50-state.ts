@@ -53,6 +53,7 @@ import type { Payable } from "./46-finance/payables";
 import type { Letter } from "./40-support/letters";
 import type { TrendPoint } from "./80-business/trend";
 import { newTax, type TaxState } from "./80-business/tax-state";
+import { newSetup, type BooksSetup } from "./80-business/books-guide";
 import type { StatusDay } from "./80-business/status";
 import type { MailState } from "./42-mail/types";
 import { newMail } from "./42-mail/new";
@@ -488,7 +489,7 @@ export interface GameState {
   modules: string[];
   // The bookkeeping program the Books app runs (10-catalog/bookkeeping.ts); null until one is installed.
   // The bookkeeping program, its edition, the seats bought beyond the edition's users and the add-ons bought for it.
-  books: { vendor: BooksVendorId | null; installedAt: number; edition: string | null; seats: number; download: BooksDownload | null; setupDone?: boolean; addons: Feature[] };
+  books: { vendor: BooksVendorId | null; installedAt: number; edition: string | null; seats: number; download: BooksDownload | null; setupDone?: boolean; addons: Feature[]; setup?: BooksSetup };
   // The tax office's file on the company (80-business/tax.ts).
   tax: TaxState;
   // Logins KeePassive saved, by site ("fritz:<router id>", "bank:<bank id>"): the form's values in field order.
@@ -599,7 +600,7 @@ export const newGame = (seed: number): GameState => ({
   letters: [],
   chamberYear: 0,
   modules: [],
-  books: { vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] },
+  books: { vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [], setup: newSetup() },
   tax: newTax(),
   logins: {},
   mail: newMail(seed, START_NAME),

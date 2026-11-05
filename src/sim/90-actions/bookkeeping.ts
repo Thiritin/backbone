@@ -10,6 +10,8 @@ import { bill, currentEdition, currentVendor, hasFeature, HBCI_KEY, LICENCE_KEY,
 import type { ActionResult } from "./hardware";
 import { matchTransfer } from "./billing";
 import { assignPayment } from "./bank";
+import { deliverMail } from "../42-mail/sources";
+import { bankReady, booksKey, needsActivation, needsKey, newSetup, setupOf, syncBooksGuide, type BooksSetup, type Chart, type TaxMethod } from "../80-business/books-guide";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 
@@ -29,10 +31,17 @@ function take(s: GameState, v: BooksVendor, e: Edition, seats: number): ActionRe
 // The data stays where it is; the old program's edition, seats and fee go. A program bought before costs only what its
 // edition adds. The installer stays in Downloads for a reinstall.
 function setUp(s: GameState, v: BooksVendor, e: Edition): void {
-  s.books = { vendor: v.id, installedAt: s.hour, edition: e.id, seats: 0, download: s.books.download, setupDone: false, addons: [] };
+  s.books = { vendor: v.id, installedAt: s.hour, edition: e.id, seats: 0, download: s.books.download, setupDone: false, addons: [], setup: newSetup() };
   if (!s.installed.includes("Books")) s.installed = [...s.installed, "Books"];
   const fee = monthlyFee(v, e, 0);
   if (fee) bill(s, v, MONTHLY_KEY, fee, { edition: e.name });
+}
+
+// The order mail carries the number a desktop program asks for; a browser program mails the link that confirms the sign-up.
+function mailAccess(s: GameState, v: BooksVendor): void {
+  const from = { source: "supplier:books" };
+  if (v.deployment === "browser") deliverMail(s, v.name, "booksSignup", { program: v.program }, from);
+  else if (needsKey(v.id)) deliverMail(s, v.name, "booksKey", { program: v.program, key: booksKey(s, v.id) }, from);
 }
 
 // Whole game hours a desktop program's installer takes over the player's line; null without one.
@@ -49,7 +58,7 @@ export function buyBooks(s: GameState, id: string, editionId?: string): ActionRe
   if (s.books.vendor === v.id) return fail("error.installed");
   if (v.deployment === "browser") {
     const r = take(s, v, e, 0);
-    if (r.ok) setUp(s, v, e);
+    if (r.ok) { setUp(s, v, e); mailAccess(s, v); }
     return r;
   }
   if (s.books.download?.vendor === v.id) return fail("error.booksDownloading");
@@ -58,6 +67,7 @@ export function buyBooks(s: GameState, id: string, editionId?: string): ActionRe
   const r = take(s, v, e, 0);
   if (!r.ok) return r;
   s.books = { ...s.books, download: { vendor: v.id, edition: e.id, startedAt: s.hour, readyAt: s.hour + hours } };
+  mailAccess(s, v);
   return { ok: true };
 }
 
@@ -138,3 +148,55 @@ export function bookByNumber(s: GameState, bookingId: string, number: string, se
   if (!id) return { ok: false, error: "books-screens.noDocument", params: { number: n } };
   return tr ? matchTransfer(s, tr.id, id, settle) : assignPayment(s, bookingId, id);
 }
+
+// The installer, the licence and the program's own assistants run in order; each action fails until the one before is done.
+const order = (): ActionResult => fail("error.booksSetupOrder");
+const installed = (s: GameState) => (s.books.vendor ? booksVendor(s.books.vendor) : undefined);
+// What the program wants before it opens a company: the licence, its number and the activation, where it has them.
+const opened = (s: GameState, v: BooksVendor): boolean => {
+  const u = setupOf(s);
+  return (v.deployment === "browser" || u.licence) && (!needsKey(v.id) || u.key !== "") && (!needsActivation(v.id) && v.deployment !== "browser" || u.activated);
+};
+function step(s: GameState, change: (v: BooksVendor) => ActionResult | void): ActionResult {
+  const v = installed(s);
+  if (!v) return fail("error.booksNotDownloaded");
+  const r = change(v) ?? { ok: true as const };
+  if (r.ok) syncBooksGuide(s);
+  return r;
+}
+const patch = (s: GameState, p: Partial<BooksSetup>) => { s.books = { ...s.books, setup: { ...setupOf(s), ...p } }; };
+
+export const acceptBooksLicence = (s: GameState): ActionResult => step(s, (v) => v.deployment === "browser" ? order() : patch(s, { licence: true }));
+
+export const enterBooksKey = (s: GameState, key: string): ActionResult => step(s, (v) => {
+  if (!needsKey(v.id) || !setupOf(s).licence) return order();
+  const norm = (x: string) => x.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (norm(key) !== norm(booksKey(s, v.id))) return fail("error.booksKey");
+  patch(s, { key: booksKey(s, v.id) });
+});
+
+// Desktop activation goes over the line; a browser program is confirmed from the sign-up mail.
+export const activateBooks = (s: GameState): ActionResult => step(s, (v) => {
+  if (v.deployment === "desktop") {
+    if (!needsActivation(v.id) || !setupOf(s).licence || (needsKey(v.id) && setupOf(s).key === "")) return order();
+    if (!downloadMbps(s)) return fail("error.booksOffline");
+  }
+  patch(s, { activated: true });
+});
+
+export const createBooksCompany = (s: GameState, o: { chart: Chart; fiscalStart: number; method: TaxMethod }): ActionResult => step(s, (v) => {
+  if (!opened(s, v)) return order();
+  if (!["skr03", "skr04"].includes(o.chart) || !Number.isInteger(o.fiscalStart) || o.fiscalStart < 1 || o.fiscalStart > 12 || !["soll", "ist", "euer"].includes(o.method)) return fail("error.booksCompany");
+  patch(s, { company: true, chart: o.chart, fiscalStart: o.fiscalStart, method: o.method });
+});
+
+// The steps after the company need it to exist.
+const inCompany = (s: GameState, p: Partial<BooksSetup>): ActionResult => step(s, () => setupOf(s).company ? patch(s, p) : order());
+export const enterOpening = (s: GameState): ActionResult => inCompany(s, { opening: true });
+export const setBooksTemplate = (s: GameState): ActionResult => inCompany(s, { template: true });
+export const backupBooks = (s: GameState): ActionResult => inCompany(s, { backupAt: s.hour });
+export const linkBooksBank = (s: GameState): ActionResult => step(s, () => {
+  if (!setupOf(s).company) return order();
+  if (!bankReady(s)) return fail("error.booksBank");
+  patch(s, { bank: true });
+});

@@ -1,3 +1,4 @@
+import { newSetup } from "../src/sim/80-business/books-guide";
 import { describe, expect, it } from "vitest";
 import { hourOf } from "../src/sim/00-core/time";
 import { BOOKS_VENDORS, booksVendor } from "../src/sim/10-catalog/bookkeeping";
@@ -103,7 +104,7 @@ describe("bookkeeping vendors", () => {
     const raw = JSON.parse(serialize(newGame(4)));
     delete raw.books;
     raw.installed = ["Browser", "Books"];
-    expect(deserialize(JSON.stringify(raw)).books).toEqual({ vendor: "lexwear", installedAt: 0, edition: "buchhalter", seats: 0, download: null, addons: [] });
+    expect(deserialize(JSON.stringify(raw)).books).toEqual({ vendor: "lexwear", installedAt: 0, edition: "buchhalter", seats: 0, download: null, addons: [], setup: newSetup() });
     raw.installed = ["Browser"];
     expect(deserialize(JSON.stringify(raw)).books.vendor).toBeNull();
   });
@@ -111,7 +112,7 @@ describe("bookkeeping vendors", () => {
   it("starts a new game without Books and ticks the Getting started step on install", () => {
     const s = game(2005);
     expect(STARTER_APPS).not.toContain("Books");
-    expect(s.books).toEqual({ vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [] });
+    expect(s.books).toEqual({ vendor: null, installedAt: 0, edition: null, seats: 0, download: null, addons: [], setup: newSetup() });
     expect(TUTORIAL.indexOf("books")).toBeGreaterThan(TUTORIAL.indexOf("register"));
     expect(TUTORIAL.indexOf("books")).toBeLessThan(TUTORIAL.indexOf("sendInvoice"));
     expect(checkDone(s, "books")).toBe(false);

@@ -84,7 +84,7 @@ describe("driving there", () => {
     expect(present(s, loc)).toBe(true);
     ok(installPart(s, id, part, undefined, "self"));
     expect(s.cash).toBe(cash - 90);
-    expect(s.orders).toMatchObject([{ worker: "player", kind: "parts", locationId: loc }]);
+    expect(s.orders).toEqual([]);
     expect(s.player).toEqual({ at: loc, until: hour + 4, doing: "travel", by: "drive" });
   });
 
