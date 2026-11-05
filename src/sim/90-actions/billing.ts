@@ -13,6 +13,16 @@ const log = (s: GameState, inv: Invoice, key: keyof typeof ACTION_MINUTES | "wri
   logActivity(s, { customerId: inv.customerId, serviceId: null, by: null, key: `activity.${key}`, params: { invoice: inv.number }, minutes: key === "writeOff" ? 0 : ACTION_MINUTES[key] });
 
 // Emails a draft invoice as PDF.
+// Saves the invoice as a PDF in the player's Downloads without sending it; a second copy is named as browsers name one.
+export function downloadInvoice(s: GameState, invoiceId: string): ActionResult {
+  const inv = s.invoices.find((x) => x.id === invoiceId);
+  if (!inv) return fail("error.invoiceSettled");
+  let name = `${inv.number}.pdf`;
+  for (let i = 1; s.media.files.includes(name); i++) name = `${inv.number} (${i}).pdf`;
+  s.media.files = [...s.media.files, name];
+  return { ok: true, id: name };
+}
+
 export function sendInvoice(s: GameState, invoiceId: string): ActionResult {
   const inv = s.invoices.find((x) => x.id === invoiceId && x.status === "draft");
   if (!inv) return fail("error.invoiceSent");

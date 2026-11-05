@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-05
 - Taxware Office is now a program of its own that looks like its version: a grey Windows desktop with menus, toolbar, Navigator and child windows until 2008, a workflow start page with side navigation and tabs from 2009, and a flat start page with tiles from 2015.
 - In Taxware Office you post bank lines through the Dialogbuchen mask into a Buchungsstapel, and read the Kontenplan in SKR03 or SKR04, the open items, the trial balance, BWA, GuV, Bilanz and the advance VAT return.
+- Rexoffice now opens as its own web app with a sidebar, a dashboard of your figures, a document editor for invoices and quotes, uploaded receipts you assign to bank bookings, and a look that changes with the year.
+- Rexoffice sends overdue reminders by hand and shows each advance VAT return with its output tax, input tax and difference.
 - GnuCache is now a program of its own with menus, toolbar, tabs and status bar in the look of its era, an account tree with the full chart, registers that list every booked line and take a document number in the blank last row, a balanced balance sheet, other reports, and a new-file assistant that creates the company.
 - Every purchase now asks how to pay in one step, takes cash until you open a bank account, names the reason up front when an order cannot go through, and afterwards shows Ordered or Paid with a link to the invoice or receipt.
 - A provider cable sends its order confirmation at once and its invoice after installation, the landlord bills you by letter, and flyers, trade fairs, review platforms, shop software, lease buyouts, cross connects and domains bill from their own vendor.

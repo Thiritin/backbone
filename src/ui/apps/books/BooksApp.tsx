@@ -29,6 +29,7 @@ import { setupOf } from "../../../sim/80-business/books-guide";
 import type { AppMenu } from "../../desktop/menu";
 import { GnuCache } from "./programs/gnucache/GnuCache";
 import { useBooks } from "./view";
+import { Rexoffice } from "./programs/saas/rexoffice/Rexoffice";
 import { LAYOUTS } from "./layouts";
 import { TaxwareProgram } from "./programs/taxware/TaxwareProgram";
 import type { Entry, Group } from "./layouts/types";
@@ -71,13 +72,13 @@ export function BooksApp() {
   );
 }
 
-// A product with a program of its own draws it; every other product shares the tabbed screens.
+// Programs with their own interface; the rest share the layouts below.
 export function BooksProgram() {
-  const v = currentVendor(useBooks());
-  return v?.id === "lexwear" ? <TaxwareProgram /> : <TabsProgram />;
+  const id = useBooks().books.vendor;
+  return id === "lexwear" ? <TaxwareProgram /> : id === "lexoffize" ? <Rexoffice /> : <SharedProgram />;
 }
 
-function TabsProgram() {
+function SharedProgram() {
   const game = useBooks(), act = useStore((s) => s.act), openApp = useStore((s) => s.openApp);
   const waiting = useStore((s) => unsynced(s.game));
   // Before Shop link, a shop system hands its records over only on import.
@@ -138,7 +139,7 @@ function TabsProgram() {
 }
 
 // A browser program without its line: the browser's error page for the vendor's address.
-function Offline({ v }: { v: BooksVendor }) {
+export function Offline({ v }: { v: BooksVendor }) {
   return (
     <div className="books-offline">
       <h2>{t("books-editions.offlineTitle")}</h2>
