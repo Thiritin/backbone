@@ -49,5 +49,5 @@ if (dry) process.exit(0);
 
 const file = join(mkdtempSync(join(tmpdir(), 'release-')), 'notes.md');
 writeFileSync(file, `${notes}\n`);
-execFileSync('gh', ['release', 'create', tag, '--target', sh('git', ['rev-parse', 'HEAD']), '--title', `raid0 ${tag.slice(1)}`, '--notes-file', file], { stdio: 'inherit' });
+execFileSync('gh', ['release', 'create', tag, '--target', sh('git', ['rev-parse', 'HEAD']), '--title', tag.slice(1), '--notes-file', file], { stdio: 'inherit' });
 console.log(`\nCreated ${tag}. Watch the run with: gh run watch $(gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId')`);

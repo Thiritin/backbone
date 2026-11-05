@@ -53,20 +53,20 @@ export function parseDays(text) {
   return days;
 }
 
-/** Markdown for the bullets in `newText` that `oldText` (null for no baseline) lacks, grouped under their day, newest first. */
+/** Markdown for the bullets in `newText` that `oldText` (null for no baseline) lacks, newest first. */
 export function notesSince(oldText, newText) {
   const seen = new Set((oldText ? parseDays(oldText) : []).flatMap((d) => d.bullets.map((b) => `${d.date}|${b}`)));
   return parseDays(newText)
     .map((d) => ({ ...d, bullets: d.bullets.filter((b) => !seen.has(`${d.date}|${b}`)) }))
     .filter((d) => d.bullets.length)
-    .map((d) => `## ${d.date}\n\n${d.bullets.join('\n')}`)
-    .join('\n\n');
+    .flatMap((d) => d.bullets)
+    .join('\n');
 }
 
 /** Discord messages for a release: a header with the version, then the notes split on line breaks below the size limit. */
 export function discordChunks(tag, notes, limit = DISCORD_LIMIT) {
   const out = [];
-  let cur = `# [raid0 ${tag.slice(1)}](${SITE})`;
+  let cur = `# [${tag.slice(1)}](${SITE})`;
   for (const line of notes.split('\n')) {
     if (cur.length + line.length + 1 > limit) { out.push(cur); cur = ''; }
     cur += (cur ? '\n' : '') + line;
