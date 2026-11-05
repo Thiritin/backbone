@@ -96,7 +96,7 @@ function Installer({ game, page, url, go }: { game: GameState; page: SetupPage; 
       </>;
       case "requirements": return <>
         <table className="ss-table"><tbody>
-          {reqs.map((r) => <tr key={r.key}><th>{t(`shop-setup.req.${r.key}`)}</th><td className="num">{r.key === "php" ? r.params.have : ""}</td><td className={r.ok ? "ss-ok" : "ss-bad"}>{r.ok ? t("shop-setup.req.ok") : t("shop-setup.req.failed")}</td></tr>)}
+          {reqs.map((r) => <tr key={r.key + (r.params.path ?? "")}><th>{t(`shop-setup.req.${r.key}`, r.params)}</th><td className="num">{r.key === "php" ? r.params.have : ""}</td><td className={r.ok ? "ss-ok" : "ss-bad"}>{r.ok ? t("shop-setup.req.ok") : t("shop-setup.req.failed")}</td></tr>)}
           <tr><th>{t("shop-setup.req.mysql")}</th><td /><td className="ss-ok">{t("shop-setup.req.ok")}</td></tr>
         </tbody></table>
         <button type="button" className="ss-btn" onClick={() => next(() => stepError("requirements"))}>{t("shop-setup.continue")}</button>

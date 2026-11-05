@@ -324,6 +324,8 @@ export function deserialize(raw: string): GameState {
   if (data.shop && data.shop.install === undefined) installSavedShop(s);
   if (!data.ownWebspaces) ownShopWebspace(s);
   if (data.shop?.install && !data.shop.install.ws) fillShopWebspace(s);
+  // A shop installed before the cron rule keeps billing for a month while the player sets the job.
+  if (s.shop.install?.ws && s.shop.cronRanAt === undefined) s.shop = { ...s.shop, cronRanAt: s.hour };
   fillPearMail(s, data.pearMail);
   if (s.registration) provisionStarterMail(s);
   fillDesk(s, data.desk !== undefined);
