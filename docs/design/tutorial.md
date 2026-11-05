@@ -4,7 +4,7 @@ A new game starts with nothing but a browser and no money in the business. The p
 
 ## The empty desktop
 
-The game opens paused on Saturday 1 January 2005 at 00:00. The dock holds only the Browser and the cash reads €0. The desktop shows the Getting started guide, and its first step reads "Open a business account on a bank's website in the Browser." Its Open button opens the Yahoy! directory, which lists the banks. The second step is the registration, and its Open button opens the Browser on the trade office page. The Browser also bookmarks that page until the company is registered.
+The game opens on Monday 3 January 2005 at 08:00, when the trade office opens, with the clock running at normal speed. The dock holds only the Browser and the cash reads €0. The desktop shows the Getting started card: the title of the current step, one sentence, one button that opens the place where the step happens, a progress bar such as 4/10 and a folded list of all steps. Chapter one has ten steps: bank account, trade registration, domain, website, registration fee, server, mounting, operating system, web hosting online and the first order. A step that waits on time, such as the fee letter, the website build or the first order, shows "Waiting" and the next step becomes current. The card can be closed and stays closed; the corkboard in the room shows the same ten steps with the current one highlighted. The first step's Open button opens the bank site, and the second step opens the trade office page. The Browser also bookmarks that page until the company is registered.
 
 ## The bank account
 

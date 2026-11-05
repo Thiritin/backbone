@@ -365,15 +365,15 @@ describe("connections between racks", () => {
 describe("corkboard", () => {
   it("pins one card per step with ticks from the guide, lists them close up and ticks a step once done", async () => {
     const { boardOf } = await import("../src/ui/world/panel/Corkboard");
-    const { checkDone, guideSteps, TUTORIAL } = await import("../src/sim/checklist");
+    const { CHAPTER1 } = await import("../src/sim/checklist");
     const { openBankAccount } = await import("../src/sim/90-actions/bank");
     useStore.getState().startGame();
     const { container } = render(createElement(World));
     const cards = () => [...container.querySelectorAll("[data-corkboard] [data-card]")];
     const g = () => useStore.getState().game;
-    const first = guideSteps(g()).filter((id) => (TUTORIAL as readonly string[]).includes(id));
-    expect(cards().length).toBe(first.length);
-    expect(cards().filter((c) => c.getAttribute("data-done") === "true").length).toBe(first.filter((id) => checkDone(g(), id)).length);
+    const first = CHAPTER1.map((c) => c.id);
+    expect(cards().length).toBe(10);
+    expect(cards().filter((c) => c.getAttribute("data-done") === "true").length).toBe(0);
     fireEvent.click(screen.getByRole("button", { name: t("world.obj.board") }));
     const panel = screen.getByRole("dialog", { name: t("world.obj.board") });
     expect([...panel.querySelectorAll("[data-step]")].map((x) => x.getAttribute("data-step"))).toEqual(first);
@@ -383,7 +383,7 @@ describe("corkboard", () => {
     expect(cards()[0].getAttribute("data-done")).toBe("true");
     expect(boardOf(g()).current).toBe("register");
     // A room step's line closes the close-up and lights the object it names.
-    act(() => { useStore.setState({ game: { ...g(), checklist: [...g().checklist, "register", "mail"] } }); });
+    act(() => { useStore.setState({ game: { ...g(), checklist: [...g().checklist, "register", "domain", "website"] } }); });
     expect(boardOf(g()).current).toBe("payBill");
     fireEvent.click(screen.getByRole("dialog").querySelector('[data-go="letterbox"]')!);
     expect(screen.queryByRole("dialog")).toBeNull();

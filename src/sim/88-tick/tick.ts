@@ -460,7 +460,6 @@ export function tick(state: GameState): SimEvent[] {
   panelMailTick(state);
   fetchTick(state);
   importTick(state);
-  events.push(...pearMailTick(state));
   leaseTick(state);
   pinMembers(state);
   events.push(...providerCableTick(state));
@@ -491,6 +490,8 @@ export function tick(state: GameState): SimEvent[] {
   events.push(...salesTick(state));
   events.push(...usedTick(state));
   syncTicketMail(state);
+  // After every source of mail this hour, so a message stamped at the full hour is not skipped by the check.
+  events.push(...pearMailTick(state));
   trendTick(state);
   return events;
 }

@@ -1,50 +1,47 @@
-import { Fragment } from "react";
 import { Check } from "lucide-react";
 import { t } from "../../i18n/en";
-import { checkDone, guideSteps } from "../../sim/checklist";
-import { STEP_WIKI, stepOf } from "./guide";
+import { cardBoard } from "../../sim/checklist";
+import { cardOf } from "./guide";
 import { wikiUrl } from "./browser/sites/wiki/articles";
 import { useStore } from "../store";
-import "./customers/customers.css";
+
+const LIST_H = 470, CARD_H = 250;
+// The card grows to hold the list when it is unfolded.
+const fit = (open: boolean) => useStore.setState(({ windows }) => ({ windows: windows.map((w) => (w.app === "Getting started" ? { ...w, h: open ? LIST_H : CARD_H } : w)) }));
 import "./checklist/checklist.css";
 
-// Text with <kbd>key</kbd> markers as JSX.
-const keys = (text: string) => text.split(/<kbd>(.*?)<\/kbd>/).map((part, i) => (i % 2 ? <kbd key={i}>{part}</kbd> : <Fragment key={i}>{part}</Fragment>));
-
+// The next-step card: the current step, one button that opens it, progress, and the whole list folded away.
 export function GuideApp() {
   const game = useStore((s) => s.game);
-  const openApp = useStore((s) => s.openApp);
+  const openApp = useStore((s) => s.openApp), openDoc = useStore((s) => s.openDoc);
+  const { cards, done, wait, current } = cardBoard(game);
+  const left = done.indexOf(false), shown = current ?? cards[left];
+  const finished = done.filter(Boolean).length;
+  if (!shown) return <article className="guide next"><h2>{t("guide.next.done")}</h2></article>;
+  const { title, text, step } = cardOf(game, shown);
+  const waits = wait[cards.indexOf(shown)];
   return (
-    <article className="guide">
-      <h2>{t("apps.guide.title")}</h2>
-      <p>{t("apps.guide.intro")}</p>
-      <h3>{t("apps.guide.firstServer")}</h3>
-      <p>{t("apps.guide.setup")}</p>
-      <ol className="guide-steps">
-        {guideSteps(game).map((id) => {
-          const done = checkDone(game, id);
-          const step = stepOf(game, id);
-          return (
-            <li key={id} className={`chk-row${done ? " done" : ""}`}>
-              <span className={`chk-box${done ? " done" : ""}`}>{done && <Check />}</span>
-              <div className="grow">
-                <span className="cus-strong">{step.title}</span>
-                <span className="cus-dim">{step.text}</span>
-              </div>
-              {STEP_WIKI[id] && <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: wikiUrl(STEP_WIKI[id]!) })}>{t("apps.guide.wiki")}</button>}
-              {!done && <button className="btn" onClick={() => openApp(step.app, step.focus)}>{t("apps.open")}</button>}
+    <article className="guide next">
+      <div className="next-head"><h2>{title}</h2><span className="next-count">{finished}/{cards.length}</span></div>
+      <div className="next-bar" role="progressbar" aria-valuemin={0} aria-valuemax={cards.length} aria-valuenow={finished}><i style={{ width: `${(finished / cards.length) * 100}%` }} /></div>
+      <p>{text}</p>
+      <div className="next-actions">
+        {waits ? <span className="next-wait">{t("guide.next.waiting")}</span> : <button className="btn primary" onClick={() => openApp(step.app, step.focus)}>{t("apps.open")}</button>}
+        {shown.id === "payBill" && game.docs.some((d) => d.id === "tans") && <button className="btn" onClick={() => openDoc("tans")}>{t("doc.tans")}</button>}
+        <button className="btn" onClick={() => openApp("Browser", { kind: "url", id: wikiUrl("Help:Playing_the_game") })}>{t("guide.help")}</button>
+      </div>
+      <details className="next-all" onToggle={(e) => fit(e.currentTarget.open)}>
+        <summary>{t("guide.next.all")}</summary>
+        <ol className="guide-steps">
+          {cards.map((c, i) => (
+            <li key={c.id} className={`chk-row${done[i] ? " done" : ""}${c === shown ? " cur" : ""}`}>
+              <span className={`chk-box${done[i] ? " done" : ""}`}>{done[i] && <Check />}</span>
+              <div className="grow"><span className="cus-strong">{cardOf(game, c).title}</span></div>
+              {wait[i] && <span className="cus-dim">{t("guide.next.waiting")}</span>}
             </li>
-          );
-        })}
-      </ol>
-      <h3>{t("apps.guide.time")}</h3>
-      <p>{keys(t("apps.guide.timeText"))}</p>
-      <h3>{t("apps.guide.windows")}</h3>
-      <p>{t("apps.guide.windowsText")}</p>
-      <h3>{t("apps.guide.notifications")}</h3>
-      <p>{t("apps.guide.notificationsText")}</p>
-      <h3>{t("apps.guide.saving")}</h3>
-      <p>{t("apps.guide.savingText")}</p>
+          ))}
+        </ol>
+      </details>
     </article>
   );
 }

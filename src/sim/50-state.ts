@@ -425,6 +425,8 @@ export interface GameState {
   lossReports: LossReport[];
   // The hour the first panel host went online and the internet reached it, null before.
   webOpenedAt: number | null;
+  // The hour the first order became possible: web hosting listed, a panel host online and mail routed. Null before.
+  firstOrderFrom: number | null;
   // PHP security advisories and the nodes patched, offline or compromised.
   security: Security;
   // Terminal files the player changed, per machine ("desk" or a device id) (60-infra/fs.ts).
@@ -556,7 +558,7 @@ export const newGame = (seed: number): GameState => ({
   devices: [device("dev5", "home-router", "AVN", "rack2", 5, null, "fra1-gw-01", 0), device("dev6", "line-jack", "", null, 0, "loc1", "fra1-line-01", 0)],
   cables: [],
   ledger: [], licenses: [], trials: [], cart: [], media: { images: [], files: [], dumps: {}, stick: { os: null, in: null } }, leases: [], powerDue: 0, powerUse: {}, docs: [guideDoc()], dcs: seedDcs(seed, 2005), waitlist: [], contracts: [], crossConnects: [], providerCables: [], providerPrices: {}, unlocks: [], training: null, knowHow: 0, installed: ["Browser", "Chat"], kbReads: {}, statusDays: [], checklist: [], seenChanges: [], undocked: [], os: "aqua",
-  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, files: {}, webspaces: {}, panelMail: {}, ownWebspaces: [], installers: {},
+  customers: [], services: [], clusters: [], workloads: [], downHours: {}, maintenance: [], lossReports: [], webOpenedAt: null, firstOrderFrom: null, files: {}, webspaces: {}, panelMail: {}, ownWebspaces: [], installers: {},
   invoices: [], transfers: [], yearlyBilledUntil: {}, loans: [], loansBlockedUntil: 0,
   quotes: [],
   billingRules: { autoRemind: false, autoSuspendDays: 0, autoCollectDays: 0, numbering: "year" }, autoOrders: false, reviewOrders: false, screenOrders: false, screenChecks: 0, chargebackStrikes: 0,

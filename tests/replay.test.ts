@@ -1,4 +1,5 @@
 import { newGame } from "./fixtures";
+import { OPEN_HOUR } from "../src/sim/90-actions/start";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -68,7 +69,7 @@ describe("action log", () => {
     const psus = s.log.filter((e) => e.name === "setPlugged").length;
     expect(psus).toBeGreaterThan(0);
     expect(s.log.map((e) => e.name)).toEqual(["openBankAccount", "setCompany", "buyDevice", "mountDevice", ...Array(psus).fill("setPlugged"), "connect", "connect", "orderHomeLine", "installPanel", "setPortShare"]);
-    expect(s.log[2]).toEqual({ hour: 0, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
+    expect(s.log[2]).toEqual({ hour: OPEN_HOUR, minute: 0, name: "buyDevice", args: ["g1-compute", "Dwell", 1, "loc1"] });
     expect(store().act(mountDevice, "nope", "rack2", 1).ok).toBe(false);
     expect(store().game.log).toHaveLength(s.log.length);
   });
