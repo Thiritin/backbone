@@ -12,7 +12,7 @@ import { mailSiteUrl } from "../../sim/10-catalog/mail-consumer";
 import { HOSTTOAST_HOST } from "../../sim/10-catalog/hosttoast";
 import { FLYER_HOST } from "../../sim/10-catalog/flyers";
 import type { GameState } from "../../sim/50-state";
-import { nextGoal, type Card, type Goal } from "../../sim/checklist";
+import { nextGoal, waiting, type Card, type Goal } from "../../sim/checklist";
 
 export type StepId = Goal;
 export interface Step { title: string; text: string; app: string; focus?: { kind: string; id: string } }
@@ -25,6 +25,12 @@ export const STEP_WIKI: Partial<Record<StepId, string>> = {
 
 const basement = (s: GameState) => s.locations.find((l) => l.space === "basement") ?? s.locations[0];
 const firstServer = (s: GameState) => s.devices.find((d) => modelById(d.model).kind === "server");
+
+// The order's own email or ticket, when one is open; Support routes it to the desk or to Pear Mail.
+const orderAt = (s: GameState, fallback: string): Pick<Step, "app" | "focus"> => {
+  const r = s.sales.requests.find((x) => x.kind === "order" && !x.shop && x.ticketId && x.status !== "lost" && x.status !== "declined");
+  return r ? { app: "Support", focus: { kind: "ticket", id: r.ticketId! } } : { app: fallback };
+};
 
 // Where each tutorial step happens and what the Open button shows there.
 export function stepOf(s: GameState, id: StepId): Step {
@@ -96,11 +102,11 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "flyers":
       return { title: t("guide.step.flyers"), text: t("apps.guide.step.flyers"), app: "Browser", focus: { kind: "url", id: `${displayHost(FLYER_HOST)}/` } };
     case "firstCustomer":
-      return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: mailApp }), app: mailWin };
+      return { title: t("guide.step.firstCustomer"), text: t("apps.guide.step.firstCustomer", { app: mailApp }), ...orderAt(s, mailWin) };
     case "orderAccount":
     case "orderProvision":
     case "orderAccess":
-      return { title: t(`guide.step.${id}`), text: t(`apps.guide.step.${id}`, { app: mailApp }), app: mailWin };
+      return { title: t(`guide.step.${id}`), text: t(`apps.guide.step.${id}`, { app: mailApp }), ...orderAt(s, mailWin) };
     case "orderDomain":
       return { title: t("guide.step.orderDomain"), text: t("apps.guide.step.orderDomain", { app: mailApp }), app: "Browser", focus: { kind: "url", id: s.registrar ? registrarUrl(s) : `${HOME_URL}${dirSlug(t("sim.index.cat.resellers"))}` } };
     case "sendInvoice":
@@ -123,5 +129,6 @@ export function stepOf(s: GameState, id: StepId): Step {
 // A card's own title and sentence; later-chapter cards are single goals and use the goal's text.
 export function cardOf(s: GameState, c: Card): { title: string; text: string; step: Step } {
   const step = stepOf(s, nextGoal(s, c));
-  return c.chapter === 1 ? { title: t(`guide.card.${c.id}`), text: t(`guide.card.${c.id}.text`), step } : { title: step.title, text: step.text, step };
+  if (c.chapter === 1) return { title: t(`guide.card.${c.id}`), text: t(`guide.card.${c.id}${waiting(s, c.id) ? ".wait" : ".text"}`), step };
+  return { title: step.title, text: step.text, step };
 }

@@ -177,11 +177,11 @@ function formInvoice(s: GameState, id: string): void {
 
 export function firstOrder(s: GameState, events: SimEvent[]): void {
   if (s.webOpenedAt === null) return;
-  // The customer writes by email, so the order waits while the domain's MX is wrong.
-  if (s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
+  // The three days start once hosting is listed and the panel host is reachable; the customer writes by email, so
+  // the order waits while the domain's MX is wrong and then comes at once if the days are used up.
   s.firstOrderFrom ??= s.hour;
-  const day = Math.floor((s.hour - s.firstOrderFrom) / 24);
-  if (day >= FIRST_ORDER_DAYS) return;
+  if (s.sales.requests.some((r) => r.kind === "order") || mailUnrouted(s)) return;
+  const day = Math.min(Math.floor((s.hour - s.firstOrderFrom) / 24), FIRST_ORDER_DAYS - 1);
   if (rand(s.rng) < 1 / (FIRST_ORDER_DAYS - day)) orderLead(s, "private", s.locations[0]?.city ?? "Frankfurt", events);
 }
 

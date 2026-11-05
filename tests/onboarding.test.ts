@@ -76,6 +76,23 @@ describe("onboarding cards", () => {
     expect(s.sales.requests.some((r) => r.kind === "order")).toBe(true);
   });
 
+  it("sends the order the next morning when the window ran out while the mail was not routed", () => {
+    const s = startGame(1);
+    s.webOpenedAt = s.hour;
+    s.firstOrderFrom = s.hour - 24 * 10;
+    s.marketing = { ...s.marketing, lines: ["webHosting"] };
+    for (let h = 0; h < 30 && !s.sales.requests.some((r) => r.kind === "order"); h++) tick(s);
+    expect(s.sales.requests.some((r) => r.kind === "order")).toBe(true);
+  });
+
+  it("points the first-order card at the order's ticket and words the waiting states as statements", () => {
+    const s = startGame(1);
+    const card = { id: "firstOrder", goals: ["firstCustomer"], chapter: 1 } as const;
+    expect(cardOf(s, card).step.focus).toBeUndefined();
+    s.sales.requests = [{ kind: "order", ticketId: "tkt1", status: "open" } as never];
+    expect(cardOf(s, card).step).toMatchObject({ app: "Support", focus: { kind: "ticket", id: "tkt1" } });
+  });
+
   it("loads a save from the old step list without losing ticks", () => {
     const s = startGame(1);
     s.checklist = ["bank", "internet", "findAddress", "mail", "hosttoast"];

@@ -16,7 +16,7 @@
 /* Yosemighty: flat checkboxes. */
 :root[data-os="yosemite"] .chk-box { border-radius: 3px; border-width: 1px; }
 
-.next { padding: 16px; display: grid; gap: 10px; align-content: start; box-sizing: border-box; flex: 1; min-width: 0; overflow-y: auto; }
+.next { padding: 16px; display: grid; gap: 10px; align-content: start; box-sizing: border-box; flex: 1; min-width: 0; overflow-y: auto; align-content: start; }
 .next h2 { margin: 0; font-size: 16px; }
 .next p { margin: 0; }
 .next-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
@@ -28,3 +28,4 @@
 .next-all summary { cursor: pointer; }
 .next-all .chk-row.cur .cus-strong { color: var(--accent); }
 .next-actions { display: flex; gap: 8px; align-items: center; }
+.next-all ol { max-height: 200px; overflow-y: auto; }

@@ -51,8 +51,9 @@ export const focusOf = (p: Record<string, string | number>): Omit<Focus, "n"> | 
 // types holds the notification types switched off or on by id (notify-types.ts); a missing id is on.
 export interface NotifyPref { allow: boolean; sound: boolean; types?: Record<string, boolean> }
 const WIDE = { w: 1240, h: 680 };
+export const GUIDE_W = 440;
 const WINDOW_SIZES: Record<string, { w: number; h: number }> = {
-  "Getting started": { w: 440, h: 600 }, Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
+  "Getting started": { w: GUIDE_W, h: 250 }, Security: { w: 900, h: 560 }, Browser: { w: 1100, h: 720 }, News: { w: 520, h: 640 },
   Locations: { w: 1440, h: 860 }, Shop: { w: 1180, h: 700 }, Books: { w: 900, h: 560 }, Marketing: WIDE, Market: WIDE, Network: WIDE,
   Support: { w: 1400, h: 840 }, Research: { w: 1140, h: 600 }, Staff: { w: 1240, h: 640 }, Post: { w: 1000, h: 820 }, "Pear Mail": { w: 1000, h: 640 }, DocuWhere: { w: 1240, h: 820 }, DohleFormular: { w: 760, h: 420 }, FileGorilla: { w: 980, h: 680 }, Preview: { w: 640, h: 860 },
 };
@@ -383,11 +384,14 @@ export const useStore = create<Store>((set, get) => ({
     const focus = target ? { ...target, n: ++focusId } : open?.focus;
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1, focus } : w)) });
     const n = ws.length % 8, size = WINDOW_SIZES[app] ?? { w: 760, h: 480 };
-    const x = 136 + n * 32, y = 64 + n * 28;
+    const sw = globalThis.innerWidth ?? Infinity, sh = globalThis.innerHeight ?? Infinity;
+    // The guide card docks at the right edge below the exit icon; other windows keep clear of it while it is open.
+    const guide = app === "Getting started", card = ws.some((x) => x.app === "Getting started" && !x.minimized) ? GUIDE_W + 32 : 16;
+    const x = guide ? Math.max(136, sw - size.w - 16) : 136 + n * 32, y = guide ? 128 : 64 + n * 28;
     // Leaves room for the dock on small screens.
-    const w = Math.min(size.w, (globalThis.innerWidth ?? Infinity) - x - 16), h = Math.min(size.h, (globalThis.innerHeight ?? Infinity) - y - 110);
+    const w = Math.min(size.w, sw - x - (guide ? 16 : card)), h = Math.min(size.h, sh - y - 110);
     uiSound("open");
-    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: Math.max(w, 480), h: Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
+    set({ windows: [...ws, { id: `${app}-${Date.now()}`, app, x, y, w: guide ? w : Math.max(w, 480), h: guide ? h : Math.max(h, 320), z: topZ(ws) + 1, minimized: false, zoomed: false, focus }] });
   },
   openConsole: (deviceId) => {
     const ws = get().windows, open = ws.find((w) => w.console === deviceId);
