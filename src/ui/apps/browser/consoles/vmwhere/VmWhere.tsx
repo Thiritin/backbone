@@ -28,6 +28,7 @@ import "./vmwhere.css";
 import { usePageAct } from "../../pageAct";
 import { HARDWARE_SHOP } from "../../../../../sim/46-finance/payables";
 import { PayButton } from "../../sites/shared/PayButton";
+import { OrderDone } from "../../sites/shared/OrderDone";
 
 // docs/design/software.md, section 10: one look per vSphear client generation, ids as in UI_LOOKS.
 const LOOKS = looks({ thickClient: 2004, flecks: 2011, clearity: 2016 });
@@ -216,6 +217,7 @@ function Datastores({ game, c }: { game: GameState; c: Cluster }) {
   const free = game.devices.filter((d) => modelById(d.model).server && !datastoreBlock(game, c, d.id));
   const protocols = (Object.keys(DATASTORE_FROM) as DatastoreProtocol[]).filter((x) => DATASTORE_FROM[x] <= year);
   const [pick, setPick] = useState(""), [protocol, setProtocol] = useState<DatastoreProtocol>("nfs");
+  const [done, setDone] = useState<string>();
   const server = free.some((d) => d.id === pick) ? pick : free[0]?.id ?? "";
   return (
     <>
@@ -252,9 +254,10 @@ function Datastores({ game, c }: { game: GameState; c: Cluster }) {
             </select>
           </label>
           <PayButton className="cx-btn primary" supplier="hardware" name={HARDWARE_SHOP} amount={protocol === "fc" ? FC_HBA_PRICE * c.nodes.length : 0}
-            run={(m) => act(attachDatastore, c.id, server, protocol, protocol === "fc" ? m : undefined)}>{t("browser-consoles-2.newDatastore")}</PayButton>
+            run={(m) => act(attachDatastore, c.id, server, protocol, protocol === "fc" ? m : undefined)} onDone={setDone}>{t("browser-consoles-2.newDatastore")}</PayButton>
         </div>
       )}
+      {done && <div className="cx-inline"><OrderDone payable={done} btn="cx-btn" /></div>}
     </>
   );
 }

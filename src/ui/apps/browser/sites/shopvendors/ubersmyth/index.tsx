@@ -156,7 +156,7 @@ function Addons({ game }: { game: GameState }) {
   const act = usePageAct(), year = yearOf(game.hour);
   const state = (m: Module) => hasModule(game, m.id) && game.shop.variant === ID ? <span className="ubv-ok">{t("vendor-sites.registered")}</span>
     : bought(game, m.id, ID) ? <span className="ubv-ok">{t("vendor-sites.bought")}</span>
-    : <button type="button" className="ubv-btn" onClick={() => act(buyShopLink, ID, m.id)}>{t("vendor-sites.buy")}</button>;
+    : <PayButton className="ubv-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>;
   return (
     <div className="ubv-addons">
       {MODULES.filter((m) => m.vendor === "shop" && m.year <= year).map((m) => (

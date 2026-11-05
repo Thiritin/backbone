@@ -97,7 +97,7 @@ function Pricing({ game, cart }: { game: GameState; cart: () => void }) {
                 <td className="num">{m.id !== "shop-link" && feeText(methodById(m.id as MethodId))}</td>
                 <td>{hasModule(game, m.id) && game.shop.variant === ID ? t("vendor-sites.registered")
                   : bought(game, m.id, ID) ? t("vendor-sites.bought")
-                  : <button type="button" className="cxv-btn" onClick={() => act(buyShopLink, ID, m.id)}>{t("vendor-sites.buy")}</button>}</td>
+                  : <PayButton className="cxv-btn" supplier="shopVendor" name={vendorName(ID)} amount={m.price} run={(pm) => act(buyShopLink, ID, m.id, pm)}>{t("vendor-sites.buy")}</PayButton>}</td>
               </tr>
             ))}</tbody>
           </table>

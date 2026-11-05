@@ -192,5 +192,5 @@ export function Ripe({ game }: { game: GameState }) {
     </div>
   );
   // One place for the pay step, so its outcome stays when joining switches the view.
-  return <>{body}{step}</>;
+  return <>{body}{step && <div className="net-addrs">{step}</div>}</>;
 }
