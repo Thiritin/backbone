@@ -5,6 +5,8 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 ## 2026-11-05
 - Every purchase now asks how to pay in one step, takes cash until you open a bank account, names the reason up front when an order cannot go through, and afterwards shows Ordered or Paid with a link to the invoice or receipt.
 - A provider cable sends its order confirmation at once and its invoice after installation, the landlord bills you by letter, and flyers, trade fairs, review platforms, shop software, lease buyouts, cross connects and domains bill from their own vendor.
+- A step card opened while a rack is already on screen now turns it to the back for cabling, the guide counts the step you are on, and the free-slot outline disappears once a server is mounted.
+- Prefilled transfer amounts and registrar factors use your language's number format, the trade office has a German web address, the shop cart scrolls to the leasing offers, and German system messages address you as du.
 - Shop systems now come with a step-by-step installation guide, need a cron job to bill automatically, and ask for the config file under its real name and writable folders before the installer runs.
 - Every bookkeeping program now installs through its own setup pages, with licence, serial number and sign-up, and a first-steps guide in the style of its era opens on first launch and ticks off each step until the books are ready.
 - Each accounting software vendor now has its own website look in every era, with a download section, system requirements and an installation guide link.

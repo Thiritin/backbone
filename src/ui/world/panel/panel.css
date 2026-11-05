@@ -26,7 +26,9 @@
 .wp-stack { position: relative; width: 105px; height: 148px; padding: 0; border: 0; background: none; cursor: pointer; }
 .wp-stack i { position: absolute; inset: 0; background: oklch(0.98 0.004 90); border: 1px solid oklch(0.84 0.01 90); transform: translate(calc(var(--k) * -2px), calc(var(--k) * -2px)); }
 .wp-stack.prev i { transform: translate(calc(var(--k) * 2px), calc(var(--k) * -2px)); }
-.wp-stack:hover i:last-child { border-color: var(--accent); }
+.wp-stack:hover i:last-child { border-color: oklch(0.6 0.01 90); }
+.wp-stack:focus-visible { outline: none; }
+.wp-n { position: absolute; inset: 0; display: grid; place-items: center; font: 600 20px var(--font-ui); color: oklch(0.45 0.01 90); }
 .wp-key { flex-shrink: 0; padding: 10px 22px; border: 0; border-bottom: 5px solid oklch(0.32 0.012 255); background: oklch(0.42 0.012 255); color: oklch(0.95 0.01 250); font: 600 14px var(--font-ui); cursor: pointer; }
 .wp-key:active:not(:disabled) { border-bottom-width: 2px; transform: translateY(3px); }
 .wp-key:disabled { opacity: 0.5; cursor: default; }

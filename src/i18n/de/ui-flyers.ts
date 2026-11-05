@@ -2,7 +2,7 @@ import type { Dict } from "../lang";
 
 export default {
   "error.flyerSize": () => "Diese Auflage ist nicht verfügbar.",
-  "error.flyerCity": () => "Sie haben keinen Standort in dieser Stadt.",
+  "error.flyerCity": () => "Du hast keinen Standort in dieser Stadt.",
   "ledger.flyers": (p) => `Flyer: ${p.size} in ${p.city}`,
   "sim.index.flyers": () => "Flyer, die in Ihrer Stadt gedruckt und verteilt werden",
   "flyers.nav.home": () => "Startseite",

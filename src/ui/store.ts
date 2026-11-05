@@ -121,7 +121,7 @@ export interface Store {
   place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
   // key is the sim event key that picks the sound.
   notify: (app: string, title: string, text: string, key?: string, focus?: Omit<Focus, "n">, from?: string) => void;
-  dismiss: (id: number) => void;
+  dismiss: (id: number, seen?: boolean) => void;
   forget: (id: number | null) => void;
   started: boolean;
   // A game is loaded and the main menu can return to it.
@@ -488,7 +488,8 @@ export const useStore = create<Store>((set, get) => ({
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     setTimeout(() => get().dismiss(b.id), 6000);
   },
-  dismiss: (id) => set(({ banners }) => ({ banners: banners.filter((b) => b.id !== id) })),
+  // A banner the player acts on counts as seen on the bell.
+  dismiss: (id, seen = false) => set(({ banners, unseen }) => ({ banners: banners.filter((b) => b.id !== id), unseen: seen && banners.some((b) => b.id === id) ? Math.max(0, unseen - 1) : unseen })),
   // null clears the whole history.
   forget: (id) => set(({ banners, history }) => ({ banners: banners.filter((b) => id !== null && b.id !== id), history: id === null ? [] : history.filter((b) => b.id !== id) })),
 
