@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
@@ -13,8 +13,11 @@ import "./index.css";
 const ERAS = [{ from: 2005, look: "early" as const }, { from: 2013, look: "late" as const }];
 
 function Row({ r, go, game, fav, ad }: { r: IndexRow; go: (url: string) => void; game: GameState; fav?: boolean; ad?: boolean }) {
+  // The recommended entry is brought into view, so a card pointing at the list lands on it.
+  const at = useRef<HTMLLIElement>(null);
+  useEffect(() => { if (r.pick) at.current?.scrollIntoView?.({ block: "nearest" }); }, [r.pick]);
   return (
-    <li className={r.down ? "down" : ad ? "yx-ad" : undefined}>
+    <li ref={at} className={r.down ? "down" : ad ? "yx-ad" : undefined}>
       {fav && <Favicon game={game} r={resolve(game, r.url)} />}
       <a href={`#${r.url}`} onClick={(e) => { e.preventDefault(); go(r.url); }}>{r.title}</a>
       {ad && <span className="yx-tag">{t("browser-sites-1.ix.ad")}</span>}

@@ -17,6 +17,7 @@ import type { End, GameState, Location } from "../../sim/50-state";
 import { Defs } from "../art/fronts";
 import { rackItems } from "../apps/locations/RackView";
 import { uiSound, useStore } from "../store";
+import { NextStrip } from "./NextStrip";
 import { SpeedControl } from "../desktop/MenuBar";
 import { dateOf, formatClock } from "../../sim/00-core/time";
 import { iso, type Pt } from "./grid";
@@ -100,7 +101,7 @@ export const World = memo(function World() {
   const [hint, setHint] = useState<string | null>(null);
   // The own hall is being edited.
   const [editing, setEditing] = useState(false);
-  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string; guide?: "cable" | "vga" } | null>(null);
+  const [rackOpen, setRackOpen] = useState<{ id: string; port?: End; device?: string; guide?: "cable" | "vga" | "usb" | "mount" } | null>(null);
   // The port whose cable the player holds; with no panel open, the room is in cable mode.
   const [cable, setCable] = useState<End | null>(null);
   // A connection between two racks: the pair whose backs are open, and the rack or device a right-click started from.
@@ -277,16 +278,16 @@ export const World = memo(function World() {
   });
   // The next-step card walks the player to a rack and opens its close-up: "rack:shelf" for the shelf, "rack:rack" for the first full rack.
   useEffect(() => {
-    if (seek?.startsWith("dev:") || seek?.startsWith("cable:") || seek?.startsWith("vga:")) {
+    if (seek?.startsWith("dev:") || seek?.startsWith("cable:") || seek?.startsWith("vga:") || seek?.startsWith("usb:")) {
       useStore.getState().setSeek(null);
       const kind = seek.split(":")[0], d = game.devices.find((x) => x.id === seek.slice(kind.length + 1)), r = racks.find((x) => x.id === d?.rackId);
-      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(kind === "cable" || kind === "vga" ? { guide: kind } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+      if (d && r) use(r.id, () => setRackOpen({ id: r.id, device: d.id, ...(kind === "cable" || kind === "vga" || kind === "usb" ? { guide: kind } : {}) }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
       return;
     }
     if (!seek?.startsWith("rack:")) return;
     useStore.getState().setSeek(null);
     const shelf = seek === "rack:shelf", r = racks.find((x) => (x.model === "shelf") === shelf) ?? racks[0];
-    if (r) use(r.id, () => setRackOpen({ id: r.id }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
+    if (r) use(r.id, () => setRackOpen({ id: r.id, guide: "mount" }), () => frontOf(tiles[r.id]), r.name)({ stopPropagation() {} } as MouseEvent);
   });
   const stored = game.devices.filter((d) => d.store === loc.id && !d.chassisId).length;
   // A unit that landed in storage within the last day stands by the door as a parcel until it is mounted.
@@ -475,6 +476,7 @@ export const World = memo(function World() {
         })()}
       </svg>
       <OrderChip game={game} loc={loc} />
+      <NextStrip />
       <div className="w-clock">
         <SpeedControl speed={speed} setSpeed={setSpeed} />
         <span className="num">{formatClock(game.hour, game.minute)}</span>

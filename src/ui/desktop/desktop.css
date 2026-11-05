@@ -321,3 +321,11 @@ button { font: inherit; color: inherit; cursor: default; }
 
 .pause-menu { display: flex; flex-direction: column; gap: 6px; min-width: 240px; width: max-content; max-width: calc(100vw - 32px); padding: 12px; border: 1px solid var(--line, oklch(0 0 0 / 0.3)); border-radius: var(--r-win, 0); background: var(--surface, var(--field, oklch(0.97 0 0))); color: var(--ink, inherit); box-shadow: 0 8px 24px oklch(0 0 0 / 0.3); }
 .pause-menu .btn { white-space: nowrap; text-align: left; }
+
+.tan-sheet { overflow: auto; padding: 10px 8px; font-family: var(--font-num); font-size: 12px; }
+.tan-grid { display: grid; grid-auto-flow: column; grid-template-columns: repeat(4, 1fr); gap: 2px 6px; }
+.tan-cell { padding: 1px 4px; scroll-margin-top: 22px; white-space: nowrap; }
+.tan-cell i { font-style: normal; opacity: 0.55; margin-right: 8px; }
+.tan-cell.used { opacity: 0.45; }
+.tan-cell.now { background: var(--accent, oklch(0.75 0.15 85)); color: #000; font-weight: 700; }
+.tan-cell.now i { opacity: 0.8; }

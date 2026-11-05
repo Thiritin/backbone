@@ -173,7 +173,7 @@
 .shop-side .shop-soft-tile svg.lucide { width: 13px; height: 13px; color: white; }
 .shop-view button { padding: 0 7px; display: grid; place-items: center; }
 .shop-view svg.lucide { width: 14px; height: 14px; }
-.shop-list { flex: 1; min-width: 0; overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; align-content: start; }
+.shop-list { flex: 1; min-width: 0; container-type: inline-size; overflow: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; align-content: start; }
 .shop-row { border-bottom: var(--ar-bw) solid var(--line); }
 .shop-row-main { display: grid; grid-template-columns: 64px minmax(160px, 1.1fr) minmax(0, 2fr) auto; align-items: center; gap: 14px; padding: 8px 4px; }
 .shop-row-pic { height: 44px; display: grid; place-items: center; overflow: hidden; }
@@ -265,4 +265,10 @@
   .shop-side { display: none; }
   .shop-row-main { grid-template-columns: 48px minmax(0, 1fr) auto; }
   .shop-row-specs, .shop-row-buy .shop-vendor, .shop-row-buy .shop-config { display: none; }
+}
+
+/* A list squeezed beside the cart puts the buy controls under the name. */
+@container (max-width: 560px) {
+  .shop-row-main { grid-template-columns: 48px minmax(0, 1fr); }
+  .shop-row-buy { grid-column: 1 / -1; justify-items: end; }
 }

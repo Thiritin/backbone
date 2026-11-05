@@ -296,3 +296,6 @@
 .wk-power[data-guide], .wk-port[data-guide], .wk-ic[data-guide] { outline: 3px solid oklch(0.75 0.19 60); outline-offset: 2px; }
 .wk-power[data-guide]::after, .wk-port[data-guide]::after, .wk-ic[data-guide]::after { content: ""; position: absolute; left: -2px; top: -2px; width: 8px; height: 8px; background: oklch(0.75 0.19 60); }
 [data-end][data-guide] { stroke: oklch(0.75 0.19 60); stroke-width: 3; }
+.usb-hit[data-guide] { stroke: oklch(0.75 0.19 60); stroke-width: 3; }
+.rack-free[data-guide] rect { stroke: oklch(0.75 0.19 60); stroke-width: 3; }
+.wp-unit button[data-guide] { outline: 3px solid oklch(0.75 0.19 60); outline-offset: 2px; }

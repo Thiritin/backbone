@@ -48,12 +48,12 @@ const key = (e: End) => `${e.device}:${e.port}`;
 // The rack close-up: the rack stands centred on the floor; a picked unit slides it left and hangs a paper tag beside it.
 // On the back a cable is dragged from port to port, or a click takes a port as the cable in hand and a click on a second port plugs it in; the hand outlives the panel.
 export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, device, guide, onConnectFrom }: {
-  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string; guide?: "cable" | "vga";
+  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string; guide?: "cable" | "vga" | "usb" | "mount";
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rack = game.racks.find((r) => r.id === rackId);
   const [sel, setSel] = useState<string | null>(device ?? null);
-  const [back, setBack] = useState(!!(hand || startPort || guide));
+  const [back, setBack] = useState(!!(hand || startPort || guide === "cable" || guide === "vga"));
   // The side turning away while the other turns in.
   const [turning, setTurning] = useState<boolean | null>(null);
   const [port, setPort] = useState<End | null>(startPort);
@@ -212,6 +212,18 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   // A tag opened at high zoom is brought into view.
   // The card's cabling step outlines the line jack and router uplink, the boot step the server VGA port (the console end is port 100).
   useEffect(() => {
+    if (guide === "mount") {
+      // The free unit to click, then the stored devices that fit it.
+      const hit = free === null ? [document.querySelector(".wr-face .rack-free")] : [...document.querySelectorAll("[data-free] .wp-unit button")];
+      const els = hit.filter((el): el is Element => !!el);
+      els.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => els.forEach((el) => el.removeAttribute("data-guide"));
+    }
+    if (guide === "usb") {
+      const usb = [...document.querySelectorAll(".usb-hit")];
+      usb.forEach((el) => el.setAttribute("data-guide", ""));
+      return () => usb.forEach((el) => el.removeAttribute("data-guide"));
+    }
     if (guide === "vga") {
       const vga = [...document.querySelectorAll("[data-end]")].filter((el) => el.getAttribute("data-end") === `${device}:100`);
       vga.forEach((el) => el.setAttribute("data-guide", ""));

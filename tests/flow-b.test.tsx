@@ -14,6 +14,8 @@ import { hostOf, useInstaller } from "../src/ui/apps/console/installer";
 import { Editions } from "../src/ui/apps/browser/sites/books/VendorShop";
 import { TerminalApp } from "../src/ui/apps/terminal/TerminalApp";
 import { ShopApp } from "../src/ui/apps/shop/ShopApp";
+import { NextStrip } from "../src/ui/world/NextStrip";
+import { NoteApp } from "../src/ui/apps/NoteApp";
 import { useStore } from "../src/ui/store";
 import { withServer, withStick } from "./fixtures";
 
@@ -22,7 +24,7 @@ afterEach(() => { cleanup(); sessionStorage.clear(); });
 describe("deep-link targets", () => {
   it("points each card at its own page", () => {
     const s = newGame(1);
-    expect(stepOf(s, "downloadIso").focus).toEqual({ kind: "url", id: "www.debiant.org/" });
+    expect(stepOf(s, "downloadIso").focus).toEqual({ kind: "url", id: "www.debiant.org/download" });
     expect(stepOf(s, "domain").focus?.id).toBe("www.namecheep.com/");
     expect(stepOf(s, "buyServer")).toMatchObject({ app: "Shop", focus: { kind: "class", id: "server" } });
   });
@@ -86,5 +88,24 @@ describe("accounting download", () => {
     render(view());
     fireEvent.click(screen.getAllByText(t("books-vendors.install"))[0]);
     expect(useStore.getState().game.books.vendor).toBe("lexwear");
+  });
+
+  it("shows the card in the room and drops it with the card window", () => {
+    useStore.setState({ game: newGame(5), windows: [] });
+    useStore.getState().openApp("Getting started");
+    render(<NextStrip />);
+    expect(screen.getByText(t("guide.step.bank"))).toBeTruthy();
+    fireEvent.click(screen.getByLabelText(t("apps.close")));
+    expect(useStore.getState().windows.some((w) => w.app === "Getting started")).toBe(false);
+    expect(screen.queryByText(t("guide.step.bank"))).toBeNull();
+  });
+
+  it("marks the code the bank asks for on the TAN list", () => {
+    const s = newGame(5);
+    s.bank = { id: "sparklasse", tan: "itan", tans: { list: 1, codes: ["AAA", "BBB", "CCC"], used: [0] }, pending: null } as never;
+    s.docs = [...s.docs, { id: "tans", kind: "note", title: "TAN", body: "", x: 0, y: 0 }];
+    useStore.setState({ game: s });
+    render(<NoteApp id="tans" />);
+    expect(document.querySelector(".tan-cell.now")?.textContent).toContain("BBB");
   });
 });

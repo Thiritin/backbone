@@ -18,7 +18,7 @@ import { useStore } from "../../store";
 
 export const ARM_MS = 3000;
 // The key on the tag that the current guide card needs.
-const GUIDE_KEY: Partial<Record<string, "power" | "console" | "reboot">> = { mountServer: "power", mountRouter: "power", plugStick: "console", bootUsb: "reboot", installOs: "console" };
+const GUIDE_KEY: Partial<Record<string, "power" | "console" | "reboot">> = { mountServer: "power", mountRouter: "power", bootUsb: "reboot", installOs: "console" };
 type Menus = ReturnType<typeof useDeviceMenu>;
 const real = (e: MenuEntry | undefined): e is MenuItem => !!e;
 const bare = (s: string) => s.replace(/(\.\.\.|…)$/, "");
@@ -119,7 +119,7 @@ export function UnitTag({ deviceId, renaming, onRenaming, menus, back, onPorts, 
             <i />
           </button>
           <span className="wk-gap" />
-          {m.kind === "server" && <button className="wk-port" data-cart="" data-guide={guide === "console" ? "" : undefined} disabled={!onCart} aria-label={t("world.console")} title={t("world.console")} onClick={onCart}>
+          {m.kind === "server" && <button className="wk-port" data-cart="" data-guide={guide === "console" || guide === "reboot" ? "" : undefined} disabled={!onCart} aria-label={t("world.console")} title={t("world.console")} onClick={onCart}>
             <svg viewBox="0 0 24 16" aria-hidden="true"><rect x="1.5" y="1.5" width="21" height="11" /><path d="M8 15h8" /></svg>
           </button>}
           {onPorts && <button className={`wk-port${back ? " on" : ""}`} data-ports="" aria-pressed={back} aria-label={t("locations-1.ports")} title={t("locations-1.ports")} onClick={onPorts}>
