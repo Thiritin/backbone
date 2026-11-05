@@ -18,6 +18,7 @@ function Row({ r, go, game, fav, ad }: { r: IndexRow; go: (url: string) => void;
       {fav && <Favicon game={game} r={resolve(game, r.url)} />}
       <a href={`#${r.url}`} onClick={(e) => { e.preventDefault(); go(r.url); }}>{r.title}</a>
       {ad && <span className="yx-tag">{t("browser-sites-1.ix.ad")}</span>}
+      {r.pick && <span className="yx-tag">{t("browser-sites-1.ix.pick")}</span>}
       <span className="yx-desc">{r.down ? t("browser-sites-1.ix.down") : r.desc}</span>
     </li>
   );

@@ -239,7 +239,7 @@ export default {
   "apps.guide.step.shareWeb": () => "Condividi la porta del server web con il server in Internet, Abilitazioni di Fritz!OZ.",
   "apps.guide.step.internet": () => "Ordina una linea internet in Sedi, sotto Linea internet.",
   "apps.guide.step.downloadIso": () => "Scarica l'ISO di Debiant dal suo sito nel browser.",
-  "apps.guide.step.writeStick": () => "Fai clic destro sull'ISO nel Finder e scegli Scrivi sulla chiavetta USB.",
+  "apps.guide.step.writeStick": () => "Fai doppio clic sull'ISO nel Finder per scriverla sulla chiavetta USB.",
   "apps.guide.step.plugStick": () => "Clicca sulla porta USB sul frontale del server nel rack per inserire la chiavetta.",
   "apps.guide.step.bootUsb": () => "Accendi il server e premi F11 nella schermata di avvio. Scegli la chiavetta USB.",
   "apps.guide.step.installOs": () => "Installa Debiant dalla chiavetta.",

@@ -239,7 +239,7 @@ export default {
   "apps.guide.step.shareWeb": () => "Partage le port du serveur web avec le serveur sous Internet, Autoriser l'accès dans Fritz!OZ.",
   "apps.guide.step.internet": () => "Commande une ligne internet dans Sites, sous Ligne internet.",
   "apps.guide.step.downloadIso": () => "Télécharge l'ISO de Debiant depuis son site dans le navigateur.",
-  "apps.guide.step.writeStick": () => "Fais un clic droit sur l'ISO dans le Finder et choisis Écrire sur la clé USB.",
+  "apps.guide.step.writeStick": () => "Double-clique sur l'ISO dans le Finder pour l'écrire sur la clé USB.",
   "apps.guide.step.plugStick": () => "Clique sur le port USB en façade du serveur dans le rack pour brancher la clé.",
   "apps.guide.step.bootUsb": () => "Allume le serveur et appuie sur F11 sur l'écran de démarrage. Choisis la clé USB.",
   "apps.guide.step.installOs": () => "Installe Debiant depuis la clé.",

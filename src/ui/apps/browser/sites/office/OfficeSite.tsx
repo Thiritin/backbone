@@ -1,5 +1,5 @@
 import { addressLine, officeAddress } from "../../../../../sim/60-infra/properties";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { dateOf } from "../../../../../sim/00-core/time";
@@ -52,6 +52,8 @@ function Register({ game }: { game: GameState }) {
   const [owner, setOwner] = useState("");
   const blank = officeAddress(game);
   const [address, setAddress] = useState<AddressValue>(blank);
+  const send = useRef<HTMLButtonElement>(null);
+  useEffect(() => { send.current?.scrollIntoView({ block: "center" }); }, []);
   return (
     <form className="to-form" onSubmit={(e) => { e.preventDefault(); act(registerCompany, name, owner, "sole", address); }}>
       <fieldset>
@@ -85,11 +87,11 @@ function Register({ game }: { game: GameState }) {
             </tr>
           </tbody>
         </table>
-        <label className="to-check"><input type="checkbox" required /> {t("browser-sites-1.of.declare")} <b>*</b></label>
+        <label className="to-check"><input type="checkbox" required defaultChecked /> {t("browser-sites-1.of.declare")} <b>*</b></label>
         <p className="to-req"><b>*</b> {t("browser-sites-1.of.required")}</p>
         {note("form")}
         <div className="to-buttons">
-          <button type="submit">{t("browser-sites-1.of.submit")}</button>
+          <button type="submit" ref={send}>{t("browser-sites-1.of.submit")}</button>
           <button type="reset" onClick={() => { setName(""); setOwner(""); setAddress(blank); }}>{t("browser-sites-1.of.reset")}</button>
         </div>
       </fieldset>

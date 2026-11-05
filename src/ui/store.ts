@@ -404,8 +404,9 @@ export const useStore = create<Store>((set, get) => ({
     const ws = get().windows, open = ws.find((w) => w.console === deviceId);
     if (open) return set({ windows: ws.map((w) => (w.id === open.id ? { ...w, minimized: false, z: topZ(ws) + 1 } : w)) });
     const n = ws.length % 5, x = 140 + n * 32, y = 80 + n * 28;
+    const sw = globalThis.innerWidth ?? Infinity, sh = globalThis.innerHeight ?? Infinity, card = ws.some((w) => w.app === "Getting started" && !w.minimized) ? GUIDE_W + 32 : 16;
     uiSound("open");
-    set({ windows: [...ws, { id: `console-${deviceId}-${Date.now()}`, app: "Console", console: deviceId, x, y, w: 720, h: 620, z: topZ(ws) + 1, minimized: false, zoomed: false }] });
+    set({ windows: [...ws, { id: `console-${deviceId}-${Date.now()}`, app: "Console", console: deviceId, x, y, w: Math.max(Math.min(720, sw - x - card), 480), h: Math.max(Math.min(620, sh - y - 110), 360), z: topZ(ws) + 1, minimized: false, zoomed: false }] });
   },
   openDoc: (doc) => {
     const ws = get().windows, d = get().game.docs.find((x) => x.id === doc);

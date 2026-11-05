@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { t } from "../../../../../i18n/en";
 import { LOCALE } from "../../../../../i18n/lang";
 import { euro, euroCents } from "../../../../../sim/00-core/money";
@@ -99,6 +99,8 @@ function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn
   const [number, setNumber] = useState(saved[0]), [pin, setPin] = useState(saved[1]), [failed, setFailed] = useState(false);
   const [plan, setPlanPick] = useState<PlanId | undefined>(() => plansFor(bank, game.registration?.form ?? "sole")[0]?.id);
   const other = !!game.bank && game.bank.id !== bank.id;
+  const open = useRef<HTMLButtonElement>(null);
+  useEffect(() => { open.current?.scrollIntoView({ block: "center" }); }, []);
   const submit = () => {
     const ok = game.bank?.id === bank.id && number.trim() === game.bank.number && pin.trim() === game.bank.pin;
     setFailed(!ok);
@@ -130,7 +132,7 @@ function Login({ game, bank, onIn, onOpen }: { game: GameState; bank: Bank; onIn
       <Box title={t("bank.site.plans")}>
         <Plans game={game} bank={bank} last={(p, serves) => (game.bank && !other ? null
           : <input type="radio" name="plan" aria-label={p.name} disabled={!serves} checked={plan === p.id} onChange={() => setPlanPick(p.id)} />)} />
-        {(!game.bank || other) && plan && <p><button className="bks-btn primary" onClick={() => {
+        {(!game.bank || other) && plan && <p><button ref={open} className="bks-btn primary" onClick={() => {
           if ((other ? act(switchBank, bank.id, plan) : act(openBankAccount, bank.id, plan)).ok) onOpen();
         }}>{other ? t("bank.site.switch", { bank: bank.name }) : t("bank.site.open")}</button></p>}
       </Box>

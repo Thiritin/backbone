@@ -34,6 +34,7 @@ export function ShopFilter({ items, filter, set, clear, sort, setSort }: { sort:
       </select>
     </label>
   );
+  const [more, setMore] = useSessionState("shop.filter.open", false);
   const vendors = VENDORS.filter((v) => filter.vendor === v || left({ vendor: v }) > 0);
   return (
     <div className="shop-filter">
@@ -43,6 +44,8 @@ export function ShopFilter({ items, filter, set, clear, sort, setSort }: { sort:
           {SORTS.map((k) => <option key={k} value={k}>{t(`shop.sort.${k}`)}</option>)}
         </select>
       </label>
+      <button className="shop-chip" aria-expanded={more} onClick={() => setMore(!more)}>{t("shop.filters")}</button>
+      {more && <>
       {pick("form", t("shop.formFactor"), FORMS, String, null)}
       {pick("cores", t("shop.minCores"), CORES, String, 0)}
       {pick("ram", t("shop.minRam"), RAMS, ram, 0)}
@@ -57,6 +60,7 @@ export function ShopFilter({ items, filter, set, clear, sort, setSort }: { sort:
           ))}
         </div>
       )}
+      </>}
       {isSet(filter) && <button className="shop-chip" onClick={clear}>{t("shop.clear")}</button>}
     </div>
   );

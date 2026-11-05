@@ -239,7 +239,7 @@ export default {
   "apps.guide.step.shareWeb": () => "Gib in Fritz!OZ unter Internet, Freigaben den Webserver-Port für den Server frei.",
   "apps.guide.step.internet": () => "Bestelle eine Internetleitung unter Standorte bei Internetleitung.",
   "apps.guide.step.downloadIso": () => "Lade das Debiant-ISO von der Website im Browser herunter.",
-  "apps.guide.step.writeStick": () => "Klicke das ISO im Finder mit der rechten Maustaste an und wähle Auf USB-Stick schreiben.",
+  "apps.guide.step.writeStick": () => "Doppelklicke im Finder auf die ISO-Datei, um sie auf den USB-Stick zu schreiben.",
   "apps.guide.step.plugStick": () => "Klicke im Rack auf den USB-Anschluss an der Front des Servers, um den Stick einzustecken.",
   "apps.guide.step.bootUsb": () => "Schalte den Server ein und drücke auf dem Startbildschirm F11. Wähle den USB-Stick.",
   "apps.guide.step.installOs": () => "Installiere Debiant vom Stick.",

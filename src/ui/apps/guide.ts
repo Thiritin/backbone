@@ -69,7 +69,7 @@ export function stepOf(s: GameState, id: StepId): Step {
     case "downloadIso":
       return { title: t("guide.step.downloadIso"), text: t("apps.guide.step.downloadIso"), app: "Browser", focus: { kind: "url", id: `${displayHost(SITES.lunix.host)}/` } };
     case "writeStick":
-      return { title: t("guide.step.writeStick"), text: t("apps.guide.step.writeStick"), app: "Applications" };
+      return { title: t("guide.step.writeStick"), text: t("apps.guide.step.writeStick"), app: "Applications", focus: { kind: "folder", id: "downloads" } };
     case "plugStick":
       return { title: t("guide.step.plugStick"), text: t("apps.guide.step.plugStick"), app: "Locations", focus: server && { kind: "device", id: server.id } };
     case "bootUsb":

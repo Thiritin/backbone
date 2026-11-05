@@ -239,7 +239,7 @@ export default {
   "apps.guide.step.shareWeb": () => "Compartilhe a porta do servidor web com o servidor em Internet, Permitir acesso no Fritz!OZ.",
   "apps.guide.step.internet": () => "Encomenda uma linha de internet em Locais, em Linha de internet.",
   "apps.guide.step.downloadIso": () => "Descarrega a ISO do Debiant a partir do site no navegador.",
-  "apps.guide.step.writeStick": () => "Clica com o botão direito na ISO no Finder e escolhe Gravar na pen USB.",
+  "apps.guide.step.writeStick": () => "Faz duplo clique na ISO no Finder para a gravar na pen USB.",
   "apps.guide.step.plugStick": () => "Clica na porta USB na frente do servidor no rack para ligar a pen.",
   "apps.guide.step.bootUsb": () => "Liga o servidor e prime F11 no ecrã de arranque. Escolhe a pen USB.",
   "apps.guide.step.installOs": () => "Instala o Debiant a partir da pen.",

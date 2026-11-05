@@ -106,6 +106,7 @@ export default {
   "shop.bidder.rival": () => "Otro postor",
   "shop.any": () => "Cualquiera",
   "shop.sortBy": () => "Ordenar",
+  "shop.filters": () => "Filtros",
   "shop.formFactor": () => "Formato",
   "shop.minCores": () => "Núcleos mín.",
   "shop.minRam": () => "RAM mín.",

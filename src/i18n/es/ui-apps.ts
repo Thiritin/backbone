@@ -239,7 +239,7 @@ export default {
   "apps.guide.step.shareWeb": () => "Comparte el puerto del servidor web con el servidor en Internet, Permitir acceso de Fritz!OZ.",
   "apps.guide.step.internet": () => "Contrata una línea de internet en Ubicaciones, en Línea de internet.",
   "apps.guide.step.downloadIso": () => "Descarga la ISO de Debiant desde su web en el navegador.",
-  "apps.guide.step.writeStick": () => "Haz clic derecho en la ISO en el Finder y elige Grabar en la memoria USB.",
+  "apps.guide.step.writeStick": () => "Haz doble clic en la ISO en Finder para escribirla en la memoria USB.",
   "apps.guide.step.plugStick": () => "Haz clic en el puerto USB de la parte frontal del servidor en el rack para conectar la memoria.",
   "apps.guide.step.bootUsb": () => "Enciende el servidor y pulsa F11 en la pantalla de inicio. Elige la memoria USB.",
   "apps.guide.step.installOs": () => "Instala Debiant desde la memoria.",

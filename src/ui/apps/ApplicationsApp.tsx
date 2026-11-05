@@ -124,7 +124,7 @@ export function ApplicationsApp() {
           );
         })}
         {at === "downloads" && game.media.images.map((id) => (
-          <Item key={id} label={isoFile(id)} menu={() => [{ label: t("apps.finder.writeToUsb"), disabled: !home, run: () => write(id) }]}
+          <Item key={id} label={isoFile(id)} open={() => home && write(id)} menu={() => [{ label: t("apps.finder.writeToUsb"), disabled: !home, run: () => write(id) }]}
             drag={(e) => { e.dataTransfer.setData(ISO, id); e.dataTransfer.effectAllowed = "copy"; }}>
             <span className="di-page"><FILE_ICON.iso /></span>
           </Item>

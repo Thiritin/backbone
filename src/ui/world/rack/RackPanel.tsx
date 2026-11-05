@@ -46,12 +46,12 @@ const key = (e: End) => `${e.device}:${e.port}`;
 
 // The rack close-up: the rack stands centred on the floor; a picked unit slides it left and hangs a paper tag beside it.
 // On the back a cable is dragged from port to port, or a click takes a port as the cable in hand and a click on a second port plugs it in; the hand outlives the panel.
-export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, onConnectFrom }: {
-  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void;
+export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, port: startPort = null, device, onConnectFrom }: {
+  rackId: string; onClose: () => void; hand?: End | null; onHand?: (e: End | null) => void; port?: End | null; onConnectFrom?: (deviceId: string) => void; device?: string;
 }) {
   const game = useStore((s) => s.game), act = useStore((s) => s.act);
   const rack = game.racks.find((r) => r.id === rackId);
-  const [sel, setSel] = useState<string | null>(null);
+  const [sel, setSel] = useState<string | null>(device ?? null);
   const [back, setBack] = useState(!!(hand || startPort));
   // The side turning away while the other turns in.
   const [turning, setTurning] = useState<boolean | null>(null);
