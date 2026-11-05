@@ -19,7 +19,7 @@ import { playerAt } from "../sim/60-infra/handwork";
 import { useTrip, type Trip } from "./travel/route";
 import { t } from "../i18n/en";
 import type { ActionResult, CartLine } from "../sim/90-actions/hardware";
-import { readSession, writeSession } from "./session";
+import { clearDrafts, readSession, writeSession } from "./session";
 import { booksAppUrl, currentVendor } from "../sim/80-business/bookkeeping";
 import { shopAdminUrl } from "../sim/80-business/portal";
 import { shopActive } from "../sim/80-business/shop";
@@ -490,6 +490,7 @@ export const useStore = create<Store>((set, get) => ({
   importSave: (raw) => {
     try {
       const game = deserialize(raw);
+      clearDrafts();
       set({ ...fresh(), game, started: true });
       uiSound("startup");
     } catch {

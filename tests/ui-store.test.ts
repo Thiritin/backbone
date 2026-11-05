@@ -1,7 +1,7 @@
 import { START_CASH } from "../src/sim/10-catalog/economy";
 import { describe, expect, it, vi } from "vitest";
 import { prefOf, useStore, type Win } from "../src/ui/store";
-import { readSession } from "../src/ui/session";
+import { readSession, writeSession } from "../src/ui/session";
 import { adoptOldKeys } from "../src/ui/old-keys";
 import { serialize } from "../src/sim/91-save/save";
 import { readyGame, newGame } from "./fixtures";
@@ -219,5 +219,25 @@ describe("alerts", () => {
     useStore.setState({ speed: 0, resume: 60, alert: { id: 1, app: "Books", title: "a", text: "b", hour: 0, key: "event.cashNegative" } });
     s().closeAlert(false);
     expect(s()).toMatchObject({ alert: null, speed: 0 });
+  });
+});
+
+describe("installer drafts", () => {
+  it("are dropped when a save is imported, other session keys stay", () => {
+    const m = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", {
+      getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, v), removeItem: (k: string) => m.delete(k),
+      get length() { return m.size; }, key: (i: number) => [...m.keys()][i] ?? null,
+    });
+    try {
+      writeSession("inst.m1.typed", "root");
+      writeSession("inst.sc.c1.form", { a: 1 });
+      writeSession("shop.view", "list");
+      useStore.getState().importSave(serialize(newGame(7)));
+      expect([...m.keys()].filter((k) => k.includes("inst."))).toEqual([]);
+      expect(readSession("shop.view", "grid")).toBe("list");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

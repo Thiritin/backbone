@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { useSessionState } from "../../session";
 import { nowHours } from "../../../sim/00-core/time";
 import { softwareById } from "../../../sim/10-catalog/platforms";
 import { serverOsById, type ServerOsId } from "../../../sim/10-catalog/server-os";
@@ -32,8 +33,8 @@ export const winEra = (version: string): 0 | 1 | 2 => (version === "2003" ? 0 : 
 // What the installer finds on the disks and what erasing them costs, typed confirmation included.
 function useTarget(game: GameState, m: Machine) {
   const act = useStore((s) => s.act);
-  const [typed, setTyped] = useState("");
-  const [note, setNote] = useState("");
+  const [typed, setTyped] = useSessionState(`inst.${m.id}.typed`, "");
+  const [note, setNote] = useSessionState(`inst.${m.id}.note`, "");
   const found = installCase(game, m.id), busy = found.kind === "busy", drives = isDevice(m) ? drivesOf(m) : [];
   const array = isDevice(m) ? `${drives.length} x ${disk(drives[0]?.size ?? 0)}${m.raid === "none" ? "" : ` RAID ${m.raid}`}, ${disk(raidUsable(m))}` : t("console.virtualDisk", { size: disk(m.diskGb) });
   const had = found.kind === "empty" ? null : softwareById(found.cluster.panel ?? found.cluster.platform ?? found.cluster.switching?.to ?? "").name;
@@ -96,11 +97,11 @@ const FIELDS: Field[] = ["ip", "mask", "gw", "dns"];
 // The Debiant text-mode installer: the boot menu, language, the network by DHCP or by hand, the partitioner with its
 // erase confirmation; the install itself and the reboot follow from the simulation.
 function useLunixSetup(game: GameState, m: Machine, version: string): Keyed {
-  const [step, setStep] = useState<LunixStep>("boot");
-  const [form, setForm] = useState<Record<Field, string>>({ ip: "", mask: "255.255.255.0", gw: "", dns: "" });
-  const [iface, setIface] = useState<IfaceConfig>({ mode: "dhcp" });
+  const [step, setStep] = useSessionState<LunixStep>(`inst.${m.id}.lstep`, "boot");
+  const [form, setForm] = useSessionState<Record<Field, string>>(`inst.${m.id}.form`, { ip: "", mask: "255.255.255.0", gw: "", dns: "" });
+  const [iface, setIface] = useSessionState<IfaceConfig>(`inst.${m.id}.iface`, { mode: "dhcp" });
   const tg = useTarget(game, m), net = machineNet(game, m.id);
-  const [host, setHost] = useState(() => hostOf(m));
+  const [host, setHost] = useSessionState(`inst.${m.id}.host`, hostOf(m));
   const go = (to: LunixStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
   const named = () => { const bad = badHostname(game, m.id, host); if (bad) tg.setNote(t(bad)); else go("dhcp")(); };
   const typeHost = (key: string) => {
@@ -186,11 +187,11 @@ type WinStep = "start" | "key" | "edition" | "license" | "type" | "upgrade" | "w
 // Windoors Setup: the blue text-mode first stage of 2003, or the Install Windoors window of 2008 and later. Media one
 // release ahead of the Windoors on the disks offers the in-place upgrade.
 function useWindoorsSetup(game: GameState, m: Machine, version: string): Keyed {
-  const [step, setStep] = useState<WinStep>("start");
+  const [step, setStep] = useSessionState<WinStep>(`inst.${m.id}.wstep`, "start");
   const tg = useTarget(game, m), era = winEra(version), act = useStore((s) => s.act);
   const upgrade = m.os?.id === "windoors" && upgradeTarget(game, m.id)?.version === version;
   const go = (to: WinStep) => () => { setStep(to); tg.setNote(""); tg.setTyped(""); };
-  const [key, setKey] = useState("");
+  const [key, setKey] = useSessionState(`inst.${m.id}.key`, "");
   const upgradeNow = () => { const r = act(upgradeOs, m.id, key || undefined); tg.setNote(r.ok ? "" : t(r.error ?? "")); if (r.ok) { setKey(""); setStep("start"); } };
   const typeKey = (k: string) => {
     if (k === "Backspace") setKey((v) => v.slice(0, -1));

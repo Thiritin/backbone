@@ -18,7 +18,19 @@ export function writeSession(key: string, value: unknown): void {
   }
 }
 
-export function useSessionState<T>(key: string, fallback: T): [T, (v: T) => void] {
+// Installer and wizard drafts live under "inst."; they belong to one game and go when another begins.
+export function clearDrafts(): void {
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const k = sessionStorage.key(i);
+      if (k?.startsWith("raid0.ui.inst.")) sessionStorage.removeItem(k);
+    }
+  } catch {
+    // Storage blocked; nothing was kept.
+  }
+}
+
+export function useSessionState<T>(key: string, fallback: T): [T, (v: T | ((p: T) => T)) => void] {
   const [value, setValue] = useState(() => readSession(key, fallback));
   useEffect(() => writeSession(key, value), [key, value]);
   return [value, setValue];
