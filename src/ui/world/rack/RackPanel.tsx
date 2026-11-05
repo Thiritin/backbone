@@ -15,7 +15,8 @@ import { menuOn } from "../../desktop/ContextMenu";
 import { tidy, type MenuItem } from "../../desktop/menu";
 import { reduced } from "../../desktop/motion";
 import { devName, portLamps } from "../../apps/hw";
-import { affected, frontGuide, panelPress } from "./panelPress";
+import { frontGuide } from "./guide";
+import { affected, panelPress } from "./panelPress";
 import { handsWays, useHandWork, wayLabel, type HandTask } from "../../apps/locations/HandSheet";
 import { PortCard, useDeviceMenu } from "../../apps/locations/Inspector";
 import { mountable, mountTask, rackItems, rackLinks, rackRemotes } from "../../apps/locations/RackView";
@@ -44,7 +45,6 @@ const TURN_MS = 150;
 const TAG_GAP = 56, HOLE = 16, TAG_W = 260;
 // The stage height the fitted rack leaves for the room around it; rack.css reserves the same in the fit height.
 const CHROME = 84;
-const CABLED = ["switch", "gateway", "firewall", "patch", "server"];
 const same = (a: End, b: End) => a.device === b.device && a.port === b.port;
 const key = (e: End) => `${e.device}:${e.port}`;
 
@@ -304,9 +304,8 @@ export function RackPanel({ rackId, onClose, hand = null, onHand = () => {}, por
   if (back && pp && jack !== null && !hand) tag = <JackTag game={game} panel={pp} jack={jack} />;
   else if (back && hand) tag = <HandTag name={endName(game, hand)} onAway={onClose} onDrop={() => onHand(null)} />;
   else if (back && port && portDev && peerOf(port)) tag = <div className="wr-tag-body" data-port={key(port)}><PortCard game={game} device={portDev} model={modelById(portDev.model)} port={port.port} peer={peerOf(port)} onSelect={pick} /><GroupRow game={game} d={portDev} port={port.port} /></div>;
-  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} onPanel={offSite ? undefined : (op) => press(dev.id, op)} back={back} onPorts={CABLED.includes(modelById(dev.model).kind) ? () => turn(!back) : undefined}
-    onCart={modelById(dev.model).kind === "server" && !back && present(game, rack.locationId) ? () => { setPlug(dev.id); setCart(dev.id); } : undefined} />; }
-  // A picked free unit sets what fits there on the floor beside the rack.
+  else if (dev && !lid) { unit = true; tag = <UnitTag deviceId={dev.id} renaming={renaming} onRenaming={setRenaming} menus={menus} onSold={() => pick(null)} />; }
+// A picked free unit sets what fits there on the floor beside the rack.
   const floor = !dev && free !== null ? <FloorUnits rack={rack} unit={free} onMount={(task) => work.start(game, { ...task, onDone: () => pick(task.deviceId) })} /> : null;
 
   const shelf = rack.model === "shelf", tall = shelf ? (units * shelfPitch(FRONT_U)) / FRONT_U : units;
