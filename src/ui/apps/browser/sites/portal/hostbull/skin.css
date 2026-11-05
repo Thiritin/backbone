@@ -1,8 +1,39 @@
-/* HostBill: gradients first, flat UI from 2020 */
-.sk-bull { font-family: "Open Sans", Arial, sans-serif; background: #fff; }
-.sk-bull .shop-head { background: linear-gradient(#4a90d9, #2f6fb5); color: #fff; }
-.sk-bull .shop-nav { background: #eef2f6; }
-.sk-bull .btn.primary { background: #3b82c4; color: #fff; border: 0; }
+/* HostBill: icon rail in light grey with blue accents until the 2019 line, dark navy from it */
+.sk-bull { font: 13px/1.5 "Open Sans", "Helvetica Neue", Arial, sans-serif; color: #2d3748; background: #eef1f6; }
+.sk-bull a { color: #2b6cb0; }
+.sk-bull .shop-head { display: flex; align-items: center; height: 52px; padding: 0 20px; background: linear-gradient(#3d92dc, #2a6fb5); color: #fff; }
+.sk-bull .shop-logo { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.sk-bull .shop-nav { position: relative; z-index: 2; width: 64px; flex: none; padding: 8px 0; gap: 0; background: #f7f9fc; border-right: 1px solid #d9dfea; align-items: stretch; }
+.sk-bull .shop-nav a { position: relative; display: flex; align-items: center; justify-content: center; padding: 8px 0; font-size: 0; color: #4a5568; border-left: 3px solid transparent; }
+.sk-bull .shop-nav a::after { content: attr(title); display: none; position: absolute; left: 100%; top: 50%; transform: translateY(-50%); padding: 5px 10px; border-radius: 3px; background: #1b2a4a; color: #fff; font: 600 12px "Open Sans", Arial, sans-serif; white-space: nowrap; }
+.sk-bull .shop-nav a:hover::after { display: block; }
+.sk-bull .hb-ico { width: 20px; height: 20px; }
+.sk-bull .shop-nav a:hover { background: #eaf1fa; color: #1b2a4a; }
+.sk-bull .shop-nav a.on { font-weight: 600; background: #e1edfa; color: #1f5f9f; border-left-color: #3b9ae1; }
+.sk-bull .hb-ico { flex: none; }
+.sk-bull .ps-main { padding: 20px 24px; min-width: 0; flex: 1; }
+.sk-bull .ps-title { margin: 0 0 14px; font-size: 20px; font-weight: 600; color: #1b2a4a; }
+.sk-bull .pt-btn { font: 600 12px "Open Sans", Arial, sans-serif; padding: 6px 14px; color: #2d3748; background: #fff; border: 1px solid #c5cddb; border-radius: 3px; }
+.sk-bull .pt-btn:hover:not(:disabled) { background: #f1f5fa; }
+.sk-bull .pt-btn.primary, .sk-bull .pt-toolbar .pt-btn { color: #fff; background: #3b9ae1; border-color: #3b9ae1; }
+.sk-bull .pt-btn.primary:hover:not(:disabled), .sk-bull .pt-toolbar .pt-btn:hover:not(:disabled) { background: #2f84cf; border-color: #2f84cf; }
+.sk-bull .pt-table td .pt-btn:not(.primary) { padding: 0; color: #2b6cb0; background: none; border: 0; font-weight: 400; }
+.sk-bull .pt-table td .pt-btn:not(.primary):hover:not(:disabled) { background: none; text-decoration: underline; }
+.sk-bull .pt-select, .sk-bull .pt-input, .sk-bull input, .sk-bull select { padding: 5px 8px; border: 1px solid #c5cddb; border-radius: 3px; font: inherit; }
+.sk-bull .pt-table { background: #fff; border: 1px solid #d9dfea; }
+.sk-bull .pt-table th { background: #f6f8fb; color: #5b6578; font-size: 12px; border-bottom: 1px solid #d9dfea; }
+.sk-bull .pt-table td { border-bottom: 1px solid #edf0f5; }
+.sk-bull .pt-box { background: #fff; border: 1px solid #d9dfea; border-radius: 3px; }
+.sk-bull .pt-box-h { background: none; border-bottom: 1px solid #edf0f5; font-weight: 600; color: #1b2a4a; }
+.sk-bull .pt-tabs { border-bottom-color: #c5cddb; }
+.sk-bull .pt-tabs button { background: #e6eaf1; border-color: #c5cddb; }
+.sk-bull .pt-tabs button.on { background: #fff; color: #1b2a4a; }
+.sk-bull .pt-wizard { background: #fff; border-color: #c5cddb; border-left: 4px solid #3b9ae1; }
+.sk-bull .pt-group-h { color: #1b2a4a; }
+.sk-bull .pt-version { padding: 10px 24px; color: #8a94a8; font-size: 12px; background: #fff; border-top: 1px solid #d9dfea; }
 .sk-bull-late .shop-head { background: #fff; color: #1b2430; border-bottom: 1px solid #e2e6ea; }
-.sk-bull-late .shop-nav { background: #1b2430; }
-.sk-bull-late .shop-nav a { color: #cfd6de; }
+.sk-bull-late .shop-nav { background: #1b2a4a; border-right: 0; }
+.sk-bull-late .shop-nav a { color: #b8c4dc; }
+.sk-bull-late .shop-nav a:hover { background: #22345a; color: #fff; }
+.sk-bull-late .shop-nav a.on { background: #25375f; color: #fff; border-left-color: #3b9ae1; }
+.sk-bull-late .pt-btn { border-radius: 6px; }

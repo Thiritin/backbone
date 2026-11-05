@@ -19,7 +19,7 @@ export function Login({ variant, onLogin, error, onForgot }: LoginProps & { vari
       <h1>{shopById(variant).name}</h1>
       <label>{t("shop-admin.username")}<input name="username" autoComplete="off" /></label>
       <label>{t("shop-admin.password")}<input name="password" type="password" autoComplete="off" /></label>
-      <button type="submit" className="btn primary">{t("shop-admin.login")}</button>
+      <button type="submit" className="pt-btn primary">{t("shop-admin.login")}</button>
       <LoginNote error={error} onForgot={onForgot} />
     </form>
   );
