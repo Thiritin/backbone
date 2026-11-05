@@ -35,7 +35,7 @@ import { OrderChip } from "./OrderChip";
 import { visitThen } from "./visit";
 import { frontOf, seatOf } from "../../sim/90-actions/work-orders";
 import { PairPanel } from "./rack/PairPanel";
-import { menuOn } from "../desktop/ContextMenu";
+import { menuOn, menuTriggers } from "../desktop/ContextMenu";
 import { RoomCables } from "./rack/Cables";
 import { ConsolePanel, PostPanel, PowerPanel, ScanPanel, StoragePanel } from "./panel/Panels";
 import { PhonePanel } from "./panel/PhonePanel";
@@ -315,13 +315,15 @@ export const World = memo(function World() {
   // Things standing on the floor, sorted by x + y so nearer ones overlap farther ones; a fixture sorts by its farthest tile.
   const things: { depth: number; node: ReactNode; front?: boolean }[] = racks.map((r) => {
     const tile = tiles[r.id], glow = (cable && !rackOpen && game.devices.find((d) => d.id === cable.device)?.rackId !== r.id) || (from && from.rack !== r.id), leds = game.devices.filter((d) => d.rackId === r.id && !d.chassisId).map((d) => ({ id: d.id, on: d.on && !loc.tripped, fault: d.components.some((c) => c.failedAt !== null), flood: floodedDevice(game, d) && !loc.tripped, top: d.slot + modelById(d.model).height - 1 }));
+    const rackMenu = menuTriggers(menuOn(() => [{ label: t("world.newConnection"), run: () => setFrom({ rack: r.id }) }]));
     const p = rackPower(game, r.id), hot = !loc.tripped && p.limitWatts > 0 && p.watts >= 0.9 * p.limitWatts;
     return {
       depth: tile.x + tile.y,
       node: (
         <g key={r.id} className={`w-obj w-rack${lit === r.id ? " w-lit" : ""}${glow || hint === r.id ? " w-glow" : ""}`} data-rack={r.id} role="button" aria-label={r.name}
-          onClick={use(r.id, () => { if (from && from.rack !== r.id) { setPair({ a: from.rack, b: r.id, from: from.device }); setFrom(null); } else setRackOpen({ id: r.id }); }, () => frontOf(tile), r.name)}
-          onPointerDown={(e) => { if (!e.button && r.model !== "shelf") { e.stopPropagation(); link.current = r.id; dragged.current = false; } }}
+          onClick={(e) => { const go = use(r.id, () => { if (from && from.rack !== r.id) { setPair({ a: from.rack, b: r.id, from: from.device }); setFrom(null); } else setRackOpen({ id: r.id }); }, () => frontOf(tile), r.name); if (!rackMenu.swallowed()) go(e); }}
+          onPointerDown={(e) => { rackMenu.onPointerDown(e); if (!e.button && r.model !== "shelf") { e.stopPropagation(); link.current = r.id; dragged.current = false; } }}
+          onPointerMove={rackMenu.onPointerMove} onPointerUp={rackMenu.onPointerUp} onPointerCancel={rackMenu.onPointerCancel}
           onContextMenu={menuOn(() => [{ label: t("world.newConnection"), run: () => setFrom({ rack: r.id }) }])}>
           {r.model === "shelf"
             ? <ShelfUnit tile={tile} units={rackUnits(r.model)} devices={game.devices.filter((d) => d.rackId === r.id).map((d) => ({ id: d.id, slot: d.slot, height: modelById(d.model).height, light: isOfficeRouter(modelById(d.model)), on: d.on && !loc.tripped, flood: floodedDevice(game, d) && !loc.tripped }))} />

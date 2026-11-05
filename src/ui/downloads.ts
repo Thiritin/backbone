@@ -1,10 +1,13 @@
 import { create } from "zustand";
 import { archiveNamed } from "../sim/10-catalog/archives";
 import { imageExists, imageParts } from "../sim/10-catalog/server-os";
-import { nowHours } from "../sim/00-core/time";
+import { nowHours, yearOf } from "../sim/00-core/time";
 import { downloadArchive, downloadedFiles, downloadImage, downloadMbps, IMAGE_MB, transferHours, uploadMbps } from "../sim/90-actions/media";
 import type { ActionResult } from "../sim/90-actions/hardware";
 import { checkUpload, uploadFile } from "../sim/90-actions/webspace-files";
+import type { GameState } from "../sim/50-state";
+import { installerFile, PROGRAMS } from "../sim/10-catalog/programs";
+import { booksVendor } from "../sim/10-catalog/bookkeeping";
 import { useStore } from "./store";
 
 // Downloads (ISO images and archives) and uploads into a web space run in game time at the line speed they started at;
@@ -65,6 +68,16 @@ export function nextTransferEnd(): number | null {
     ...Object.values(g.installers).map((x) => x.readyAt), ...(book ? [book.readyAt] : []),
   ].filter((e) => e > now);
   return ends.length ? Math.min(...ends) : null;
+}
+
+// Program installers and the bookkeeping program download in the sim (installers, books.download); the browser lists them with the other downloads.
+export interface Fetched extends Transfer { id: string; file: string }
+export function softwareDownloads(g: GameState): Fetched[] {
+  const book = g.books.download, year = yearOf(g.hour);
+  return [
+    ...PROGRAMS.filter((p) => g.installers[p.id] && !g.installed.includes(p.id)).map((p) => ({ id: p.id, file: installerFile(p, year), start: g.installers[p.id].startedAt, hours: g.installers[p.id].readyAt - g.installers[p.id].startedAt })),
+    ...(book && g.books.vendor !== book.vendor ? [{ id: book.vendor, file: `${booksVendor(book.vendor)?.program}.dmg`, start: book.startedAt, hours: book.readyAt - book.startedAt }] : []),
+  ];
 }
 
 const share = (d: Transfer | undefined, now: number): number | null => (d ? Math.min(1, (now - d.start) / d.hours) : null);
