@@ -17,6 +17,8 @@ import { cableColor } from "../../art/fronts";
 import { RackFront, type RackItem, type RackLink, type RackRemote } from "../../art/RackFront";
 import { t } from "../../../i18n/en";
 import { useStore } from "../../store";
+import { HARDWARE_SHOP } from "../../../sim/46-finance/payables";
+import { PayButton } from "../browser/sites/shared/PayButton";
 import { day, deviceLamps, devName, height, portLamps, portLights } from "../hw";
 import { rackUnits } from "./Floor";
 import { Inspector, SellConfirm, togglePlug, useDeviceMenu, useOfflineGuard } from "./Inspector";
@@ -358,9 +360,13 @@ function MoveRack({ game, rack, onClose, onMoved }: { game: GameState; rack: Rac
 // Power upgrades: the basement's extra household circuit, a rented rack's second and high-density feeds and its power contract.
 export function Upgrades({ loc, rack }: { loc: Location; rack?: Rack }) {
   const act = useStore((s) => s.act), game = useStore((s) => s.game);
+  const [bought, setBought] = useState(false);
   const dc = dcOf(loc);
   const rows: { name: string; effect: string; price: string; on: boolean; buy: () => void; drop?: () => void; control?: ReactNode }[] = [];
-  if (loc.space === "basement") rows.push({ name: t("locations-2.extraCircuit"), effect: `+${EXTRA_CIRCUIT_KW} kW`, price: euro(CIRCUIT_PRICE), on: loc.extraCircuit, buy: () => act(buyCircuit, loc.id) });
+  if (loc.space === "basement") rows.push({
+    name: t("locations-2.extraCircuit"), effect: `+${EXTRA_CIRCUIT_KW} kW`, price: euro(CIRCUIT_PRICE), on: loc.extraCircuit, buy: () => {},
+    control: loc.extraCircuit && !bought ? undefined : <PayButton className="btn primary" supplier="hardware" name={HARDWARE_SHOP} amount={CIRCUIT_PRICE} run={(m) => { const r = act(buyCircuit, loc.id, m); if (r.ok) setBought(true); return r; }}>{t("locations-2.buy")}</PayButton>,
+  });
   if (dc && rack && !rack.provided) {
     const feed = (key: "feedB" | "highDensity", name: string, effect: string) => rows.push({
       name, effect, price: t("locations-2.perMo", { amount: euro(Math.round(FEED_PRICE[key] * dc.positionPrice)) }), on: rack[key],

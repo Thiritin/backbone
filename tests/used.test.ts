@@ -4,6 +4,7 @@ import { brandFrom, componentParts, modelById } from "../src/sim/10-catalog/hard
 import { challengeFor } from "../src/sim/10-catalog/challenges";
 import { presetPrice } from "../src/sim/10-catalog/parts";
 import { bidHistory, CLEARANCE_SIZE, EBUY_FEE, leading, LOT_SIZE, onMarket, rivalBids, rivalNow, REP_EARLY, REP_LEAD, shipHours, USED_EVENTS, type Listing } from "../src/sim/10-catalog/used";
+import { openAccount } from "../src/sim/46-finance/bank";
 import type { GameState } from "../src/sim/50-state";
 import { deviceValue, HOURS_PER_YEAR } from "../src/sim/60-infra/status";
 import { monthListings, usedTick } from "../src/sim/80-business/used";
@@ -94,6 +95,14 @@ describe("used listings", () => {
       if (l.channel === "ebuy") expect(l.rival! / presetPrice(modelById(l.model), yearOf(l.postedAt), l.brand, l.vendor)).toBeGreaterThanOrEqual(0.349);
     }
     expect(scam).toBe(true);
+  });
+
+  it("pays a bought listing by the chosen method and refuses one the company cannot use", () => {
+    const s = { ...game(), bank: { ...openAccount(game(), "sparklasse"), welcomed: true } }, l = market(s, "board");
+    expect(buyListing(s, l.id, "loc1", "card")).toEqual({ ok: false, error: "error.noCard" });
+    expect(s.used.some((x) => x.id === l.id)).toBe(true);
+    expect(buyListing(s, l.id, "loc1", "transfer").ok).toBe(true);
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "marketplace", method: "transfer", doc: "invoice", amount: l.price, paidAt: null });
   });
 
   it("delivers a bought listing through the transit path with its hidden wear", () => {

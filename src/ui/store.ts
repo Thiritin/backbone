@@ -121,7 +121,7 @@ export interface Store {
   place: (id: string, box: Partial<Pick<Win, "x" | "y" | "w" | "h">>) => void;
   // key is the sim event key that picks the sound.
   notify: (app: string, title: string, text: string, key?: string, focus?: Omit<Focus, "n">, from?: string) => void;
-  dismiss: (id: number) => void;
+  dismiss: (id: number, seen?: boolean) => void;
   forget: (id: number | null) => void;
   started: boolean;
   // A game is loaded and the main menu can return to it.
@@ -227,6 +227,14 @@ export const uiSound = (kind: UiSound) => {
 };
 const pending = new Set<Sound>(), lastPlayed: Partial<Record<Sound, number>> = {};
 let lastBanner = -Infinity;
+
+// Runs fn with action failures kept off the notifications and pages, for a caller that shows the error itself.
+let quiet = false;
+export function quietly<T>(fn: () => T): T {
+  quiet = true;
+  try { return fn(); } finally { quiet = false; }
+}
+export const isQuiet = () => quiet;
 
 function loadTheme(): Theme {
   try {
@@ -342,7 +350,7 @@ export const useStore = create<Store>((set, get) => ({
   },
   act: (fn, ...args) => {
     const r = get().attempt(fn, ...args);
-    if (!r.ok) {
+    if (!r.ok && !quiet) {
       lastBanner = Date.now();
       // The failure belongs to the front window's app, or in the room to the room.
       const { surface, windows, game } = get(), top = windows.filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0];
@@ -362,7 +370,7 @@ export const useStore = create<Store>((set, get) => ({
       const was = get().game.player, now = game.player;
       // A drive any action starts, from the map or a job done in person, plays as the trip in the room.
       if (now.doing === "travel" && now.until > game.hour && now.at !== was.at && ["room", "map"].includes(useTrip.getState().stage)) {
-        const trip: Trip = { from: playerAt(get().game), to: playerAt(game), start: nowHours(game), until: now.until, resume: get().speed, by: now.by };
+        const trip: Trip = { from: playerAt(get().game), to: playerAt(game), start: nowHours(game), until: now.until, resume: get().speed, by: now.by, billed: game.payables.length > get().game.payables.length };
         set({ game, speed: 0, surface: "world" });
         useTrip.setState({ stage: "leave", trip });
       } else set({ game });
@@ -480,7 +488,8 @@ export const useStore = create<Store>((set, get) => ({
     set(({ banners, history, unseen }) => ({ banners: [...banners, b].slice(-4), history: [b, ...history].slice(0, 50), unseen: unseen + 1 }));
     setTimeout(() => get().dismiss(b.id), 6000);
   },
-  dismiss: (id) => set(({ banners }) => ({ banners: banners.filter((b) => b.id !== id) })),
+  // A banner the player acts on counts as seen on the bell.
+  dismiss: (id, seen = false) => set(({ banners, unseen }) => ({ banners: banners.filter((b) => b.id !== id), unseen: seen && banners.some((b) => b.id === id) ? Math.max(0, unseen - 1) : unseen })),
   // null clears the whole history.
   forget: (id) => set(({ banners, history }) => ({ banners: banners.filter((b) => id !== null && b.id !== id), history: id === null ? [] : history.filter((b) => b.id !== id) })),
 

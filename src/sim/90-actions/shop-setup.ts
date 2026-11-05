@@ -3,13 +3,14 @@
 import { hashRng, rand } from "../00-core/rng";
 import { yearOf } from "../00-core/time";
 import { shopArchive } from "../10-catalog/archives";
+import { shopSetup } from "../10-catalog/shop-setup";
 import { shopById, type ShopId } from "../10-catalog/shops";
 import { versionAt } from "../10-catalog/software-versions";
 import { deliverMail } from "../42-mail/sources";
 import type { GameState } from "../50-state";
 import { SHOP_MACHINE, upgradeKey, upgradeKeyBlock } from "../60-infra/licence";
 import {
-  adminRow, adminRows, CONFIG_FILE, dbAccessError, EMAIL_LOGIN, filesIn, hashFor, installDirIn, INSTALL_DIR, isMd5, newerRelease, passMatches,
+  adminRow, adminRows, configFile, dbAccessError, EMAIL_LOGIN, filesIn, hashFor, installerIn, isMd5, newerRelease, passMatches,
   requirementsOf, shopBroken, shopSpace, shopUrl, usesBcrypt, type ShopAdmin,
 } from "../60-infra/shop-files";
 import { ADMIN_TABLE, tablesOf } from "../60-infra/webdb";
@@ -67,7 +68,9 @@ function finish(s: GameState, wsId: string, clusterId: string, folder: string, i
   if (!t.ok) return t;
   const admin = { ...a, user: EMAIL_LOGIN.includes(id) ? a.email : a.user, pass: hashFor(s, id, version, a.pass) };
   for (const [table, values] of adminRows(id, admin)) insertRow(s, wsId, db, table, values);
-  put(s, wsId, "files", join(folder, CONFIG_FILE[id]!), { mb: 0.002, at: s.hour, from: shopArchive(id, version)!.name });
+  // The installer writes into the config file the player renamed and opened, and leaves its permissions as they were.
+  const path = join(folder, configFile(id, version)), mode = webspaceOf(s, wsId)?.files[path]?.mode;
+  put(s, wsId, "files", path, { mb: 0.002, at: s.hour, from: shopArchive(id, version)!.name, ...(mode && { mode }) });
   const r = installShop(s, clusterId, id, key, version);
   if (!r.ok) return r;
   s.shop = { ...s.shop, install: { ...s.shop.install!, ws: wsId, folder, db } };
@@ -79,16 +82,19 @@ export function runShopInstaller(s: GameState, wsId: string, folder: string, f: 
   const at = ownSpace(s, wsId);
   if ("ok" in at) return at;
   const files = filesIn(at.ws, folder);
-  if (!files || !installDirIn(at.ws, folder)) return fail("shop-setup.error.noFiles");
+  if (!files || !installerIn(at.ws, folder)) return fail("shop-setup.error.noFiles");
   const i = s.shop.install;
   if (i?.ws === wsId && i.folder === folder && !shopBroken(s)) return fail("shop-setup.error.installed");
   for (const step of ["requirements", "licence", "db"] as const) {
     const e = installerStepError(s, wsId, folder, step, f);
     if (e) return e;
   }
-  const bad = adminError(files.id, f);
+  // HostBull's installer asks for no account: it creates admin with the password admin, and the form may leave them empty.
+  const preset = files.id === "hostBull" && !f.user && !f.pass;
+  const form = preset ? { ...f, user: "admin", pass: "admin", email: f.email || `admin@${at.ws.domain}` } : f;
+  const bad = preset ? (EMAIL.test(form.email) ? null : fail("shop-setup.error.email")) : adminError(files.id, f);
   if (bad) return bad;
-  return finish(s, wsId, at.clusterId, folder, files.id, files.version, f.dbName, f, f.key || undefined);
+  return finish(s, wsId, at.clusterId, folder, files.id, files.version, f.dbName, form, f.key || undefined);
 }
 
 // The upgrade script: files of a newer release over the installed one move the shop to it, licensed by the key it holds
@@ -97,7 +103,7 @@ export function runShopUpgrade(s: GameState, key?: string): ActionResult {
   const at = shopSpace(s);
   if (!at) return fail("error.shopNotInstalled");
   const files = filesIn(at.ws, at.folder);
-  if (!files || files.id !== at.id || !installDirIn(at.ws, at.folder)) return fail("shop-setup.error.noFiles");
+  if (!files || files.id !== at.id || !installerIn(at.ws, at.folder)) return fail("shop-setup.error.noFiles");
   if (!newerRelease(at.id, files.version, at.version)) return fail("shop-setup.upgrade.current", { version: at.version });
   const code = key?.trim() || undefined, b = upgradeKeyBlock(s, SHOP_MACHINE, at.id, files.version, code);
   if (b) return fail(b);
@@ -152,11 +158,16 @@ export const randomText = (s: GameState, n: number, salt: number) => {
 
 // Puts the release's files into the folder as the archive unpacks them, without the install folder.
 function placeFiles(s: GameState, wsId: string, folder: string, id: ShopId, version: string, keepInstall: boolean): void {
-  const a = shopArchive(id, version)!;
+  const a = shopArchive(id, version)!, setup = shopSetup(id, version);
   for (const [p, mb] of a.entries) {
     const rel = p.replace(/\/$/, "");
-    if (!keepInstall && rel === INSTALL_DIR) continue;
+    if (!keepInstall && rel === setup.installDir) continue;
     put(s, wsId, "files", join(folder, rel), { ...(p.endsWith("/") && { dir: true as const }), mb, at: s.hour, from: a.name });
+  }
+  // App installers set the permissions the product asks for.
+  for (const [rel, bits] of setup.writable) {
+    const path = join(folder, rel), f = webspaceOf(s, wsId)?.files[path];
+    if (f) put(s, wsId, "files", path, { ...f, mode: bits === 0o222 ? "0777" : "0755" });
   }
 }
 
@@ -187,7 +198,7 @@ export function installShopApp(s: GameState, wsId: string, id: ShopId, f: AppIns
   const folder = dir ? join(d.folder, dir) : d.folder;
   if (Object.keys(at.ws.files).some((p) => p.startsWith(`${folder}/`) && !(dir === "" && p === `${folder}/index.html`))) return fail("shop-setup.app.notEmpty", { folder: `/${folder}` });
   const version = versionAt(id, s.hour).version;
-  const req = requirementsOf(s, at.ws, folder, id, version).find((x) => !x.ok);
+  const req = requirementsOf(s, at.ws, folder, id, version, false).find((x) => !x.ok);
   if (req) return fail(`shop-setup.req.${req.key}.fail`, { ...req.params, name: shopById(id).name });
   const b = shopClaimBlock(s, at.clusterId, id, f.key || undefined, version);
   if (b) return fail(b);
@@ -216,7 +227,16 @@ export function fillShopWebspace(s: GameState): void {
   if (!t.ok) return;
   const user = EMAIL_LOGIN.includes(id) ? email : "admin";
   for (const [table, values] of adminRows(id, { first: "Admin", last: "", email, user, pass: hashFor(s, id, i.version, pass) })) insertRow(s, own.id, db.id!, table, values);
-  put(s, own.id, "files", join(folder, CONFIG_FILE[id]!), { mb: 0.002, at: s.hour, from: shopArchive(id, i.version)!.name });
+  put(s, own.id, "files", join(folder, configFile(id, i.version)), { mb: 0.002, at: s.hour, from: shopArchive(id, i.version)!.name });
   s.shop = { ...s.shop, install: { ...i, ws: own.id, folder, db: db.id! } };
   deliverMail(s, shopById(id).name, "shopCredentials", { name: shopById(id).name, user, pass, url: `${host}${portalPath(id, "admin")}` });
+}
+
+// Changing the admin password in the shop's own admin area: the old password has to match.
+export function changeShopPassword(s: GameState, user: string, oldPass: string, pass: string): ActionResult {
+  const at = shopSpace(s), row = at && adminRow(s, "login", user.trim());
+  if (!at || !row || !passMatches(row.pass, oldPass)) return fail(`shop-setup.login.${at?.id}`);
+  if (pass.length < PASS_MIN) return fail("shop-setup.error.passShort", { min: String(PASS_MIN) });
+  editRow(s, at.ws.workloadId, at.db, ADMIN_TABLE[at.id].table, row.pk, { [ADMIN_TABLE[at.id].pass]: hashFor(s, at.id, at.version, pass) });
+  return { ok: true };
 }

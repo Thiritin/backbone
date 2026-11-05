@@ -111,6 +111,21 @@ describe("vendor shop", () => {
     expect(s.cart).toHaveLength(1);
   });
 
+  it("takes cash before the bank account opens and keeps the cart when the cash is short", () => {
+    const s = game(10_000);
+    s.bank = null;
+    addToCart(s, "windoors", null);
+    const cash = s.cash;
+    s.cash = 1;
+    expect(checkout(s, WINDOORS, orderDetails(s, "transfer"), "cash")).toEqual({ ok: false, error: "error.noCash" });
+    expect(s.cart).toHaveLength(1);
+    s.cash = cash;
+    expect(checkout(s, WINDOORS, orderDetails(s, "transfer"), "cash").ok).toBe(true);
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "software", method: "cash", doc: "receipt" });
+    expect(s.payables.at(-1)!.paidAt).not.toBeNull();
+    expect(s.cart).toHaveLength(0);
+  });
+
   it("invoices an order paid by transfer and sends its keys once the money arrives", () => {
     const s = game(1000);
     addToCart(s, "pleskit", "webAdmin");

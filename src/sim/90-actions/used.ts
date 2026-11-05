@@ -9,13 +9,13 @@ import type { GameState } from "../50-state";
 import { deviceValue, HOURS_PER_YEAR } from "../60-infra/status";
 import { serverTaken } from "../60-infra/cluster";
 import { stock, type ActionResult } from "./hardware";
+import type { Method } from "../46-finance/payables";
 import { spend } from "./purchase";
 
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const cents = (v: number) => Math.round(v * 100) / 100;
-const pay = (s: GameState, l: Listing, amount: number) => {
-  spend(s, { supplier: "marketplace", name: channelName(l.channel), lines: [{ hour: s.hour, category: "hardware", key: "ledger.usedBuy", params: { model: modelById(l.model).name, qty: l.qty, channel: l.channel }, amount: -amount }] });
-};
+const pay = (s: GameState, l: Listing, amount: number, method?: Method) =>
+  spend(s, { supplier: "marketplace", name: channelName(l.channel), lines: [{ hour: s.hour, category: "hardware", key: "ledger.usedBuy", params: { model: modelById(l.model).name, qty: l.qty, channel: l.channel }, amount: -amount }], method });
 // A company without a bank account pays from the till; with one, the order is an open payable.
 const short = (s: GameState, amount: number) => !s.bank && s.cash < amount;
 
@@ -27,8 +27,12 @@ function placeError(s: GameState, l: Listing, locationId: string): string | null
 
 // Pays for a listing and ships its units: the parts carry their hidden age, a missing second power supply stays missing.
 export function deliverListing(s: GameState, l: Listing, locationId: string, price: number): string[] {
-  const city = s.locations.find((x) => x.id === locationId)!.city;
   pay(s, l, price);
+  return ship(s, l, locationId, price);
+}
+
+function ship(s: GameState, l: Listing, locationId: string, price: number): string[] {
+  const city = s.locations.find((x) => x.id === locationId)!.city;
   const ids = stock(s, { model: l.model, brand: l.brand, qty: l.qty, ...(l.vendor ? { vendor: l.vendor } : {}) }, null, locationId, shipHours(l, city));
   let psus = 0;
   s.devices = s.devices.map((d) => {
@@ -47,19 +51,19 @@ export function deliverListing(s: GameState, l: Listing, locationId: string, pri
 }
 
 // A fixed ask on the board or in a chat. A chat scam takes the money and never ships.
-export function buyListing(s: GameState, listingId: string, locationId: string): ActionResult {
+export function buyListing(s: GameState, listingId: string, locationId: string, method?: Method): ActionResult {
   const l = s.used.find((x) => x.id === listingId);
   if (!l || !onMarket(s, l)) return fail("error.listingGone");
   if (l.channel === "ebuy") return fail("error.auctionOnly");
   const error = placeError(s, l, locationId);
   if (error) return fail(error);
-  if (short(s, l.price)) return fail("error.noCash");
+  const paid = pay(s, l, l.price, method);
+  if (!paid.ok) return paid;
   if (l.scam) {
-    pay(s, l, l.price);
     s.used = s.used.map((x) => (x.id === l.id ? { ...x, dueAt: s.hour + shipHours(l, s.locations.find((y) => y.id === locationId)!.city) } : x));
     return { ok: true };
   }
-  const ids = deliverListing(s, l, locationId, l.price);
+  const ids = ship(s, l, locationId, l.price);
   s.used = s.used.filter((x) => x.id !== l.id);
   if (l.channel === "board") s.usedRep += 1;
   return { ok: true, id: ids[0] };

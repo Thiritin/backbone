@@ -3,7 +3,7 @@ import { t } from "../../../../../i18n/en";
 import { euro } from "../../../../../sim/00-core/money";
 import { yearOf } from "../../../../../sim/00-core/time";
 import type { GameState } from "../../../../../sim/50-state";
-import { AGENCY_HOST } from "../../../../../sim/80-business/browser";
+import { AGENCY_HOST, AGENCY_TITLE } from "../../../../../sim/80-business/browser";
 import { owns } from "../../../../../sim/80-business/marketing";
 import { DESIGN_DAYS, designQuote } from "../../../../../sim/80-business/website";
 import { setUpChannel } from "../../../../../sim/90-actions/marketing";
@@ -11,6 +11,7 @@ import { redesign } from "../../../../../sim/90-actions/website";
 import { metrics } from "../../../../../sim/metrics";
 import { formatDay } from "../../../billing/format";
 import { usePageAct } from "../../pageAct";
+import { PayButton } from "../shared/PayButton";
 import { eraOf } from "../era";
 import "./agency.css";
 
@@ -37,7 +38,7 @@ function Quote({ game }: { game: GameState }) {
         {has && <><dt>{t("agency.quote.delivery")}</dt><dd>{ready ? t("agency.quote.deliveredOn", { date: formatDay(ready.hour) }) : t("agency.quote.days", { n: DESIGN_DAYS })}</dd></>}
         <dt>{t("agency.quote.price")}</dt><dd className="ag-price">{euro(designQuote(game))}</dd>
       </dl>
-      <button className="ag-button" disabled={!!ready} onClick={() => (has ? act(redesign) : act(setUpChannel, "website"))}>{t(has ? "agency.quote.orderRedo" : "agency.quote.orderNew")}</button>
+      <PayButton className="ag-button" disabled={!!ready} supplier="services" name={AGENCY_TITLE} amount={designQuote(game)} run={(m) => (has ? act(redesign, m) : act(setUpChannel, "website", m))}>{t(has ? "agency.quote.orderRedo" : "agency.quote.orderNew")}</PayButton>
     </section>
   );
 }

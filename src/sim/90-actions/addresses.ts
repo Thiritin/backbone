@@ -13,7 +13,8 @@ import { methodsFor, placeOrder } from "./purchase";
 const fail = (error: string): ActionResult => ({ ok: false, error });
 const pay = (s: GameState, name: string, key: string, params: Record<string, string | number>, amount: number, method?: Method): ActionResult => {
   const lines = [{ hour: s.hour, category: "rent", key, params, amount: -amount }];
-  return placeOrder(s, { supplier: "network", name, lines, method: method ?? methodsFor(s, "network", lines, name)[0] });
+  const supplier = name === SUPPLIER_NAMES.registry ? "registry" : "network";
+  return placeOrder(s, { supplier, name, lines, method: method ?? methodsFor(s, supplier, lines, name)[0] });
 };
 
 // Rents more addresses from a datacenter's provider, billed monthly; the home line brings its own.
@@ -75,11 +76,15 @@ export function requestDelist(s: GameState, id: string): ActionResult {
   return { ok: true };
 }
 
+// The error joining RIPE runs into before any payment, or null.
+export const lirError = (s: GameState): string | null =>
+  s.ips.lir ? "error.alreadyLir" : !s.locations.some((l) => l.dc) ? "error.lirNeedsDatacenter" : null;
+
 // Joins RIPE as a LIR: a sign-up fee, a yearly fee and the free block of the year. Needs a rented location to announce from.
 export function joinLir(s: GameState, method?: Method): ActionResult {
-  if (s.ips.lir) return fail("error.alreadyLir");
-  if (!s.locations.some((l) => l.dc)) return fail("error.lirNeedsDatacenter");
-  const paid = pay(s, SUPPLIER_NAMES.network!, "ledger.lirSignup", {}, LIR_FEES.signup, method);
+  const no = lirError(s);
+  if (no) return fail(no);
+  const paid = pay(s, SUPPLIER_NAMES.registry!, "ledger.lirSignup", {}, LIR_FEES.signup, method);
   if (!paid.ok) return paid;
   // A LIR assigns itself an AS number unless the company already registered one.
   const asn = s.network.asn ?? 20000 + Math.floor(rand(hashRng(s.seed, 0xa5)) * 40000);
@@ -94,7 +99,7 @@ export function joinLir(s: GameState, method?: Method): ActionResult {
 export function buyBlock(s: GameState, method?: Method): ActionResult {
   if (!s.ips.lir) return fail("error.needsLir");
   const price = 256 * transferPrice(yearOf(s.hour));
-  const paid = pay(s, SUPPLIER_NAMES.network!, "ledger.blockBought", { size: 256 }, price, method);
+  const paid = pay(s, SUPPLIER_NAMES.registry!, "ledger.blockBought", { size: 256 }, price, method);
   if (!paid.ok) return paid;
   addBlock(s, 256, 24);
   return { ok: true };
@@ -106,16 +111,24 @@ function addBlock(s: GameState, size: number, prefix: number): void {
   s.ips = { ...s.ips, blocks: [...s.ips.blocks, { id: `blk${n}`, prefix: `185.${second}.${third}.0/${prefix}`, size, locationId: null, boughtAt: s.hour }] };
 }
 
+// The error announcing a block runs into before any payment, or null.
+export function announceError(s: GameState, blockId: string, locationId: string, byProvider = false): string | null {
+  const b = s.ips.blocks.find((x) => x.id === blockId), loc = s.locations.find((l) => l.id === locationId);
+  if (!b) return "error.unknownBlock";
+  if (!loc?.dc) return "error.lirNeedsDatacenter";
+  if (!byProvider && !fullTableAt(s, locationId)) return "error.needsBgpRouter";
+  if (s.ips.addresses.some((a) => a.blockId === b.id && a.holder)) return "error.addressInUse";
+  return null;
+}
+
 // Announces a block from a rented location; its addresses become free there. A block with addresses in use stays put.
 // byProvider: the provider announces it from its own routers for a setup fee, so no own BGP router is needed.
 export function announceBlock(s: GameState, blockId: string, locationId: string, byProvider = false, method?: Method): ActionResult {
-  const b = s.ips.blocks.find((x) => x.id === blockId), loc = s.locations.find((l) => l.id === locationId);
-  if (!b) return fail("error.unknownBlock");
-  if (!loc?.dc) return fail("error.lirNeedsDatacenter");
-  if (!byProvider && !fullTableAt(s, locationId)) return fail("error.needsBgpRouter");
-  if (s.ips.addresses.some((a) => a.blockId === b.id && a.holder)) return fail("error.addressInUse");
+  const no = announceError(s, blockId, locationId, byProvider);
+  if (no) return fail(no);
+  const b = s.ips.blocks.find((x) => x.id === blockId)!, loc = s.locations.find((l) => l.id === locationId)!;
   if (byProvider) {
-    const paid = pay(s, datacenterById(loc.dc).name, "ledger.providerRouting", { prefix: b.prefix }, PROVIDER_ROUTING_SETUP, method);
+    const paid = pay(s, datacenterById(loc.dc!).name, "ledger.providerRouting", { prefix: b.prefix }, PROVIDER_ROUTING_SETUP, method);
     if (!paid.ok) return paid;
   }
   s.ips = { ...s.ips, blocks: s.ips.blocks.map((x) => (x.id === b.id ? { ...x, locationId, byProvider } : x)), addresses: s.ips.addresses.filter((a) => a.blockId !== b.id) };

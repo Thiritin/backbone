@@ -15,6 +15,9 @@ import { HandsButtons, handsWays, useHandWork } from "../../apps/locations/HandS
 import { COUNTED, LID_MS, slotName } from "../../apps/locations/LidSheet";
 import { specOf, spareSpec } from "../../apps/locations/Slots";
 import { useStore } from "../../store";
+import { HARDWARE_SHOP, type Method } from "../../../sim/46-finance/payables";
+import type { ActionResult } from "../../../sim/90-actions/hardware";
+import { PayButton } from "../../apps/browser/sites/shared/PayButton";
 
 // The pull along the rails between the rack and the open spot in front of it.
 const PULL_MS = 260;
@@ -98,7 +101,7 @@ function SlotTag({ device, slot, wear, hand }: { device: Device; slot: Slot; wea
             <HandsButtons ways={rep} className="wr-line" disabled={!set} onRun={(how) => hand.start(game, { title: set > 1 ? t("locations-1.replaceCpus", { n: set }) : t("locations-1.replacePart", { part: partLabel(c) }), deviceId: device.id, action: replaceComponent, args: [device.id, c.id], tech: { kind: "replace", componentId: c.id }, how })}>{t("locations-1.replace")}</HandsButtons>
             {removable && <HandsButtons ways={rem} className="wr-line" onRun={(how) => hand.start(game, { title: t("locations-1.removePart", { part: partLabel(c) }), deviceId: device.id, action: removePart, args: [device.id, c.id], tech: { kind: "part", componentId: c.id }, how })}>{t("locations-1.remove")}</HandsButtons>}
           </>}
-          {w !== "ok" && at && <OrderLine c={c} at={at} order={(line) => act(buyDevice, line.model, line.brand, 1, at, { part: line.part })} />}
+          {w !== "ok" && at && <OrderLine c={c} at={at} order={(line, m) => act(buyDevice, line.model, line.brand, 1, at, { part: line.part }, m)} />}
         </div>
       </div>
     );
@@ -127,14 +130,14 @@ function SlotTag({ device, slot, wear, hand }: { device: Device; slot: Slot; wea
 }
 
 // A failed or worn part can be ordered from the Shop at its price; a part the Shop no longer sells says so.
-function OrderLine({ c, at, order }: { c: Component; at: string; order: (line: { model: string; brand: string; part: PartSpec }) => void }) {
+function OrderLine({ c, at, order }: { c: Component; at: string; order: (line: { model: string; brand: string; part: PartSpec }, m?: Method) => ActionResult }) {
   const game = useStore((s) => s.game), year = yearOf(game.hour), want = specOf(c);
   const due = game.devices.find((d) => d.model === `part-${c.kind}` && d.arriveAt !== null && (d.transitTo === at || d.store === at) && samePart(spareSpec(d), want));
   if (due) return note(t("locations-1.partOrdered", { day: formatDay(due.arriveAt!) }));
   const part = partOffers(year).find((o) => samePart(o, want));
   if (!part) return note(t("error.notInShop"));
   const line = { model: `part-${c.kind}`, brand: "Generic", qty: 1, part };
-  return <button className="wr-line" data-order="" disabled={game.cash < unitPrice(line, year)} onClick={() => order(line)}>{t("locations-1.orderPart")} <span className="num">{euro(unitPrice(line, year))}</span></button>;
+  return <div data-order=""><PayButton className="wr-line" supplier="hardware" name={HARDWARE_SHOP} amount={unitPrice(line, year)} run={(m) => order(line, m)}>{t("locations-1.orderPart")} <span className="num">{euro(unitPrice(line, year))}</span></PayButton></div>;
 }
 
 const note = (text: string) => <span className="wr-line" aria-disabled="true">{text}</span>;

@@ -8,6 +8,7 @@ import { booksUrl, currentEdition, licencePrice } from "../../../../../sim/80-bu
 import { openBooksInstaller } from "../../../books/guide/Installer";
 import { buyAddon, buyBooks, setSeats, upgradeBooks } from "../../../../../sim/90-actions/bookkeeping";
 import { usePageAct } from "../../pageAct";
+import { PayButton } from "../shared/PayButton";
 import "./books-vendors.css";
 
 export interface SiteProps { game: GameState; path: string; go: (url: string) => void }
@@ -34,11 +35,11 @@ function Action({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition })
     if (d && d.edition !== e.id) return null;
     if (d && game.hour >= d.readyAt) return <button type="button" className="bv-buy" onClick={() => openBooksInstaller(v.id)}>{t("books-vendors.install")}</button>;
     if (d) return <span className="bv-state num">{t("books-vendors.downloading", { pct: Math.floor((100 * (nowHours(game) - d.startedAt)) / (d.readyAt - d.startedAt)) })}</span>;
-    return <button type="button" className="bv-buy" onClick={() => act(buyBooks, v.id, e.id)}>{t(v.deployment === "desktop" ? "books-vendors.download" : "vendor-sites.buy")}</button>;
+    return <PayButton className="bv-buy" supplier="books" name={v.name} amount={licencePrice(game, v, e)} run={(m) => act(buyBooks, v.id, e.id, m)}>{t(v.deployment === "desktop" ? "books-vendors.download" : "vendor-sites.buy")}</PayButton>;
   }
   if (v.deployment === "desktop" && now && e.price < now.price) return null;
   const price = licencePrice(game, v, e);
-  return <button type="button" className="bv-buy" onClick={() => act(upgradeBooks, e.id)}>{v.deployment === "desktop" ? t("books-editions.upgradeFor", { price: euro(price) }) : t("books-editions.switch")}</button>;
+  return <PayButton className="bv-buy" supplier="books" name={v.name} amount={price} run={(m) => act(upgradeBooks, e.id, m)}>{v.deployment === "desktop" ? t("books-editions.upgradeFor", { price: euro(price) }) : t("books-editions.switch")}</PayButton>;
 }
 
 function Seats({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition }) {
@@ -48,7 +49,7 @@ function Seats({ game, v, e }: { game: GameState; v: BooksVendor; e: Edition }) 
       <span>{t("books-editions.seats", { n })}</span>
       <span className="num">{amount(v, e.seat)}</span>
       {v.deployment === "browser" && n > 0 && <button type="button" className="bv-buy" onClick={() => act(setSeats, n - 1)}>−</button>}
-      <button type="button" className="bv-buy" onClick={() => act(setSeats, n + 1)}>+</button>
+      <PayButton className="bv-buy" supplier="books" name={v.name} amount={v.deployment === "desktop" ? e.seat : 0} run={(m) => act(setSeats, n + 1, m)}>+</PayButton>
     </div>
   );
 }
@@ -61,7 +62,7 @@ function Addons({ game, v }: { game: GameState; v: BooksVendor }) {
       <span>{t(`books-editions.feature.${f}`)}</span>
       <span className="num">{amount(v, price)}</span>
       {mine && (game.books.addons.includes(f) ? <span className="bv-state">{t("books-editions.yours")}</span>
-        : <button type="button" className="bv-buy" onClick={() => act(buyAddon, f)}>{t("vendor-sites.buy")}</button>)}
+        : <PayButton className="bv-buy" supplier="books" name={v.name} amount={v.deployment === "desktop" ? price : 0} run={(m) => act(buyAddon, f, m)}>{t("vendor-sites.buy")}</PayButton>)}
     </div>
   ));
 }

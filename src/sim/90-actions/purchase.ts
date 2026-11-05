@@ -23,7 +23,7 @@ export function methodsFor(s: GameState, supplier: SupplierId, lines: LedgerEntr
 
 // Checks the method against the company's means, then issues the one document for the order. A credit (negative total) is
 // money coming back and needs no check.
-export function placeOrder(s: GameState, o: { supplier: SupplierId; name: string; lines: LedgerEntry[]; method: Method; order?: string; doc?: Payable["doc"] }): ActionResult & { payable?: string } {
+export function placeOrder(s: GameState, o: { supplier: SupplierId; name: string; lines: LedgerEntry[]; method: Method; order?: string; doc?: Payable["doc"]; paper?: boolean }): ActionResult & { payable?: string } {
   const amount = total(o.lines), { method } = o;
   const fail = (error: string) => ({ ok: false as const, error });
   if (amount > 0) {

@@ -34,6 +34,7 @@ describe("cross-connects", () => {
     expect(s.cash).toBe(cash - crossConnectSetup(FR5));
     expect(s.crossConnects).toEqual([{ id, contractId: c.id, to: "cogentle", monthly: FR5.crossConnect, since: s.hour, jack: { device: expect.any(String), port: 0 } }]);
     expect(s.ledger.at(-1)).toMatchObject({ key: "ledger.crossConnectSetup", category: "rent", params: { to: "Cogentle", dc: FR5.id } });
+    expect(s.payables.at(-1)).toMatchObject({ supplier: "datacenter", name: FR5.name });
     runTo(s, hourOf(new Date(Date.UTC(2005, 3, 1))) + 1);
     expect(s.ledger.filter((e) => e.key === "ledger.crossConnect")).toMatchObject([{ amount: -FR5.crossConnect, params: { to: "Cogentle", dc: FR5.id } }]);
     expect(err(cancelCrossConnect(s, "nope"))).toBe("error.unknownCrossConnect");

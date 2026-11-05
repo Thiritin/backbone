@@ -12,7 +12,7 @@ Each bank's site shows its conditions under the login box with an Open account b
 
 ## The trade office
 
-The page lives at `www.trade-office.gov/eservice/` and looks like a government site from 2005 that was last updated in 2003: a table layout at 760 pixels wide, Verdana at 11 pixels, a crest in a blue header, a grey left menu where most links lead to "under construction", a visitor counter, a "Best viewed with Internet Exploder 6 at 1024x768" footer and bevelled grey buttons. The form is a fieldset with red asterisks on the required fields.
+The page lives at `www.gewerbeamt-frankfurt.de/eservice/` and looks like a government site from 2005 that was last updated in 2003: a table layout at 760 pixels wide, Verdana at 11 pixels, a crest in a blue header, a grey left menu where most links lead to "under construction", a visitor counter, a "Best viewed with Internet Exploder 6 at 1024x768" footer and bevelled grey buttons. The form is a fieldset with red asterisks on the required fields.
 
 The online service only answers during office hours, Monday to Friday from 08:00 to 16:00. Outside them the page shows the hours and nothing else. Since the game starts on a Saturday night, the first thing the player learns is to press play or fast-forward. At 08:00 on Monday the game posts a Browser notification that the trade office is open, which also stops "Skip to next event" there, so one click on Skip gets the player to the opening.
 

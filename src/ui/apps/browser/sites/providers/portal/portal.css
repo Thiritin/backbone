@@ -18,8 +18,8 @@
 .ps-offer p { margin: 4px 0 8px; }
 .ps-error { color: #b3261e; }
 .ps-sheet-veil { position: absolute; inset: 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 48px; background: rgba(0, 0, 0, 0.35); z-index: 2; }
-.ps-sheet { width: min(460px, 92%); background: #ffffff; color: #222222; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); }
-.ps-sheet-h { margin: 0; padding: 10px 14px; border-bottom: 1px solid #dddddd; }
+.ps-sheet { width: min(460px, 92%); max-height: calc(100% - 64px); overflow-y: auto; background: #ffffff; color: #222222; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); }
+.ps-sheet-h { position: sticky; top: 0; z-index: 1; background: inherit; margin: 0; padding: 10px 14px; border-bottom: 1px solid #dddddd; }
 .ps-sheet-b { padding: 10px 14px; }
 .ps-sheet-b h4 { margin: 12px 0 4px; }
 .ps-sheet-f { justify-content: flex-end; padding: 10px 14px; margin: 0 !important; border-top: 1px solid #dddddd; }

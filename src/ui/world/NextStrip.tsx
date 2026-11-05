@@ -19,7 +19,7 @@ export function NextStrip() {
   const parts = shown.goals.filter((g) => checkDone(game, g)).length, waits = wait[cards.indexOf(shown)];
   return (
     <aside className="w-next" data-next={shown.id}>
-      <div className="w-next-text"><b>{title}{shown.goals.length > 1 && !waits && <span className="w-next-n num">{parts}/{shown.goals.length}</span>}</b><span>{text}</span></div>
+      <div className="w-next-text"><b>{title}<span className="w-next-n num">{t("guide.next.step", { n: cards.indexOf(shown) + 1, total: cards.length })}</span>{shown.goals.length > 1 && !waits && <span className="w-next-n num">{parts}/{shown.goals.length}</span>}</b><span>{text}</span></div>
       {waits ? <span className="w-next-wait">{t("guide.next.waiting")}</span> : <button className="btn primary" onClick={() => openStep(game, shown, step)}>{t("apps.open")}</button>}
       <button className="w-next-x" aria-label={t("apps.close")} onClick={() => set(false)}><X size={14} /></button>
     </aside>

@@ -54,6 +54,8 @@ describe("post in the letterbox", () => {
     const s = withPost();
     s.cash = 1_000_000;
     expect(rentSection(s, "gallushof", freeSections(s, listingById("gallushof")!)[0]).ok).toBe(true);
+    // The landlord's deposit letter is beside the point here.
+    s.letters = s.letters.filter((l) => l.topic !== "landlordDoc");
     const office = s.properties.at(-1)!.locationId!;
     expect(postLocation(s)).toBe(office);
     post(s, OFFICE_NAME, "officeRegistered", { name: "Kellerhost", reg: "4712" }, 1);
