@@ -26,11 +26,10 @@ A trip into or out of a country across the sea (London, Dublin) flies, by the ta
 
 ## Sounds
 
-Car door, engine start, engine running, engine stop; for a flight a lighter taxi door and a jet rumble loop. The game's sound layer synthesises its sounds in code; the travel sounds follow that unless a free pack fits better. Any pack used is recorded in `public/world/CREDITS.md`.
+Car door on leaving, engine running on the road; for a flight a jet rumble loop. The game's sound layer synthesises its sounds in code; the travel sounds follow that unless a free pack fits better. Any pack used is recorded in `public/world/CREDITS.md`.
 
 ## Pieces
 
 - Data: the roads file, the routes file, the script that builds them, and the credits entry for the data sources.
-- Scenes: the two side-view scenes drawn in code, with the avatar in the style of the room figures and the car drawn flat.
 - Map: the dark map, the route, the marker, the clock readout.
-- Flow: door, map, scene, map, scene, room, with skip on every stage and the existing travel action and arrival time driving all of it.
+- Flow: door or car, map, road, room, with skip on every stage and the existing travel action and arrival time driving all of it.
