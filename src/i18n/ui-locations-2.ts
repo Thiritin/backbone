@@ -362,4 +362,7 @@ export default {
   "locations-2.job.connect": () => "Connect cable",
   "locations-2.job.disconnect": () => "Unplug cable",
   "locations-2.job.setPlugged": () => "Power cord",
+  "locations-2.selectAll": () => "Select all",
+  "locations-2.selectedUnits": (p) => `${p.n} selected`,
+  "locations-2.selectStack": () => "Select",
 } satisfies Dict;
