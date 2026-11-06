@@ -34,7 +34,7 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
   const px0 = edge ? -4 : -9 - e, px1 = edge ? w + 16 : w + 13 + e, py0 = edge ? -8 : -14 - e, py1 = h + 9;
   const sy0 = py1 + 2.35, sy1 = sy0 + STREET, gateX0 = w + 3, gateX1 = w + 9, bayY = (k: number) => h + 1 - BAY.w * (k + 1);
   const tone = (slot: number) => CAR_TONES[pick(seed, slot, CAR_TONES.length)];
-  const by = py0 - (setting === "nowhere" ? 8 : 14), top = dbl ? 3.2 : 2.6, boothX1 = gateX1 + (c.guard ? 5.2 : 3);
+  const by = py0 - (setting === "nowhere" ? 8 : 14), top = dbl ? 3.2 : 2.6, boothX1 = gateX1 + (c.guard ? 6 : 3);
   const items: Item[] = [
     it("street", -300, sy0, w + 300, sy1, 0, "front", { moving: true }),
     it("walk", -300, py1 + 0.4, w + 300, py1 + 0.4 + 1.8, 0, "front"),
@@ -42,11 +42,12 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     carItem("hatchback", w + 1.4, bayY(0) + 0.1, PLAYER_CAR, "front", { kind: "hatchback" }),
     ...Array.from({ length: edge ? 1 : Math.min(3, staff) }, (_, k) => carItem(["hatchback", "sedan", "van"][k], w + 1.2, bayY(k + 1) + 0.1, tone(5 + k), "front", { kind: ["hatchback", "sedan", "van"][k] })),
     it("gate", gateX0, py1 - 0.3, gateX1, py1 + 0.3, M, "front", { kind: setting !== "business" && c.slide ? "slide" : "barrier" }),
+    it("gate", 2, py1 - 0.3, 6, py1 + 0.3, M, "front", { kind: "door" }),
     it("booth", gateX1 + 1.1, py1 - 1.6, boothX1, py1 + 0.7, Math.round(2.8 * M), "front"),
     carItem(setting === "industrial" ? "van" : "coupe", -34, sy0 + 4.2, tone(7), "front", { kind: setting === "industrial" ? "van" : "coupe", moving: true }), carItem(setting === "industrial" ? "van" : "hatchback", w + 16, sy0 + 1.4, tone(8), "front", { kind: setting === "industrial" ? "van" : "hatchback", moving: true }),
     it("cam", gateX0 - 1.6, py1 - 3.5, gateX0 - 1.4, py1 - 3.3, 5 * M, "front", { kind: "gate" }),
     ...fenceLine("x", py0, px0, px1, "back", dbl, top), ...fenceLine("y", px0, py0, py1, "back", dbl, top), ...fenceLine("y", px1, py0, py1, "front", dbl, top),
-    ...fenceLine("x", py1, px0, gateX0, "front", false, 2.6), ...fenceLine("x", py1, boothX1, px1, "front", false, 2.6),
+    ...fenceLine("x", py1, px0, 2, "front", false, 2.6), ...fenceLine("x", py1, 6, gateX0, "front", false, 2.6), ...fenceLine("x", py1, boothX1, px1, "front", false, 2.6),
   ];
   if (edge) {
     items.push(it("light", w + 7.9, h + 0.9, w + 8.1, h + 1.1, 8 * M, "front"), ...packUtil(["cont", "pallet"], px0 + 2, () => w - 1, -3.5, py0 + 1.2, 1.2));
@@ -54,7 +55,7 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     items.push(
       it("lobby", 0, h, 9, h + 6, 96, "front"), it("sign", 5.2, h + 0.6, 7, h + 0.8, 56, "front"),
       it("yard", w - 11, -9.4, w - 1, -4.5, 56, "back", { count: 3 }),
-      it("path", 3.4, h + 6, 4.8, h + 8.2, 0, "front"), it("path", 3.4, h + 7.2, gateX0 + 3, h + 8.2, 0, "front"), it("path", gateX0 + 1, h + 7.2, gateX0 + 3, py1 + 0.4, 0, "front"),
+      it("path", 3.4, h + 6, 4.8, py1 + 0.4, 0, "front"), it("path", 3.4, h + 7.2, gateX0 + 3, h + 8.2, 0, "front"), it("path", gateX0 + 1, h + 7.2, gateX0 + 3, py1 + 0.4, 0, "front"),
       it("light", px1 - 6.1, py0 + 5.9, px1 - 5.9, py0 + 6.1, 8 * M, "back"), it("light", px0 + 5.9, 3, px0 + 6.1, 3.2, 8 * M, "back"),
       it("bin", w + 7, h + 2.3, w + 7.7, h + 3, 30, "front"), it("bin", w + 7.9, h + 2.3, w + 8.6, h + 3, 30, "front"),
     );
@@ -64,7 +65,8 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     items.push(...packUtil(rest, px0 + (dbl ? gap + 1.5 : 2), (y) => (y > -10 ? w - 12.5 : px1 - 9), -4.5, py0 + (dbl ? gap + 0.6 : 1.5), cls === "L" ? 3.5 : cls === "M" ? 2.2 : 1.2));
     if (dbl) {
       items.push(
-        ...fenceLine("x", py0 + gap, px0 + gap, px1 - gap, "back", false, 2.6), ...fenceLine("y", px0 + gap, py0 + gap, py1 - 5, "front", false, 2.6), ...fenceLine("y", px1 - gap, py0 + gap, py1 - 5, "front", false, 2.6),
+        ...fenceLine("x", py0 + gap, px0 + gap, px1 - gap, "back", false, 2.6), ...fenceLine("y", px0 + gap, py0 + gap, py1 - 2, "back", false, 2.6), ...fenceLine("y", px1 - gap, py0 + gap, py1 - 2, "front", false, 2.6),
+        ...fenceLine("x", py1 - 2, px0 + gap, 2, "front", false, 2.6), ...fenceLine("x", py1 - 2, 6, gateX0, "front", false, 2.6), ...fenceLine("x", py1 - 2, boothX1, px1 - gap, "front", false, 2.6),
         it("cam", px1 - 2.1, py0 + 1.9, px1 - 1.9, py0 + 2.1, 5 * M, "back"), it("cam", px0 + 1.9, py0 + 1.9, px0 + 2.1, py0 + 2.1, 5 * M, "back"),
       );
     }

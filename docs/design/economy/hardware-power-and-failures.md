@@ -230,14 +230,25 @@ Backup rules: hourly, daily or weekly, kept 7, 14 or 30 days. A full copy plus 5
 
 **How the first build plays backups.** A cluster backs up to another cluster, in its own zone or another one, daily or weekly (Sundays), at 02:00, with one retention for all: the pool needs 1.3 × the used disk of every workload backed up to it. A job fails with a notification when the target's control plane is down or its nodes lack the free disk. A backup records the hour on each workload. When a server's array is lost, the game opens an incident report listing every workload on it with its customer, disk and last backup. Customers without a backup lose 60 happiness at once and ask for a refund. Restoring from a backup takes the used disk ÷ 450 GB per hour inside the zone or ÷ 45 GB per hour from another zone, rounded up to whole hours, and costs the happiness in the table, counted from the hour of the loss. Without a backup, a restore starts the workload on an empty disk. A refund pays back one month of the service's fees; declining one makes the customer leave. Restores from a backup, refunds and declines each give the customer the review chance from Marketing and reviews, with the 3-star rule after a refund.
 
-**Power outages.** Grid outages are random events per location. They are far more frequent than in reality, so the player meets them in the first year. The basement's household line fails twice as often as a datacenter's utility feed (decision).
+**Power outages.** Grid outages are random events per location, calibrated to German grid statistics: a household line sees about 0.3 unplanned interruptions a year, a medium voltage feed far fewer, and the average connection is dark for 10 to 25 minutes a year. A server room with a UPS or generator rarely goes dark, so those purchases pay off over years, not weeks.
 
 | Event | Rate | Duration | What survives it |
 | --- | --- | --- | --- |
-| Grid outage, basement | 3 a year | Median 20 minutes, 10% last over 2 hours, at most 12 hours | Rooms with a UPS, while its battery lasts |
-| Grid outage, datacenter | 1.5 a year per location | As above | Datacenters with generators; a datacenter UPS alone bridges 15 minutes, plus any UPS of your own |
-| Datacenter feed failure | 0.3 a year per feed | Median 30 minutes | Servers with a second PSU on the other feed |
+| Grid outage, basement | 0.25 a year | Median 20 minutes, 10% last over 2 hours, at most 12 hours | Rooms with a UPS, while its battery lasts |
+| Grid outage, own hall | 0.1 a year | As above | Halls with batteries and a generator |
+| Grid outage, datacenter without generator | 0.08 a year per location | As above | A datacenter UPS bridges 15 minutes, plus any UPS of your own |
+| Grid outage, datacenter with generator | 0.05 a year per location | As above | Generators carry the load; customers see about 0.015 a year |
+| Regional storm | 0.1 a year, every location at once | Median 2 hours, at most 12 hours | Generators and batteries only |
+| Datacenter feed failure | 0.08 a year per feed | Median 30 minutes | Servers with a second PSU on the other feed |
 | Generator fails to start | 2% of grid outages at a datacenter | Until the grid returns | Nothing on that feed |
+
+Measured over 20 seeds and 10 years (tests/grid-rates.test.ts), storms included:
+
+| Location | Outages a year before / after | Dark minutes a year before / after |
+| --- | --- | --- |
+| Basement | 2.95 / 0.43 | 143 / 45 |
+| Datacenter, UPS | 1.5 / 0.25 | 57 / 28 |
+| Datacenter, UPS and generator | 1.5 / 0.24 (0.015 customer-visible) | 0.6 / 2.6 |
 
 A UPS runs for its battery capacity divided by the load:
 

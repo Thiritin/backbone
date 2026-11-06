@@ -4,8 +4,11 @@ Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A
 
 ## 2026-11-06
 - Generators, transformers and other plant equipment in your datacenter now stand clear of each other, and their hazard pads line up.
+- Power outages are now much rarer and match real grid statistics, with an occasional regional storm that darkens every location for hours.
 
 ## 2026-11-05
+- Cars passing your datacenter now drive smoothly instead of in jumps.
+- The fence around your datacenter now closes into a clean ring of equal sections with a posted gate, and the inner fence no longer cuts through the lobby or the guard booth.
 - Stored hardware can be selected across several models and shipped or driven to another location in one trip.
 - Small parts such as RAM and drives are now drawn smaller than rack servers in storage and shop pictures.
 - Taxware Office is now a program of its own that looks like its version: a grey Windows desktop with menus, toolbar, Navigator and child windows until 2008, a workflow start page with side navigation and tabs from 2009, and a flat start page with tiles from 2015.
