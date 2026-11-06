@@ -451,7 +451,7 @@ export const World = memo(function World() {
     carDoor();
     useTrip.getState().send("door");
   };
-  leaveRef.current = use("car", leaveCar, () => (fx.door ? beside(fx.door) : null), t("world.site.car")) 
+  leaveRef.current = click(leaveCar);
   const drive: Drive = useMemo(() => ({ onLeave: (e) => leaveRef.current(e as MouseEvent) }), []);
   const openDoor = () => {
     setDoor(1);
