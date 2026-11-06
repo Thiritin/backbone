@@ -18,15 +18,19 @@ import { cleanShutdowns } from "./ups";
 import { bootHours, deviceWatts, dualFed, HOURS_PER_YEAR, locationOf, pluggedIn, rackPower } from "./status";
 
 export const GRID = {
-  // Outages a year: the household line in the basement fails more often than a datacenter's utility feed.
-  basementPerYear: 3, datacenterPerYear: 1.5,
+  // Grid interruptions a year, near German low and medium voltage statistics: a household line fails most often, a datacenter's
+  // medium voltage feed rarely, and a site with a generator rides most of them out.
+  basementPerYear: 0.25, hallPerYear: 0.1,
+  datacenterPerYear: { none: 0.15, ups: 0.08, "ups+generator": 0.05 },
+  // A regional storm cuts the grid at every location at once, for hours.
+  stormPerYear: 0.1, stormMedianMinutes: 120, stormSigma: 0.5,
   // Median 20 minutes, 10% over 2 hours.
   medianMinutes: 20, sigma: 1.4, maxMinutes: 12 * 60,
   generatorFails: 0.02,
   // A datacenter's own UPS bridges this long, also on sites without a generator.
   siteUpsMinutes: 15,
   // A datacenter feed fails on its own, behind the site's UPS and generator.
-  feedPerYear: 0.3, feedMedianMinutes: 30,
+  feedPerYear: 0.08, feedMedianMinutes: 30,
 };
 // A datacenter hall's cooling fails at times; the room then heats up (thermal.ts).
 export const COOLING = { perYear: 0.3, medianMinutes: 40, sigma: 1, maxMinutes: 8 * 60 };
@@ -204,10 +208,16 @@ export function gridTick(s: GameState): SimEvent[] {
   s.locations.forEach((loc, i) => {
     if (loc.readyAt > s.hour || !s.devices.some((d) => d.rackId && locationOf(s, d)?.id === loc.id)) return;
     const r = hashRng(s.seed, s.hour, i, 91);
-    if (rand(r) >= (loc.dc ? GRID.datacenterPerYear : GRID.basementPerYear) / HOURS_PER_YEAR) return;
+    const perYear = loc.dc ? GRID.datacenterPerYear[datacenterById(loc.dc).backup] : hallOf(s, loc.id) ? GRID.hallPerYear : GRID.basementPerYear;
+    if (rand(r) >= perYear / HOURS_PER_YEAR) return;
     const minutes = Math.max(5, Math.min(GRID.maxMinutes, Math.round(GRID.medianMinutes * Math.exp(GRID.sigma * normal(r)))));
     gridOutage(s, loc, minutes, r, events);
   });
+  const storm = hashRng(s.seed, s.hour, 0, 95);
+  if (rand(storm) < GRID.stormPerYear / HOURS_PER_YEAR) {
+    const minutes = Math.max(30, Math.min(GRID.maxMinutes, Math.round(GRID.stormMedianMinutes * Math.exp(GRID.stormSigma * normal(storm)))));
+    for (const loc of s.locations) if (loc.readyAt <= s.hour && s.devices.some((d) => d.rackId && locationOf(s, d)?.id === loc.id)) gridOutage(s, loc, minutes, storm, events);
+  }
   s.locations.forEach((loc, i) => {
     if (!loc.dc || loc.readyAt > s.hour || !s.devices.some((d) => d.rackId && locationOf(s, d)?.id === loc.id)) return;
     const r = hashRng(s.seed, s.hour, i, 94);

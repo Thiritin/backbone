@@ -255,15 +255,15 @@ describe("grid outages", () => {
     expect(powered(s, "dev3")).toBe(true);
   });
 
-  it("happens a few times a year in the basement and shows up as incidents", () => {
+  it("happens every few years in the basement and shows up as incidents", () => {
     const s = readyGame(2);
-    for (let h = 0; h < 8760; h++) {
+    for (let h = 0; h < 8760 * 20; h++) {
       s.hour++;
       gridTick(s);
     }
     const grid = s.ops.incidents.filter((i) => i.cause === "grid");
     expect(grid.length).toBeGreaterThan(0);
-    expect(grid.length).toBeLessThan(10);
+    expect(grid.length).toBeLessThan(20);
   });
 });
 
