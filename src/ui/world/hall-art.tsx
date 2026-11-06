@@ -4,6 +4,8 @@ import type { Company } from "../../sim/50-state";
 import { ICONS } from "../apps/company";
 import { at3, onX, onY, pts, Prism, WallBand } from "./draw";
 import { iso, type Pt } from "./grid";
+import { HALL } from "../../sim/20-world/properties";
+import type { HallItemKind } from "../../sim/50-state";
 import "./hall-art.css";
 
 // Flat isometric art for the hall's placeable items and rooms. Every item takes the scene tile (x, y)
@@ -17,10 +19,17 @@ interface Box { x0: number; y0: number; x1: number; y1: number }
 const horizontal = (f: Facing) => f === "n" || f === "s";
 // Footprint of a w wide, d deep item: w runs along the front.
 export const dims = (w: number, d: number, f: Facing = "s") => (horizontal(f) ? { w, d } : { w: d, d: w });
+// The drawn box sits INSET inside its tile footprint so neighbours never touch.
+export const INSET = 0.06;
 const boxOf = (x: number, y: number, w: number, d: number, f: Facing): Box => {
   const s = dims(w, d, f);
-  return { x0: x, y0: y, x1: x + s.w, y1: y + s.d };
+  return { x0: x + INSET, y0: y + INSET, x1: x + s.w - INSET, y1: y + s.d - INSET };
 };
+// The drawn box of a plant item, from the same size the sim reserves for it.
+export function itemBox(kind: HallItemKind, x: number, y: number, f: Facing, halle = false): Box {
+  const sp = HALL.items[kind];
+  return boxOf(x, y, typeof sp.w === "object" ? sp.w[halle ? "halle" : "office"] : sp.w, sp.d, f);
+}
 const ghosted = (ghost: boolean | undefined, node: ReactNode) => (ghost ? <g className="ha-ghost">{node}</g> : node);
 
 // Point on a visible side face: u from the left of the screen to the right, at height z.
@@ -50,7 +59,7 @@ const SideLine = ({ b, side, u, z0, z1, cls }: { b: Box; side: "s" | "e"; u: num
 const sides = ["s", "e"] as const;
 
 export function Crac({ x, y, facing = "s", ghost }: Base) {
-  const b = boxOf(x, y, 2, 1, facing), H = 56, f = frontSide(facing);
+  const b = itemBox("crac", x, y, facing), H = 56, f = frontSide(facing);
   return ghosted(ghost, (
     <g>
       <Prism {...b} z1={H} tone="ha-t ha-crac" />
@@ -106,7 +115,7 @@ export function Containment({ x, y, endN, endE, endS, endW, ghost }: { x: number
 }
 
 export function Transformer({ x, y, facing = "s", size, ghost }: Base & { size: "office" | "halle" }) {
-  const b = boxOf(x, y, size === "halle" ? 2 : 1, 2, facing), H = 50, f = frontSide(facing);
+  const b = itemBox("transformer", x, y, facing, size === "halle"), H = 50, f = frontSide(facing);
   const W = b.x1 - b.x0, D = b.y1 - b.y0;
   const n = size === "halle" ? 4 : 2;
   return ghosted(ghost, (
@@ -130,7 +139,7 @@ export function Transformer({ x, y, facing = "s", size, ghost }: Base & { size: 
 }
 
 export function Switchgear({ x, y, facing = "s", ghost }: Base) {
-  const b = boxOf(x, y, 1, 2, facing), H = 80, f = frontSide(facing);
+  const b = itemBox("switchgear", x, y, facing), H = 80, f = frontSide(facing);
   return ghosted(ghost, (
     <g>
       <Prism {...b} z1={H} tone="ha-t ha-gear" />
@@ -149,7 +158,7 @@ export function Switchgear({ x, y, facing = "s", ghost }: Base) {
 }
 
 export function Generator({ x, y, facing = "s", ghost }: Base) {
-  const b = boxOf(x, y, 2, 2, facing), H = 44, f = frontSide(facing);
+  const b = itemBox("generator", x, y, facing), H = 44, f = frontSide(facing);
   const p = topAt(b, facing, 0.85, 0.8, H), q = topAt(b, facing, 0.85, 0.8, H + 56);
   return ghosted(ghost, (
     <g>
@@ -169,7 +178,7 @@ export function Generator({ x, y, facing = "s", ghost }: Base) {
 }
 
 export function Ups({ x, y, facing = "s", running, ghost }: Base & { running: boolean }) {
-  const b = boxOf(x, y, 1, 2, facing), H = 70, f = frontSide(facing);
+  const b = itemBox("ups", x, y, facing), H = 70, f = frontSide(facing);
   return ghosted(ghost, (
     <g>
       <Prism {...b} z1={H} tone="ha-t ha-ups" />
@@ -189,7 +198,7 @@ export function Ups({ x, y, facing = "s", running, ghost }: Base & { running: bo
 }
 
 export function Battery({ x, y, facing = "s", ghost }: Base) {
-  const b = boxOf(x, y, 1, 2, facing), H = 50, f = frontSide(facing);
+  const b = itemBox("battery", x, y, facing), H = 50, f = frontSide(facing);
   return ghosted(ghost, (
     <g>
       <Prism {...b} z1={H} tone="ha-t ha-batt" />
@@ -324,9 +333,10 @@ export function Hatch({ x, y, w, h, m = 0.3 }: { x: number; y: number; w: number
   const ring = (g: number) => [iso(x - g, y - g), iso(x + w + g, y - g), iso(x + w + g, y + h + g), iso(x - g, y + h + g)];
   const path = (g: number) => `M${ring(g).map((p) => `${p.x} ${p.y}`).join("L")}Z`;
   const stripes: ReactNode[] = [];
-  for (let s = x - m; s < x + w + m + h + m; s += 0.5) {
-    const p = iso(s, y - m), q = iso(s - (h + 2 * m), y + h + m);
-    stripes.push(<line key={s} className="ha-s ha-hatch" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />);
+  // Stripes sit on a fixed grid of x + y so neighbouring pads line up.
+  for (let c = Math.floor((x + y - 2 * m) / 0.5) * 0.5; c < x + y + w + h + 2 * m; c += 0.5) {
+    const p = iso(c - (y - m), y - m), q = iso(c - (y + h + m), y + h + m);
+    stripes.push(<line key={c} className="ha-s ha-hatch" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />);
   }
   return (
     <g>

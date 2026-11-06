@@ -2,6 +2,9 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-06
+- Generators, transformers and other plant equipment in your datacenter now stand clear of each other, and their hazard pads line up.
+
 ## 2026-11-05
 - Stored hardware can be selected across several models and shipped or driven to another location in one trip.
 - Small parts such as RAM and drives are now drawn smaller than rack servers in storage and shop pictures.
