@@ -2,6 +2,9 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-06
+- Power outages are now much rarer and match real grid statistics, with an occasional regional storm that darkens every location for hours.
+
 ## 2026-11-05
 - Cars passing your datacenter now drive smoothly instead of in jumps.
 - The fence around your datacenter now closes into a clean ring of equal sections with a posted gate, and the inner fence no longer cuts through the lobby or the guard booth.
