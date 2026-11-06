@@ -14,22 +14,6 @@ function out(): { c: AudioContext; o: GainNode; t: number } | null {
   }
 }
 
-// A sawtooth through a low-pass, gliding between two pitches: the engine.
-function motor(c: AudioContext, o: AudioNode, at: number, from: number, to: number, secs: number, peak: number) {
-  const osc = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
-  osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(from, at);
-  osc.frequency.exponentialRampToValueAtTime(to, at + secs);
-  lp.type = "lowpass";
-  lp.frequency.value = 380;
-  g.gain.setValueAtTime(0.0001, at);
-  g.gain.exponentialRampToValueAtTime(peak, at + 0.08);
-  g.gain.exponentialRampToValueAtTime(0.0001, at + secs);
-  osc.connect(lp).connect(g).connect(o);
-  osc.start(at);
-  osc.stop(at + secs + 0.05);
-  return { osc, g };
-}
 
 export function carDoor() {
   const a = out();
