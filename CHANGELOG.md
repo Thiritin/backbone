@@ -2,6 +2,9 @@
 
 Newest first. One `## YYYY-MM-DD` heading per day, one `- ` bullet per change. A bullet is one player-facing sentence that says what changed in the game, with no file names, code names or em dashes. The game reads this file at build time and shows the bullets a newer build has when it offers a reload, so every change that lands in main adds its bullet here, under the heading of its day.
 
+## 2026-11-06
+- Power outages are now much rarer and match real grid statistics, with an occasional regional storm that darkens every location for hours.
+
 ## 2026-11-05
 - Taxware Office is now a program of its own that looks like its version: a grey Windows desktop with menus, toolbar, Navigator and child windows until 2008, a workflow start page with side navigation and tabs from 2009, and a flat start page with tiles from 2015.
 - In Taxware Office you post bank lines through the Dialogbuchen mask into a Buchungsstapel, and read the Kontenplan in SKR03 or SKR04, the open items, the trial balance, BWA, GuV, Bilanz and the advance VAT return.
