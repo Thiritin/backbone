@@ -1,5 +1,5 @@
 import { ArrowDownToLine, Router, Truck } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { isOfficeRouter, modelById, modelName } from "../../../sim/10-catalog/hardware";
 import type { Device, GameState, Location } from "../../../sim/50-state";
 import { euro } from "../../../sim/00-core/money";
@@ -118,9 +118,45 @@ function MountSheet({ game, stack, onClose, onMount, onMounted }: { game: GameSt
   );
 }
 
+// Ships every selected stack at once: one courier quote, or the player drives the load over.
+function Bulk({ game, from, ids, onDone, children }: { game: GameState; from: string; ids: string[]; onDone: () => void; children?: ReactNode }) {
+  const act = useStore((s) => s.act), notify = useStore((s) => s.notify);
+  const targets = game.locations.filter((l) => l.id !== from);
+  const [to, setTo] = useState(targets[0].id);
+  const dest = targets.find((l) => l.id === to) ?? targets[0], trip = parcelCost(game, from, dest.id, ids.length);
+  const here = present(game, from) && game.player.until <= game.hour, fare = drive(game, dest.id);
+  const go = (self: boolean) => {
+    if (!act(shipStock, ids, dest.id, self).ok) return;
+    notify("Locations", t("locations-2.shippingTo", { az: dest.az }), t("locations-2.nUnits", { n: ids.length }));
+    onDone();
+  };
+  return (
+    <div className="loc-row loc-ship loc-bulk">
+      <strong className="num">{t("locations-2.selectedUnits", { n: ids.length })}</strong>
+      {children}
+      <div className="seg wrap" role="group" aria-label={t("locations-2.zone")}>
+        {targets.map((l) => <button key={l.id} className="num" title={l.name} aria-pressed={l.id === dest.id} onClick={() => setTo(l.id)}>{l.az}</button>)}
+      </div>
+      <span className="grow" />
+      <span className="num">{euro(trip.price)}</span>
+      <span className="num loc-muted">{t("locations-2.arrives", { day: day(game.hour + trip.hours) })}</span>
+      {fare && <button className="btn" disabled={!here} title={here ? undefined : t("error.notThere")} onClick={() => go(true)}>{t("locations-1.driveYourself", { hours: fare.hours, fee: euro(fare.fee) })}</button>}
+      <button className="btn primary" onClick={() => go(false)}>{t("locations-2.ship")}</button>
+    </div>
+  );
+}
+
 // Units stored in one zone, grouped by model.
 export function Storage({ game, loc, onMounted }: { game: GameState; loc: Location; onMounted?: Mounted }) {
   const stacks = storageStacks(game, loc.id);
+  const [sel, setSel] = useState<string[]>([]), [qty, setQty] = useState<Record<string, number>>({}), last = useRef(-1);
+  const key = (s: Stack) => `${s.model}|${s.brand}`, keys = stacks.map(key), picked = stacks.filter((s) => sel.includes(key(s)));
+  const pick = (i: number, range: boolean) => {
+    const span = range && last.current >= 0 ? keys.slice(Math.min(i, last.current), Math.max(i, last.current) + 1) : [keys[i]];
+    const on = !sel.includes(keys[i]);
+    setSel(on ? [...new Set([...sel, ...span])] : sel.filter((k) => !span.includes(k)));
+    last.current = i;
+  };
   const transit = new Map<string, Device[]>();
   for (const d of game.devices.filter((x) => x.transitTo)) {
     const k = `${d.model}|${d.brand}|${d.transitTo}|${d.arriveAt}`;
@@ -128,8 +164,12 @@ export function Storage({ game, loc, onMounted }: { game: GameState; loc: Locati
   }
   return (
     <div className="loc-card">
-      <div className="loc-card-h"><h3>{t("locations-2.storage")}</h3><Zone loc={loc} /><span className="grow" /><span className="num loc-muted">{stacks.reduce((n, s) => n + s.ids.length, 0)}</span></div>
-      {stacks.length ? <div className="loc-stack-grid">{stacks.map((s) => <StackRow key={`${s.model}|${s.brand}`} game={game} stack={s} onMounted={onMounted} />)}</div> : <div className="loc-row loc-muted">{t("locations-2.empty")}</div>}
+      <div className="loc-card-h"><h3>{t("locations-2.storage")}</h3><Zone loc={loc} /><span className="grow" />{stacks.length > 1 && game.locations.length > 1 && <label className="loc-pick"><input type="checkbox" checked={picked.length === stacks.length} onChange={(e) => setSel(e.target.checked ? keys : [])} />{t("locations-2.selectAll")}</label>}<span className="num loc-muted">{stacks.reduce((n, s) => n + s.ids.length, 0)}</span></div>
+      {stacks.length ? <div className="loc-stack-grid">{stacks.map((s, i) => <StackRow key={key(s)} game={game} stack={s} onMounted={onMounted} checked={sel.includes(key(s))} onPick={game.locations.length > 1 ? (r) => pick(i, r) : undefined} />)}</div> : <div className="loc-row loc-muted">{t("locations-2.empty")}</div>}
+      {picked.length > 0 && <Bulk key={loc.id} game={game} from={loc.id} ids={picked.flatMap((s) => s.ids.slice(0, qty[key(s)] ?? s.ids.length))} onDone={() => { setSel([]); setQty({}); }}>
+        {picked.filter((s) => s.ids.length > 1).map((s) => <span key={key(s)} className="loc-bulk-qty" title={`${s.brand} ${modelName(modelById(s.model), s.brand)}`}>
+          <Stepper value={Math.min(qty[key(s)] ?? s.ids.length, s.ids.length)} min={1} onChange={(v) => setQty({ ...qty, [key(s)]: Math.min(v, s.ids.length) })} /></span>)}
+      </Bulk>}
       {transit.size > 0 && <div className="loc-card-h loc-sub"><h3><Truck />{t("locations-2.inTransit")}</h3></div>}
       {[...transit].map(([k, ds]) => {
         const m = modelById(ds[0].model), to = game.locations.find((l) => l.id === ds[0].transitTo)!;
@@ -144,7 +184,7 @@ export function Storage({ game, loc, onMounted }: { game: GameState; loc: Locati
   );
 }
 
-function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; onMounted?: Mounted }) {
+function StackRow({ game, stack, onMounted, checked, onPick }: { game: GameState; stack: Stack; onMounted?: Mounted; checked: boolean; onPick?: (range: boolean) => void }) {
   const act = useStore((s) => s.act);
   const [mounting, setMounting] = useState(false), hand = useHandWork();
   const [selling, setSelling] = useState(false);
@@ -164,6 +204,7 @@ function StackRow({ game, stack, onMounted }: { game: GameState; stack: Stack; o
   return (
     <div className={`loc-stack${shipping || listing || selling ? " open" : ""}`} onContextMenu={menuOn(entries)}>
       <div className="loc-stack-main">
+        {onPick && <input type="checkbox" className="loc-stack-pick" aria-label={t("locations-2.selectStack")} checked={checked} onChange={() => {}} onClick={(e) => onPick(e.shiftKey)} />}
         <Isometric model={m} brand={stack.brand} w={96} count={stack.ids.length} />
         <div className="loc-stack-name">
           <strong>{stack.brand} {modelName(m, stack.brand)}</strong>

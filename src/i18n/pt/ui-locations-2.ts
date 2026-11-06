@@ -362,4 +362,7 @@ export default {
   "locations-2.job.connect": () => "Ligar cabo",
   "locations-2.job.disconnect": () => "Desligar cabo",
   "locations-2.job.setPlugged": () => "Cabo de alimentação",
+  "locations-2.selectAll": () => "Selecionar tudo",
+  "locations-2.selectedUnits": (p) => `${p.n} equipamentos selecionados`,
+  "locations-2.selectStack": () => "Selecionar",
 } satisfies Dict;

@@ -362,4 +362,7 @@ export default {
   "locations-2.job.connect": () => "Kabel stecken",
   "locations-2.job.disconnect": () => "Kabel ziehen",
   "locations-2.job.setPlugged": () => "Stromkabel",
+  "locations-2.selectAll": () => "Alle auswählen",
+  "locations-2.selectedUnits": (p) => `${p.n} Geräte ausgewählt`,
+  "locations-2.selectStack": () => "Auswählen",
 } satisfies Dict;

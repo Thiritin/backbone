@@ -362,4 +362,7 @@ export default {
   "locations-2.job.connect": () => "Brancher un câble",
   "locations-2.job.disconnect": () => "Débrancher un câble",
   "locations-2.job.setPlugged": () => "Cordon d'alimentation",
+  "locations-2.selectAll": () => "Tout sélectionner",
+  "locations-2.selectedUnits": (p) => `${p.n} appareils sélectionnés`,
+  "locations-2.selectStack": () => "Sélectionner",
 } satisfies Dict;
