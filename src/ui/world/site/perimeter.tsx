@@ -6,8 +6,8 @@ const MESH = 2.4 * M, POST = 2.85 * M, GAP = 2.5 * M;
 
 // One 5 m run of the security fence: posts every 2.5 m, diagonal mesh, a V outrigger and a razor coil along the top. It sits in the plane of the run.
 export function Fence({ i }: { i: Item }) {
-  const along = i.dir === "y", len = (along ? i.y1 - i.y0 : i.x1 - i.x0) * M, plane = along ? onX(i.x0, i.y0, 0) : onY(i.x0, i.y0, 0);
-  const posts = Array.from({ length: Math.floor(len / GAP) + 1 }, (_, k) => k * GAP);
+  const along = i.dir === "y", len = (along ? i.y1 - i.y0 : i.x1 - i.x0) * M, plane = along ? onX(i.x0, i.y1, 0) : onY(i.x0, i.y0, 0);
+  const gaps = Math.max(1, Math.ceil(len / GAP - 1e-6)), posts = Array.from({ length: gaps + 1 }, (_, k) => (k * len) / gaps);
   const coil = i.coil ? "M" + Array.from({ length: Math.floor(len / 5) }, (_, k) => `${k * 5 + 5} ${-POST - 3}a4.5 4.5 0 1 1 -9 0a4.5 4.5 0 1 1 9 0`).join("M") : "";
   return (
     <g pointerEvents="none" transform={plane}>

@@ -34,7 +34,7 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
   const px0 = edge ? -4 : -9 - e, px1 = edge ? w + 16 : w + 13 + e, py0 = edge ? -8 : -14 - e, py1 = h + 9;
   const sy0 = py1 + 2.35, sy1 = sy0 + STREET, gateX0 = w + 3, gateX1 = w + 9, bayY = (k: number) => h + 1 - BAY.w * (k + 1);
   const tone = (slot: number) => CAR_TONES[pick(seed, slot, CAR_TONES.length)];
-  const by = py0 - (setting === "nowhere" ? 8 : 14), top = dbl ? 3.2 : 2.6, boothX1 = gateX1 + (c.guard ? 5.2 : 3);
+  const by = py0 - (setting === "nowhere" ? 8 : 14), top = dbl ? 3.2 : 2.6, boothX1 = gateX1 + (c.guard ? 6 : 3);
   const items: Item[] = [
     it("street", -300, sy0, w + 300, sy1, 0, "front", { moving: true }),
     it("walk", -300, py1 + 0.4, w + 300, py1 + 0.4 + 1.8, 0, "front"),
@@ -64,7 +64,8 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     items.push(...packUtil(rest, px0 + (dbl ? gap + 1.5 : 2), (y) => (y > -10 ? w - 12.5 : px1 - 9), -4.5, py0 + (dbl ? gap + 0.6 : 1.5), cls === "L" ? 3.5 : cls === "M" ? 2.2 : 1.2));
     if (dbl) {
       items.push(
-        ...fenceLine("x", py0 + gap, px0 + gap, px1 - gap, "back", false, 2.6), ...fenceLine("y", px0 + gap, py0 + gap, py1 - 5, "front", false, 2.6), ...fenceLine("y", px1 - gap, py0 + gap, py1 - 5, "front", false, 2.6),
+        ...fenceLine("x", py0 + gap, px0 + gap, px1 - gap, "back", false, 2.6), ...fenceLine("y", px0 + gap, py0 + gap, py1 - 2, "back", false, 2.6), ...fenceLine("y", px1 - gap, py0 + gap, py1 - 2, "front", false, 2.6),
+        ...fenceLine("x", py1 - 2, px0 + gap, 2, "front", false, 2.6), ...fenceLine("x", py1 - 2, 6, gateX0, "front", false, 2.6), ...fenceLine("x", py1 - 2, boothX1, px1 - gap, "front", false, 2.6),
         it("cam", px1 - 2.1, py0 + 1.9, px1 - 1.9, py0 + 2.1, 5 * M, "back"), it("cam", px0 + 1.9, py0 + 1.9, px0 + 2.1, py0 + 2.1, 5 * M, "back"),
       );
     }
