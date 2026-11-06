@@ -15,7 +15,7 @@ import { useStore } from "../store";
 import { placeOf } from "../../sim/20-world/places";
 import { along, arc, driveMs, driveOf, km, loadRoutes, loadGeo, loadStreets, useTrip, type LL, type RouteData, type Trip } from "./route";
 import { readyIn } from "../apps/hw";
-import { Scene, useSkip } from "./Scene";
+import { useSkip } from "./useSkip";
 import { engineRun, jetRun } from "./sounds";
 import "./travel.css";
 
@@ -23,9 +23,7 @@ export function Travel() {
   const stage = useTrip((s) => s.stage), trip = useTrip((s) => s.trip);
   if (stage === "map") return <TravelMap />;
   if (!trip) return null;
-  if (stage === "leave") return <Scene key="leave" place={trip.from} leaving taxi={trip.by === "fly"} />;
   if (stage === "road") return <Road trip={trip} />;
-  if (stage === "arrive") return <Scene key="arrive" place={trip.to} leaving={false} taxi={trip.by === "fly"} />;
   return null;
 }
 
@@ -143,7 +141,8 @@ function Drive({ trip, rd, roads, streets, geo }: { trip: Trip; rd: RouteData; r
     const left = () => Math.floor((trip.start + hours * to - nowHours(useStore.getState().game)) * 60 + 1e-6);
     for (let n = left(); n > 0;) { advance(n / 60); const m = left(); if (m >= n) break; n = m; }
   };
-  const finish = () => { catchUp(1); send("done"); };
+  const end = () => { const s = useStore.getState(); if (!s.alert) s.setSpeed(trip.resume); send("done"); };
+  const finish = () => { catchUp(1); end(); };
 
   useEffect(() => {
     const stop = fly ? jetRun() : engineRun(), t0 = performance.now();
@@ -151,7 +150,7 @@ function Drive({ trip, rd, roads, streets, geo }: { trip: Trip; rd: RouteData; r
       const f = Math.min(1, (now - t0) / ms);
       setE(now - t0);
       catchUp(f);
-      if (f >= 1) send("done");
+      if (f >= 1) end();
       else raf = requestAnimationFrame(frame);
     });
     return () => { cancelAnimationFrame(raf); stop(); };

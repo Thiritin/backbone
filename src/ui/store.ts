@@ -372,7 +372,7 @@ export const useStore = create<Store>((set, get) => ({
       if (now.doing === "travel" && now.until > game.hour && now.at !== was.at && ["room", "map"].includes(useTrip.getState().stage)) {
         const trip: Trip = { from: playerAt(get().game), to: playerAt(game), start: nowHours(game), until: now.until, resume: get().speed, by: now.by, billed: game.payables.length > get().game.payables.length };
         set({ game, speed: 0, surface: "world" });
-        useTrip.setState({ stage: "leave", trip });
+        useTrip.setState({ stage: "road", trip });
       } else set({ game });
     } else uiSound("error");
     return r;

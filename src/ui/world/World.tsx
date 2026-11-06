@@ -90,13 +90,6 @@ export const World = memo(function World() {
   const fx = fixtures(loc, plan);
 
   const [door, setDoor] = useState(0);
-  // The player's car: it slides into its bay when the trip ends and out of it on leaving. UI state only, never saved.
-  const [carAnim, setCarAnim] = useState<"" | "in" | "out">("");
-  const stage = useTrip((x) => x.stage), lastStage = useRef(stage);
-  useEffect(() => {
-    const was = lastStage.current; lastStage.current = stage;
-    if (was === "arrive" && stage === "room") { setCarAnim("in"); const id = setTimeout(() => setCarAnim("") , 1300); return () => clearTimeout(id); }
-  }, [stage]);
   const [lit, setLit] = useState<string | null>(null);
   // The object a corkboard card points at, glowing for a moment after the close-up closes.
   const [hint, setHint] = useState<string | null>(null);
@@ -456,11 +449,10 @@ export const World = memo(function World() {
   const leaveRef = useRef<(e: MouseEvent) => void>(() => {});
   const leaveCar = () => {
     carDoor();
-    setCarAnim("out");
-    setTimeout(() => { setCarAnim(""); useTrip.getState().send("door"); }, 700);
+    useTrip.getState().send("door");
   };
   leaveRef.current = use("car", leaveCar, () => (fx.door ? beside(fx.door) : null), t("world.site.car")) 
-  const drive: Drive = useMemo(() => ({ anim: carAnim, onLeave: (e) => leaveRef.current(e as MouseEvent) }), [carAnim]);
+  const drive: Drive = useMemo(() => ({ onLeave: (e) => leaveRef.current(e as MouseEvent) }), []);
   const openDoor = () => {
     setDoor(1);
     setTimeout(() => setDoor(2), 150);

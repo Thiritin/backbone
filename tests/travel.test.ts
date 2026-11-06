@@ -57,13 +57,13 @@ describe("travel", () => {
     const hour = s.hour;
     expect(useStore.getState().act(moveServer, ["dev3"], dc, "self").ok).toBe(true);
     const st = useStore.getState();
-    expect(useTrip.getState()).toMatchObject({ stage: "leave", trip: { from: { id: "loc1" }, to: { id: dc }, resume: 1, by: "drive" } });
+    expect(useTrip.getState()).toMatchObject({ stage: "road", trip: { from: { id: "loc1" }, to: { id: dc }, resume: 1, by: "drive" } });
     expect(st).toMatchObject({ surface: "world", speed: 0 });
     expect(st.game.hour).toBe(hour);
   });
 
-  it("goes door, map, leave, road, arrive, room", () => {
-    const seq: [TripEvent, Stage][] = [["door", "map"], ["done", "map"], ["pick", "leave"], ["close", "leave"], ["done", "road"], ["done", "arrive"], ["door", "arrive"], ["done", "room"]];
+  it("goes door, map, road, room", () => {
+    const seq: [TripEvent, Stage][] = [["door", "map"], ["done", "map"], ["pick", "road"], ["close", "road"], ["door", "road"], ["done", "room"]];
     let s: Stage = "room";
     for (const [e, want] of seq) expect((s = next(s, e))).toBe(want);
     expect(next("map", "close")).toBe("room");

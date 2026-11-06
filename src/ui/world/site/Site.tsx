@@ -22,14 +22,14 @@ export { SiteWeather } from "./weather";
 // The spike's fixed yard: two transformers and a condenser.
 const gear = (i: Item): Gear[] => [{ kind: "xfmr", x: i.x0 + 1.5, y: i.y0 + 1 }, { kind: "xfmr", x: i.x0 + 4.2, y: i.y0 + 1 }, { kind: "cond", x: i.x1 - 3, y: i.y0 + 1.2 }];
 
-const PARKED: Drive = { anim: "" };
-export interface Drive { anim: "" | "in" | "out"; onLeave?: (e: { stopPropagation(): void }) => void }
+const PARKED: Drive = {};
+export interface Drive { onLeave?: (e: { stopPropagation(): void }) => void }
 
 // The player's own car: the one site element that takes the pointer, a click leaves the location.
 function PlayerCar({ i, drive }: { i: Item; drive: Drive }) {
   const label = t("world.site.car");
   return (
-    <g className={`w-car${drive.anim ? ` w-car-${drive.anim}` : ""}`} role="button" tabIndex={0} aria-label={label} onClick={drive.onLeave} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") drive.onLeave?.(e); }}>
+    <g className="w-car" role="button" tabIndex={0} aria-label={label} onClick={drive.onLeave} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") drive.onLeave?.(e); }}>
       <Model id={`${i.kind ?? "sedan"}-${i.dir ?? "x"}`} x={i.x0} y={i.y0} tone={i.tone} />
       <polygon className="w-car-hit" fill="transparent" points={flat(0, [i.x0, i.y0], [i.x1, i.y0], [i.x1, i.y1], [i.x0, i.y1])} />
     </g>
