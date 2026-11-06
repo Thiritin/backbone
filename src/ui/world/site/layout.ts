@@ -70,6 +70,7 @@ export const hedgeRuns = (x0: number, x1: number, y: number, seed: number, layer
 // A security fence line in equal segments of at most 5 m between whole-tile posts; the coil runs along the top of the double fence only.
 export const fenceLine = (axis: "x" | "y", fixed: number, a0: number, a1: number, layer: Item["layer"], coil = true, top = 3.2) => {
   const out: Item[] = [], n = Math.max(1, Math.ceil((a1 - a0) / 10));
+  if (a1 <= a0) return out;
   for (let k = 0; k < n; k++) {
     const a = Math.round(a0 + ((a1 - a0) * k) / n), b = Math.round(a0 + ((a1 - a0) * (k + 1)) / n);
     out.push(axis === "x" ? it("fence", a, fixed, b, fixed + 0.1, Math.round(top * M), layer, { dir: "x", coil }) : it("fence", fixed, a, fixed + 0.1, b, Math.round(top * M), layer, { dir: "y", coil }));

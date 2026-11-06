@@ -42,11 +42,12 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     carItem("hatchback", w + 1.4, bayY(0) + 0.1, PLAYER_CAR, "front", { kind: "hatchback" }),
     ...Array.from({ length: edge ? 1 : Math.min(3, staff) }, (_, k) => carItem(["hatchback", "sedan", "van"][k], w + 1.2, bayY(k + 1) + 0.1, tone(5 + k), "front", { kind: ["hatchback", "sedan", "van"][k] })),
     it("gate", gateX0, py1 - 0.3, gateX1, py1 + 0.3, M, "front", { kind: setting !== "business" && c.slide ? "slide" : "barrier" }),
+    it("gate", 2, py1 - 0.3, 6, py1 + 0.3, M, "front", { kind: "door" }),
     it("booth", gateX1 + 1.1, py1 - 1.6, boothX1, py1 + 0.7, Math.round(2.8 * M), "front"),
     carItem(setting === "industrial" ? "van" : "coupe", -34, sy0 + 4.2, tone(7), "front", { kind: setting === "industrial" ? "van" : "coupe", moving: true }), carItem(setting === "industrial" ? "van" : "hatchback", w + 16, sy0 + 1.4, tone(8), "front", { kind: setting === "industrial" ? "van" : "hatchback", moving: true }),
     it("cam", gateX0 - 1.6, py1 - 3.5, gateX0 - 1.4, py1 - 3.3, 5 * M, "front", { kind: "gate" }),
     ...fenceLine("x", py0, px0, px1, "back", dbl, top), ...fenceLine("y", px0, py0, py1, "back", dbl, top), ...fenceLine("y", px1, py0, py1, "front", dbl, top),
-    ...fenceLine("x", py1, px0, gateX0, "front", false, 2.6), ...fenceLine("x", py1, boothX1, px1, "front", false, 2.6),
+    ...fenceLine("x", py1, px0, 2, "front", false, 2.6), ...fenceLine("x", py1, 6, gateX0, "front", false, 2.6), ...fenceLine("x", py1, boothX1, px1, "front", false, 2.6),
   ];
   if (edge) {
     items.push(it("light", w + 7.9, h + 0.9, w + 8.1, h + 1.1, 8 * M, "front"), ...packUtil(["cont", "pallet"], px0 + 2, () => w - 1, -3.5, py0 + 1.2, 1.2));
@@ -54,7 +55,7 @@ export function buildSite(setting: Setting, cls: SiteClass, seed: number, w: num
     items.push(
       it("lobby", 0, h, 9, h + 6, 96, "front"), it("sign", 5.2, h + 0.6, 7, h + 0.8, 56, "front"),
       it("yard", w - 11, -9.4, w - 1, -4.5, 56, "back", { count: 3 }),
-      it("path", 3.4, h + 6, 4.8, h + 8.2, 0, "front"), it("path", 3.4, h + 7.2, gateX0 + 3, h + 8.2, 0, "front"), it("path", gateX0 + 1, h + 7.2, gateX0 + 3, py1 + 0.4, 0, "front"),
+      it("path", 3.4, h + 6, 4.8, py1 + 0.4, 0, "front"), it("path", 3.4, h + 7.2, gateX0 + 3, h + 8.2, 0, "front"), it("path", gateX0 + 1, h + 7.2, gateX0 + 3, py1 + 0.4, 0, "front"),
       it("light", px1 - 6.1, py0 + 5.9, px1 - 5.9, py0 + 6.1, 8 * M, "back"), it("light", px0 + 5.9, 3, px0 + 6.1, 3.2, 8 * M, "back"),
       it("bin", w + 7, h + 2.3, w + 7.7, h + 3, 30, "front"), it("bin", w + 7.9, h + 2.3, w + 8.6, h + 3, 30, "front"),
     );

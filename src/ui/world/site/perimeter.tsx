@@ -22,6 +22,13 @@ export function Fence({ i }: { i: Item }) {
 
 // The gate: two heavy posts with a sliding leaf drawn open beside them and a striped barrier arm across the lane.
 export function Gate({ i }: { i: Item }) {
+  if (i.kind === "door") return (
+    <g pointerEvents="none">
+      <Prism x0={i.x0 - 0.15} y0={i.y0} x1={i.x0 + 0.15} y1={i.y0 + 0.3} z1={2.6 * M} tone="w-tone-fence" />
+      <Prism x0={i.x1 - 0.15} y0={i.y0} x1={i.x1 + 0.15} y1={i.y0 + 0.3} z1={2.6 * M} tone="w-tone-fence" />
+      <Prism x0={i.x0 + 0.15} y0={i.y0 - 2.6} x1={i.x0 + 0.25} y1={i.y0} z1={2.2 * M} tone="w-tone-fence" />
+    </g>
+  );
   return (
     <g pointerEvents="none">
       <Prism x0={i.x0 - 0.15} y0={i.y0} x1={i.x0 + 0.15} y1={i.y0 + 0.3} z1={3 * M} tone="w-tone-concrete" />
