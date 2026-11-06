@@ -14,7 +14,6 @@ function out(): { c: AudioContext; o: GainNode; t: number } | null {
   }
 }
 
-
 export function carDoor() {
   const a = out();
   if (!a) return;
