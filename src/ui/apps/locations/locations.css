@@ -507,3 +507,8 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .hall-tile.row { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 22%, var(--field)); }
 .hall-tile.row.filled { background: color-mix(in oklch, var(--accent) 55%, var(--field)); }
 .hall-tile[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 0; }
+
+.loc-stack-main { position: relative; }
+.loc-stack-pick { position: absolute; top: 8px; left: 8px; }
+.loc-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.loc-bulk { position: sticky; bottom: 0; background: var(--win); border-top: var(--ar-bw) solid var(--line); }
