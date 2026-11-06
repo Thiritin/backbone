@@ -6,8 +6,17 @@ import { Defs, Front } from "./fronts";
 interface Props { model: DeviceModel; brand: string; w?: number; count?: number }
 
 // A 19-inch front is about 11 units wide per unit of height.
-export function Isometric({ model, brand, w: width = 150, count = 1 }: Props) {
-  if (model.kind === "part") return <PartIso kind={model.id.replace(/^part-/, "") as ComponentKind} name={model.name} w={width} count={count} />;
+// Every picture sits centred in the same box, so a stick next to a 1U server keeps its real size.
+export function Isometric(p: Props) {
+  const w = p.w ?? 150;
+  return <span className="iso-box" style={{ width: w, height: Math.round(w * 0.62) }}><IsoArt {...p} /></span>;
+}
+
+// Share of the box width a spare part fills; a 1U front fills all of it.
+export const PART_SCALE: Record<ComponentKind, number> = { hdd: 0.8, ssd: 0.6, nvme: 0.6, psu: 0.7, fan: 0.6, ram: 0.7, board: 0.85, cpu: 0.6, nic: 0.6, gpu: 0.95, optic: 0.7 };
+
+function IsoArt({ model, brand, w: width = 150, count = 1 }: Props) {
+  if (model.kind === "part") { const k = model.id.replace(/^part-/, "") as ComponentKind; return <PartIso kind={k} name={model.name} w={Math.round(width * (PART_SCALE[k] ?? 1))} count={count} />; }
   const w = width, units = Math.max(1, model.height), u = Math.max(8, w / 10.9), h = units * u, dx = w * 0.16, dy = dx * 0.5;
   const copies = Math.min(3, Math.max(1, count)), step = 7, extra = (copies - 1) * step;
   const W = w + dx + extra + 2, H = h + dy + extra + 2 + (count > 1 ? 14 : 0);
