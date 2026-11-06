@@ -49,7 +49,10 @@ describe("selection bar", () => {
     fireEvent.click(screen.getAllByLabelText(t("locations-2.selectStack"))[0]);
     fireEvent.click(screen.getAllByLabelText(t("locations-2.selectStack"))[1]);
     expect(screen.getByText(t("locations-2.selectedUnits", { n: 3 }))).toBeTruthy();
+    // the x2 stack gets a stepper; taking one unit lowers the total
+    fireEvent.click(screen.getByLabelText(t("shop.fewer")));
+    expect(screen.getByText(t("locations-2.selectedUnits", { n: 2 }))).toBeTruthy();
     fireEvent.click(screen.getByLabelText(t("locations-2.selectAll")));
-    expect(screen.queryByText(t("locations-2.selectedUnits", { n: 3 }))).toBeNull();
+    expect(screen.queryByText(/^[0-9]+ selected$/)).toBeNull();
   });
 });

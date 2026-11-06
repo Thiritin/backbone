@@ -75,7 +75,7 @@ svg.logo-mark { flex: none; }
 .loc-rack-facts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 /* Storage */
-.loc-stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 10px; }
+.loc-stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; padding: 10px; }
 .loc-stack { border: var(--ar-bw) solid var(--line); border-radius: var(--ar-sheet); background: var(--win); overflow: hidden; }
 .loc-stack.open { grid-column: 1 / -1; }
 .loc-stack-main { display: grid; justify-items: center; gap: 8px; padding: 10px; }
@@ -512,3 +512,6 @@ button.loc-swatch[aria-checked="true"] { outline: 2px solid var(--accent); outli
 .loc-stack-pick { position: absolute; top: 8px; left: 8px; }
 .loc-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
 .loc-bulk { position: sticky; bottom: 0; background: var(--win); border-top: var(--ar-bw) solid var(--line); }
+.loc-stack-acts { flex-wrap: wrap; justify-content: center; }
+.loc-stack-name strong { overflow-wrap: anywhere; }
+.loc-bulk-qty { display: inline-flex; }
