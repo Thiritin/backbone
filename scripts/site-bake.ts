@@ -10,10 +10,12 @@ import pc from "polygon-clipping";
 type V3 = [number, number, number];
 type Tri = { p: [V3, V3, V3]; rgb: string; mat: string; cell: string };
 // A colour rule: the first one whose ranges (OKLCH, hue in degrees) and material name all hold gives the material.
+// x and y are the facing along +x and +y; nx and ny the opposite way.
+export type Dir = "x" | "y" | "nx" | "ny";
 interface Rule { m: string; name?: string; cell?: string[]; Z?: [number, number]; L?: [number, number]; C?: [number, number]; H?: [number, number] }
 interface Cfg {
   kits: Record<string, { rules: Rule[] }>;
-  models: { id: string; kit: string; src: string; yaw: number; size: [number, number, number]; dirs: ("x" | "y")[]; rules?: Rule[]; bare?: boolean }[];
+  models: { id: string; kit: string; src: string; yaw: number; size: [number, number, number]; dirs: Dir[]; rules?: Rule[]; bare?: boolean }[];
 }
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -77,7 +79,9 @@ export function loadGlb(file: string): Tri[] {
 }
 
 // glTF (X right, Y up, -Z forward) to world (x, y on the ground, z up) after a yaw; a proper rotation, so winding holds. Scaled to the real size and set on the origin.
-export function place(tris: Tri[], yaw: number, size: V3, dir: "x" | "y"): Tri[] {
+export function place(tris: Tri[], yaw: number, size: V3, facing: Dir): Tri[] {
+  const dir = facing.slice(-1), c0 = facing[0] === "n" ? 180 : 0;
+  yaw += c0;
   const c = Math.cos((yaw * Math.PI) / 180), s = Math.sin((yaw * Math.PI) / 180);
   const w = (p: V3): V3 => [p[0] * c - p[2] * s, -(p[0] * s + p[2] * c), p[1]];
   const T = tris.map((t) => ({ ...t, p: t.p.map(w) as Tri["p"] }));
@@ -193,7 +197,7 @@ function cutX(ring: Ring, cx: number, side: 1 | -1): Ring {
   return out;
 }
 
-function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: boolean, bare: boolean) {
+function pass(m: Cfg["models"][number], dir: Dir, rules: Rule[], inspect: boolean, bare: boolean) {
   const placed = place(loadGlb(path.join(artDir, m.src)), m.yaw, m.size, dir);
   const top = Math.max(...placed.flatMap((t) => t.p.map((p) => p[2])));
   const midX = (Math.max(...placed.flatMap((t) => t.p.map((p) => p[0] - p[1]))) + Math.min(...placed.flatMap((t) => t.p.map((p) => p[0] - p[1])))) / 2;
@@ -326,7 +330,7 @@ function pass(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect: 
   return { paths, x0, y0, x1, y1, fp };
 }
 
-export function bakeOne(m: Cfg["models"][number], dir: "x" | "y", rules: Rule[], inspect = false): BakedModel {
+export function bakeOne(m: Cfg["models"][number], dir: Dir, rules: Rule[], inspect = false): BakedModel {
   const main = pass(m, dir, rules, inspect, false), bare = m.bare && !inspect ? pass(m, dir, rules, false, true) : null;
   const [x0, y0, x1, y1] = [Math.min(main.x0, bare?.x0 ?? Infinity), Math.min(main.y0, bare?.y0 ?? Infinity), Math.max(main.x1, bare?.x1 ?? -Infinity), Math.max(main.y1, bare?.y1 ?? -Infinity)];
   return { id: dir === "x" && m.dirs.length === 1 ? m.id : `${m.id}-${dir}`, w: Math.ceil(x1 - x0), h: Math.ceil(y1 - y0), ox: Math.floor(x0), oy: Math.floor(y0), fp: main.fp, paths: [...main.paths, ...(bare?.paths ?? [])] };

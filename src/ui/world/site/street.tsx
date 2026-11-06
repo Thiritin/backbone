@@ -5,7 +5,7 @@ import { Model } from "./Model";
 import { fnv1a, KERB, type Item } from "./layout";
 import { CAR_TONES } from "./palette";
 
-// A street running along x: asphalt, a kerb on both sides, a dashed centre line and one car passing on a CSS loop.
+// A street running along x: asphalt, a kerb on both sides, a dashed centre line and a car passing each way on a CSS loop, each on its own side of the centre line.
 export function Street({ i, seed }: { i: Item; seed: number }) {
   const { x0, x1, y0, y1 } = i, mid = (y0 + y1) / 2, len = x1 - x0 - 60;
   const dash = (k: number) => `M${[[x0 + k * 6 + 1, mid - 0.07], [x0 + k * 6 + 4, mid - 0.07], [x0 + k * 6 + 4, mid + 0.07], [x0 + k * 6 + 1, mid + 0.07]].map(([x, y]) => { const p = at3(x, y, 0); return `${p.x} ${p.y}`; }).join("L")}Z`;
@@ -17,7 +17,10 @@ export function Street({ i, seed }: { i: Item; seed: number }) {
       <path className="w-f-line" d={centre} />
       <Prism x0={x0} y0={y0 - KERB} x1={x1} y1={y0} z1={5} tone="w-tone-kerb" />
       <Prism x0={x0} y0={y1} x1={x1} y1={y1 + KERB} z1={5} tone="w-tone-kerb" />
-      {i.moving && <g className="w-car-pass" style={{ ["--dx" as string]: `${len * 32}px`, ["--dy" as string]: `${len * 16}px` }}><Model id="sedan-x" x={x0 + 30} y={y0 + 1.5} tone={CAR_TONES[fnv1a(`${seed}:pass`) % 6]} /></g>}
+      {i.moving && <>
+        <g className="w-car-pass" style={{ ["--dx" as string]: `${len * 32}px`, ["--dy" as string]: `${len * 16}px` }}><Model id="sedan-x" x={x0 + 30} y={mid + 0.75} tone={CAR_TONES[fnv1a(`${seed}:pass`) % 6]} /></g>
+        <g className="w-car-pass" style={{ ["--dx" as string]: `${-len * 32}px`, ["--dy" as string]: `${-len * 16}px`, animationDelay: "-9s" }}><Model id="hatchback-nx" x={x1 - 34} y={mid - 2.75} tone={CAR_TONES[fnv1a(`${seed}:back`) % 6]} /></g>
+      </>}
     </g>
   );
 }

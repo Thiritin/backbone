@@ -4,6 +4,7 @@ import type { GameState, Location } from "../../../sim/50-state";
 import { iso } from "../grid";
 import { WALL } from "../draw";
 import { CAR_TONES, PLAYER_CAR } from "./palette";
+import type { Facing } from "./heading";
 import { buildSite } from "./compound";
 import { settingOf, type Setting } from "./setting";
 
@@ -12,7 +13,7 @@ export type ItemType = "tree" | "bin" | "hedge" | "car" | "bays" | "house" | "bo
 // One placed module. The footprint is in tiles on the site's ground plane; top is its height in px above that plane.
 export interface Item {
   t: ItemType; x0: number; y0: number; x1: number; y1: number; top: number; layer: "back" | "front";
-  seed?: number; tone?: string; coil?: boolean; dir?: "x" | "y"; kind?: string; count?: number; moving?: boolean;
+  seed?: number; tone?: string; coil?: boolean; dir?: Facing; kind?: string; count?: number; moving?: boolean;
 }
 export interface Seat { x: number; y: number; facing: "n" | "e" | "s" | "w" }
 export interface SiteSpec {
@@ -104,7 +105,7 @@ export const lotRow = (seed: number, tag: number, xStart: number, dir: 1 | -1, c
     out.push(it("path", dx0, y1, dx0 + DRIVE, roadY, 0, layer, { kind: "drive" }));
     if (pick(seed, tag + k + 80, 4) > 0) {
       const ck = LOT_CARS[pick(seed, tag + k + 240, LOT_CARS.length)], [cl, cw] = CAR_SIZE[ck];
-      out.push(it("car", dx0 + Math.floor((DRIVE - cw) / 2), y1, dx0 + Math.floor((DRIVE - cw) / 2) + cw, y1 + cl, Math.round(1.45 * M), layer, { tone: CAR_TONES[pick(seed, tag + k + 120, CAR_TONES.length)], dir: "y", kind: ck }));
+      out.push(it("car", dx0 + Math.floor((DRIVE - cw) / 2), y1, dx0 + Math.floor((DRIVE - cw) / 2) + cw, y1 + cl, Math.round(1.45 * M), layer, { tone: CAR_TONES[pick(seed, tag + k + 120, CAR_TONES.length)], dir: "ny", kind: ck }));
     }
     if (mix === "houses" || d.t === "house") out.push(...hedgeRuns(x0, dx0 - 0.5, frontY + 1.2, seed + k, layer, 0.9), ...hedgeRuns(dx0 + DRIVE + 0.5, x0 + width, frontY + 1.2, seed + k, layer, 0.9));
     cursor += dir * (width + (plain ? 2 : 2 + pick(seed, tag + k + 220, 4)));
@@ -149,7 +150,7 @@ export function siteOf(game: GameState, loc: Location, w: number, h: number): Si
       carItem("sedan", -8, nearWalk - 2, tone(3), "back"),
       it("bin", w + 1, -3, w + 1.7, -2.3, 30, "back"), it("bin", w + 1, -4.2, w + 1.7, -3.5, 30, "back"),
       carItem("hatchback", 0.5, nearWalk - 2, PLAYER_CAR, "back", { kind: "hatchback", moving: false }),
-      carItem("sedan", -16, sy0 + 1.4, tone(4), "back", { moving: true }),
+      carItem("sedan", -16, sy0 + 1.4, tone(4), "back", { dir: "nx", moving: true }),
     ];
     return { kind: "garden", setting: "suburb", cls, seed, w, h, lift: WALL, plot: { x0: -16, y0: -34, x1: w + 14, y1: 0 }, items, bay: { x: 0.5, y: nearWalk - 2, dir: "x" }, seats: [], box: bounds(items, WALL, w, h) };
   }
