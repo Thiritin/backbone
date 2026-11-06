@@ -1,4 +1,4 @@
-import { audio, rattle, sweep, tone } from "../sounds";
+import { audio, rattle, tone } from "../sounds";
 import { useStore } from "../store";
 
 function out(): { c: AudioContext; o: GainNode; t: number } | null {
@@ -14,51 +14,11 @@ function out(): { c: AudioContext; o: GainNode; t: number } | null {
   }
 }
 
-// A sawtooth through a low-pass, gliding between two pitches: the engine.
-function motor(c: AudioContext, o: AudioNode, at: number, from: number, to: number, secs: number, peak: number) {
-  const osc = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
-  osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(from, at);
-  osc.frequency.exponentialRampToValueAtTime(to, at + secs);
-  lp.type = "lowpass";
-  lp.frequency.value = 380;
-  g.gain.setValueAtTime(0.0001, at);
-  g.gain.exponentialRampToValueAtTime(peak, at + 0.08);
-  g.gain.exponentialRampToValueAtTime(0.0001, at + secs);
-  osc.connect(lp).connect(g).connect(o);
-  osc.start(at);
-  osc.stop(at + secs + 0.05);
-  return { osc, g };
-}
-
 export function carDoor() {
   const a = out();
   if (!a) return;
   tone(a.c, a.o, 70, a.t, 0.18, 0.5);
   rattle(a.c, a.o, a.t, 0.35, 900, 0.08);
-}
-
-// Lighter than the company car's door, with a click of the handle first.
-export function taxiDoor() {
-  const a = out();
-  if (!a) return;
-  tone(a.c, a.o, 1400, a.t, 0.03, 0.15);
-  tone(a.c, a.o, 95, a.t + 0.05, 0.14, 0.45);
-  rattle(a.c, a.o, a.t + 0.05, 0.25, 1200, 0.06);
-}
-
-export function engineStart() {
-  const a = out();
-  if (!a) return;
-  for (let i = 0; i < 3; i++) motor(a.c, a.o, a.t + i * 0.13, 28, 34, 0.11, 0.25);
-  sweep(a.c, a.o, 200, 700, a.t + 0.4, 0.5, 0.25);
-  motor(a.c, a.o, a.t + 0.4, 40, 90, 0.7, 0.3);
-}
-
-export function engineStop() {
-  const a = out();
-  if (!a) return;
-  motor(a.c, a.o, a.t, 60, 25, 0.6, 0.25);
 }
 
 // The running engine while on the road; the returned function fades it out.

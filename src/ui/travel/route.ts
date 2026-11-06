@@ -5,15 +5,15 @@ import type { Location } from "../../sim/50-state";
 import { CITIES } from "../map/world-data";
 
 export type LL = [number, number];
-export type Stage = "room" | "map" | "leave" | "road" | "arrive";
+export type Stage = "room" | "map" | "road";
 export type TripEvent = "door" | "pick" | "close" | "done";
 
-// Door, map, leave, road, arrive, room; done also stands for a skip.
+// Door, map, road, room; done also stands for a skip.
 export function next(s: Stage, e: TripEvent): Stage {
   if (e === "close") return s === "map" ? "room" : s;
   if (e === "door") return s === "room" ? "map" : s;
-  if (e === "pick") return s === "map" ? "leave" : s;
-  return s === "leave" ? "road" : s === "road" ? "arrive" : s === "arrive" ? "room" : s;
+  if (e === "pick") return s === "map" ? "road" : s;
+  return s === "road" ? "room" : s;
 }
 
 // billed: the action that started the trip issued a document, such as a travel ticket.

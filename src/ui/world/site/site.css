@@ -107,9 +107,4 @@
 .w-car * { pointer-events: all; }
 .w-car:focus { outline: none; }
 .w-car:hover use, .w-car:focus-visible use { --paint-t: var(--car-hot-t); --paint-l: var(--car-hot-l); --paint-r: var(--car-hot-r); }
-.w-car-in { animation: w-car-in 1.2s ease-out both; }
-.w-car-out { animation: w-car-out 0.7s ease-in both; }
-@keyframes w-car-in { from { transform: translate(120px, 60px); } to { transform: none; } }
-@keyframes w-car-out { from { transform: none; } to { transform: translate(120px, 60px); } }
-@media (prefers-reduced-motion: reduce) { .w-car-in, .w-car-out { animation: none; } }
 

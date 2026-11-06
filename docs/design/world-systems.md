@@ -13,7 +13,7 @@ How every game system meets the 2D plane. Decided 2026-11-03. The desktop stays 
 | Failures and maintenance | A failed part's device shows a red LED on its front; a technician figure stands at the rack while a job runs there; a provider technician in the provider's colours for remote hands jobs | The lid scene marks the failed part and offers the swap from stored parts | Maintenance planning, burn-in, remote hands jobs |
 | Locations | Share, cage and suite halls with neighbour racks, aisles where the site has them | The racks | Locations app, contracts, waitlists |
 | Properties and staff | The office with desks, reception, server section or closet; staff at their desks in office hours, arriving and leaving; technicians away at jobs | The desk PC into the desktop, the closet rack | Properties tab, hiring, rotation |
-| Travel | The door, the map with streets, car or taxi and plane scenes | The map | Locations app shows where you are |
+| Travel | The door or car, the map with streets and the drive on it | The map | Locations app shows where you are |
 | On call | The wall phone ringing at night | The phone with the notepad | Pager notification, staff rotation |
 | Connectivity | The provider panel with labelled jacks, the office line socket | Uplink booking and provider cables from a jack's tag | Network tab, carriers, exchanges, peering |
 | Tutorial | A corkboard by the basement door with the getting-started checklist pinned to it, ticks appearing as steps complete; in the office the same board in the reception | The board drawn large, each step a pinned card, the current one brighter | The getting-started guide window |

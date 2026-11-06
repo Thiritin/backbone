@@ -6,12 +6,11 @@ Leaving the room is a trip, and a trip is something to watch. The sim already de
 
 ## The sequence
 
-1. **The door.** Using the door in the world opens the map with the current location marked and every reachable location as a pin. Picking one starts the trip through the existing travel action.
-2. **Getting in.** A side-view scene drawn in the art direction of the rooms ([World art direction](../world-art.md)): the street outside the current building, the company car at the kerb. The avatar walks to the car, the door opens, the avatar gets in, the door shuts, the engine starts, the car drives off, and the scene fades to black. Each beat has a sound. The scene plays in about four seconds and any key or click skips it.
-3. **On the road.** The map, dark and gamey. The route from origin to destination is drawn along real roads and a car marker drives it. The game clock in the corner runs ahead, with the speed multiplier shown, so the player sees how much game time the trip eats. The sim ticks at that speed and everything that happens in the meantime happens: mail arrives, tickets come in, money moves. The animation lasts a fixed stretch of real time scaled gently with distance, roughly six to twelve seconds, and arrives exactly at the game time the sim chose. Any key or click skips to arrival.
-4. **Arrival.** Fade from black into the side-view scene at the destination: the car pulls up, the door opens, the avatar gets out and walks through the building door. Then the destination room in the world.
+1. **The door.** Using the door or the company car in the world opens the map with the current location marked and every reachable location as a pin. Picking one starts the trip through the existing travel action.
+2. **On the road.** The map, dark and gamey. The route from origin to destination is drawn along real roads and a car marker drives it. The game clock in the corner runs ahead, with the speed multiplier shown, so the player sees how much game time the trip eats. The sim ticks at that speed and everything that happens in the meantime happens: mail arrives, tickets come in, money moves. The animation lasts a fixed stretch of real time scaled gently with distance, roughly six to twelve seconds, and arrives exactly at the game time the sim chose. Any key or click skips to arrival.
+3. **Arrival.** The destination room in the world.
 
-A trip into or out of a country across the sea (London, Dublin) flies, by the table in [Hardware, power and failures](../economy/hardware-power-and-failures.md). A flight follows the same sequence with a taxi in place of the company car in both street scenes: the taxi door shuts, the taxi drives off to the airport, the map shows a plane marker along the great-circle arc between the two places with a dashed trail behind it and a jet rumble under it, and at the far end the taxi pulls up at the destination. Trips to the other continent will fly the same way once those sites are on offer.
+A trip into or out of a country across the sea (London, Dublin) flies, by the table in [Hardware, power and failures](../economy/hardware-power-and-failures.md). A flight follows the same sequence, and the map shows a plane marker along the great-circle arc between the two places with a dashed trail behind it and a jet rumble under it. Trips to the other continent will fly the same way once those sites are on offer.
 
 ## The map
 
@@ -27,11 +26,10 @@ A trip into or out of a country across the sea (London, Dublin) flies, by the ta
 
 ## Sounds
 
-Car door, engine start, engine running, engine stop; for a flight a lighter taxi door and a jet rumble loop. The game's sound layer synthesises its sounds in code; the travel sounds follow that unless a free pack fits better. Any pack used is recorded in `public/world/CREDITS.md`.
+Car door on leaving, engine running on the road; for a flight a jet rumble loop. The game's sound layer synthesises its sounds in code; the travel sounds follow that unless a free pack fits better. Any pack used is recorded in `public/world/CREDITS.md`.
 
 ## Pieces
 
 - Data: the roads file, the routes file, the script that builds them, and the credits entry for the data sources.
-- Scenes: the two side-view scenes drawn in code, with the avatar in the style of the room figures and the car drawn flat.
 - Map: the dark map, the route, the marker, the clock readout.
-- Flow: door, map, scene, map, scene, room, with skip on every stage and the existing travel action and arrival time driving all of it.
+- Flow: door or car, map, road, room, with skip on every stage and the existing travel action and arrival time driving all of it.
